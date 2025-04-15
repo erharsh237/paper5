@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import './App.css'
 import Navbar from './components/navbar.jsx'
+import Carousel from './components/Carousel.jsx'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -8,7 +9,8 @@ function App() {
   return (
     <>
       <div>
-        <Navbar />
+        <Navbar />,
+        <Carousel />
       </div>
     </>
   )
