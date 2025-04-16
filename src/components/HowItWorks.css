@@ -8,18 +8,20 @@
     position: relative;
     overflow: hidden;
     z-index: 1;
+    scroll-margin-top: 100px; /* Adjust this value to match navbar height */
+    padding: 100px 20px;
   }
   
   /* Section title */
   .section-title {
     font-size: 3rem;
     margin-bottom: 60px;
-    color: #00e0ff;
+    color: #f1f1f1;
     text-transform: uppercase;
     letter-spacing: 2px;
     position: relative;
     z-index: 2;
-    margin-top: -80px;
+    /* margin-top: -80px; */
   }
   
   /* Glowing dot background using CSS particles */

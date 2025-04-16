@@ -2,7 +2,7 @@
 
 :root {
     --dark-text: #f0f0f0;
-    --accent: #4e89ff;
+    /* --accent: #4e89ff; */
     --cta-bg: #4e89ff;
     --cta-text: #ffffff;
   }
@@ -18,7 +18,7 @@
   .hero-container {
     position: relative;
     height: 100vh;
-    width: 100vw;
+    width: 100%;
     background: url('../assets/books.jpg') no-repeat center center/cover;
     background-attachment: fixed;
     display: flex;
@@ -39,14 +39,16 @@
   .navbar {
     position: absolute;
     top: 0;
+    left: 0;
     width: 100%;
+    position: fixed;
     padding: 1.5rem 3rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(10px);
-    z-index: 1002;
+    z-index: 9999;
   }
   
   .logo {
@@ -60,18 +62,28 @@
     list-style: none;
     display: flex;
     gap: 1.5rem;
+    
   }
   
   .nav-links li a {
-    color: var(--cta-text);
+    color: white;
     text-decoration: none;
     font-weight: 500;
-    transition: color 0.3s;
+    padding: 6px 12px;
+    border-radius: 8px;
+    position: relative;
+    transition: all 0.3s ease-in-out;
   }
   
+  /* Hover Effect */
   .nav-links li a:hover {
-    color: var(--accent);
+    color: #ffffff;
+    /* background-color: #4e89ff; */
+    border: 1px solid #ffffff;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
   }
+  
   
   .hero-content {
     position: relative;
@@ -84,6 +96,7 @@
     max-width: 700px;
     animation: fadeIn 1s ease-in-out;
     box-shadow: 0 0 30px rgba(0,0,0,0.3);
+    margin-top: 100px;
   }
   
   .hero-content h1 {

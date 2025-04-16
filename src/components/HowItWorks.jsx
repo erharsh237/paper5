@@ -28,7 +28,7 @@ const steps = [
 
 const HowItWorks = () => {
   return (
-    <section className="how-it-works">
+    <section className="how-it-works" id='howitworks'>
       <div className="particle-bg"></div>
       <motion.h2
         className="section-title"

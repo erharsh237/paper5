@@ -4,3 +4,6 @@
   box-sizing: border-box;
   font-family: 'Raleway', 'Josefin Sans', 'Questrial', sans-serif;
 }
+html {
+  scroll-behavior: smooth;
+}
