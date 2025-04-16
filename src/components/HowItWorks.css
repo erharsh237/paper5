@@ -88,6 +88,7 @@
   .step-icon {
     font-size: 3rem;
     background: linear-gradient(45deg, #00e0ff, #ff00ff);
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 25px;
