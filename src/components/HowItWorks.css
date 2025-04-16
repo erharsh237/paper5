@@ -1,0 +1,84 @@
+.how-it-works {
+    background-color: #000000;
+    color: #ffffff;
+    padding: 100px 20px;
+    text-align: center;
+    font-family: 'Segoe UI', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .section-title {
+    font-size: 3rem;
+    margin-bottom: 60px;
+    color: #00e0ff;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    position: relative;
+  }
+  
+  .steps-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 50px;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+  }
+  
+  .step-card {
+    background: linear-gradient(145deg, #0a0a0a, #111111);
+    border-radius: 20px;
+    padding: 40px 30px;
+    position: relative;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 15px rgba(0, 224, 255, 0.05);
+    cursor: pointer;
+  }
+  
+  .step-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(0, 224, 255, 0.3);
+    border-image: linear-gradient(45deg, #00e0ff, #ff00ff) 1;
+  }
+  
+  .step-icon {
+    font-size: 3rem;
+    background: linear-gradient(45deg, #00e0ff, #ff00ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 25px;
+    transition: transform 0.3s ease;
+  }
+  
+  .step-card:hover .step-icon {
+    transform: rotate(5deg) scale(1.1);
+  }
+  
+  .step-title {
+    font-size: 1.6rem;
+    color: #ffffff;
+    margin-bottom: 15px;
+  }
+  
+  .step-description {
+    font-size: 0.95rem;
+    color: #cfcfcf;
+    line-height: 1.6;
+  }
+  
+  .step-number {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(45deg, #00e0ff, #ff00ff);
+    color: #000000;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-weight: bold;
+    font-size: 0.8rem;
+    box-shadow: 0 0 10px rgba(0, 224, 255, 0.5);
+  }
+  

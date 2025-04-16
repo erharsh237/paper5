@@ -1,0 +1,130 @@
+/* HeroSection.css */
+
+:root {
+    --dark-text: #f0f0f0;
+    --accent: #4e89ff;
+    --cta-bg: #4e89ff;
+    --cta-text: #ffffff;
+  }
+  
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #000;
+    color: var(--dark-text);
+    overflow-x: hidden;
+  }
+  
+  .hero-container {
+    position: relative;
+    height: 100vh;
+    width: 100vw;
+    background: url('../assets/books.jpg') no-repeat center center/cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(135deg, rgba(18,18,18,0.85), rgba(18,18,18,0.65));
+    z-index: 1;
+  }
+  
+  .navbar {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    padding: 1.5rem 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    z-index: 1002;
+  }
+  
+  .logo {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--cta-text);
+    letter-spacing: 1px;
+  }
+  
+  .nav-links {
+    list-style: none;
+    display: flex;
+    gap: 1.5rem;
+  }
+  
+  .nav-links li a {
+    color: var(--cta-text);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s;
+  }
+  
+  .nav-links li a:hover {
+    color: var(--accent);
+  }
+  
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    padding: 2.5rem 3rem;
+    border-radius: 20px;
+    text-align: center;
+    max-width: 700px;
+    animation: fadeIn 1s ease-in-out;
+    box-shadow: 0 0 30px rgba(0,0,0,0.3);
+  }
+  
+  .hero-content h1 {
+    font-size: 3.2rem;
+    margin-bottom: 1rem;
+    color: var(--cta-text);
+    line-height: 1.2;
+  }
+  
+  .hero-content p {
+    font-size: 1.2rem;
+    color: #dcdcdc;
+    margin-bottom: 2rem;
+  }
+  
+  .hero-btn {
+    background-color: var(--cta-bg);
+    color: var(--cta-text);
+    padding: 0.8rem 2rem;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    box-shadow: 0 4px 12px rgba(78,137,255,0.5);
+    transition: all 0.3s ease-in-out;
+  }
+  
+  .hero-btn:hover {
+    background-color: #336dd8;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 18px rgba(78,137,255,0.6);
+  }
+  
+  /* Animations */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(25px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
