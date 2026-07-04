@@ -1,0 +1,131 @@
+import { useEffect, useMemo, useState } from 'react'
+import { useAuth } from '../lib/AuthContext'
+import { subscribeDeadlines, subscribeMembers } from '../lib/deadlines'
+import { getUrgency } from '../lib/utils'
+import DeadlineCard from '../components/DeadlineCard'
+import NewDeadlineModal from '../components/NewDeadlineModal'
+import AddMemberModal from '../components/AddMemberModal'
+import MembersPanel from '../components/MembersPanel'
+import './Dashboard.css'
+
+// Single shared team workspace for this internal tool.
+const TEAM_ID = 'default-team'
+
+export default function Dashboard() {
+  const { user, logout } = useAuth()
+  const [deadlines, setDeadlines] = useState([])
+  const [members, setMembers] = useState([])
+  const [showNewModal, setShowNewModal] = useState(false)
+  const [showMemberModal, setShowMemberModal] = useState(false)
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [assigneeFilter, setAssigneeFilter] = useState('all')
+  const [search, setSearch] = useState('')
+
+  useEffect(() => {
+    const unsub1 = subscribeDeadlines(TEAM_ID, setDeadlines)
+    const unsub2 = subscribeMembers(TEAM_ID, setMembers)
+    return () => { unsub1(); unsub2() }
+  }, [])
+
+  const stats = useMemo(() => {
+    const active = deadlines.filter(d => d.status !== 'done')
+    const overdue = active.filter(d => getUrgency(d.dueDate, d.status) === 'overdue')
+    const dueSoon = active.filter(d => ['critical', 'warn'].includes(getUrgency(d.dueDate, d.status)))
+    const done = deadlines.filter(d => d.status === 'done')
+    return { total: deadlines.length, active: active.length, overdue: overdue.length, dueSoon: dueSoon.length, done: done.length }
+  }, [deadlines])
+
+  const filtered = useMemo(() => {
+    return deadlines.filter(d => {
+      if (statusFilter !== 'all' && d.status !== statusFilter) return false
+      if (assigneeFilter !== 'all' && d.assigneeId !== assigneeFilter) return false
+      if (search.trim() && !d.title.toLowerCase().includes(search.toLowerCase())) return false
+      return true
+    })
+  }, [deadlines, statusFilter, assigneeFilter, search])
+
+  return (
+    <div className="dash">
+      <header className="dash-header">
+        <div className="dash-header-inner">
+          <div className="dash-brand">
+            <span className="dash-brand-dot" />
+            <span className="mono">SECURIQ <span className="dash-brand-sub">| Deadline Tracker</span></span>
+          </div>
+          <div className="dash-header-actions">
+            <span className="dash-user">{user?.displayName || user?.email}</span>
+            <button className="btn-ghost btn-sm" onClick={logout}>Sign out</button>
+          </div>
+        </div>
+      </header>
+
+      <main className="dash-body">
+        <section className="stat-strip">
+          <StatTile label="Active" value={stats.active} tone="info" />
+          <StatTile label="Overdue" value={stats.overdue} tone="critical" />
+          <StatTile label="Due soon" value={stats.dueSoon} tone="warn" />
+          <StatTile label="Completed" value={stats.done} tone="signal" />
+        </section>
+
+        <MembersPanel members={members} />
+
+        <section className="controls-bar">
+          <div className="controls-left">
+            <input
+              className="search-input"
+              placeholder="Search deadlines…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="filter-select">
+              <option value="all">All statuses</option>
+              <option value="not_started">Not started</option>
+              <option value="in_progress">In progress</option>
+              <option value="blocked">Blocked</option>
+              <option value="done">Done</option>
+            </select>
+            <select value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)} className="filter-select">
+              <option value="all">Everyone</option>
+              {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
+          </div>
+          <div className="controls-right">
+            <button className="btn-ghost btn-sm" onClick={() => setShowMemberModal(true)}>+ Member</button>
+            <button className="btn-primary btn-sm" onClick={() => setShowNewModal(true)}>+ New deadline</button>
+          </div>
+        </section>
+
+        <section className="deadline-list">
+          {filtered.length === 0 ? (
+            <div className="empty-state">
+              <p>{deadlines.length === 0 ? 'No deadlines yet. Create the first one.' : 'Nothing matches these filters.'}</p>
+            </div>
+          ) : (
+            filtered.map(d => <DeadlineCard key={d.id} deadline={d} currentUser={user} />)
+          )}
+        </section>
+      </main>
+
+      {showNewModal && (
+        <NewDeadlineModal
+          teamId={TEAM_ID}
+          members={members}
+          currentUser={user}
+          onClose={() => setShowNewModal(false)}
+        />
+      )}
+      {showMemberModal && (
+        <AddMemberModal teamId={TEAM_ID} onClose={() => setShowMemberModal(false)} />
+      )}
+    </div>
+  )
+}
+
+function StatTile({ label, value, tone }) {
+  return (
+    <div className={`stat-tile stat-tile--${tone}`}>
+      <div className="stat-value mono">{value}</div>
+      <div className="stat-label">{label}</div>
+    </div>
+  )
+}
