@@ -88,6 +88,18 @@
 .login-btn:hover { opacity: 0.9; }
 .login-btn:active { transform: scale(0.98); }
 
+.login-denied {
+  background: #fce4e8;
+  border: 1px solid #f6c7cf;
+  color: var(--accent-critical);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
 .login-footnote {
   margin-top: 20px;
   font-size: 11px;

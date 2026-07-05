@@ -3,7 +3,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 
 export default function App() {
-  const { user, loading } = useAuth()
+  const { user, loading, accessDenied } = useAuth()
 
   if (loading) {
     return (
@@ -16,5 +16,5 @@ export default function App() {
     )
   }
 
-  return user ? <Dashboard /> : <Login />
+  return user ? <Dashboard /> : <Login accessDenied={accessDenied} />
 }

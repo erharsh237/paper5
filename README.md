@@ -78,9 +78,10 @@ Add the same env vars in the Vercel dashboard under Project Settings → Environ
 - [ ] **Populate the allowlist** — this is the critical step, because your team signs in with personal Gmail rather than a shared company domain:
   1. Firebase Console → Firestore Database → Data tab → **Start collection** → name it `allowedUsers`.
   2. For each team member, **Add document** → set the **Document ID** to their exact Gmail address in lowercase (e.g. `harshpal@gmail.com`) → add any placeholder field (e.g. `addedBy: "you"`) since only the document's existence matters, not its contents.
-  3. Anyone who signs in with an email that has no matching document is denied all reads/writes by the rules — Firebase Auth succeeds, but Firestore blocks them.
-  4. To revoke someone's access later, delete their document from `allowedUsers`.
-  5. This collection is locked (`allow write: if false`) so it can only be edited by you directly in the Firebase Console, never from the app itself.
+  3. **Add yourself first**, before anyone tries to sign in — the app checks this collection immediately after Google sign-in and force-signs-out anyone not listed, showing them "not on the team allowlist." If you're not in it yet, you'll lock yourself out too.
+  4. Anyone who signs in with an email that has no matching document sees Google's account picker succeed, then gets immediately signed back out with a clear denial message — they never reach the dashboard.
+  5. To revoke someone's access later, delete their document from `allowedUsers` — they'll be blocked on their next sign-in attempt (existing sessions may take a refresh to catch it).
+  6. This collection is locked (`allow write: if false`) so it can only be edited by you directly in the Firebase Console, never from the app itself.
 - [ ] **Deploy Firestore indexes**: `firestore.indexes.json` defines the composite index the app's queries need. If you have the Firebase CLI installed, run `firebase deploy --only firestore:indexes`. Otherwise, load the app once in production — Firestore will show a console error with a direct link to auto-create the missing index.
 - [ ] **Set environment variables on your host** (Vercel/Netlify project settings) — same 9 keys as your local `.env`. The app will throw a clear error on load if any Firebase key is missing, rather than a silent failure.
 - [ ] **Authorized domains in Firebase Auth**: Firebase Console → Authentication → Settings → Authorized domains → add your production domain (e.g. `tracker.securiq.co`) or Google sign-in will fail there the same way it failed on `localhost` before you added it.

@@ -1,7 +1,7 @@
 import { useAuth } from '../lib/AuthContext'
 import './Login.css'
 
-export default function Login() {
+export default function Login({ accessDenied }) {
   const { login } = useAuth()
 
   return (
@@ -16,6 +16,13 @@ export default function Login() {
         <p className="login-sub">
           Internal tracker for your team's milestones. No noise, no missed dates.
         </p>
+
+        {accessDenied && (
+          <div className="login-denied">
+            Your Google account isn't on the team allowlist. Ask your admin to add your email before you can sign in.
+          </div>
+        )}
+
         <button className="login-btn" onClick={login}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>

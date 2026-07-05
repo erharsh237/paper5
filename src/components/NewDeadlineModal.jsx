@@ -23,6 +23,12 @@ export default function NewDeadlineModal({ teamId, members, currentUser, onClose
 
     if (!title.trim()) return setError('Title is required.')
     if (!dueDate) return setError('Due date is required.')
+
+    const parsedDate = new Date(dueDate)
+    if (isNaN(parsedDate.getTime())) {
+      return setError('That due date looks invalid. Please pick it using the calendar icon instead of typing it.')
+    }
+
     if (!assignee) return setError('Select a team member to assign.')
     if (!currentUser?.email) return setError('Your account has no email on file — cannot assign ownership.')
 
@@ -32,7 +38,7 @@ export default function NewDeadlineModal({ teamId, members, currentUser, onClose
         title: title.trim(),
         description: description.trim(),
         priority,
-        dueDate: new Date(dueDate).toISOString(),
+        dueDate: parsedDate.toISOString(),
         assigneeId: assignee.id,
         assigneeName: assignee.name,
         assigneeEmail: assignee.email,
@@ -48,7 +54,7 @@ export default function NewDeadlineModal({ teamId, members, currentUser, onClose
             toEmail: assignee.email,
             title: title.trim(),
             description: description.trim(),
-            dueDate: new Date(dueDate).toLocaleString(undefined, {
+            dueDate: parsedDate.toLocaleString(undefined, {
               dateStyle: 'medium', timeStyle: 'short',
             }),
             priority,
