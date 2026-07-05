@@ -1,7 +1,7 @@
 import { useAuth } from '../lib/AuthContext'
 import './Login.css'
 
-export default function Login({ accessDenied }) {
+export default function Login({ accessDenied, denialReason }) {
   const { login } = useAuth()
 
   return (
@@ -17,9 +17,15 @@ export default function Login({ accessDenied }) {
           Internal tracker for your team's milestones. No noise, no missed dates.
         </p>
 
-        {accessDenied && (
+        {accessDenied && denialReason === 'not_allowed' && (
           <div className="login-denied">
-            Your Google account isn't on the team allowlist. Ask your admin to add your email before you can sign in.
+            <strong>Access blocked.</strong> Your Google account isn't authorized for this tracker. Ask your admin to add your email before you can sign in.
+          </div>
+        )}
+
+        {accessDenied && denialReason === 'check_failed' && (
+          <div className="login-denied login-denied--warn">
+            <strong>Couldn't verify access.</strong> Something interrupted the authorization check (network issue or a browser extension). Please try again.
           </div>
         )}
 

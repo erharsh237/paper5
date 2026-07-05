@@ -9,33 +9,48 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [accessDenied, setAccessDenied] = useState(false)
+  const [denialReason, setDenialReason] = useState(null) // 'not_allowed' | 'check_failed' | null
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u) {
         setUser(null)
         setAccessDenied(false)
+        setDenialReason(null)
         setLoading(false)
         return
       }
 
       try {
-        const allowed = await isEmailAllowed(u.email)
+        const allowed = await Promise.race([
+          isEmailAllowed(u.email),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Allowlist check timed out')), 8000)
+          ),
+        ])
         if (!allowed) {
           setAccessDenied(true)
+          setDenialReason('not_allowed')
           setUser(null)
           await signOut(auth)
         } else {
           setAccessDenied(false)
+          setDenialReason(null)
           setUser(u)
         }
       } catch (err) {
-        // If the allowlist check itself fails (e.g. rules reject the read),
-        // fail closed — treat as denied rather than granting access.
+        // If the allowlist check itself fails or times out (e.g. blocked
+        // request, network issue), fail closed — deny rather than hang
+        // forever or silently grant access.
         console.error('Allowlist check failed:', err)
         setAccessDenied(true)
+        setDenialReason('check_failed')
         setUser(null)
-        await signOut(auth)
+        try {
+          await signOut(auth)
+        } catch (signOutErr) {
+          console.error('Sign-out after denial also failed:', signOutErr)
+        }
       }
       setLoading(false)
     })
@@ -46,7 +61,7 @@ export function AuthProvider({ children }) {
   const logout = () => signOut(auth)
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, accessDenied }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, accessDenied, denialReason }}>
       {children}
     </AuthContext.Provider>
   )

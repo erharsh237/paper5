@@ -100,6 +100,12 @@
   text-align: left;
 }
 
+.login-denied--warn {
+  background: #fbedd3;
+  border-color: #f3dba6;
+  color: var(--accent-warn);
+}
+
 .login-footnote {
   margin-top: 20px;
   font-size: 11px;
