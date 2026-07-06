@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react'
 import { UrgencyBadge, PriorityBadge } from './Badge'
 import { getUrgency, formatDue, STATUSES } from '../lib/utils'
-import { updateDeadlineStatus } from '../lib/deadlines'
+import { updateDeadlineStatus, addExtraWork } from '../lib/deadlines'
 import './DeadlineCard.css'
 
 export default function DeadlineCard({ deadline, currentUser }) {
   const [expanded, setExpanded] = useState(false)
   const [draftStatus, setDraftStatus] = useState(deadline.status)
   const [saving, setSaving] = useState(false)
+  const [showExtraForm, setShowExtraForm] = useState(false)
+  const [extraNote, setExtraNote] = useState('')
+  const [savingExtra, setSavingExtra] = useState(false)
   const urgency = getUrgency(deadline.dueDate, deadline.status)
   const due = formatDue(deadline.dueDate)
   const isAssignee = currentUser?.email && deadline.assigneeEmail === currentUser.email
@@ -37,6 +40,23 @@ export default function DeadlineCard({ deadline, currentUser }) {
       await updateDeadlineStatus(deadline.id, 'done')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleAddExtraWork() {
+    const note = extraNote.trim()
+    if (!note) return
+    setSavingExtra(true)
+    try {
+      await addExtraWork(deadline.id, {
+        note,
+        addedBy: currentUser?.email,
+        addedByName: currentUser?.displayName || currentUser?.email,
+      })
+      setExtraNote('')
+      setShowExtraForm(false)
+    } finally {
+      setSavingExtra(false)
     }
   }
 
@@ -105,6 +125,54 @@ export default function DeadlineCard({ deadline, currentUser }) {
             )}
           </div>
           <div className="dcard-footnote mono">assigned by {deadline.createdByName || deadline.createdBy}</div>
+
+          {deadline.extraWork?.length > 0 && (
+            <div className="dcard-extrawork">
+              <div className="dcard-extrawork-title">Extra work logged</div>
+              {deadline.extraWork.map((item, i) => (
+                <div className="dcard-extrawork-item" key={i}>
+                  <p>{item.note}</p>
+                  <span className="mono">— {item.addedByName || item.addedBy}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {isAssignee && (
+            showExtraForm ? (
+              <div className="dcard-extraform" onClick={(e) => e.stopPropagation()}>
+                <textarea
+                  className="dcard-extraform-input"
+                  placeholder="Describe the extra work you did…"
+                  value={extraNote}
+                  onChange={(e) => setExtraNote(e.target.value)}
+                  rows={2}
+                />
+                <div className="dcard-extraform-actions">
+                  <button
+                    className="dcard-update"
+                    disabled={!extraNote.trim() || savingExtra}
+                    onClick={handleAddExtraWork}
+                  >
+                    Save note
+                  </button>
+                  <button
+                    className="dcard-extraform-cancel"
+                    onClick={() => { setShowExtraForm(false); setExtraNote('') }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                className="dcard-add-extra"
+                onClick={(e) => { e.stopPropagation(); setShowExtraForm(true) }}
+              >
+                + Log extra work
+              </button>
+            )
+          )}
         </div>
       )}
     </div>

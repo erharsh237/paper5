@@ -40,7 +40,7 @@ service cloud.firestore {
 
     function isStatusOnlyChange() {
       return request.resource.data.diff(resource.data).affectedKeys()
-        .hasOnly(['status', 'percentComplete']);
+        .hasOnly(['status', 'percentComplete', 'extraWork']);
     }
 
     match /deadlines/{deadlineId} {

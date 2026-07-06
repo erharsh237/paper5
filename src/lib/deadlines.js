@@ -1,6 +1,6 @@
 import {
   collection, addDoc, updateDoc, deleteDoc, doc,
-  onSnapshot, query, orderBy, serverTimestamp, where
+  onSnapshot, query, orderBy, serverTimestamp, where, arrayUnion, Timestamp
 } from 'firebase/firestore'
 import { db } from './firebase'
 
@@ -51,6 +51,20 @@ export async function updateDeadlineStatus(id, status) {
   if (status === 'done') patch.percentComplete = 100
   if (status === 'not_started') patch.percentComplete = 0
   return updateDoc(doc(db, 'deadlines', id), patch)
+}
+
+// Optional note an assignee can attach to their own deadline to log extra
+// work done beyond the original scope. Stored as an append-only array so
+// concurrent additions never overwrite each other.
+export async function addExtraWork(id, { note, addedBy, addedByName }) {
+  return updateDoc(doc(db, 'deadlines', id), {
+    extraWork: arrayUnion({
+      note,
+      addedBy,
+      addedByName,
+      addedAt: Timestamp.now(),
+    }),
+  })
 }
 
 export async function deleteDeadline(id) {
