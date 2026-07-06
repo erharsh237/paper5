@@ -163,15 +163,18 @@
 .search-input:focus, .filter-select:focus { border-color: var(--accent-signal); outline: none; }
 
 .deadline-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
-  gap: 12px;
-  align-content: start;
-  align-items: start;
+  column-width: 320px;
+  column-gap: 12px;
+}
+
+.deadline-list > * {
+  break-inside: avoid;
+  margin-bottom: 12px;
+  display: inline-block;
+  width: 100%;
 }
 
 .empty-state {
-  grid-column: 1 / -1;
   text-align: center;
   padding: 60px 20px;
   color: var(--text-tertiary);
