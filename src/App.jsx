@@ -1,6 +1,8 @@
+import { Routes, Route } from 'react-router-dom'
 import { useAuth } from './lib/AuthContext'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import NotFound from './pages/NotFound'
 
 export default function App() {
   const { user, loading, accessDenied, denialReason } = useAuth()
@@ -16,5 +18,10 @@ export default function App() {
     )
   }
 
-  return user ? <Dashboard /> : <Login accessDenied={accessDenied} denialReason={denialReason} />
+  return (
+    <Routes>
+      <Route path="/" element={user ? <Dashboard /> : <Login accessDenied={accessDenied} denialReason={denialReason} />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  )
 }
