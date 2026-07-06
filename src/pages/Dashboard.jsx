@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../lib/AuthContext'
 import { subscribeDeadlines, subscribeMembers } from '../lib/deadlines'
 import { getUrgency } from '../lib/utils'
+import { downloadMonthlyReport } from '../lib/report'
 import DeadlineCard from '../components/DeadlineCard'
 import NewDeadlineModal from '../components/NewDeadlineModal'
 import AddMemberModal from '../components/AddMemberModal'
@@ -21,6 +22,13 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [assigneeFilter, setAssigneeFilter] = useState('all')
   const [search, setSearch] = useState('')
+  const now = new Date()
+  const [reportMonth, setReportMonth] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`)
+
+  function handleDownloadReport() {
+    const [y, m] = reportMonth.split('-').map(Number)
+    downloadMonthlyReport(deadlines, members, { year: y, month: m - 1 })
+  }
 
   useEffect(() => {
     const unsub1 = subscribeDeadlines(TEAM_ID, setDeadlines)
@@ -91,6 +99,14 @@ export default function Dashboard() {
                 </select>
               </div>
               <div className="controls-right">
+                <input
+                  type="month"
+                  className="filter-select"
+                  value={reportMonth}
+                  onChange={(e) => setReportMonth(e.target.value)}
+                  title="Report month"
+                />
+                <button className="btn-ghost btn-sm" onClick={handleDownloadReport}>⬇ Download report</button>
                 <button className="btn-ghost btn-sm" onClick={() => setShowMemberModal(true)}>+ Member</button>
                 <button className="btn-primary btn-sm" onClick={() => setShowNewModal(true)}>+ New deadline</button>
               </div>

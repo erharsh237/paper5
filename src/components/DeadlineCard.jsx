@@ -11,6 +11,7 @@ export default function DeadlineCard({ deadline, currentUser }) {
   const [showExtraForm, setShowExtraForm] = useState(false)
   const [extraNote, setExtraNote] = useState('')
   const [savingExtra, setSavingExtra] = useState(false)
+  const [statusError, setStatusError] = useState(null)
   const urgency = getUrgency(deadline.dueDate, deadline.status)
   const due = formatDue(deadline.dueDate)
   const isAssignee = currentUser?.email &&
@@ -27,8 +28,17 @@ export default function DeadlineCard({ deadline, currentUser }) {
   async function handleSaveUpdate() {
     if (!isDirty || draftStatus === 'done') return
     setSaving(true)
+    setStatusError(null)
     try {
       await updateDeadlineStatus(deadline.id, draftStatus)
+    } catch (err) {
+      console.error('Failed to update status:', err)
+      setStatusError(
+        err?.code === 'permission-denied'
+          ? "You don't have permission to update this — check you're the assignee and rules are deployed."
+          : 'Update failed. Please try again.'
+      )
+      setDraftStatus(deadline.status) // revert visibly, don't leave it hanging
     } finally {
       setSaving(false)
     }
@@ -37,8 +47,16 @@ export default function DeadlineCard({ deadline, currentUser }) {
   async function handleMarkComplete() {
     if (!confirm(`Mark "${deadline.title}" as done?`)) return
     setSaving(true)
+    setStatusError(null)
     try {
       await updateDeadlineStatus(deadline.id, 'done')
+    } catch (err) {
+      console.error('Failed to mark complete:', err)
+      setStatusError(
+        err?.code === 'permission-denied'
+          ? "You don't have permission to update this — check you're the assignee and rules are deployed."
+          : 'Update failed. Please try again.'
+      )
     } finally {
       setSaving(false)
     }
