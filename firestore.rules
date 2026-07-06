@@ -31,11 +31,11 @@ service cloud.firestore {
     }
 
     function isOwner(resource) {
-      return isSignedIn() && resource.data.createdBy == request.auth.token.email;
+      return isSignedIn() && resource.data.createdBy.lower() == request.auth.token.email.lower();
     }
 
     function isAssignee(resource) {
-      return isSignedIn() && resource.data.assigneeEmail == request.auth.token.email;
+      return isSignedIn() && resource.data.assigneeEmail.lower() == request.auth.token.email.lower();
     }
 
     function isStatusOnlyChange() {
@@ -52,7 +52,7 @@ service cloud.firestore {
         && request.resource.data.title.size() < 300
         && request.resource.data.dueDate is string
         && request.resource.data.teamId is string
-        && request.resource.data.createdBy == request.auth.token.email;
+        && request.resource.data.createdBy.lower() == request.auth.token.email.lower();
 
       // Only the assignee can change status/progress, and only those
       // fields. The creator/owner retains full edit rights. Only the

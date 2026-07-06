@@ -31,8 +31,8 @@ export async function createDeadline(teamId, data) {
     dueDate: data.dueDate, // ISO string
     assigneeId: data.assigneeId,
     assigneeName: data.assigneeName,
-    assigneeEmail: data.assigneeEmail,
-    createdBy: data.createdBy, // exact signed-in email — used for delete permission checks
+    assigneeEmail: (data.assigneeEmail || '').toLowerCase(),
+    createdBy: (data.createdBy || '').toLowerCase(), // exact signed-in email — used for delete permission checks
     createdByName: data.createdByName, // display name shown in the UI
     createdAt: serverTimestamp(),
     percentComplete: 0,

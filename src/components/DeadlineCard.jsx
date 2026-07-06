@@ -13,7 +13,8 @@ export default function DeadlineCard({ deadline, currentUser }) {
   const [savingExtra, setSavingExtra] = useState(false)
   const urgency = getUrgency(deadline.dueDate, deadline.status)
   const due = formatDue(deadline.dueDate)
-  const isAssignee = currentUser?.email && deadline.assigneeEmail === currentUser.email
+  const isAssignee = currentUser?.email &&
+    deadline.assigneeEmail?.toLowerCase() === currentUser.email.toLowerCase()
   // Only the assignee moves their own progress.
   const canUpdateStatus = isAssignee
   const isDirty = draftStatus !== deadline.status
