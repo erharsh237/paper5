@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { UrgencyBadge, PriorityBadge } from './Badge'
 import { getUrgency, formatDue, STATUSES } from '../lib/utils'
-import { updateDeadlineStatus, deleteDeadline } from '../lib/deadlines'
+import { updateDeadlineStatus } from '../lib/deadlines'
 import './DeadlineCard.css'
 
 export default function DeadlineCard({ deadline, currentUser }) {
@@ -10,7 +10,6 @@ export default function DeadlineCard({ deadline, currentUser }) {
   const [saving, setSaving] = useState(false)
   const urgency = getUrgency(deadline.dueDate, deadline.status)
   const due = formatDue(deadline.dueDate)
-  const isOwner = currentUser?.email && deadline.createdBy === currentUser.email
   const isAssignee = currentUser?.email && deadline.assigneeEmail === currentUser.email
   // Only the assignee moves their own progress.
   const canUpdateStatus = isAssignee
@@ -41,18 +40,14 @@ export default function DeadlineCard({ deadline, currentUser }) {
     }
   }
 
-  function handleDelete() {
-    if (confirm(`Delete "${deadline.title}"?`)) {
-      deleteDeadline(deadline.id)
-    }
-  }
+
 
   return (
     <div className={`dcard dcard--${urgency}`}>
       <div className="dcard-main" onClick={() => setExpanded(!expanded)}>
         <div className="dcard-top">
           <div className="dcard-badges">
-            <UrgencyBadge urgency={urgency} />
+            <UrgencyBadge urgency={urgency} status={deadline.status} />
             <PriorityBadge priority={deadline.priority} />
           </div>
           <span className="dcard-due mono">{due.relative}</span>
@@ -107,14 +102,6 @@ export default function DeadlineCard({ deadline, currentUser }) {
               <span className="dcard-status-readonly mono">
                 {STATUSES.find(s => s.key === deadline.status)?.label || deadline.status}
               </span>
-            )}
-            {isOwner && (
-              <button
-                className="dcard-delete"
-                onClick={(e) => { e.stopPropagation(); handleDelete() }}
-              >
-                Delete
-              </button>
             )}
           </div>
           <div className="dcard-footnote mono">assigned by {deadline.createdByName || deadline.createdBy}</div>

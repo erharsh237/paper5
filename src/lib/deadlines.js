@@ -27,7 +27,7 @@ export async function createDeadline(teamId, data) {
     title: data.title,
     description: data.description || '',
     priority: data.priority || 'medium', // low | medium | high | critical
-    status: 'not_started', // not_started | in_progress | blocked | done
+    status: 'in_progress', // not_started | in_progress | blocked | done (default: in_progress)
     dueDate: data.dueDate, // ISO string
     assigneeId: data.assigneeId,
     assigneeName: data.assigneeName,

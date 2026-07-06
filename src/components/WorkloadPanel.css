@@ -1,0 +1,119 @@
+.workload-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-hair);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  align-self: start;
+}
+
+.workload-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.workload-panel-header h2 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.workload-count {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  background: var(--bg-inset);
+  border: 1px solid var(--border-hair);
+  border-radius: 20px;
+  padding: 1px 8px;
+}
+
+.workload-empty {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  padding: 8px 0;
+}
+
+.workload-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.workload-row {
+  background: var(--bg-inset);
+  border: 1px solid var(--border-hair);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.workload-row-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.workload-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border-hair-bright);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.workload-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workload-total {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.workload-none {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 8px;
+}
+
+.workload-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.workload-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  border: 1px solid var(--border-hair);
+  color: var(--text-secondary);
+  background: var(--bg-panel-raised);
+}
+
+.workload-tag--in_progress { color: var(--accent-signal); border-color: rgba(52,199,89,0.3); }
+.workload-tag--not_started { color: var(--accent-warn); border-color: rgba(255,159,10,0.3); }
+.workload-tag--blocked { color: var(--accent-critical); border-color: rgba(255,84,112,0.3); }
+.workload-tag--done { color: var(--text-tertiary); }
+
+@media (max-width: 900px) {
+  .workload-panel { align-self: stretch; }
+}

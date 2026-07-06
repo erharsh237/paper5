@@ -61,7 +61,7 @@
 .btn-sm { padding: 7px 14px; font-size: 12.5px; }
 
 .dash-body {
-  max-width: 1120px;
+  max-width: 1400px;
   width: 100%;
   margin: 0 auto;
   padding: 24px;
@@ -69,6 +69,33 @@
   display: flex;
   flex-direction: column;
   gap: 22px;
+}
+
+.dash-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 22px;
+  align-items: start;
+}
+
+.dash-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.dash-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 24px;
+}
+
+@media (max-width: 900px) {
+  .dash-columns { grid-template-columns: 1fr; }
+  .dash-sidebar { position: static; }
 }
 
 .stat-strip {
@@ -140,6 +167,7 @@
   grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
   gap: 12px;
   align-content: start;
+  align-items: start;
 }
 
 .empty-state {

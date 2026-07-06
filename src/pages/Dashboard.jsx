@@ -6,6 +6,7 @@ import DeadlineCard from '../components/DeadlineCard'
 import NewDeadlineModal from '../components/NewDeadlineModal'
 import AddMemberModal from '../components/AddMemberModal'
 import MembersPanel from '../components/MembersPanel'
+import WorkloadPanel from '../components/WorkloadPanel'
 import './Dashboard.css'
 
 // Single shared team workspace for this internal tool.
@@ -67,43 +68,50 @@ export default function Dashboard() {
           <StatTile label="Completed" value={stats.done} tone="signal" />
         </section>
 
-        <MembersPanel members={members} />
+        <div className="dash-columns">
+          <div className="dash-main">
+            <section className="controls-bar">
+              <div className="controls-left">
+                <input
+                  className="search-input"
+                  placeholder="Search deadlines…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="filter-select">
+                  <option value="all">All statuses</option>
+                  <option value="not_started">Not started</option>
+                  <option value="in_progress">In progress</option>
+                  <option value="blocked">Blocked</option>
+                  <option value="done">Done</option>
+                </select>
+                <select value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)} className="filter-select">
+                  <option value="all">Everyone</option>
+                  {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                </select>
+              </div>
+              <div className="controls-right">
+                <button className="btn-ghost btn-sm" onClick={() => setShowMemberModal(true)}>+ Member</button>
+                <button className="btn-primary btn-sm" onClick={() => setShowNewModal(true)}>+ New deadline</button>
+              </div>
+            </section>
 
-        <section className="controls-bar">
-          <div className="controls-left">
-            <input
-              className="search-input"
-              placeholder="Search deadlines…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="filter-select">
-              <option value="all">All statuses</option>
-              <option value="not_started">Not started</option>
-              <option value="in_progress">In progress</option>
-              <option value="blocked">Blocked</option>
-              <option value="done">Done</option>
-            </select>
-            <select value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)} className="filter-select">
-              <option value="all">Everyone</option>
-              {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-            </select>
+            <section className="deadline-list">
+              {filtered.length === 0 ? (
+                <div className="empty-state">
+                  <p>{deadlines.length === 0 ? 'No deadlines yet. Create the first one.' : 'Nothing matches these filters.'}</p>
+                </div>
+              ) : (
+                filtered.map(d => <DeadlineCard key={d.id} deadline={d} currentUser={user} />)
+              )}
+            </section>
           </div>
-          <div className="controls-right">
-            <button className="btn-ghost btn-sm" onClick={() => setShowMemberModal(true)}>+ Member</button>
-            <button className="btn-primary btn-sm" onClick={() => setShowNewModal(true)}>+ New deadline</button>
-          </div>
-        </section>
 
-        <section className="deadline-list">
-          {filtered.length === 0 ? (
-            <div className="empty-state">
-              <p>{deadlines.length === 0 ? 'No deadlines yet. Create the first one.' : 'Nothing matches these filters.'}</p>
-            </div>
-          ) : (
-            filtered.map(d => <DeadlineCard key={d.id} deadline={d} currentUser={user} />)
-          )}
-        </section>
+          <aside className="dash-sidebar">
+            <WorkloadPanel members={members} deadlines={deadlines} />
+            <MembersPanel members={members} />
+          </aside>
+        </div>
       </main>
 
       {showNewModal && (
