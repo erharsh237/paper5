@@ -1,17 +1,44 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { UrgencyBadge, PriorityBadge } from './Badge'
 import { getUrgency, formatDue, STATUSES } from '../lib/utils'
-import { updateDeadline, deleteDeadline } from '../lib/deadlines'
+import { updateDeadlineStatus, deleteDeadline } from '../lib/deadlines'
 import './DeadlineCard.css'
 
 export default function DeadlineCard({ deadline, currentUser }) {
   const [expanded, setExpanded] = useState(false)
+  const [draftStatus, setDraftStatus] = useState(deadline.status)
+  const [saving, setSaving] = useState(false)
   const urgency = getUrgency(deadline.dueDate, deadline.status)
   const due = formatDue(deadline.dueDate)
   const isOwner = currentUser?.email && deadline.createdBy === currentUser.email
+  const isAssignee = currentUser?.email && deadline.assigneeEmail === currentUser.email
+  // Only the assignee moves their own progress.
+  const canUpdateStatus = isAssignee
+  const isDirty = draftStatus !== deadline.status
 
-  function handleStatusChange(e) {
-    updateDeadline(deadline.id, { status: e.target.value })
+  // Keep the draft in sync if status changes elsewhere (other tab/device).
+  useEffect(() => {
+    setDraftStatus(deadline.status)
+  }, [deadline.status])
+
+  async function handleSaveUpdate() {
+    if (!isDirty || draftStatus === 'done') return
+    setSaving(true)
+    try {
+      await updateDeadlineStatus(deadline.id, draftStatus)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleMarkComplete() {
+    if (!confirm(`Mark "${deadline.title}" as done?`)) return
+    setSaving(true)
+    try {
+      await updateDeadlineStatus(deadline.id, 'done')
+    } finally {
+      setSaving(false)
+    }
   }
 
   function handleDelete() {
@@ -46,14 +73,41 @@ export default function DeadlineCard({ deadline, currentUser }) {
         <div className="dcard-expanded">
           {deadline.description && <p className="dcard-desc">{deadline.description}</p>}
           <div className="dcard-controls">
-            <select
-              value={deadline.status}
-              onChange={handleStatusChange}
-              onClick={(e) => e.stopPropagation()}
-              className="dcard-status-select"
-            >
-              {STATUSES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
-            </select>
+            {canUpdateStatus ? (
+              <>
+                <select
+                  value={draftStatus}
+                  onChange={(e) => setDraftStatus(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  disabled={deadline.status === 'done' || saving}
+                  className="dcard-status-select"
+                >
+                  {STATUSES.filter(s => s.key !== 'done').map(s => (
+                    <option key={s.key} value={s.key}>{s.label}</option>
+                  ))}
+                </select>
+                <button
+                  className="dcard-update"
+                  disabled={!isDirty || saving || deadline.status === 'done'}
+                  onClick={(e) => { e.stopPropagation(); handleSaveUpdate() }}
+                >
+                  Update
+                </button>
+                {deadline.status !== 'done' && (
+                  <button
+                    className="dcard-complete"
+                    disabled={saving}
+                    onClick={(e) => { e.stopPropagation(); handleMarkComplete() }}
+                  >
+                    Mark Complete
+                  </button>
+                )}
+              </>
+            ) : (
+              <span className="dcard-status-readonly mono">
+                {STATUSES.find(s => s.key === deadline.status)?.label || deadline.status}
+              </span>
+            )}
             {isOwner && (
               <button
                 className="dcard-delete"

@@ -101,6 +101,7 @@
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .dcard-status-select {
@@ -123,6 +124,36 @@
   font-weight: 600;
 }
 .dcard-delete:hover { background: rgba(255,84,112,0.08); border-color: rgba(255,84,112,0.3); }
+
+.dcard-update {
+  background: none;
+  border: 1px solid var(--border-hair-bright);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.dcard-update:disabled { opacity: 0.4; cursor: not-allowed; }
+.dcard-update:not(:disabled):hover { background: var(--bg-inset); }
+
+.dcard-complete {
+  background: var(--accent-signal);
+  border: 1px solid var(--accent-signal);
+  color: var(--bg-panel);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.dcard-complete:disabled { opacity: 0.4; cursor: not-allowed; }
+.dcard-complete:not(:disabled):hover { filter: brightness(1.1); }
+
+.dcard-status-readonly {
+  flex: 1;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
 
 .dcard-footnote {
   font-size: 10.5px;

@@ -43,6 +43,16 @@ export async function updateDeadline(id, patch) {
   return updateDoc(doc(db, 'deadlines', id), patch)
 }
 
+// Status-only update used by assignees from the card controls. Kept
+// separate from updateDeadline since it's the narrow write the Firestore
+// rules permit for a non-owner (status/percentComplete only).
+export async function updateDeadlineStatus(id, status) {
+  const patch = { status }
+  if (status === 'done') patch.percentComplete = 100
+  if (status === 'not_started') patch.percentComplete = 0
+  return updateDoc(doc(db, 'deadlines', id), patch)
+}
+
 export async function deleteDeadline(id) {
   return deleteDoc(doc(db, 'deadlines', id))
 }

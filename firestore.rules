@@ -34,6 +34,15 @@ service cloud.firestore {
       return isSignedIn() && resource.data.createdBy == request.auth.token.email;
     }
 
+    function isAssignee(resource) {
+      return isSignedIn() && resource.data.assigneeEmail == request.auth.token.email;
+    }
+
+    function isStatusOnlyChange() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['status', 'percentComplete']);
+    }
+
     match /deadlines/{deadlineId} {
       allow read: if isAllowedUser();
 
@@ -45,9 +54,14 @@ service cloud.firestore {
         && request.resource.data.teamId is string
         && request.resource.data.createdBy == request.auth.token.email;
 
-      // Anyone allowed can update status/progress (normal team workflow),
-      // but only the original creator can delete.
-      allow update: if isAllowedUser();
+      // Only the assignee can change status/progress, and only those
+      // fields. The creator/owner retains full edit rights. Only the
+      // creator can delete.
+      allow update: if isAllowedUser()
+        && (
+          (isAssignee(resource) && isStatusOnlyChange()) ||
+          isOwner(resource)
+        );
       allow delete: if isAllowedUser() && isOwner(resource);
     }
 
