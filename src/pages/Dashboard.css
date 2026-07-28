@@ -48,6 +48,10 @@
 
 .dash-header-actions { display: flex; align-items: center; gap: 14px; }
 
+@media (max-width: 480px) {
+  .dash-header-actions { gap: 8px; }
+}
+
 .dash-user {
   font-size: 13px;
   color: var(--text-secondary);
@@ -57,8 +61,6 @@
 @media (min-width: 560px) {
   .dash-user { display: inline; }
 }
-
-.btn-sm { padding: 7px 14px; font-size: 12.5px; }
 
 .dash-body {
   max-width: 1400px;
@@ -169,6 +171,12 @@
   gap: 12px;
   align-content: start;
   align-items: start;
+}
+
+.load-more-row {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0 8px;
 }
 
 .empty-state {

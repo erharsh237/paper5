@@ -1,0 +1,61 @@
+import { useEffect, useState, useRef, useMemo } from 'react'
+import { subscribeNotifications, markNotificationRead } from '../lib/notifications'
+import './NotificationBell.css'
+
+export default function NotificationBell({ teamId, currentUser }) {
+  const [notifications, setNotifications] = useState([])
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!currentUser?.email) return
+    return subscribeNotifications(teamId, currentUser.email, setNotifications)
+  }, [teamId, currentUser?.email])
+
+  useEffect(() => {
+    function onClickOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
+
+  const unreadCount = useMemo(() => {
+    const email = (currentUser?.email || '').toLowerCase()
+    return notifications.filter(n => !n.readBy?.includes(email)).length
+  }, [notifications, currentUser?.email])
+
+  function handleDismiss(id) {
+    markNotificationRead(id, currentUser.email)
+  }
+
+  return (
+    <div className="notif-bell-wrap" ref={ref}>
+      <button className="notif-bell-btn" onClick={() => setOpen(!open)} aria-label="Notifications">
+        🔔
+        {unreadCount > 0 && <span className="notif-bell-badge mono">{unreadCount}</span>}
+      </button>
+      {open && (
+        <div className="notif-bell-panel">
+          <div className="notif-bell-header mono">NOTIFICATIONS</div>
+          {notifications.length === 0 ? (
+            <div className="notif-bell-empty">Nothing yet.</div>
+          ) : (
+            notifications.slice(0, 20).map(n => {
+              const email = (currentUser?.email || '').toLowerCase()
+              const isRead = n.readBy?.includes(email)
+              return (
+                <div key={n.id} className={`notif-bell-item${isRead ? ' notif-bell-item--read' : ''}`}>
+                  <p>{n.message}</p>
+                  {!isRead && (
+                    <button className="notif-bell-dismiss" onClick={() => handleDismiss(n.id)}>Dismiss</button>
+                  )}
+                </div>
+              )
+            })
+          )}
+        </div>
+      )}
+    </div>
+  )
+}

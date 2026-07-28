@@ -1,7 +1,7 @@
 rules_version = '2';
 
 // ── Setup required before deploying ──
-// This project restricts access via an explicit allowlist, since the team
+// This project restricts access via two explicit allowlists, since the team
 // signs in with personal Gmail addresses rather than a shared company domain.
 //
 // 1. In Firestore Console, manually create a collection called `allowedUsers`.
@@ -15,7 +15,13 @@ rules_version = '2';
 //    is denied all reads/writes, even though Firebase Auth itself succeeds.
 // 4. To remove someone's access, delete their document from `allowedUsers`.
 //
-// This collection itself is locked down — only editable directly in the
+// 5. Separately, create a collection called `admins` the same way, for
+//    whichever subset of the team should be able to unlock a locked sprint
+//    or delete another founder's member/sprint record. Same shape: document
+//    id = exact lowercase email, fields optional. A user can be in both
+//    `allowedUsers` and `admins`, or just `allowedUsers`.
+//
+// Both collections are locked down — only editable directly in the
 // Firebase Console by project owners, never from client code.
 
 service cloud.firestore {
@@ -30,6 +36,11 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/allowedUsers/$(request.auth.token.email.lower()));
     }
 
+    function isAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.token.email.lower()));
+    }
+
     function isOwner(resource) {
       return isSignedIn() && resource.data.createdBy.lower() == request.auth.token.email.lower();
     }
@@ -38,9 +49,48 @@ service cloud.firestore {
       return isSignedIn() && resource.data.assigneeEmail.lower() == request.auth.token.email.lower();
     }
 
+    // Every collection where the client sets createdBy must also prove the
+    // signer IS that createdBy — otherwise anyone could write an arbitrary
+    // name into that field and have the UI attribute their action to a
+    // different teammate.
+    function createdByIsSelf() {
+      return request.resource.data.createdBy.lower() == request.auth.token.email.lower();
+    }
+
     function isStatusOnlyChange() {
       return request.resource.data.diff(resource.data).affectedKeys()
-        .hasOnly(['status', 'percentComplete', 'extraWork']);
+        .hasOnly(['status', 'percentComplete', 'actualHours',
+          'blockerInfo', 'reviewNote', 'reviewerEmail', 'reviewerName']);
+    }
+
+    // Reviewer path: any allowed user who is NOT the assignee may move a
+    // task out of 'review' (approve -> done, or reject -> in_progress),
+    // touching only the review-verdict fields. Mirrors "another founder
+    // approves" from the spec — no fixed reviewer role.
+    function isReviewerTransition(resource) {
+      return isAllowedUser() && !isAssignee(resource)
+        && resource.data.status == 'review'
+        && request.resource.data.status in ['done', 'in_progress']
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'percentComplete', 'reviewerEmail', 'reviewerName', 'reviewNote', 'completedAt']);
+    }
+
+    // True when the deadline's sprint (if any) is locked. Falls back to
+    // false (unlocked) if there's no sprintId or the sprint doc is missing,
+    // so tasks outside any sprint are never accidentally frozen.
+    function sprintIsLocked(sprintId) {
+      return sprintId != null &&
+        exists(/databases/$(database)/documents/sprints/$(sprintId)) &&
+        get(/databases/$(database)/documents/sprints/$(sprintId)).data.locked == true;
+    }
+
+    // Fields that must NOT change while the deadline's sprint is locked,
+    // even for the owner. Mirrors SPRINT_LOCKED_FIELDS in src/lib/deadlines.js.
+    function violatesSprintLock() {
+      let lockedFields = ['assigneeId', 'assigneeName', 'assigneeEmail',
+        'dueDate', 'estimatedHours', 'sprintId', 'title', 'priority'];
+      return sprintIsLocked(resource.data.sprintId) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasAny(lockedFields);
     }
 
     match /deadlines/{deadlineId} {
@@ -52,17 +102,70 @@ service cloud.firestore {
         && request.resource.data.title.size() < 300
         && request.resource.data.dueDate is string
         && request.resource.data.teamId is string
-        && request.resource.data.createdBy.lower() == request.auth.token.email.lower();
+        && createdByIsSelf();
 
       // Only the assignee can change status/progress, and only those
-      // fields. The creator/owner retains full edit rights. Only the
-      // creator can delete.
+      // fields. The creator/owner retains full edit rights EXCEPT setting
+      // status to 'done' directly — that must go through isReviewerTransition
+      // so evidence-based review can't be bypassed just by being the owner
+      // (this also blocks an owner who is also the assignee from
+      // self-approving, since isReviewerTransition requires !isAssignee).
+      // Only the creator can delete.
       allow update: if isAllowedUser()
+        && !violatesSprintLock()
         && (
-          (isAssignee(resource) && isStatusOnlyChange()) ||
-          isOwner(resource)
+          (isAssignee(resource) && isStatusOnlyChange() && request.resource.data.status != 'done') ||
+          (isOwner(resource) && request.resource.data.status != 'done') ||
+          isReviewerTransition(resource)
         );
       allow delete: if isAllowedUser() && isOwner(resource);
+
+      // Evidence: only the task's assignee submits it (mirrors the old
+      // isAssignee-gated write on the parent doc), nobody edits or deletes
+      // a submitted entry — it's a record of what was submitted when.
+      match /evidence/{evidenceId} {
+        allow read: if isAllowedUser();
+        allow create: if isAllowedUser()
+          && get(/databases/$(database)/documents/deadlines/$(deadlineId)).data.assigneeEmail.lower()
+            == request.auth.token.email.lower()
+          && request.resource.data.submittedBy.lower() == request.auth.token.email.lower();
+        allow update, delete: if false;
+      }
+
+      // Extra-work notes: same shape — assignee-only, append-only.
+      match /extraWork/{entryId} {
+        allow read: if isAllowedUser();
+        allow create: if isAllowedUser()
+          && get(/databases/$(database)/documents/deadlines/$(deadlineId)).data.assigneeEmail.lower()
+            == request.auth.token.email.lower()
+          && request.resource.data.addedBy.lower() == request.auth.token.email.lower();
+        allow update, delete: if false;
+      }
+    }
+
+    match /sprints/{sprintId} {
+      allow read: if isAllowedUser();
+
+      allow create: if isAllowedUser()
+        && request.resource.data.teamId is string
+        && request.resource.data.number is number
+        && request.resource.data.startDate is string
+        && request.resource.data.endDate is string
+        && createdByIsSelf();
+
+      // Any allowed user can edit general sprint fields (goal, dates,
+      // activating it) — that's normal collaborative planning. Unlocking a
+      // locked sprint specifically requires isAdmin(), matching "Only Admin
+      // can unlock" from the spec — this used to only be enforced by the
+      // UI hiding a button, which isn't enforcement at all.
+      allow update: if isAllowedUser()
+        && (
+          !(resource.data.locked == true && request.resource.data.locked == false)
+          || isAdmin()
+        );
+      // Deleting a sprint outright is destructive and irreversible —
+      // restricted to whoever created it, or an admin.
+      allow delete: if isAllowedUser() && (isOwner(resource) || isAdmin());
     }
 
     match /members/{memberId} {
@@ -72,10 +175,17 @@ service cloud.firestore {
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
         && request.resource.data.email is string
-        && request.resource.data.email.matches('.*@.*[.].*');
+        && request.resource.data.email.matches('.*@.*[.].*')
+        && createdByIsSelf();
 
+      // Editing a member's name/email stays open to the team — low-risk,
+      // collaborative (fixing a typo, updating an email). Removing someone
+      // from the roster entirely is the destructive action — restricted to
+      // whoever added them, or an admin. Older docs created before this
+      // field existed have no createdBy, so isOwner() can't match them;
+      // only an admin can remove those legacy entries.
       allow update: if isAllowedUser();
-      allow delete: if isAllowedUser();
+      allow delete: if isAllowedUser() && (isOwner(resource) || isAdmin());
     }
 
     // allowedUsers is never writable from client code — manage it only
@@ -83,6 +193,111 @@ service cloud.firestore {
     match /allowedUsers/{userEmail} {
       allow read: if isSignedIn();
       allow write: if false;
+    }
+
+    // admins is the same shape and same lockdown as allowedUsers — see the
+    // setup note at the top of this file.
+    match /admins/{userEmail} {
+      allow read: if isAllowedUser();
+      allow write: if false;
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAllowedUser();
+      allow create: if isAllowedUser()
+        && request.resource.data.teamId is string
+        && request.resource.data.message is string
+        && request.resource.data.message.size() < 500
+        && createdByIsSelf();
+      // Only the readBy array (dismiss-for-me) can be changed after creation.
+      allow update: if isAllowedUser()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy']);
+      allow delete: if false;
+    }
+
+    match /meetings/{meetingId} {
+      allow read: if isAllowedUser();
+      allow create: if isAllowedUser()
+        && request.resource.data.teamId is string
+        && request.resource.data.date is string
+        && createdByIsSelf();
+      // Any allowed user can add notes during a live meeting (small trusted team).
+      allow update: if isAllowedUser();
+      allow delete: if false;
+    }
+
+    match /reflections/{reflectionId} {
+      allow read: if isAllowedUser();
+      // A founder can only write their own reflection — doc id embeds their
+      // email, and the payload's memberEmail must match the signer too.
+      allow create, update: if isAllowedUser()
+        && request.resource.data.teamId is string
+        && request.resource.data.sprintId is string
+        && request.resource.data.memberEmail.lower() == request.auth.token.email.lower()
+        && reflectionId.matches('.*_' + request.auth.token.email.lower());
+      allow delete: if false;
+    }
+
+    // Doc id is the user's own lowercase email — read/write restricted to
+    // that same user, since "have I seen the tour" is personal state with
+    // no reason for anyone else to read or change it.
+    match /onboarding/{userEmail} {
+      allow read, write: if isAllowedUser()
+        && userEmail == request.auth.token.email.lower();
+    }
+
+    // Profiles are readable by the whole team (it's a small trusted crew
+    // and teammates should be able to see each other's basic info/role),
+    // but each person can only write their own doc — id is their lowercase
+    // email, same pattern as onboarding.
+    function changesAim() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasAny(['aim', 'aimSavedAt']);
+    }
+
+    // aim can only be (re)written if it's never been saved, or the last
+    // save is 45+ days old. Also forces aimSavedAt to equal the real
+    // server time (via the serverTimestamp() sentinel resolving to
+    // request.time) so a client can't just claim an old date to bypass it.
+    function aimEditAllowed() {
+      let savedAt = resource.data.get('aimSavedAt', null);
+      return (savedAt == null || request.time > savedAt + duration.value(45, 'd'))
+        && request.resource.data.aimSavedAt == request.time;
+    }
+
+    match /profiles/{userEmail} {
+      allow read: if isAllowedUser();
+      allow create: if isAllowedUser() && userEmail == request.auth.token.email.lower()
+        && (!('aim' in request.resource.data) || request.resource.data.aimSavedAt == request.time);
+      allow update: if isAllowedUser() && userEmail == request.auth.token.email.lower()
+        && (!changesAim() || aimEditAllowed());
+      allow delete: if false;
+    }
+
+    // Team-maintained list of roles for the Profile page dropdown — any
+    // allowed user can add one (small trusted team), nobody deletes.
+    match /roles/{roleId} {
+      allow read: if isAllowedUser();
+      allow create, update: if isAllowedUser()
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() < 100;
+      allow delete: if false;
+    }
+
+    // Team-shared integration settings (repo names, project IDs, webhook
+    // URLs). Any allowed user can read/write, same trust level as
+    // sprints/meetings — this is deliberately NOT where personal API
+    // tokens go (see integrationCredentials below).
+    match /integrationConfig/{teamId} {
+      allow read, write: if isAllowedUser();
+    }
+
+    // Personal API credentials (GitHub/Vercel tokens) — owner-only, never
+    // team-readable. Doc id is the owning user's lowercase email, same
+    // pattern as onboarding/profiles.
+    match /integrationCredentials/{userEmail} {
+      allow read, write: if isAllowedUser()
+        && userEmail == request.auth.token.email.lower();
     }
 
     // Deny everything else by default

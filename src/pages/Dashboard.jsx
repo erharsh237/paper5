@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../lib/AuthContext'
-import { subscribeDeadlines, subscribeMembers } from '../lib/deadlines'
+import { subscribeMembers } from '../lib/deadlines'
+import { useDeadlines } from '../lib/useDeadlines'
+import { subscribeSprints } from '../lib/sprints'
 import { getUrgency } from '../lib/utils'
 import { downloadMonthlyReport } from '../lib/report'
 import DeadlineCard from '../components/DeadlineCard'
@@ -8,6 +10,10 @@ import NewDeadlineModal from '../components/NewDeadlineModal'
 import AddMemberModal from '../components/AddMemberModal'
 import MembersPanel from '../components/MembersPanel'
 import WorkloadPanel from '../components/WorkloadPanel'
+import SprintOverview from '../components/SprintOverview'
+import NotificationBell from '../components/NotificationBell'
+import NavTabs from '../components/NavTabs'
+import Breadcrumbs from '../components/Breadcrumbs'
 import './Dashboard.css'
 
 // Single shared team workspace for this internal tool.
@@ -15,8 +21,9 @@ const TEAM_ID = 'default-team'
 
 export default function Dashboard() {
   const { user, logout } = useAuth()
-  const [deadlines, setDeadlines] = useState([])
+  const { deadlines, hasMore, loadMore, loadingMore } = useDeadlines(TEAM_ID)
   const [members, setMembers] = useState([])
+  const [sprints, setSprints] = useState([])
   const [showNewModal, setShowNewModal] = useState(false)
   const [showMemberModal, setShowMemberModal] = useState(false)
   const [statusFilter, setStatusFilter] = useState('all')
@@ -25,16 +32,25 @@ export default function Dashboard() {
   const now = new Date()
   const [reportMonth, setReportMonth] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`)
 
-  function handleDownloadReport() {
+  const [generatingReport, setGeneratingReport] = useState(false)
+
+  async function handleDownloadReport() {
     const [y, m] = reportMonth.split('-').map(Number)
-    downloadMonthlyReport(deadlines, members, { year: y, month: m - 1 })
+    setGeneratingReport(true)
+    try {
+      await downloadMonthlyReport(deadlines, members, { year: y, month: m - 1 })
+    } finally {
+      setGeneratingReport(false)
+    }
   }
 
   useEffect(() => {
-    const unsub1 = subscribeDeadlines(TEAM_ID, setDeadlines)
     const unsub2 = subscribeMembers(TEAM_ID, setMembers)
-    return () => { unsub1(); unsub2() }
+    const unsub3 = subscribeSprints(TEAM_ID, setSprints)
+    return () => { unsub2(); unsub3() }
   }, [])
+
+  const activeSprint = useMemo(() => sprints.find(s => s.status === 'active'), [sprints])
 
   const stats = useMemo(() => {
     const active = deadlines.filter(d => d.status !== 'done')
@@ -62,6 +78,8 @@ export default function Dashboard() {
             <span className="mono">SECURIQ <span className="dash-brand-sub">| Deadline Tracker</span></span>
           </div>
           <div className="dash-header-actions">
+            <NavTabs />
+            <NotificationBell teamId={TEAM_ID} currentUser={user} />
             <span className="dash-user">{user?.displayName || user?.email}</span>
             <button className="btn-ghost btn-sm" onClick={logout}>Sign out</button>
           </div>
@@ -69,6 +87,10 @@ export default function Dashboard() {
       </header>
 
       <main className="dash-body">
+        <Breadcrumbs trail={[{ label: 'Team' }]} />
+
+        <SprintOverview teamId={TEAM_ID} sprints={sprints} deadlines={deadlines} currentUser={user} />
+
         <section className="stat-strip">
           <StatTile label="Active" value={stats.active} tone="info" />
           <StatTile label="Overdue" value={stats.overdue} tone="critical" />
@@ -106,7 +128,9 @@ export default function Dashboard() {
                   onChange={(e) => setReportMonth(e.target.value)}
                   title="Report month"
                 />
-                <button className="btn-ghost btn-sm" onClick={handleDownloadReport}>⬇ Download report</button>
+                <button className="btn-ghost btn-sm" onClick={handleDownloadReport} disabled={generatingReport} title="Only covers deadlines currently loaded — click Load more first if the report month is older than what's shown">
+                  {generatingReport ? 'Generating…' : '⬇ Download report'}
+                </button>
                 <button className="btn-ghost btn-sm" onClick={() => setShowMemberModal(true)}>+ Member</button>
                 <button className="btn-primary btn-sm" onClick={() => setShowNewModal(true)}>+ New deadline</button>
               </div>
@@ -118,9 +142,25 @@ export default function Dashboard() {
                   <p>{deadlines.length === 0 ? 'No deadlines yet. Create the first one.' : 'Nothing matches these filters.'}</p>
                 </div>
               ) : (
-                filtered.map(d => <DeadlineCard key={d.id} deadline={d} currentUser={user} />)
+                filtered.map(d => (
+                  <DeadlineCard
+                    key={d.id}
+                    deadline={d}
+                    currentUser={user}
+                    teamId={TEAM_ID}
+                    sprintLocked={!!(d.sprintId && sprints.find(s => s.id === d.sprintId)?.locked)}
+                  />
+                ))
               )}
             </section>
+
+            {hasMore && (
+              <div className="load-more-row">
+                <button className="btn-ghost btn-sm" onClick={loadMore} disabled={loadingMore}>
+                  {loadingMore ? 'Loading…' : 'Load more'}
+                </button>
+              </div>
+            )}
           </div>
 
           <aside className="dash-sidebar">
@@ -135,11 +175,12 @@ export default function Dashboard() {
           teamId={TEAM_ID}
           members={members}
           currentUser={user}
+          activeSprint={activeSprint}
           onClose={() => setShowNewModal(false)}
         />
       )}
       {showMemberModal && (
-        <AddMemberModal teamId={TEAM_ID} onClose={() => setShowMemberModal(false)} />
+        <AddMemberModal teamId={TEAM_ID} currentUser={user} onClose={() => setShowMemberModal(false)} />
       )}
     </div>
   )

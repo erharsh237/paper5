@@ -16,12 +16,14 @@ const STATUS_BADGE_LABEL = {
   not_started: 'Not started',
   in_progress: 'On track',
   blocked: 'Blocked',
+  review: 'In review',
   done: 'Complete',
 }
 const STATUS_BADGE_TONE = {
   not_started: 'warn',
   in_progress: 'clear',
   blocked: 'overdue',
+  review: 'info',
   done: 'done',
 }
 

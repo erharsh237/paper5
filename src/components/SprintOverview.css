@@ -1,0 +1,127 @@
+.sprint-overview {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-hair);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sprint-overview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sprint-overview-header h2 {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+.sprint-overview-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sprint-overview-empty {
+  padding: 32px 20px;
+}
+
+.sprint-overview-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sprint-number {
+  font-size: 13px;
+  color: var(--accent-signal);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sprint-lock-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-critical);
+  letter-spacing: 0.04em;
+}
+
+.sprint-goal {
+  font-size: 15px;
+  color: var(--text-primary);
+  margin-top: 4px;
+}
+
+.sprint-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sprint-progress-bar-track {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--border-hair);
+  overflow: hidden;
+}
+
+.sprint-progress-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent-signal);
+  transition: width 0.3s ease;
+}
+
+.sprint-progress-pct {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  min-width: 36px;
+  text-align: right;
+}
+
+.sprint-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 900px) {
+  .sprint-stat-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 480px) {
+  .sprint-stat-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.sprint-stat {
+  border: 1px solid var(--border-hair);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.sprint-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.sprint-stat-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.sprint-stat--critical .sprint-stat-value { color: var(--accent-critical); }

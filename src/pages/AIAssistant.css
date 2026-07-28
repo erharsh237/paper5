@@ -1,0 +1,66 @@
+.integrations-intro code {
+  background: var(--bg-inset);
+  border: 1px solid var(--border-hair);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.ai-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ai-card {
+  width: 100%;
+}
+
+.ai-card-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 1px solid var(--border-hair);
+  padding-top: 12px;
+}
+
+.ai-hours-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ai-hours-row input {
+  width: 80px;
+  background: var(--bg-inset);
+  border: 1px solid var(--border-hair);
+  border-radius: var(--radius-sm);
+  padding: 5px 8px;
+  color: var(--text-primary);
+}
+
+.ai-result {
+  background: var(--bg-inset);
+  border: 1px solid var(--border-hair);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 12.5px;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  white-space: pre-wrap;
+}
+
+.ai-result-row + .ai-result-row {
+  border-top: 1px solid var(--border-hair);
+  padding-top: 6px;
+}
+
+.ai-result-sub {
+  color: var(--text-tertiary);
+  font-size: 11.5px;
+}

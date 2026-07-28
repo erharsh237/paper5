@@ -31,6 +31,9 @@
 .badge--clear { background: #dcf3e8; color: var(--accent-signal); border-color: #b9e6cf; }
 .badge--clear .badge-dot { background: var(--accent-signal); }
 
+.badge--info { background: #e2eaff; color: var(--accent-info); border-color: #c7d7fb; }
+.badge--info .badge-dot { background: var(--accent-info); }
+
 .badge--done { background: var(--bg-inset); color: var(--text-secondary); border-color: var(--border-hair); }
 .badge--done .badge-dot { background: var(--text-tertiary); }
 

@@ -233,6 +233,23 @@
   color: var(--text-tertiary);
 }
 
+.dcard-blocker {
+  background: var(--bg-inset);
+  border: 1px solid var(--border-hair);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dcard-blocker p {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  margin: 0;
+  white-space: pre-wrap;
+}
+
 @media (max-width: 480px) {
   .dcard-main { padding: 14px; }
   .dcard-meta { flex-direction: column; align-items: flex-start; }

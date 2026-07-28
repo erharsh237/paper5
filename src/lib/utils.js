@@ -5,6 +5,7 @@ export const STATUSES = [
   { key: 'not_started', label: 'Not started' },
   { key: 'in_progress', label: 'In progress' },
   { key: 'blocked', label: 'Blocked' },
+  { key: 'review', label: 'In review' },
   { key: 'done', label: 'Done' },
 ]
 

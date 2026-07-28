@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { addMember } from '../lib/deadlines'
 
-export default function AddMemberModal({ teamId, onClose }) {
+export default function AddMemberModal({ teamId, currentUser, onClose }) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
@@ -12,7 +12,7 @@ export default function AddMemberModal({ teamId, onClose }) {
     if (!name.trim() || !email.trim()) return setError('Name and email are both required.')
     setSubmitting(true)
     try {
-      await addMember(teamId, { name: name.trim(), email: email.trim() })
+      await addMember(teamId, { name: name.trim(), email: email.trim(), addedBy: currentUser?.email })
       onClose()
     } catch (err) {
       console.error(err)

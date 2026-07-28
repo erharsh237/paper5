@@ -1,0 +1,41 @@
+.chart-wrap {
+  width: 100%;
+}
+
+.accountability-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.accountability-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--border-hair);
+  border-left: 3px solid var(--border-hair);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  flex-wrap: wrap;
+}
+
+.accountability-row--level1 { border-left-color: var(--accent-warn); }
+.accountability-row--level2 { border-left-color: var(--accent-critical); }
+.accountability-row--level3 { border-left-color: var(--accent-critical); background: rgba(255,84,112,0.05); }
+
+.accountability-name {
+  font-weight: 600;
+  font-size: 13px;
+  min-width: 100px;
+}
+
+.accountability-level {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.accountability-rec {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  flex: 1;
+}

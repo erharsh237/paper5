@@ -1,0 +1,20 @@
+.conn-banner {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  width: 100%;
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 12px;
+}
+
+.conn-banner--offline {
+  background: var(--accent-critical-dim, #ffe1e6);
+  color: var(--accent-critical, #d3273e);
+}
+
+.conn-banner--slow {
+  background: #fff3cd;
+  color: #8a6100;
+}

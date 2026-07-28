@@ -4,18 +4,20 @@ import { sendDeadlineEmail } from '../lib/email'
 import { PRIORITIES } from '../lib/utils'
 import './NewDeadlineModal.css'
 
-export default function NewDeadlineModal({ teamId, members, currentUser, onClose }) {
+export default function NewDeadlineModal({ teamId, members, currentUser, activeSprint, onClose }) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [priority, setPriority] = useState('medium')
   const [assigneeId, setAssigneeId] = useState(members[0]?.id || '')
   const [dueDate, setDueDate] = useState('')
+  const [estimatedHours, setEstimatedHours] = useState('')
   const [notifyEmail, setNotifyEmail] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [emailStatus, setEmailStatus] = useState(null) // null | 'sending' | 'sent' | 'failed' | 'skipped'
   const [error, setError] = useState('')
 
   const assignee = members.find(m => m.id === assigneeId)
+  const sprintLocked = !!activeSprint?.locked
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -31,6 +33,7 @@ export default function NewDeadlineModal({ teamId, members, currentUser, onClose
 
     if (!assignee) return setError('Select a team member to assign.')
     if (!currentUser?.email) return setError('Your account has no email on file — cannot assign ownership.')
+    if (sprintLocked) return setError('The active sprint is locked — new tasks can\'t be added until it\'s unlocked.')
 
     setSubmitting(true)
     try {
@@ -44,6 +47,8 @@ export default function NewDeadlineModal({ teamId, members, currentUser, onClose
         assigneeEmail: assignee.email,
         createdBy: currentUser?.email,
         createdByName: currentUser?.displayName || currentUser?.email || 'Someone',
+        sprintId: activeSprint?.id || null,
+        estimatedHours: estimatedHours === '' ? null : Number(estimatedHours),
       })
 
       if (notifyEmail) {
@@ -127,13 +132,32 @@ export default function NewDeadlineModal({ teamId, members, currentUser, onClose
             </div>
           </div>
 
-          <div className="field">
-            <label htmlFor="due">Due date & time</label>
-            <input
-              id="due" type="datetime-local" value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-            />
+          <div className="field-row">
+            <div className="field">
+              <label htmlFor="due">Due date & time</label>
+              <input
+                id="due" type="datetime-local" value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="est-hours">Estimated hours</label>
+              <input
+                id="est-hours" type="number" min="0" step="0.5" value={estimatedHours}
+                onChange={(e) => setEstimatedHours(e.target.value)}
+                placeholder="e.g. 4"
+              />
+            </div>
           </div>
+
+          {activeSprint && (
+            <div className="form-status form-status--pending">
+              Will be added to Sprint {activeSprint.number}{sprintLocked ? ' — currently locked' : ''}.
+            </div>
+          )}
+          {sprintLocked && (
+            <div className="form-error">The active sprint is locked. Unlock it from the dashboard to add new tasks.</div>
+          )}
 
           <label className="checkbox-row">
             <input
@@ -152,7 +176,7 @@ export default function NewDeadlineModal({ teamId, members, currentUser, onClose
 
           <div className="modal-actions">
             <button type="button" className="btn-ghost" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn-primary" disabled={submitting || members.length === 0}>
+            <button type="submit" className="btn-primary" disabled={submitting || members.length === 0 || sprintLocked}>
               {submitting ? 'Saving…' : 'Create deadline'}
             </button>
           </div>

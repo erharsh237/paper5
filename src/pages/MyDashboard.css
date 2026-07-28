@@ -1,0 +1,59 @@
+.mydash-hello h1 {
+  font-size: 20px;
+  margin: 0 0 4px;
+}
+
+.mydash-hello-sprint {
+  font-size: 12.5px;
+  color: var(--text-tertiary);
+}
+
+.mydash-attention {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.mydash-attention-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-hair);
+  border-left: 3px solid var(--accent-info);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+}
+
+.mydash-attention-card--critical {
+  border-left-color: var(--accent-critical);
+}
+
+.mydash-attention-title {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.mydash-attention-card p {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.mydash-reliability {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.mydash-reliability-sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.mydash-section-title {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+  margin: 4px 0 -6px;
+}

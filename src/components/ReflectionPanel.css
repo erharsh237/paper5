@@ -1,0 +1,40 @@
+.reflection-panel {
+  gap: 14px;
+}
+
+.reflection-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reflection-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.reflection-toggle--on {
+  border-color: var(--accent-signal) !important;
+  color: var(--accent-signal) !important;
+}
+
+.reflection-status-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--border-hair);
+  padding-top: 12px;
+}
+
+.reflection-status-pill {
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+  border: 1px solid var(--border-hair);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.reflection-status-pill--done {
+  color: var(--accent-signal);
+  border-color: var(--accent-signal);
+}
