@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'
+import { onAuthStateChanged, signInWithRedirect, getRedirectResult, signOut } from 'firebase/auth'
 import { auth, googleProvider } from './firebase'
 import { isEmailAllowed } from './allowlist'
 
@@ -9,7 +9,21 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [accessDenied, setAccessDenied] = useState(false)
-  const [denialReason, setDenialReason] = useState(null) // 'not_allowed' | 'check_failed' | null
+  const [denialReason, setDenialReason] = useState(null) // 'not_allowed' | 'check_failed' | 'redirect_failed' | null
+
+  // Surfaces errors from the redirect sign-in flow itself (e.g. unauthorized
+  // domain, blocked by the embedding app) — onAuthStateChanged below only
+  // ever sees a *successful* sign-in, so without this a failed redirect
+  // would just silently drop the user back at the login screen with no
+  // explanation of what went wrong.
+  useEffect(() => {
+    getRedirectResult(auth).catch((err) => {
+      console.error('Redirect sign-in failed:', err)
+      setDenialReason('redirect_failed')
+      setAccessDenied(true)
+      setLoading(false)
+    })
+  }, [])
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -57,7 +71,7 @@ export function AuthProvider({ children }) {
     return unsub
   }, [])
 
-  const login = () => signInWithPopup(auth, googleProvider)
+  const login = () => signInWithRedirect(auth, googleProvider)
   const logout = () => signOut(auth)
 
   return (
