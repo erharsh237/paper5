@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../lib/AuthContext'
-import { subscribeMembers } from '../lib/deadlines'
+import { subscribeAllowedUsers } from '../lib/allowlist'
 import { useDeadlines } from '../lib/useDeadlines'
 import { subscribeSprints } from '../lib/sprints'
 import { getUrgency } from '../lib/utils'
 import { downloadMonthlyReport } from '../lib/report'
 import DeadlineCard from '../components/DeadlineCard'
 import NewDeadlineModal from '../components/NewDeadlineModal'
-import AddMemberModal from '../components/AddMemberModal'
-import MembersPanel from '../components/MembersPanel'
 import WorkloadPanel from '../components/WorkloadPanel'
 import SprintOverview from '../components/SprintOverview'
 import NotificationBell from '../components/NotificationBell'
@@ -25,7 +23,6 @@ export default function Dashboard() {
   const [members, setMembers] = useState([])
   const [sprints, setSprints] = useState([])
   const [showNewModal, setShowNewModal] = useState(false)
-  const [showMemberModal, setShowMemberModal] = useState(false)
   const [statusFilter, setStatusFilter] = useState('all')
   const [assigneeFilter, setAssigneeFilter] = useState('all')
   const [search, setSearch] = useState('')
@@ -45,7 +42,7 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    const unsub2 = subscribeMembers(TEAM_ID, setMembers)
+    const unsub2 = subscribeAllowedUsers(setMembers)
     const unsub3 = subscribeSprints(TEAM_ID, setSprints)
     return () => { unsub2(); unsub3() }
   }, [])
@@ -89,7 +86,7 @@ export default function Dashboard() {
       <main className="dash-body">
         <Breadcrumbs trail={[{ label: 'Team' }]} />
 
-        <SprintOverview teamId={TEAM_ID} sprints={sprints} deadlines={deadlines} currentUser={user} />
+        <SprintOverview teamId={TEAM_ID} sprints={sprints} deadlines={deadlines} currentUser={user} members={members} />
 
         <section className="stat-strip">
           <StatTile label="Active" value={stats.active} tone="info" />
@@ -131,7 +128,6 @@ export default function Dashboard() {
                 <button className="btn-ghost btn-sm" onClick={handleDownloadReport} disabled={generatingReport} title="Only covers deadlines currently loaded — click Load more first if the report month is older than what's shown">
                   {generatingReport ? 'Generating…' : '⬇ Download report'}
                 </button>
-                <button className="btn-ghost btn-sm" onClick={() => setShowMemberModal(true)}>+ Member</button>
                 <button className="btn-primary btn-sm" onClick={() => setShowNewModal(true)}>+ New deadline</button>
               </div>
             </section>
@@ -165,7 +161,6 @@ export default function Dashboard() {
 
           <aside className="dash-sidebar">
             <WorkloadPanel members={members} deadlines={deadlines} />
-            <MembersPanel members={members} />
           </aside>
         </div>
       </main>
@@ -178,9 +173,6 @@ export default function Dashboard() {
           activeSprint={activeSprint}
           onClose={() => setShowNewModal(false)}
         />
-      )}
-      {showMemberModal && (
-        <AddMemberModal teamId={TEAM_ID} currentUser={user} onClose={() => setShowMemberModal(false)} />
       )}
     </div>
   )

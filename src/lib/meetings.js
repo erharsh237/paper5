@@ -1,6 +1,6 @@
 import {
-  collection, addDoc, updateDoc, doc,
-  onSnapshot, query, where, orderBy, serverTimestamp, limit
+  collection, addDoc, updateDoc, doc, setDoc,
+  onSnapshot, query, where, orderBy, serverTimestamp, limit, deleteField
 } from 'firebase/firestore'
 import { db } from './firebase'
 
@@ -20,6 +20,40 @@ export function subscribeMeetings(teamId, callback) {
   const q = query(meetingsCol, where('teamId', '==', teamId), orderBy('date', 'desc'), limit(30))
   return onSnapshot(q, (snap) => {
     callback(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+  })
+}
+
+export function subscribeUpcomingMeetings(teamId, callback) {
+  const now = new Date().toISOString()
+  const q = query(meetingsCol, where('teamId', '==', teamId), where('date', '>=', now), orderBy('date', 'asc'), limit(5))
+  return onSnapshot(q, (snap) => {
+    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+  })
+}
+
+export function subscribeEventNotes(teamId, callback) {
+  return onSnapshot(doc(db, 'teamSettings', teamId), (snap) => {
+    if (snap.exists() && snap.data().eventNotes) {
+      callback(snap.data().eventNotes) // Returns an object { [eventId]: { title, date, notes } }
+    } else {
+      callback({})
+    }
+  })
+}
+
+export function saveEventNote(teamId, eventId, notesObj) {
+  return setDoc(doc(db, 'teamSettings', teamId), {
+    eventNotes: {
+      [eventId]: notesObj
+    },
+    updatedAt: serverTimestamp(),
+  }, { merge: true })
+}
+
+export function deleteEventNote(teamId, eventId) {
+  return updateDoc(doc(db, 'teamSettings', teamId), {
+    [`eventNotes.${eventId}`]: deleteField(),
+    updatedAt: serverTimestamp(),
   })
 }
 

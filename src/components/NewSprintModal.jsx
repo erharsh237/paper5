@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { createSprint, setActiveSprint } from '../lib/sprints'
 
-export default function NewSprintModal({ teamId, currentUser, existingCount, onClose }) {
+export default function NewSprintModal({ teamId, currentUser, existingCount, members = [], onClose }) {
   const [number, setNumber] = useState(existingCount + 1)
   const [goal, setGoal] = useState('')
+  const [assigneeId, setAssigneeId] = useState('')
   const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [endDate, setEndDate] = useState(() => {
     const d = new Date()
@@ -22,11 +23,14 @@ export default function NewSprintModal({ teamId, currentUser, existingCount, onC
 
     setSubmitting(true)
     try {
+      const selectedMember = members.find(m => m.id === assigneeId)
       const ref = await createSprint(teamId, {
         number: Number(number),
         goal: goal.trim(),
         startDate,
         endDate,
+        assigneeId: assigneeId || null,
+        assigneeName: selectedMember ? selectedMember.name || selectedMember.email : null,
         createdBy: currentUser?.email,
       })
       if (activateNow) await setActiveSprint(teamId, ref.id)
@@ -65,6 +69,20 @@ export default function NewSprintModal({ teamId, currentUser, existingCount, onC
               onChange={(e) => setGoal(e.target.value)}
               placeholder="e.g. Ship the detection engine MVP end-to-end"
             />
+          </div>
+
+          <div className="field">
+            <label htmlFor="sprint-assignee">Assign to</label>
+            <select
+              id="sprint-assignee"
+              value={assigneeId}
+              onChange={(e) => setAssigneeId(e.target.value)}
+            >
+              <option value="">(Unassigned)</option>
+              {members.map(m => (
+                <option key={m.id} value={m.id}>{m.name || m.email}</option>
+              ))}
+            </select>
           </div>
 
           <div className="field-row">

@@ -2,12 +2,6 @@ import { removeMember } from '../lib/deadlines'
 import './MembersPanel.css'
 
 export default function MembersPanel({ members }) {
-  function handleRemove(id, name) {
-    if (confirm(`Remove ${name} from the team? Existing deadlines assigned to them stay untouched.`)) {
-      removeMember(id)
-    }
-  }
-
   return (
     <section className="members-panel">
       <div className="members-panel-header">
@@ -26,13 +20,6 @@ export default function MembersPanel({ members }) {
                 <div className="member-name">{m.name}</div>
                 <div className="member-email mono">{m.email}</div>
               </div>
-              <button
-                className="member-remove"
-                onClick={() => handleRemove(m.id, m.name)}
-                aria-label={`Remove ${m.name}`}
-              >
-                ✕
-              </button>
             </div>
           ))}
         </div>

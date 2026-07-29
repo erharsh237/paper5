@@ -16,7 +16,7 @@
 
 let gisScriptPromise = null
 
-function loadGis() {
+export function loadGis() {
   if (gisScriptPromise) return gisScriptPromise
   gisScriptPromise = new Promise((resolve, reject) => {
     if (window.google?.accounts?.oauth2) return resolve()
@@ -33,29 +33,44 @@ function loadGis() {
 // Access tokens from the implicit flow are short-lived (~1hr) and
 // intentionally not persisted — re-prompting occasionally is the correct
 // tradeoff for a client-only app with no refresh-token storage.
-let cachedToken = null
-let cachedTokenExpiry = 0
+let cachedToken = localStorage.getItem('gcal_token') || null
+let cachedTokenExpiry = parseInt(localStorage.getItem('gcal_token_expiry') || '0', 10)
 
 async function ensureAccessToken(clientId) {
   if (cachedToken && Date.now() < cachedTokenExpiry) return cachedToken
-  await loadGis()
+  
+  if (!window.google?.accounts?.oauth2) {
+    await loadGis()
+  }
+
   return new Promise((resolve, reject) => {
-    const client = window.google.accounts.oauth2.initTokenClient({
-      client_id: clientId,
-      scope: 'https://www.googleapis.com/auth/calendar.events',
-      callback: (response) => {
-        if (response.error) return reject(new Error(`Google auth failed: ${response.error}`))
-        cachedToken = response.access_token
-        cachedTokenExpiry = Date.now() + (response.expires_in - 60) * 1000
-        resolve(cachedToken)
-      },
-    })
-    client.requestAccessToken()
+    try {
+      const client = window.google.accounts.oauth2.initTokenClient({
+        client_id: (clientId || '').trim(),
+        scope: 'https://www.googleapis.com/auth/calendar.events',
+        error_callback: (err) => {
+          console.error('Google OAuth Error:', err)
+          reject(new Error(err.message || err.type || 'Failed to initialize Google Login. Check your Client ID.'))
+        },
+        callback: (response) => {
+          if (response.error) return reject(new Error(`Google auth failed: ${response.error}`))
+          cachedToken = response.access_token
+          cachedTokenExpiry = Date.now() + (response.expires_in - 60) * 1000
+          localStorage.setItem('gcal_token', cachedToken)
+          localStorage.setItem('gcal_token_expiry', cachedTokenExpiry.toString())
+          resolve(cachedToken)
+        },
+      })
+      client.requestAccessToken()
+    } catch (err) {
+      console.error('Popup blocked or error:', err)
+      reject(new Error('Failed to open Google Login. Please ensure popups are allowed.'))
+    }
   })
 }
 
-async function createEvent(config, accessToken, event) {
-  const calendarId = config.googleCalendarId || 'primary'
+async function createEvent(credentials, accessToken, event) {
+  const calendarId = credentials?.googleCalendarId || 'primary'
   const res = await fetch(
     `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
     {
@@ -65,6 +80,12 @@ async function createEvent(config, accessToken, event) {
     }
   )
   if (!res.ok) {
+    if (res.status === 401) {
+      localStorage.removeItem('gcal_token')
+      localStorage.removeItem('gcal_token_expiry')
+      cachedToken = null
+      cachedTokenExpiry = 0
+    }
     const body = await res.json().catch(() => ({}))
     throw new Error(body.error?.message || `Google Calendar API error (${res.status}).`)
   }
@@ -77,34 +98,85 @@ export const googleCalendar = {
   description: 'Push sprint start/end dates and the weekly meeting slot onto the team calendar.',
   configFields: [
     { key: 'googleCalendarClientId', label: 'OAuth Client ID', placeholder: '....apps.googleusercontent.com' },
+  ],
+  credentialFields: [
     { key: 'googleCalendarId', label: 'Calendar ID (optional — defaults to "primary")', placeholder: 'primary' },
   ],
-  credentialFields: [],
 
   isConfigured(config) {
     return Boolean(config?.googleCalendarClientId)
   },
 
   actions: {
-    async syncSprintDates(config, _credentials, sprint) {
-      if (!this.isConfigured(config)) throw new Error('Google Calendar Client ID not configured.')
+    async syncSprintDates(config, credentials, sprint) {
+      if (!googleCalendar.isConfigured(config)) throw new Error('Google Calendar Client ID not configured.')
       const token = await ensureAccessToken(config.googleCalendarClientId)
-      return createEvent(config, token, {
+      return createEvent(credentials, token, {
         summary: `Sprint ${sprint.number}${sprint.goal ? `: ${sprint.goal}` : ''}`,
         start: { date: sprint.startDate },
         end: { date: sprint.endDate },
       })
     },
 
-    async syncMeetingSlot(config, _credentials, { date, sprintId }) {
-      if (!this.isConfigured(config)) throw new Error('Google Calendar Client ID not configured.')
+    async syncMeetingSlot(config, credentials, { date, sprintId }) {
+      if (!googleCalendar.isConfigured(config)) throw new Error('Google Calendar Client ID not configured.')
       const token = await ensureAccessToken(config.googleCalendarClientId)
-      return createEvent(config, token, {
+      return createEvent(credentials, token, {
         summary: 'Sprint planning & review',
         description: sprintId ? `Sprint ID: ${sprintId}` : undefined,
         start: { date },
         end: { date },
       })
+    },
+
+    async testConnection(config, credentials) {
+      if (!googleCalendar.isConfigured(config)) throw new Error('Google Calendar Client ID not configured.')
+      const token = await ensureAccessToken(config.googleCalendarClientId)
+      const now = new Date()
+      return createEvent(credentials, token, {
+        summary: 'Securiq Calendar Sync Test',
+        description: 'If you are seeing this, your personal Google Calendar integration is working successfully!',
+        start: { dateTime: now.toISOString() },
+        end: { dateTime: new Date(now.getTime() + 30 * 60000).toISOString() },
+      })
+    },
+
+    async fetchUpcomingEvents(config, credentials) {
+      if (!googleCalendar.isConfigured(config)) throw new Error('Google Calendar Client ID not configured.')
+      const token = await ensureAccessToken(config.googleCalendarClientId)
+      const calendarId = credentials?.googleCalendarId || 'primary'
+      const timeMin = new Date().toISOString()
+      const timeMax = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days ahead
+      
+      const res = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?timeMin=${timeMin}&timeMax=${timeMax}&orderBy=startTime&singleEvents=true&maxResults=10`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      if (!res.ok) {
+        if (res.status === 401) {
+          localStorage.removeItem('gcal_token')
+          localStorage.removeItem('gcal_token_expiry')
+          cachedToken = null
+          cachedTokenExpiry = 0
+          throw new Error('Your session expired. Please click connect again.')
+        }
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error?.message || `Google Calendar API error (${res.status}).`)
+      }
+      const data = await res.json()
+      console.log('[Calendar Sync] Raw events returned by Google API:', data.items)
+      return data.items || []
+    },
+
+    disconnectCalendar() {
+      localStorage.removeItem('gcal_token')
+      localStorage.removeItem('gcal_token_expiry')
+      cachedToken = null
+      cachedTokenExpiry = 0
+    },
+
+    hasValidToken() {
+      return Boolean(cachedToken && Date.now() < cachedTokenExpiry)
     },
   },
 }

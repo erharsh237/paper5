@@ -13,12 +13,14 @@ const EVIDENCE_TYPES = [
 export default function EvidenceModal({ teamId, deadline, currentUser, onClose }) {
   const [evidenceType, setEvidenceType] = useState('pr')
   const [evidenceContent, setEvidenceContent] = useState('')
+  const [repoName, setRepoName] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
   async function handleSubmit(e) {
     e.preventDefault()
     if (!evidenceContent.trim()) return setError('Add a link, description, or notes as evidence.')
+    if ((evidenceType === 'pr' || evidenceType === 'commit') && !repoName) return setError('Select a repository.')
     if (!deadline.definitionOfDone?.trim()) {
       // Not a hard block — DoD is optional metadata in Phase 1 — but flag it
       // so founders notice it wasn't set.
@@ -29,6 +31,7 @@ export default function EvidenceModal({ teamId, deadline, currentUser, onClose }
       await submitForReview(deadline.id, {
         evidenceType,
         evidenceContent: evidenceContent.trim(),
+        repoName: (evidenceType === 'pr' || evidenceType === 'commit') ? repoName : null,
         submittedBy: currentUser?.email,
       })
       await createNotification(teamId, {
@@ -68,6 +71,17 @@ export default function EvidenceModal({ teamId, deadline, currentUser, onClose }
               {EVIDENCE_TYPES.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
             </select>
           </div>
+
+          {(evidenceType === 'pr' || evidenceType === 'commit') && (
+            <div className="field">
+              <label htmlFor="ev-repo">Repository</label>
+              <select id="ev-repo" value={repoName} onChange={(e) => setRepoName(e.target.value)}>
+                <option value="">Select a repository...</option>
+                <option value="securiq">securiq</option>
+                <option value="securiq-app">securiq-app</option>
+              </select>
+            </div>
+          )}
 
           <div className="field">
             <label htmlFor="ev-content">Evidence</label>

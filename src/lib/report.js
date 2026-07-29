@@ -43,27 +43,6 @@ function toCsv(rows, columns) {
 /**
  * Builds and downloads a CSV report for a given month. Includes any
  * deadline due that month, along with extra-work notes logged that month.
- *
- * Previously used the `xlsx` package. Dropped it entirely: xlsx carries two
- * unpatched high-severity advisories (prototype pollution, ReDoS) with no
- * fix available upstream. This app only ever used xlsx's write path on our
- * own trusted data — never parsed untrusted files — so those specific
- * advisories likely weren't reachable here, but "probably not reachable"
- * isn't the same as "not present," and a plain CSV writer needs no
- * dependency at all for what this actually does. CSV opens fine in
- * Excel/Sheets; the only thing lost is the fixed column-width styling.
- *
- * extraWork moved to a subcollection (deadlines/{id}/extraWork) so list
- * views don't carry it — this report is a one-time, user-triggered export
- * rather than something rendered on every page load, so fetching it here
- * per in-month deadline is the right tradeoff (bounded by how many
- * deadlines are actually due that month, not the whole collection).
- *
- * Note: this doesn't pull in tasks whose due date falls outside the report
- * month just because they had extra-work activity during it — doing that
- * would require fetching extraWork for every loaded deadline up front,
- * which doesn't scale. If that matters, filter by extraWork activity
- * separately.
  */
 export async function downloadMonthlyReport(deadlines, members, { year, month }) {
   const monthStart = new Date(year, month, 1)

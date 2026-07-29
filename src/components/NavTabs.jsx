@@ -9,13 +9,12 @@ import './NavTabs.css'
 const PRIMARY = [
   { to: '/', end: true, label: 'My tasks', icon: HomeIcon },
   { to: '/team', label: 'Team', icon: TeamIcon },
+  { to: '/meeting', label: 'Meeting', icon: MeetingIcon },
 ]
 
 const SECONDARY = [
-  { to: '/meeting', label: 'Meeting', icon: MeetingIcon },
   { to: '/analytics', label: 'Analytics', icon: AnalyticsIcon },
   { to: '/integrations', label: 'Integrations', icon: IntegrationsIcon },
-  { to: '/ai', label: 'AI Assistant', icon: AIIcon },
   { to: '/profile', label: 'Profile', icon: ProfileIcon },
 ]
 

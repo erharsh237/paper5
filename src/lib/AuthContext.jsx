@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'
 import { auth, googleProvider } from './firebase'
-import { isEmailAllowed } from './allowlist'
+import { isEmailAllowed, subscribeEmailAllowed } from './allowlist'
 
 const AuthContext = createContext(null)
 
@@ -12,22 +12,20 @@ export function AuthProvider({ children }) {
   const [denialReason, setDenialReason] = useState(null) // 'not_allowed' | 'check_failed' | 'redirect_failed' | null
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
+    let unsubscribeAllowlist = null
+
+    const unsubAuth = onAuthStateChanged(auth, async (u) => {
       if (!u) {
         setUser(null)
         setAccessDenied(false)
         setDenialReason(null)
         setLoading(false)
+        if (unsubscribeAllowlist) unsubscribeAllowlist()
         return
       }
 
       try {
-        const allowed = await Promise.race([
-          isEmailAllowed(u.email),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Allowlist check timed out')), 8000)
-          ),
-        ])
+        const allowed = await isEmailAllowed(u.email)
         if (!allowed) {
           setAccessDenied(true)
           setDenialReason('not_allowed')
@@ -36,12 +34,20 @@ export function AuthProvider({ children }) {
         } else {
           setAccessDenied(false)
           setDenialReason(null)
+          u.appRole = allowed.Note || ''
           setUser(u)
+
+          // Set up real-time listener to revoke session if removed from allowlist
+          unsubscribeAllowlist = subscribeEmailAllowed(u.email, async (isStillAllowed) => {
+            if (!isStillAllowed) {
+              setAccessDenied(true)
+              setDenialReason('not_allowed')
+              setUser(null)
+              await signOut(auth)
+            }
+          })
         }
       } catch (err) {
-        // If the allowlist check itself fails or times out (e.g. blocked
-        // request, network issue), fail closed — deny rather than hang
-        // forever or silently grant access.
         console.error('Allowlist check failed:', err)
         setAccessDenied(true)
         setDenialReason('check_failed')
@@ -54,7 +60,11 @@ export function AuthProvider({ children }) {
       }
       setLoading(false)
     })
-    return unsub
+    
+    return () => {
+      unsubAuth()
+      if (unsubscribeAllowlist) unsubscribeAllowlist()
+    }
   }, [])
 
   const login = () => {

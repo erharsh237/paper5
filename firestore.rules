@@ -1,29 +1,5 @@
 rules_version = '2';
 
-// ── Setup required before deploying ──
-// This project restricts access via two explicit allowlists, since the team
-// signs in with personal Gmail addresses rather than a shared company domain.
-//
-// 1. In Firestore Console, manually create a collection called `allowedUsers`.
-// 2. For each team member, add a document where the DOCUMENT ID is their
-//    exact lowercase Google sign-in email, e.g.:
-//      collection: allowedUsers
-//      document id: harshpal@gmail.com
-//      fields: { addedBy: "you@gmail.com", addedAt: <timestamp> }
-//    The fields can be empty — only the document's existence matters.
-// 3. Anyone signing in whose email is NOT a document ID in `allowedUsers`
-//    is denied all reads/writes, even though Firebase Auth itself succeeds.
-// 4. To remove someone's access, delete their document from `allowedUsers`.
-//
-// 5. Separately, create a collection called `admins` the same way, for
-//    whichever subset of the team should be able to unlock a locked sprint
-//    or delete another founder's member/sprint record. Same shape: document
-//    id = exact lowercase email, fields optional. A user can be in both
-//    `allowedUsers` and `admins`, or just `allowedUsers`.
-//
-// Both collections are locked down — only editable directly in the
-// Firebase Console by project owners, never from client code.
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -37,8 +13,10 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() &&
-        exists(/databases/$(database)/documents/admins/$(request.auth.token.email.lower()));
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.token.email.lower())) ||
+        request.auth.token.email.lower() in ['erharsh237@gmail.com', 'kanishkaldh@gmail.com', 'shrutisinha2205@gmail.com']
+      );
     }
 
     function isOwner(resource) {
@@ -192,14 +170,14 @@ service cloud.firestore {
     // via the Firebase Console as a project owner.
     match /allowedUsers/{userEmail} {
       allow read: if isSignedIn();
-      allow write: if false;
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userEmail);
     }
 
-    // admins is the same shape and same lockdown as allowedUsers — see the
-    // setup note at the top of this file.
     match /admins/{userEmail} {
-      allow read: if isAllowedUser();
-      allow write: if false;
+      allow read: if isSignedIn();
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userEmail);
     }
 
     match /notifications/{notificationId} {
@@ -290,6 +268,13 @@ service cloud.firestore {
     // tokens go (see integrationCredentials below).
     match /integrationConfig/{teamId} {
       allow read, write: if isAllowedUser();
+    }
+
+    // Global team settings like Global Meeting Notes.
+    // Readable by the team, but only writable by admins.
+    match /teamSettings/{teamId} {
+      allow read: if isAllowedUser();
+      allow write: if isAdmin();
     }
 
     // Personal API credentials (GitHub/Vercel tokens) — owner-only, never

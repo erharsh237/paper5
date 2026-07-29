@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { createDeadline } from '../lib/deadlines'
 import { sendDeadlineEmail } from '../lib/email'
 import { PRIORITIES } from '../lib/utils'
-import './NewDeadlineModal.css'
 
 export default function NewDeadlineModal({ teamId, members, currentUser, activeSprint, onClose }) {
   const [title, setTitle] = useState('')

@@ -1,30 +1,5 @@
-// AI Assistant backend.
-//
-// WHY THIS EXISTS AS A CLOUD FUNCTION AND NOT CLIENT-SIDE CODE:
-// Calling api.anthropic.com directly from the browser would mean shipping
-// the API key inside the app bundle — anyone who opens dev tools gets your
-// key. There is no way to call a real LLM from a pure static-hosted SPA
-// without either exposing a key or proxying through a backend. This file
-// IS that backend: the key lives only here, as a Secret Manager secret
-// (ANTHROPIC_API_KEY), never in client code, never in Firestore, never in
-// an env var bundled by Vite.
-//
-// SETUP (you have to do this once, I can't do it from here — I don't have
-// your Anthropic API key or Firebase CLI access):
-//   1. firebase functions:secrets:set ANTHROPIC_API_KEY
-//      (paste your key when prompted)
-//   2. Firebase Cloud Functions require the Blaze (pay-as-you-go) plan —
-//      upgrade the project if it's still on Spark.
-//   3. firebase deploy --only functions
-//
-// AUTHORIZATION: every function independently re-checks the caller's email
-// against the same `allowedUsers` Firestore collection the rest of the app
-// uses — context.auth just proves *a* Google account signed in, not that
-// it's an allowed one. Never trust client-supplied identity for this;
-// Cloud Functions run with admin privileges, so this check is the actual
-// gate.
-
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
+import { onDocumentWritten } from 'firebase-functions/v2/firestore'
 import { defineSecret } from 'firebase-functions/params'
 import { initializeApp } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore'
@@ -213,4 +188,77 @@ export const detectOverloadedFounders = onCall({ secrets }, async (request) => {
     'You identify which founders are overloaded this sprint — assigned hours exceeding their stated available hours.',
     `Founder workload:\n${JSON.stringify(rows, null, 2)}\n\nReturn JSON: {"overloaded": [{"memberId": string, "name": string, "overByHours": number}]}. Only include founders where assignedHours clearly exceeds availableHours. Skip founders with no availableHours given.`
   )
+})
+
+import { onSchedule } from 'firebase-functions/v2/scheduler'
+
+const emailjsServiceId = defineSecret('EMAILJS_SERVICE_ID')
+const emailjsTemplateId = defineSecret('EMAILJS_TEMPLATE_ID')
+const emailjsPublicKey = defineSecret('EMAILJS_PUBLIC_KEY')
+const emailjsPrivateKey = defineSecret('EMAILJS_PRIVATE_KEY')
+
+export const sendMeetingReminders = onSchedule({
+  schedule: 'every 5 minutes',
+  secrets: [emailjsServiceId, emailjsTemplateId, emailjsPublicKey, emailjsPrivateKey]
+}, async (event) => {
+  const now = new Date()
+  const thirtyMinsFromNow = new Date(now.getTime() + 30 * 60000)
+  // buffer to catch meetings since this runs every 5 mins
+  const lowerBound = new Date(thirtyMinsFromNow.getTime() - 2.5 * 60000).toISOString()
+  const upperBound = new Date(thirtyMinsFromNow.getTime() + 2.5 * 60000).toISOString()
+
+  const meetingsSnap = await db.collection('meetings')
+    .where('date', '>=', lowerBound)
+    .where('date', '<=', upperBound)
+    .get()
+
+  if (meetingsSnap.empty) return
+
+  for (const doc of meetingsSnap.docs) {
+    const meeting = doc.data()
+    const teamId = meeting.teamId
+    const membersSnap = await db.collection('members').where('teamId', '==', teamId).get()
+    
+    const sendPromises = membersSnap.docs.map(mDoc => {
+      const member = mDoc.data()
+      if (!member.email) return Promise.resolve()
+
+      return fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service_id: emailjsServiceId.value(),
+          template_id: emailjsTemplateId.value(),
+          user_id: emailjsPublicKey.value(),
+          accessToken: emailjsPrivateKey.value(),
+          template_params: {
+            to_name: member.name || member.email,
+            to_email: member.email,
+            task_title: `Meeting Reminder: Sprint ${meeting.sprintId || 'Planning'}`,
+            task_description: `Your meeting starts in 30 minutes at ${new Date(meeting.date).toLocaleString()}.`,
+            due_date: new Date(meeting.date).toLocaleString(),
+            priority: 'HIGH',
+            assigned_by: 'System',
+          }
+        })
+      }).catch(err => console.error('Failed to send email to', member.email, err))
+    })
+
+    await Promise.all(sendPromises)
+  }
+})
+
+// AUDIT LOGGING: Record any changes to the allowlist for compliance and observability.
+// This runs with admin privileges on the backend, ensuring users cannot bypass or tamper with the audit log.
+export const auditAllowlistChanges = onDocumentWritten('allowedUsers/{userEmail}', async (event) => {
+  const changeType = !event.data.before.exists ? 'CREATE' : !event.data.after.exists ? 'DELETE' : 'UPDATE'
+  
+  await db.collection('auditLogs').add({
+    targetEmail: event.params.userEmail,
+    action: changeType,
+    before: event.data.before.exists ? event.data.before.data() : null,
+    after: event.data.after.exists ? event.data.after.data() : null,
+    timestamp: new Date().toISOString(),
+    resource: 'allowedUsers'
+  })
 })

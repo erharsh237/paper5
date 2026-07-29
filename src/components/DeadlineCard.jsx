@@ -194,7 +194,9 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked, team
             <div className="dcard-blocker">
               <div className="dcard-extrawork-title">Evidence submitted</div>
               {evidence.slice(-1).map((ev) => (
-                <p key={ev.id}>[{ev.type}] {ev.content}</p>
+                <p key={ev.id}>
+                  [{ev.type}] {ev.repoName ? `(${ev.repoName}) ` : ''}{ev.content}
+                </p>
               ))}
             </div>
           )}

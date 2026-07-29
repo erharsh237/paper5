@@ -4,7 +4,7 @@ import { setActiveSprint, lockSprint, unlockSprint } from '../lib/sprints'
 import NewSprintModal from './NewSprintModal'
 import './SprintOverview.css'
 
-export default function SprintOverview({ teamId, sprints, deadlines, currentUser }) {
+export default function SprintOverview({ teamId, sprints, deadlines, currentUser, members = [] }) {
   const [showNewSprint, setShowNewSprint] = useState(false)
   const active = useMemo(() => sprints.find(s => s.status === 'active'), [sprints])
 
@@ -82,6 +82,11 @@ export default function SprintOverview({ teamId, sprints, deadlines, currentUser
             <div>
               <div className="sprint-number mono">SPRINT {active.number}{active.locked && <span className="sprint-lock-badge">🔒 LOCKED</span>}</div>
               <div className="sprint-goal">{active.goal || 'No sprint goal set.'}</div>
+              {active.assigneeName && (
+                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                  Owner: <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{active.assigneeName}</span>
+                </div>
+              )}
             </div>
             <button className="btn-ghost btn-sm" onClick={handleToggleLock}>
               {active.locked ? 'Unlock sprint' : 'Lock sprint'}
@@ -112,6 +117,7 @@ export default function SprintOverview({ teamId, sprints, deadlines, currentUser
           teamId={teamId}
           currentUser={currentUser}
           existingCount={sprints.length}
+          members={members}
           onClose={() => setShowNewSprint(false)}
         />
       )}

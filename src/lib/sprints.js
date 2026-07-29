@@ -19,7 +19,7 @@ export function subscribeSprints(teamId, callback) {
   })
 }
 
-export async function createSprint(teamId, { number, goal, startDate, endDate, createdBy }) {
+export async function createSprint(teamId, { number, goal, startDate, endDate, createdBy, assigneeId, assigneeName }) {
   return addDoc(sprintsCol, {
     teamId,
     number,
@@ -28,6 +28,8 @@ export async function createSprint(teamId, { number, goal, startDate, endDate, c
     endDate,   // ISO string
     status: 'planning',
     locked: false,
+    assigneeId: assigneeId || null,
+    assigneeName: assigneeName || null,
     createdBy: (createdBy || '').toLowerCase(),
     createdAt: serverTimestamp(),
   })

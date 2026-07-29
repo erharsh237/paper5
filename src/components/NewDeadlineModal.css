@@ -1,7 +1,0 @@
-/* This file previously held the shared modal/form/button styles
-   (.modal-*, .field, .field-row, .btn-primary, .btn-ghost, .form-error,
-   etc.) — moved to src/index.css since they're used across many pages and
-   components, not just this modal, and index.css is guaranteed to load on
-   every page regardless of route/navigation order (see the comment there
-   for why that mattered). Nothing left here specific to NewDeadlineModal
-   itself. */

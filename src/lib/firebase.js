@@ -17,10 +17,7 @@ const missingKeys = Object.entries(firebaseConfig)
   .filter(([, value]) => !value)
   .map(([key]) => key)
 
-// Previously this threw synchronously, which happens during module import —
-// before ReactDOM ever renders — so the ErrorBoundary couldn't catch it and
-// the user just got a blank white screen with a console error. Exporting a
-// flag instead lets App.jsx show an actual configuration-error page.
+// Export a flag so App.jsx can show an error page if config is missing.
 export const firebaseConfigError = missingKeys.length > 0
   ? `Missing Firebase config values: ${missingKeys.join(', ')}. Check your .env file (local) or environment variables (deployed host).`
   : null
@@ -36,3 +33,14 @@ export const db = getFirestore(app)
 export const storage = getStorage(app)
 // Region matches functions/index.js's deployed region — must stay in sync.
 export const functions = getFunctions(app, 'us-central1')
+
+// Initialize App Check (reCAPTCHA v3) to protect Firebase resources from abuse.
+// Note: You must also register your site and enforce App Check in the Firebase Console.
+if (typeof window !== 'undefined') {
+  import('firebase/app-check').then(({ initializeAppCheck, ReCaptchaV3Provider }) => {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider('6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'), // Default testing key - replace with your actual key in production
+      isTokenAutoRefreshEnabled: true
+    })
+  }).catch(err => console.warn('App Check failed to load:', err))
+}

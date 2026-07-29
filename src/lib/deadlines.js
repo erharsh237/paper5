@@ -9,13 +9,8 @@ const membersCol = collection(db, 'members')
 
 // ---- Deadlines ----
 
-// Unbounded before — pulled the entire collection into every listener no
-// matter how much history had piled up. Now capped at pageSize (default
-// below); callers that want more call subscribeDeadlines again with a
-// bigger pageSize (see useDeadlines.js), which just re-subscribes with a
-// larger limit() rather than doing true cursor pagination — simpler to
-// reason about alongside a realtime listener, at the cost of re-reading
-// the first N docs on every "load more" (fine at this data volume).
+// Pagination is handled by increasing the limit() in the query and re-subscribing,
+// rather than using cursor pagination, to simplify realtime listener logic.
 export const DEADLINES_DEFAULT_PAGE_SIZE = 100
 
 export function subscribeDeadlines(teamId, callback, pageSize = DEADLINES_DEFAULT_PAGE_SIZE) {
@@ -46,7 +41,6 @@ export async function createDeadline(teamId, data) {
     createdByName: data.createdByName, // display name shown in the UI
     createdAt: serverTimestamp(),
     percentComplete: 0,
-    // ---- FounderOS Phase 1 additions (optional, backward-compatible) ----
     sprintId: data.sprintId || null,
     estimatedHours: data.estimatedHours ?? null,
     actualHours: data.actualHours ?? 0,
@@ -82,13 +76,7 @@ export async function updateDeadlineStatus(id, status) {
   return updateDoc(doc(db, 'deadlines', id), patch)
 }
 
-// Optional note an assignee can attach to their own deadline to log extra
-// work done beyond the original scope. Previously stored as an arrayUnion
-// field on the parent deadline doc — that meant every list-view listener
-// (Dashboard, MyDashboard) carried this ever-growing array for every task,
-// even though it's only ever shown when a card is expanded. Moved to a
-// subcollection so the list payload stays flat regardless of history;
-// only fetched on demand (see subscribeExtraWork).
+// Optional note an assignee can attach to their own deadline to log extra work.
 export async function addExtraWork(deadlineId, { note, addedBy, addedByName }) {
   return addDoc(collection(db, 'deadlines', deadlineId, 'extraWork'), {
     note,
@@ -105,19 +93,15 @@ export function subscribeExtraWork(deadlineId, callback) {
   })
 }
 
-// ---- FounderOS Phase 2: evidence-based completion + review ----
-// A task cannot go straight to 'done'. The assignee submits at least one
-// piece of evidence, which flips status to 'review'; a different founder
-// then approves (-> done) or rejects (-> back to in_progress) it.
-//
-// Evidence moved to a subcollection for the same reason as extraWork above
-// — it's unbounded over a task's lifetime and was previously loaded by
-// every list-view listener whether or not the card was even expanded.
+// A task must be reviewed before being marked as done.
+// The assignee submits evidence, changing the status to 'review'.
+// A reviewer can then approve (-> done) or reject (-> in_progress).
 
-export async function submitForReview(id, { evidenceType, evidenceContent, submittedBy }) {
+export async function submitForReview(id, { evidenceType, evidenceContent, repoName, submittedBy }) {
   await addDoc(collection(db, 'deadlines', id, 'evidence'), {
     type: evidenceType, // 'pr' | 'commit' | 'screenshot' | 'video' | 'notes'
     content: evidenceContent,
+    repoName: repoName || null,
     submittedBy: (submittedBy || '').toLowerCase(),
     submittedAt: serverTimestamp(),
   })
@@ -155,9 +139,7 @@ export async function rejectReview(id, { reviewerEmail, reviewerName, reviewNote
   })
 }
 
-// ---- FounderOS Phase 2: blocker system ----
-// Marking a task blocked requires structured context, not just a status
-// flip, so the rest of the team can act on it.
+// Marking a task blocked requires structured context so the rest of the team can act on it.
 
 export async function setBlocked(id, { reason, needHelpFrom, description }) {
   return updateDoc(doc(db, 'deadlines', id), {

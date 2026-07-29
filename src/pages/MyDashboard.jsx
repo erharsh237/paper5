@@ -9,6 +9,7 @@ import NotificationBell from '../components/NotificationBell'
 import NavTabs from '../components/NavTabs'
 import SiteTour from '../components/SiteTour'
 import Breadcrumbs from '../components/Breadcrumbs'
+import CalendarWidget from '../components/CalendarWidget'
 import './Dashboard.css'
 import './MyDashboard.css'
 
@@ -23,6 +24,8 @@ export default function MyDashboard() {
   useEffect(() => {
     return subscribeSprints(TEAM_ID, setSprints)
   }, [])
+
+
 
   useEffect(() => {
     if (!user?.email) return
@@ -97,13 +100,33 @@ export default function MyDashboard() {
       <main className="dash-body">
         <Breadcrumbs trail={[{ label: 'My tasks' }]} />
 
-        <section className="mydash-hello">
-          <h1>Welcome back, {user?.displayName?.split(' ')[0] || 'there'}</h1>
-          {activeSprint && (
-            <p className="mono mydash-hello-sprint">
-              Sprint {activeSprint.number}{activeSprint.locked ? ' · locked' : ''} — {mySprintTasks.length} task{mySprintTasks.length === 1 ? '' : 's'} yours this sprint, {mySprintProgress}% done
-            </p>
-          )}
+        <section className="mydash-top-row" style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          <div className="mydash-hello" style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <h1 style={{ margin: '0 0 8px 0' }}>Welcome back, {user?.displayName?.split(' ')[0] || 'there'}</h1>
+            {activeSprint && (
+              <p className="mono mydash-hello-sprint" style={{ margin: 0 }}>
+                Sprint {activeSprint.number}{activeSprint.locked ? ' · locked' : ''} — {mySprintTasks.length} task{mySprintTasks.length === 1 ? '' : 's'} yours this sprint, {mySprintProgress}% done
+              </p>
+            )}
+          </div>
+
+           <div style={{ flex: '1 1 250px' }}>
+             <CalendarWidget user={user} />
+           </div>
+           
+           <div style={{ flex: '1 1 250px', background: 'var(--bg-panel)', padding: '1.25rem', borderRadius: '8px', border: '1px solid var(--border-hair)' }}>
+              <h3 className="mono" style={{ margin: '0 0 1rem 0', fontSize: '12px', color: 'var(--text-tertiary)', letterSpacing: '0.05em' }}>REPOSITORIES</h3>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <li style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-inset)', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border-hair)' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>📦</span>
+                  <a href="https://github.com/securiq-App/securiq" target="_blank" rel="noreferrer" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: 500 }}>securiq</a>
+                </li>
+                <li style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-inset)', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border-hair)' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>📦</span>
+                  <a href="https://github.com/securiq-App/securiq-app" target="_blank" rel="noreferrer" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: 500 }}>securiq-app</a>
+                </li>
+              </ul>
+           </div>
         </section>
 
         <section className="stat-strip">

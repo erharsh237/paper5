@@ -1,18 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useAuth } from '../lib/AuthContext'
+import { useEffect, useState } from 'react'
 import { AI_CAPABILITIES, aiAssistant } from '../lib/ai'
 import { subscribeSprints } from '../lib/sprints'
 import { subscribeMembers } from '../lib/deadlines'
-import NotificationBell from '../components/NotificationBell'
-import NavTabs from '../components/NavTabs'
-import Breadcrumbs from '../components/Breadcrumbs'
-import './Dashboard.css'
-import './AIAssistant.css'
+import './AIAssistantWidget.css'
 
 const TEAM_ID = 'default-team'
 
-export default function AIAssistant() {
-  const { user, logout } = useAuth()
+export default function AIAssistantWidget() {
+  const [isOpen, setIsOpen] = useState(false)
   const [sprints, setSprints] = useState([])
   const [members, setMembers] = useState([])
   const [openId, setOpenId] = useState(null)
@@ -20,10 +15,11 @@ export default function AIAssistant() {
   const [results, setResults] = useState({})
 
   useEffect(() => {
+    if (!isOpen) return
     const unsub1 = subscribeSprints(TEAM_ID, setSprints)
     const unsub2 = subscribeMembers(TEAM_ID, setMembers)
     return () => { unsub1(); unsub2() }
-  }, [])
+  }, [isOpen])
 
   function setField(capId, key, value) {
     setFormState(prev => ({ ...prev, [capId]: { ...prev[capId], [key]: value } }))
@@ -62,48 +58,46 @@ export default function AIAssistant() {
   }
 
   return (
-    <div className="dash">
-      <header className="dash-header">
-        <div className="dash-header-inner">
-          <div className="dash-brand">
-            <span className="dash-brand-dot" />
-            <span className="mono">SECURIQ <span className="dash-brand-sub">| AI Assistant</span></span>
-          </div>
-          <div className="dash-header-actions">
-            <NavTabs />
-            <NotificationBell teamId={TEAM_ID} currentUser={user} />
-            <span className="dash-user">{user?.displayName || user?.email}</span>
-            <button className="btn-ghost btn-sm" onClick={logout}>Sign out</button>
+    <div className="ai-widget-container">
+      <div className={`ai-widget-panel ${isOpen ? 'open' : ''}`}>
+        <div className="ai-widget-header">
+          <h2>AI Assistant</h2>
+          <button onClick={() => setIsOpen(false)} aria-label="Close panel">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div className="ai-widget-body">
+          <p className="integrations-intro" style={{ margin: '0 0 16px 0', fontSize: '13px' }}>
+            Runs against a real Cloud Function backend. Select a capability below:
+          </p>
+          <div className="ai-list">
+            {AI_CAPABILITIES.map(cap => (
+              <AICapabilityCard
+                key={cap.id}
+                cap={cap}
+                open={openId === cap.id}
+                onToggle={() => setOpenId(openId === cap.id ? null : cap.id)}
+                values={formState[cap.id] || {}}
+                onChange={(key, value) => setField(cap.id, key, value)}
+                onRun={() => handleRun(cap)}
+                result={results[cap.id]}
+                sprints={sprints}
+                members={members}
+              />
+            ))}
           </div>
         </div>
-      </header>
-
-      <main className="dash-body">
-        <Breadcrumbs trail={[{ label: 'AI Assistant' }]} />
-
-        <p className="integrations-intro">
-          Runs against a real Cloud Function backend (see <code>functions/index.js</code>) — the Anthropic API key
-          lives only there, never in this page. If a call fails with a backend-unreachable error, the functions
-          likely haven't been deployed yet.
-        </p>
-
-        <div className="ai-list">
-          {AI_CAPABILITIES.map(cap => (
-            <AICapabilityCard
-              key={cap.id}
-              cap={cap}
-              open={openId === cap.id}
-              onToggle={() => setOpenId(openId === cap.id ? null : cap.id)}
-              values={formState[cap.id] || {}}
-              onChange={(key, value) => setField(cap.id, key, value)}
-              onRun={() => handleRun(cap)}
-              result={results[cap.id]}
-              sprints={sprints}
-              members={members}
-            />
-          ))}
-        </div>
-      </main>
+      </div>
+      
+      <button className="ai-widget-button" onClick={() => setIsOpen(!isOpen)} aria-label="Toggle AI Assistant">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      </button>
     </div>
   )
 }
@@ -112,10 +106,10 @@ function AICapabilityCard({ cap, open, onToggle, values, onChange, onRun, result
   return (
     <div className="integration-card ai-card">
       <div className="integration-card-top">
-        <h3>{cap.label}</h3>
+        <h3 style={{ fontSize: '14px' }}>{cap.label}</h3>
         <button className="btn-ghost btn-sm" onClick={onToggle}>{open ? 'Close' : 'Open'}</button>
       </div>
-      <p className="integration-desc">{cap.description}</p>
+      {open && <p className="integration-desc" style={{ marginTop: '8px' }}>{cap.description}</p>}
 
       {open && (
         <div className="ai-card-form">

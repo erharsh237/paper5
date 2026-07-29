@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../lib/AuthContext'
-import { subscribeSprints, lockSprint } from '../lib/sprints'
+import { subscribeSprints } from '../lib/sprints'
 import { subscribeMembers } from '../lib/deadlines'
-import { subscribeMeetings, createMeeting, updateMeetingNote, AGENDA_STEPS } from '../lib/meetings'
+import { subscribeEventNotes } from '../lib/meetings'
 import NotificationBell from '../components/NotificationBell'
 import NavTabs from '../components/NavTabs'
 import ReflectionPanel from '../components/ReflectionPanel'
 import Breadcrumbs from '../components/Breadcrumbs'
+import CalendarWidget from '../components/CalendarWidget'
 import './Dashboard.css'
 import './Meeting.css'
 
@@ -15,55 +16,20 @@ const TEAM_ID = 'default-team'
 export default function Meeting() {
   const { user, logout } = useAuth()
   const [sprints, setSprints] = useState([])
-  const [meetings, setMeetings] = useState([])
   const [members, setMembers] = useState([])
-  const [activeStep, setActiveStep] = useState(0)
-  const [creating, setCreating] = useState(false)
-  const debounceRefs = useRef({})
+  
+  // Notes state
+  const [eventNotes, setEventNotes] = useState({})
+  const [selectedEventId, setSelectedEventId] = useState('')
 
   useEffect(() => {
     const unsub1 = subscribeSprints(TEAM_ID, setSprints)
-    const unsub2 = subscribeMeetings(TEAM_ID, setMeetings)
-    const unsub3 = subscribeMembers(TEAM_ID, setMembers)
+    const unsub2 = subscribeMembers(TEAM_ID, setMembers)
+    const unsub3 = subscribeEventNotes(TEAM_ID, setEventNotes)
     return () => { unsub1(); unsub2(); unsub3() }
-  }, [])
+  }, [user?.email])
 
-  const activeSprint = useMemo(() => sprints.find(s => s.status === 'active'), [sprints])
-  const todayMeeting = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10)
-    return meetings.find(m => m.date === today && m.sprintId === (activeSprint?.id || null))
-  }, [meetings, activeSprint])
-
-  async function handleStartMeeting() {
-    setCreating(true)
-    try {
-      await createMeeting(TEAM_ID, {
-        sprintId: activeSprint?.id || null,
-        date: new Date().toISOString().slice(0, 10),
-        createdBy: user?.email,
-      })
-    } finally {
-      setCreating(false)
-    }
-  }
-
-  function handleNoteChange(stepKey, value) {
-    setMeetings(prev => prev.map(m => m.id === todayMeeting.id
-      ? { ...m, notes: { ...m.notes, [stepKey]: value } }
-      : m))
-    clearTimeout(debounceRefs.current[stepKey])
-    debounceRefs.current[stepKey] = setTimeout(() => {
-      updateMeetingNote(todayMeeting.id, stepKey, value)
-    }, 500)
-  }
-
-  async function handleLockAndFinish() {
-    if (!activeSprint) return
-    if (!confirm(`Lock Sprint ${activeSprint.number}? New tasks and deadline/owner/estimate changes will be frozen.`)) return
-    await lockSprint(activeSprint.id)
-  }
-
-  const step = AGENDA_STEPS[activeStep]
+  const activeSprint = sprints.find(s => s.status === 'active')
 
   return (
     <div className="dash">
@@ -85,75 +51,53 @@ export default function Meeting() {
       <main className="dash-body">
         <Breadcrumbs trail={[{ label: 'Meeting' }]} />
 
-        {!todayMeeting ? (
-          <div className="empty-state">
-            <p>No meeting started for today{activeSprint ? ` (Sprint ${activeSprint.number})` : ''} yet.</p>
-            <button className="btn-primary btn-sm" style={{ marginTop: 12 }} disabled={creating} onClick={handleStartMeeting}>
-              {creating ? 'Starting…' : 'Start today\'s meeting'}
-            </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'stretch' }}>
+          {/* Calendar Top Area */}
+          <div>
+            <CalendarWidget 
+              user={user} 
+              onSelectEvent={setSelectedEventId} 
+              selectedEventId={selectedEventId} 
+            />
           </div>
-        ) : (
-          <>
-            <div className="meeting-steps">
-              {AGENDA_STEPS.map((s, i) => (
-                <button
-                  key={s.key}
-                  className={`meeting-step-tab${i === activeStep ? ' meeting-step-tab--active' : ''}${todayMeeting.notes?.[s.key] ? ' meeting-step-tab--filled' : ''}`}
-                  onClick={() => setActiveStep(i)}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
 
-            <section className="sprint-overview meeting-panel">
-              <h2 className="mono">{step.label}</h2>
-              <textarea
-                className="meeting-notes-input"
-                rows={10}
-                value={todayMeeting.notes?.[step.key] || ''}
-                onChange={(e) => handleNoteChange(step.key, e.target.value)}
-                placeholder="Notes auto-save as you type…"
-                autoFocus
-              />
-              <div className="meeting-panel-actions">
-                <button
-                  className="btn-ghost btn-sm"
-                  disabled={activeStep === 0}
-                  onClick={() => setActiveStep(s => Math.max(0, s - 1))}
-                >
-                  ← Previous
-                </button>
-                {activeStep < AGENDA_STEPS.length - 1 ? (
-                  <button className="btn-primary btn-sm" onClick={() => setActiveStep(s => Math.min(AGENDA_STEPS.length - 1, s + 1))}>
-                    Next →
-                  </button>
-                ) : (
-                  <button className="btn-primary btn-sm" onClick={handleLockAndFinish} disabled={!activeSprint || activeSprint.locked}>
-                    {activeSprint?.locked ? 'Sprint already locked' : 'Lock sprint & finish'}
-                  </button>
-                )}
+          {/* Main Notes Area */}
+          <section className="sprint-overview meeting-panel" style={{ minHeight: '400px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h2 className="mono" style={{ margin: 0 }}>MEETING NOTES</h2>
+            </div>
+            
+            {selectedEventId ? (
+              eventNotes[selectedEventId] && (eventNotes[selectedEventId].title || eventNotes[selectedEventId].date || eventNotes[selectedEventId].notes) ? (
+                <div style={{ background: 'var(--bg-layer-2)', border: '1px solid var(--border-subtle)', borderRadius: '4px', padding: '24px' }}>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '20px', color: 'var(--text-primary)' }}>
+                    {eventNotes[selectedEventId].title || 'Untitled Meeting'}
+                  </h3>
+                  {eventNotes[selectedEventId].date && (
+                    <div className="mono" style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
+                      {eventNotes[selectedEventId].date}
+                    </div>
+                  )}
+                  
+                  <div style={{ whiteSpace: 'pre-wrap', color: 'var(--text-secondary)', fontSize: '15px', lineHeight: '1.6' }}>
+                    {eventNotes[selectedEventId].notes || 'No detailed notes provided.'}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ padding: '40px 0', textAlign: 'center', background: 'var(--bg-layer-2)', borderRadius: '4px', border: '1px solid var(--border-subtle)' }}>
+                  <p className="profile-hint">No meeting notes have been added for this calendar event yet.</p>
+                </div>
+              )
+            ) : (
+              <div style={{ padding: '40px 0', textAlign: 'center', background: 'var(--bg-layer-2)', borderRadius: '4px', border: '1px dashed var(--border-subtle)' }}>
+                <p className="profile-hint">Select a meeting from the calendar above to view its notes.</p>
               </div>
-            </section>
-          </>
-        )}
+            )}
+          </section>
+        </div>
 
         {activeSprint && (
           <ReflectionPanel teamId={TEAM_ID} sprint={activeSprint} currentUser={user} members={members} />
-        )}
-
-        {meetings.length > 0 && (
-          <>
-            <h2 className="mydash-section-title mono" style={{ marginTop: 8 }}>PAST MEETINGS</h2>
-            <div className="meeting-history">
-              {meetings.filter(m => m.id !== todayMeeting?.id).slice(0, 10).map(m => (
-                <div key={m.id} className="meeting-history-row">
-                  <span className="mono">{m.date}</span>
-                  <span>{Object.values(m.notes || {}).filter(Boolean).length} / {AGENDA_STEPS.length} steps filled</span>
-                </div>
-              ))}
-            </div>
-          </>
         )}
       </main>
     </div>
