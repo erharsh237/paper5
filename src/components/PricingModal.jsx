@@ -70,8 +70,10 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
 
             <ul className="tier-features">
               <li>1 Workspace</li>
-              <li>3 Members</li>
-              <li>Basic GitHub Integration</li>
+              <li>Up to 3 Members</li>
+              <li>GitHub Repository Sync</li>
+              <li>Personal Focus Dashboard</li>
+              <li>Basic Sprint Tracking</li>
             </ul>
           </div>
 
@@ -102,8 +104,11 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
 
             <ul className="tier-features">
               <li>Up to 5 Workspaces</li>
-              <li>10 Members</li>
-              <li>GitHub, Slack & Vercel</li>
+              <li>Unlimited Team Members</li>
+              <li>GitHub & Discord Integration</li>
+              <li>Locked Sprint Scope Control</li>
+              <li>Proof of Work Peer Verification</li>
+              <li>Sunday Sync Meeting Broadcasts</li>
             </ul>
           </div>
 
@@ -133,10 +138,11 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
 
             <ul className="tier-features">
               <li>Up to 10 Workspaces</li>
-              <li>Unlimited Members</li>
-              <li>Advanced Risk Analytics</li>
-              <li>Github, Google Calendar, Discord, Slack, Vercel integration</li>
-              <li>Priority API Access</li>
+              <li>Unlimited Team Members</li>
+              <li>GitHub, Discord, Google Calendar & Webhooks</li>
+              <li>Advanced Velocity & Risk Analytics</li>
+              <li>Strict Auditing Mode & CSV Export</li>
+              <li>Developer API Key Access</li>
             </ul>
           </div>
         </div>
