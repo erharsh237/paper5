@@ -153,10 +153,9 @@ export default function Landing() {
           <section className="hero-section">
             <div className="hero-grid">
               <div className="hero-content">
-                <h1>
-                  <ErrorBoundary>
-                    <ModernTextReveal text="Everything on paper.<br />Nothing on trust." />
-                  </ErrorBoundary>
+                <h1 className="hero-title">
+                  <span className="hero-title-line">Everything on paper.</span>
+                  <span className="hero-title-line hero-title-highlight">Nothing on trust.</span>
                 </h1>
                 <p>
                   Strict compliance, automated standups, and crystal-clear analytics—so you can focus on shipping.
