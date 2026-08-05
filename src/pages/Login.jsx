@@ -11,6 +11,7 @@ const maskEmail = (email) => {
   return `${name.substring(0, 2)}***${name.substring(name.length - 1)}@${domain}`;
 }
 
+import { getMainUrl } from '../lib/domain'
 import { validateRequestHeaders, checkAccountLockout, recordFailedAttempt, resetSecurityState, checkIpBlocked } from '../lib/security'
 
 export default function Login({ accessDenied, denialReason }) {
@@ -181,10 +182,10 @@ export default function Login({ accessDenied, denialReason }) {
 
   return (
     <div className="auth-layout">
-      <Link to="/" style={{ position: 'absolute', top: '32px', left: '32px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#666', textDecoration: 'none', fontWeight: 500 }}>
+      <a href={getMainUrl('/')} style={{ position: 'absolute', top: '32px', left: '32px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#666', textDecoration: 'none', fontWeight: 500 }}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         Back to website
-      </Link>
+      </a>
       
       <div className="auth-form-side">
         <div className="auth-form-container">
