@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from './supabase';
 import { useAuth } from './AuthContext';
+import NotFound from '../pages/NotFound';
 
 const WorkspaceContext = createContext(null);
 
@@ -151,6 +152,10 @@ export function WorkspaceProvider({ children }) {
     // SEC-7: is2FABlocked removed — enforce_2fa toggle was removed from Settings UI.
     // Re-add when 2FA enforcement UI is restored.
     is2FABlocked: false,
+  }
+
+  if (!loadingWorkspace && (workspaceError || !workspace)) {
+    return <NotFound />
   }
 
   return (

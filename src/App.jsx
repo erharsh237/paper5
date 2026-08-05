@@ -42,8 +42,8 @@ const Integrations = safeLazy(() => import('./pages/Integrations'))
 const Profile = safeLazy(() => import('./pages/Profile'))
 const Settings = safeLazy(() => import('./pages/Settings'))
 const Legal = safeLazy(() => import('./pages/Legal'))
-const NotFound = safeLazy(() => import('./pages/NotFound'))
 const ForgotPassword = safeLazy(() => import('./pages/ForgotPassword'))
+import NotFound from './pages/NotFound'
 import ErrorPage from './pages/ErrorPage'
 import LegalConsentModal from './components/LegalConsentModal'
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react'
