@@ -11,24 +11,46 @@ import JoinWorkspace from './pages/JoinWorkspace'
 import Landing from './pages/Landing'
 import AuthAction from './pages/AuthAction'
 import ForcePasswordReset from './pages/ForcePasswordReset'
+// Auto-reloads page if a Vercel deploy replaced older JS bundle filenames
+function safeLazy(componentImport) {
+  return lazy(async () => {
+    try {
+      const component = await componentImport()
+      sessionStorage.removeItem('chunk_reload_attempt')
+      return component
+    } catch (error) {
+      const msg = error?.message || (typeof error === 'string' ? error : '')
+      if (msg.includes('dynamically imported module') || msg.includes('Failed to fetch') || msg.includes('Loading chunk')) {
+        const hasReloaded = sessionStorage.getItem('chunk_reload_attempt')
+        if (!hasReloaded) {
+          sessionStorage.setItem('chunk_reload_attempt', 'true')
+          window.location.reload()
+          return new Promise(() => {})
+        }
+      }
+      throw error
+    }
+  })
+}
+
 // Route-based code splitting: each page ships as its own chunk, loaded only when visited.
-const MyDashboard = lazy(() => import('./pages/MyDashboard'))
-const Dashboard = lazy(() => import('./pages/Dashboard'))
-const Meeting = lazy(() => import('./pages/Meeting'))
-const Analytics = lazy(() => import('./pages/Analytics'))
-const Integrations = lazy(() => import('./pages/Integrations'))
-const Profile = lazy(() => import('./pages/Profile'))
-const Settings = lazy(() => import('./pages/Settings'))
-const Legal = lazy(() => import('./pages/Legal'))
-const NotFound = lazy(() => import('./pages/NotFound'))
-const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const MyDashboard = safeLazy(() => import('./pages/MyDashboard'))
+const Dashboard = safeLazy(() => import('./pages/Dashboard'))
+const Meeting = safeLazy(() => import('./pages/Meeting'))
+const Analytics = safeLazy(() => import('./pages/Analytics'))
+const Integrations = safeLazy(() => import('./pages/Integrations'))
+const Profile = safeLazy(() => import('./pages/Profile'))
+const Settings = safeLazy(() => import('./pages/Settings'))
+const Legal = safeLazy(() => import('./pages/Legal'))
+const NotFound = safeLazy(() => import('./pages/NotFound'))
+const ForgotPassword = safeLazy(() => import('./pages/ForgotPassword'))
 import ErrorPage from './pages/ErrorPage'
 import LegalConsentModal from './components/LegalConsentModal'
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react'
 
 // Marketing Pages
-const Features = lazy(() => import('./pages/Features'))
-const AboutUs = lazy(() => import('./pages/AboutUs'))
+const Features = safeLazy(() => import('./pages/Features'))
+const AboutUs = safeLazy(() => import('./pages/AboutUs'))
 import { 
   ProductIntegrations, Changelog, Documentation, ApiReference, Security 
 } from './pages/MarketingPages'
