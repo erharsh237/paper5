@@ -40,89 +40,91 @@ export default function UserMenu() {
   const getPath = (path) => `/${workspaceId}${path}`
 
   return (
-    <div className="nav-more-wrap" ref={wrapRef} style={{ marginLeft: '4px' }}>
-      <button
-        type="button"
-        className="btn-ghost"
-        style={{ padding: '4px', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        onClick={() => setOpen(o => !o)}
-        aria-expanded={open}
-        title={user?.displayName || user?.email}
-      >
-        <AccountIcon />
-      </button>
-
-      {open && (
-        <div className="nav-more-menu" role="menu" style={{ right: 0, minWidth: '200px', zIndex: 50, background: 'var(--bg-layer)' }}>
-          <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-subtle)', marginBottom: '4px' }}>
-            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.displayName || 'User'}</div>
-            <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</div>
-          </div>
-          
-          <NavLink to={getPath('/profile')} className={({ isActive }) => `nav-more-item${isActive ? ' nav-more-item--active' : ''}`} onClick={() => setOpen(false)}>
-            <ProfileIcon /> Profile
-          </NavLink>
-
-          {isAdmin && (
-            <>
-              <NavLink to={getPath('/settings')} className={({ isActive }) => `nav-more-item${isActive ? ' nav-more-item--active' : ''}`} onClick={() => setOpen(false)}>
-                <SettingsIcon /> Settings
-              </NavLink>
-              <NavLink to={getPath('/integrations')} className={({ isActive }) => `nav-more-item${isActive ? ' nav-more-item--active' : ''}`} onClick={() => setOpen(false)}>
-                <IntegrationsIcon /> Integrations
-              </NavLink>
-            </>
-          )}
-
-          {workspaces.length > 1 && (
-            <a href="/workspace?picker=true" className="nav-more-item" onClick={() => setOpen(false)}>
-              <SwitchIcon /> Switch Workspace
-            </a>
-          )}
-
-          <button
-            type="button"
-            className="nav-more-item"
-            onClick={() => { setOpen(false); setIsFeedbackOpen(true); }}
-            style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-          >
-            <FeedbackIcon /> Send Feedback
-          </button>
-
-          <div style={{ margin: '4px 0', borderTop: '1px solid var(--border-subtle)' }} />
-
-          <button 
-            className="nav-more-item" 
-            onClick={() => { setOpen(false); logout(); }}
-            style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--accent-critical)' }}
-          >
-            <LogOutIcon /> Sign out
-          </button>
-        </div>
-      )}
-
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
       <button
         type="button"
         className="btn-ghost"
         onClick={() => setIsFeedbackOpen(true)}
         style={{
-          padding: '4px 10px',
+          padding: '4px 12px',
           borderRadius: '20px',
           fontSize: '12px',
           fontWeight: 600,
           display: 'inline-flex',
           alignItems: 'center',
           gap: '6px',
-          background: 'rgba(15, 157, 99, 0.1)',
+          background: 'rgba(15, 157, 99, 0.08)',
           border: '1px solid rgba(15, 157, 99, 0.25)',
           color: 'var(--accent-signal, #0f9d63)',
           cursor: 'pointer',
-          marginLeft: '6px'
+          whiteSpace: 'nowrap'
         }}
         title="Send feedback to SprintOS product team"
       >
         💬 Feedback
       </button>
+
+      <div className="nav-more-wrap" ref={wrapRef} style={{ position: 'relative' }}>
+        <button
+          type="button"
+          className="btn-ghost"
+          style={{ padding: '4px', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => setOpen(o => !o)}
+          aria-expanded={open}
+          title={user?.displayName || user?.email}
+        >
+          <AccountIcon />
+        </button>
+
+        {open && (
+          <div className="nav-more-menu" role="menu" style={{ right: 0, minWidth: '200px', zIndex: 50, background: 'var(--bg-layer)' }}>
+            <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-subtle)', marginBottom: '4px' }}>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.displayName || 'User'}</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</div>
+            </div>
+            
+            <NavLink to={getPath('/profile')} className={({ isActive }) => `nav-more-item${isActive ? ' nav-more-item--active' : ''}`} onClick={() => setOpen(false)}>
+              <ProfileIcon /> Profile
+            </NavLink>
+
+            {isAdmin && (
+              <>
+                <NavLink to={getPath('/settings')} className={({ isActive }) => `nav-more-item${isActive ? ' nav-more-item--active' : ''}`} onClick={() => setOpen(false)}>
+                  <SettingsIcon /> Settings
+                </NavLink>
+                <NavLink to={getPath('/integrations')} className={({ isActive }) => `nav-more-item${isActive ? ' nav-more-item--active' : ''}`} onClick={() => setOpen(false)}>
+                  <IntegrationsIcon /> Integrations
+                </NavLink>
+              </>
+            )}
+
+            {workspaces.length > 1 && (
+              <a href="/workspace?picker=true" className="nav-more-item" onClick={() => setOpen(false)}>
+                <SwitchIcon /> Switch Workspace
+              </a>
+            )}
+
+            <button
+              type="button"
+              className="nav-more-item"
+              onClick={() => { setOpen(false); setIsFeedbackOpen(true); }}
+              style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+            >
+              <FeedbackIcon /> Send Feedback
+            </button>
+
+            <div style={{ margin: '4px 0', borderTop: '1px solid var(--border-subtle)' }} />
+
+            <button 
+              className="nav-more-item" 
+              onClick={() => { setOpen(false); logout(); }}
+              style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--accent-critical)' }}
+            >
+              <LogOutIcon /> Sign out
+            </button>
+          </div>
+        )}
+      </div>
 
       <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
     </div>
