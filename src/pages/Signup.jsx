@@ -23,6 +23,7 @@ export default function Signup() {
     finalizeSignup, 
     authError, 
     clearAuthError,
+    getFriendlyError,
     user,
     userData
   } = useAuth()
@@ -187,13 +188,14 @@ export default function Signup() {
       setStep(3)
     } catch (err) {
       console.error(err)
+      setMessage(getFriendlyError(err))
     } finally {
       setLoading(false)
     }
   }
 
   const handleCompleteSignup = async (e) => {
-    e.preventDefault()
+    if (e) e.preventDefault()
     setLoading(true)
     setMessage('')
     clearAuthError()
@@ -207,8 +209,11 @@ export default function Signup() {
       }
       
       await finalizeSignup(password, username)
+      setMessage('Account created successfully! Redirecting...')
+      setTimeout(() => navigate('/workspace'), 800)
     } catch (err) {
       console.error(err)
+      setMessage(getFriendlyError(err))
     } finally {
       setLoading(false)
     }

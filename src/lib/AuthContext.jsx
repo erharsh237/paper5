@@ -286,6 +286,7 @@ export function AuthProvider({ children }) {
       return supabase.auth.signOut()
     }, 
     authError,
+    getFriendlyError,
     clearAuthError: () => setAuthError(null)
   }
 
