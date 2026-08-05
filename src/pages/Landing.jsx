@@ -16,23 +16,24 @@ const ModernTextReveal = ({ text }) => {
   const lines = text.split('<br />')
 
   const container = {
-    hidden: { opacity: 0 },
+    hidden: { opacity: 1 },
     visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.25, delayChildren: 0.1 },
+      transition: { staggerChildren: 0.22, delayChildren: 0.1 },
     },
   }
 
   const child = {
+    hidden: {
+      opacity: 0,
+      y: 35,
+      scale: 0.95,
+    },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
-    },
-    hidden: {
-      opacity: 0,
-      y: 30,
-      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+      scale: 1,
+      transition: { duration: 0.75, ease: [0.16, 1, 0.3, 1] },
     },
   }
 
