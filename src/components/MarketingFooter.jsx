@@ -39,25 +39,25 @@ export default function MarketingFooter({ hideCTA = false }) {
         
         <div className="footer-links-grid">
           <div className="footer-column">
-            <h4>Product</h4>
+            <h3>Product</h3>
             <a href="/#pricing">Pricing</a>
             <a href="/features">Features</a>
             <a href="/product-integrations">Integrations</a>
             <a href="/changelog">Changelog</a>
           </div>
           <div className="footer-column">
-            <h4>Resources</h4>
+            <h3>Resources</h3>
             <a href="/docs">Documentation</a>
             <a href="/docs/api">API Reference</a>
           </div>
           <div className="footer-column">
-            <h4>Company</h4>
+            <h3>Company</h3>
             <a href="/about">About Us</a>
             <button className="text-link-btn" onClick={() => setIsFeedbackOpen(true)}>Give Feedback</button>
             <button className="text-link-btn" onClick={() => setIsContactOpen(true)}>Contact Sales</button>
           </div>
           <div className="footer-column">
-            <h4>Legal</h4>
+            <h3>Legal</h3>
             <a href="/legal/terms">Terms of Service</a>
             <a href="/legal/privacy">Privacy Policy</a>
             <a href="/legal/dpa">Data Processing Agreement</a>

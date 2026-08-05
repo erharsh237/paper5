@@ -1,0 +1,18 @@
+# Paper5 | SprintOS
+
+> SprintOS by Paper5 is a high-performance workspace and sprint management platform designed for agile engineering teams to plan sprints, track deadlines, manage meetings, and integrate with GitHub and Discord.
+
+## Core Pages
+
+- [Paper5 Homepage](https://paper5.co/): Official marketing landing page and feature overview.
+- [Features](https://paper5.co/features): Detailed walkthrough of sprint locking, proof of work, and real-time notifications.
+- [Integrations](https://paper5.co/product-integrations): Overview of GitHub, Discord, Resend, and API integrations.
+- [Security](https://paper5.co/security): Security architecture, SOC2 compliance, RLS policies, and encryption standards.
+- [Documentation](https://paper5.co/docs): User guides and workspace setup documentation.
+- [API Reference](https://paper5.co/docs/api): Public API endpoints and developer reference.
+- [Changelog](https://paper5.co/changelog): Latest product updates and feature releases.
+
+## Application Links
+
+- [SprintOS App Login](https://app.paper5.co/login): Web application sign in page.
+- [SprintOS App Signup](https://app.paper5.co/signup): Web application account creation.
