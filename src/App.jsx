@@ -24,6 +24,7 @@ const NotFound = lazy(() => import('./pages/NotFound'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 import ErrorPage from './pages/ErrorPage'
 import LegalConsentModal from './components/LegalConsentModal'
+import { Analytics as VercelAnalytics } from '@vercel/analytics/react'
 
 // Marketing Pages
 const Features = lazy(() => import('./pages/Features'))
@@ -176,6 +177,7 @@ export default function App() {
           <LegalConsentModal />
         </>
       )}
+      <VercelAnalytics />
     </>
   )
 }
