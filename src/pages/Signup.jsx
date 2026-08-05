@@ -422,9 +422,9 @@ export default function Signup() {
                     </label>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                       {[
-                        { id: 'free', name: 'Starter', price: 'Free', desc: '1 Workspace' },
-                        { id: 'team', name: 'Team', price: '$29/mo', desc: '5 Workspaces' },
-                        { id: 'scale', name: 'Scale', price: '$79/mo', desc: '10 Workspaces' }
+                        { id: 'free', name: 'Starter', price: 'Free', desc: '1 Workspace (3 Seats)' },
+                        { id: 'team', name: 'Team', price: '$29/mo', desc: '5 Workspaces (7 Seats)' },
+                        { id: 'scale', name: 'Scale', price: '$79/mo', desc: '10 Workspaces (Unlimited)' }
                       ].map(p => (
                         <div 
                           key={p.id}

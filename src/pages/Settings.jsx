@@ -350,7 +350,7 @@ export default function Settings() {
   }, [activeTab, workspaceId, isAdminOrOwner])
   
   const planId = workspace?.billing_plan_id || workspace?.billing?.planId || 'free'
-  const maxMembers = (planId === 'free' || planId === 'starter') ? 3 : planId === 'team' ? 10 : 'unlimited'
+  const maxMembers = (planId === 'free' || planId === 'starter') ? 3 : planId === 'team' ? 7 : 'unlimited'
 
   if (isAdmin === false) {
     return <Navigate to={`/${workspaceId}`} replace />
@@ -399,6 +399,13 @@ export default function Settings() {
 
     setInviteError('')
     setGeneratedLink('')
+
+    const capacity = checkMemberCapacity(planId, members.length)
+    if (capacity.overCapacity) {
+      setInviteError(`Seat limit reached (${capacity.limit} members max for the ${planId} plan). Please upgrade to Scale to invite more members.`)
+      return
+    }
+
     setInviting(true)
     try {
       await createInvite(workspaceId, inviteEmail, inviteRole, inviteRole === 'member' ? invitePermissions : [], invitePassword, inviteSendEmail)

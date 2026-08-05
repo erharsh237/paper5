@@ -104,7 +104,7 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
 
             <ul className="tier-features">
               <li>Up to 5 Workspaces</li>
-              <li>Unlimited Team Members</li>
+              <li>Up to 7 Team Members</li>
               <li>GitHub & Discord Integration</li>
               <li>Locked Sprint Scope Control</li>
               <li>Proof of Work Peer Verification</li>

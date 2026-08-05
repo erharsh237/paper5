@@ -16,7 +16,7 @@ export const PLANS = {
     name: 'Team',
     price: 0,
     maxWorkspaces: 5,
-    maxMembers: 10,
+    maxMembers: 7,
     allowedIntegrations: ['github', 'slack', 'vercel', 'discord'],
     hasAdvancedAnalytics: false,
     hasPrioritySupport: false,
