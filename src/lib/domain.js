@@ -23,8 +23,9 @@ export const getDomainConfig = () => {
 
   if (!mainSiteUrl || !appSiteUrl) {
     if (IS_PRODUCTION) {
-      mainSiteUrl = 'https://paper5.com'
-      appSiteUrl = 'https://app.paper5.com'
+      const rootDomain = hostname.replace(/^app\./, '') || 'paper5.co'
+      mainSiteUrl = `${protocol}//${rootDomain}`
+      appSiteUrl = `${protocol}//app.${rootDomain}`
     } else {
       mainSiteUrl = `${protocol}//${hostname.replace(/^app\./, '')}${port}`
       appSiteUrl = `${protocol}//${hostname.startsWith('app.') ? hostname : 'app.' + hostname}${port}`
