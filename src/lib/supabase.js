@@ -13,7 +13,7 @@ export const supabaseConfigError = missingKeys.length > 0
 
 export const supabase = supabaseConfigError ? null : createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: typeof window !== 'undefined' ? window.sessionStorage : undefined,
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true

@@ -95,15 +95,7 @@ export function AuthProvider({ children }) {
     })
     authListener = authSubscription
 
-    const handleTabClose = () => {
-      if (typeof window !== 'undefined') {
-        window.sessionStorage.clear()
-      }
-    }
-    window.addEventListener('pagehide', handleTabClose)
-
     return () => {
-      window.removeEventListener('pagehide', handleTabClose)
       authListener?.subscription?.unsubscribe()
       channel?.unsubscribe()
     }
