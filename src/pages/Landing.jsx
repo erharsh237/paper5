@@ -13,13 +13,18 @@ import AlertModal from '../components/ui/AlertModal'
 
 const ModernTextReveal = ({ text }) => {
   const [isStompDone, setIsStompDone] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const lines = text.split('<br />')
-  
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const container = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.25, delayChildren: 0.3 },
+      transition: { staggerChildren: 0.25, delayChildren: 0.1 },
     },
   }
 
@@ -27,26 +32,35 @@ const ModernTextReveal = ({ text }) => {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] },
+      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
     },
     hidden: {
       opacity: 0,
-      y: 40,
-      transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] },
+      y: 30,
+      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
     },
   }
 
+  if (!mounted) {
+    return (
+      <div className="modern-text-reveal-static">
+        {lines.map((line, i) => (
+          <div key={i} className="modern-text-reveal-line">{line}</div>
+        ))}
+      </div>
+    )
+  }
+
   return (
-    <motion.span
+    <motion.div
       variants={container}
       initial="hidden"
       animate="visible"
       onAnimationComplete={() => setIsStompDone(true)}
       className={`modern-text-reveal ${isStompDone ? 'stomp-done' : ''}`}
-      style={{ display: 'inline-block' }}
     >
       {lines.map((line, lineIndex) => (
-        <span key={lineIndex} style={{ display: 'block' }}>
+        <div key={lineIndex} className="modern-text-reveal-line">
           {line.trim().split(' ').map((word, index) => (
             <motion.span
               key={index}
@@ -56,9 +70,9 @@ const ModernTextReveal = ({ text }) => {
               {word}
             </motion.span>
           ))}
-        </span>
+        </div>
       ))}
-    </motion.span>
+    </motion.div>
   )
 }
 

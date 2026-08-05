@@ -174,7 +174,8 @@
   text-align: center;
 }
 
-.modern-text-reveal {
+.modern-text-reveal,
+.modern-text-reveal-static {
   background: linear-gradient(
     120deg,
     #09090b 0%,
@@ -196,6 +197,15 @@
   align-items: center;
   width: 100%;
   text-align: center;
+}
+
+.modern-text-reveal-line {
+  display: block;
+  width: 100%;
+  line-height: 1.12;
+  margin: 0;
+  padding: 0;
+  position: relative;
 }
 
 .modern-text-reveal span,
