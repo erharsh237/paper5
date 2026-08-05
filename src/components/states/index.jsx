@@ -135,7 +135,6 @@ export function CustomAlert({ type = 'error', message }) {
       gap: '8px',
       boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
     }}>
-      <span>{isSuccess ? '✓' : 'ℹ️'}</span>
       <span>{message}</span>
     </div>
   );

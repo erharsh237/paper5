@@ -238,7 +238,7 @@ export default function Signup() {
             </div>
           )}
 
-          {message && !(message.includes('already') || message.includes('must') || message.includes('required') || message.includes('failed') || message.includes('unable')) ? (
+          {message && !(message.includes('already') || message.includes('must') || message.includes('required') || message.includes('failed') || message.includes('unable') || message.includes('locked')) ? (
             <InlineSuccess message={message} />
           ) : message && (
             <InlineError error={message.replace(/^Error:\s*/i, '')} />

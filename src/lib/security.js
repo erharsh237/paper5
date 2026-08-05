@@ -89,6 +89,14 @@ export function checkIpBlocked(clientIp = null) {
 /**
  * 3. Stronger Rate Limiting & 4. Account Lockout
  */
+function formatLockoutTime(seconds) {
+  if (seconds >= 60) {
+    const mins = Math.ceil(seconds / 60)
+    return `${mins} ${mins === 1 ? 'minute' : 'minutes'}`
+  }
+  return `${seconds} ${seconds === 1 ? 'second' : 'seconds'}`
+}
+
 export function checkAccountLockout(identifier) {
   if (!identifier) return { isLocked: false, remainingSeconds: 0 }
 
@@ -103,7 +111,7 @@ export function checkAccountLockout(identifier) {
       isLocked: true,
       remainingSeconds,
       failedAttempts: accountData.failedAttempts,
-      message: `Account is temporarily locked due to multiple failed login attempts. Please try again in ${remainingSeconds} seconds.`
+      message: `Account is temporarily locked due to multiple failed attempts. Please try again in ${formatLockoutTime(remainingSeconds)}.`
     }
   }
 
@@ -120,9 +128,7 @@ export function checkAccountLockout(identifier) {
 
 /**
  * Record a failed authentication attempt with Progressive Exponential Backoff
- * - 3 failures => 15s cooldown
- * - 5 failures => 60s lockout
- * - 8+ failures => 5 minute lockout
+ * - 3+ failures => 15 minute lockout
  */
 export function recordFailedAttempt(identifier) {
   if (!identifier) return 1
@@ -136,12 +142,8 @@ export function recordFailedAttempt(identifier) {
   const attempts = accountData.failedAttempts
   let lockDurationMs = 0
 
-  if (attempts >= 8) {
-    lockDurationMs = 5 * 60 * 1000 // 5 minutes
-  } else if (attempts >= 5) {
-    lockDurationMs = 60 * 1000 // 60 seconds
-  } else if (attempts >= 3) {
-    lockDurationMs = 15 * 1000 // 15 seconds
+  if (attempts >= 3) {
+    lockDurationMs = 15 * 60 * 1000 // 15 minutes
   }
 
   if (lockDurationMs > 0) {
