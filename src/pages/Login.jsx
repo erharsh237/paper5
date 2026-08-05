@@ -346,8 +346,8 @@ export default function Login({ accessDenied, denialReason }) {
                   </button>
                 </div>
                 {step === 2 && (
-                  <div style={{ fontSize: '13px', color: '#666', marginTop: '8px' }}>
-                    Sent to {maskEmail(verifiedEmail)}
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary, #666)', marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ color: '#10b981', fontSize: '13px' }}>🔒</span> 2FA verification code sent to your registered email address.
                   </div>
                 )}
               </div>
