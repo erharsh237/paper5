@@ -15,31 +15,28 @@ const ModernTextReveal = ({ text }) => {
   const [isStompDone, setIsStompDone] = useState(false)
   const lines = text.split('<br />')
 
-  const container = {
-    hidden: { opacity: 1 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.22, delayChildren: 0.1 },
-    },
-  }
-
   const child = {
     hidden: {
       opacity: 0,
-      y: 35,
-      scale: 0.95,
+      y: 40,
+      scale: 0.9,
     },
-    visible: {
+    visible: (i) => ({
       opacity: 1,
       y: 0,
       scale: 1,
-      transition: { duration: 0.75, ease: [0.16, 1, 0.3, 1] },
-    },
+      transition: {
+        duration: 0.65,
+        delay: i * 0.12,
+        ease: [0.215, 0.61, 0.355, 1],
+      },
+    }),
   }
+
+  let wordCounter = 0
 
   return (
     <motion.div
-      variants={container}
       initial="hidden"
       animate="visible"
       onAnimationComplete={() => setIsStompDone(true)}
@@ -47,15 +44,21 @@ const ModernTextReveal = ({ text }) => {
     >
       {lines.map((line, lineIndex) => (
         <div key={lineIndex} className="modern-text-reveal-line">
-          {line.trim().split(' ').map((word, index) => (
-            <motion.span
-              key={index}
-              variants={child}
-              className="modern-text-reveal-word"
-            >
-              {word}
-            </motion.span>
-          ))}
+          {line.trim().split(' ').map((word, index) => {
+            const currentIdx = wordCounter++
+            return (
+              <motion.span
+                key={index}
+                custom={currentIdx}
+                variants={child}
+                initial="hidden"
+                animate="visible"
+                className="modern-text-reveal-word"
+              >
+                {word}
+              </motion.span>
+            )
+          })}
         </div>
       ))}
     </motion.div>
