@@ -13,12 +13,7 @@ import AlertModal from '../components/ui/AlertModal'
 
 const ModernTextReveal = ({ text }) => {
   const [isStompDone, setIsStompDone] = useState(false)
-  const [mounted, setMounted] = useState(false)
   const lines = text.split('<br />')
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   const container = {
     hidden: { opacity: 0 },
@@ -41,16 +36,6 @@ const ModernTextReveal = ({ text }) => {
     },
   }
 
-  if (!mounted) {
-    return (
-      <div className="modern-text-reveal-static">
-        {lines.map((line, i) => (
-          <div key={i} className="modern-text-reveal-line">{line}</div>
-        ))}
-      </div>
-    )
-  }
-
   return (
     <motion.div
       variants={container}
@@ -65,7 +50,7 @@ const ModernTextReveal = ({ text }) => {
             <motion.span
               key={index}
               variants={child}
-              style={{ marginRight: '0.25em', display: 'inline-block' }}
+              className="modern-text-reveal-word"
             >
               {word}
             </motion.span>
