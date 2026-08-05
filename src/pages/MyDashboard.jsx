@@ -12,6 +12,8 @@ import Breadcrumbs from '../components/Breadcrumbs'
 import UserMenu from '../components/UserMenu'
 import CalendarWidget from '../components/CalendarWidget'
 import { useWorkspace } from '../lib/WorkspaceContext'
+import { Link } from 'react-router-dom'
+import { subscribeIntegrationConfig } from '../lib/integrations/config'
 import './Dashboard.css'
 import './MyDashboard.css'
 
@@ -22,9 +24,24 @@ export default function MyDashboard() {
   const [sprints, setSprints] = useState([])
   const [showTour, setShowTour] = useState(false)
 
+  const [integrationConfig, setIntegrationConfig] = useState({})
+
   useEffect(() => {
     return subscribeSprints(workspaceId, undefined, setSprints)
   }, [workspaceId])
+
+  useEffect(() => {
+    if (!workspaceId) return
+    return subscribeIntegrationConfig(workspaceId, setIntegrationConfig)
+  }, [workspaceId])
+
+  const githubRepos = useMemo(() => {
+    if (!integrationConfig?.github_connected) return []
+    if (Array.isArray(integrationConfig.github_repos)) return integrationConfig.github_repos
+    if (typeof integrationConfig.github_repos === 'string') return integrationConfig.github_repos.split(',').map(r => r.trim()).filter(Boolean)
+    if (integrationConfig.github_repo) return [integrationConfig.github_repo]
+    return []
+  }, [integrationConfig])
 
 
 
@@ -114,12 +131,25 @@ export default function MyDashboard() {
            
            <div style={{ flex: '1 1 250px', background: 'var(--bg-panel)', padding: '1.25rem', borderRadius: '8px', border: '1px solid var(--border-hair)' }}>
               <h3 className="mono" style={{ margin: '0 0 1rem 0', fontSize: '12px', color: 'var(--text-tertiary)', letterSpacing: '0.05em' }}>REPOSITORIES</h3>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                <li style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-inset)', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border-hair)' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>📦</span>
-                  <a href="https://github.com/erharsh237/paper5" target="_blank" rel="noreferrer" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: 500 }}>paper5</a>
-                </li>
-              </ul>
+              {githubRepos.length > 0 ? (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  {githubRepos.map((repo, idx) => (
+                    <li key={idx} style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-inset)', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>📦</span>
+                      <a href={repo.startsWith('http') ? repo : `https://github.com/${repo}`} target="_blank" rel="noreferrer" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: 500 }}>
+                        {repo.replace(/^https?:\/\/github\.com\//, '')}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>No GitHub repositories connected.</span>
+                  <Link to={`/${workspaceId}/integrations`} style={{ fontSize: '12px', color: 'var(--accent-signal, #10b981)', textDecoration: 'none', fontWeight: 600 }}>
+                    + Connect GitHub in Integrations
+                  </Link>
+                </div>
+              )}
            </div>
         </section>
 
