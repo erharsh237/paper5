@@ -50,6 +50,9 @@ export function subscribeUpcomingMeetings(workspaceId, teamId, callback) {
 }
 
 export function subscribeEventNotes(workspaceId, teamId, callback) {
+  const cb = typeof teamId === 'function' ? teamId : callback
+  if (!cb) return () => {}
+
   const fetchList = async () => {
     const { data } = await supabase
       .from('teamSettings')
@@ -58,9 +61,9 @@ export function subscribeEventNotes(workspaceId, teamId, callback) {
       .eq('id', 'main')
       .maybeSingle()
     if (data && data.eventNotes) {
-      callback(data.eventNotes)
+      cb(data.eventNotes)
     } else {
-      callback({})
+      cb({})
     }
   }
   fetchList()
