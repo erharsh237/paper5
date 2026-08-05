@@ -18,7 +18,8 @@ import './Dashboard.css'
 import './MyDashboard.css'
 
 export default function MyDashboard() {
-  const { workspaceId, workspace } = useWorkspace();
+  const { workspaceId, workspace, workspaceRole } = useWorkspace();
+  const isAdmin = workspaceRole === 'owner' || workspaceRole === 'admin'
   const { user, logout } = useAuth()
   const { deadlines, hasMore, loadMore, loadingMore } = useDeadlines(workspaceId)
   const [sprints, setSprints] = useState([])
@@ -145,9 +146,15 @@ export default function MyDashboard() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <span style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>No GitHub repositories connected.</span>
-                  <Link to={`/${workspaceId}/integrations`} style={{ fontSize: '12px', color: 'var(--accent-signal, #10b981)', textDecoration: 'none', fontWeight: 600 }}>
-                    + Connect GitHub in Integrations
-                  </Link>
+                  {isAdmin ? (
+                    <Link to={`/${workspaceId}/integrations`} style={{ fontSize: '12px', color: 'var(--accent-signal, #10b981)', textDecoration: 'none', fontWeight: 600 }}>
+                      + Connect GitHub in Integrations
+                    </Link>
+                  ) : (
+                    <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                      Ask your admin to connect GitHub repos.
+                    </span>
+                  )}
                 </div>
               )}
            </div>

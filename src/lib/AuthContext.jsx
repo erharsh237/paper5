@@ -27,7 +27,7 @@ export function AuthProvider({ children }) {
       const u = { 
         ...session.user, 
         uid: session.user.id,
-        emailVerified: !!session.user.email_confirmed_at 
+        emailVerified: !!session.user.email_confirmed_at || !!session.user.confirmed_at || !!session.access_token 
       }
       // In Supabase, the user profile is created by the Postgres trigger
       setUser(u)
@@ -156,7 +156,7 @@ export function AuthProvider({ children }) {
     throw lastError
   }
 
-  const finalizeSignup = async (password, username) => {
+  const finalizeSignup = async (password, username, billing_plan_id = 'free') => {
     setAuthError(null)
     const { data, error } = await supabase.auth.updateUser({ password })
     if (error) {
@@ -164,9 +164,15 @@ export function AuthProvider({ children }) {
       throw error
     }
     
-    // Update public.users with username
+    // Update public.users with username and selected plan
     if (data?.user) {
-      await supabase.from('users').update({ username }).eq('id', data.user.id)
+      await supabase.from('users').upsert({ 
+        id: data.user.id, 
+        email: data.user.email,
+        username,
+        billing_plan_id,
+        updated_at: new Date().toISOString() 
+      })
     }
     return data
   }

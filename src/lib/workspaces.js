@@ -140,11 +140,17 @@ export function subscribeInvites(workspaceId, callback) {
 }
 
 export async function createWorkspace(uid, email, name) {
+  const { data: authData } = await supabase.auth.getUser()
+  const creatorId = uid || authData?.user?.id
+  if (!creatorId) {
+    throw new Error('User authentication session expired. Please log in again.')
+  }
+
   const newWorkspaceId = crypto.randomUUID()
 
   const { error } = await supabase.rpc('create_new_workspace', {
     workspace_name: name,
-    creator_id: uid,
+    creator_id: creatorId,
     new_workspace_id: newWorkspaceId
   })
   
