@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import './Auth.css'
-import { InlineError } from '../components/states'
+import { InlineError, InlineSuccess } from '../components/states'
 
 const maskEmail = (email) => {
   if (!email || !email.includes('@')) return email;
@@ -12,7 +12,7 @@ const maskEmail = (email) => {
 }
 
 import { validateRequestHeaders, checkAccountLockout, recordFailedAttempt, resetSecurityState, checkIpBlocked } from '../lib/security'
-import { validateEmail, validatePassword } from '../lib/validation'
+import { validateEmail, validatePassword, validateUsername } from '../lib/validation'
 import { getMainUrl } from '../lib/domain'
 
 export default function Signup() {
@@ -129,8 +129,9 @@ export default function Signup() {
     clearAuthError()
     
     try {
-      if (username.length < 3) {
-        setMessage('Username must be at least 3 characters.')
+      const usernameCheck = validateUsername(username)
+      if (!usernameCheck.valid) {
+        setMessage(usernameCheck.error)
         setLoading(false)
         return
       }
@@ -232,19 +233,15 @@ export default function Signup() {
           <p className="auth-subtitle">Enter your email below to create your account</p>
 
           {displayError && (
-            <div style={{ marginBottom: 24 }}>
-              <InlineError error={`Error: ${displayError}`} />
+            <div style={{ marginBottom: 16 }}>
+              <InlineError error={displayError.replace(/^Error:\s*/i, '')} />
             </div>
           )}
 
-          {message && !(message.includes('already') || message.includes('must') || message.includes('required')) ? (
-            <div className="auth-success">
-              {message}
-            </div>
+          {message && !(message.includes('already') || message.includes('must') || message.includes('required') || message.includes('failed') || message.includes('unable')) ? (
+            <InlineSuccess message={message} />
           ) : message && (
-            <div style={{ marginBottom: 24 }}>
-              <InlineError error={message} />
-            </div>
+            <InlineError error={message.replace(/^Error:\s*/i, '')} />
           )}
 
           <form onSubmit={handleCompleteSignup} style={{ textAlign: 'left' }}>

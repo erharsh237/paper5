@@ -102,13 +102,20 @@ export function AuthProvider({ children }) {
   }, [])
 
   const getFriendlyError = (err) => {
-    const msg = err?.message || (typeof err === 'string' ? err : JSON.stringify(err));
-    if (msg.includes('Invalid login credentials')) return 'Invalid email or password.'
-    if (msg.includes('already registered')) return 'This email address is already registered.'
-    if (msg.includes('SMTP') || msg.includes('onboarding@resend.dev') || msg.includes('resend') || msg === '{}') {
-      return 'Unable to send verification code to this email address. Please double check the email or try again shortly.'
+    const raw = err?.message || (typeof err === 'string' ? err : JSON.stringify(err)) || '';
+    if (raw.includes('Invalid login credentials')) return 'Invalid email or password.'
+    if (raw.includes('already registered')) return 'This email address is already registered.'
+    if (raw.includes('User not found')) return 'No account found with this email.'
+    if (raw.includes('Header Validation Failed')) return 'Security check failed. Please refresh the page.'
+    if (raw.includes('rate limit') || raw.includes('Too many requests')) return 'Too many attempts. Please wait a moment and try again.'
+    if (raw.includes('SMTP') || raw.includes('onboarding@resend.dev') || raw.includes('resend') || raw.includes('500') || raw === '{}') {
+      return 'Unable to send verification code right now. Please double check the email or try again shortly.'
     }
-    return msg || 'An unknown authentication error occurred.'
+    if (raw.includes('PGRST') || raw.includes('Database') || raw.includes('FetchError') || raw.includes('Failed to fetch')) {
+      return 'Connection issue. Please check your internet connection and try again.'
+    }
+    const clean = raw.replace(/^Error:\s*/i, '').replace(/^SMTP Error:\s*/i, '')
+    return clean || 'An unexpected error occurred. Please try again.'
   }
 
   const checkUsername = async (username) => {

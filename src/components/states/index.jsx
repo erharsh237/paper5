@@ -112,25 +112,41 @@ export function SessionExpiredRedirect() {
 }
 
 // 8. Form Validation State
-export function InlineError({ error }) {
-  if (!error) return null;
+export function CustomAlert({ type = 'error', message }) {
+  if (!message) return null;
+  const isSuccess = type === 'success';
+
   return (
     <div style={{
-      color: '#dc2626',
-      background: 'rgba(239, 68, 68, 0.06)',
-      border: '1px solid rgba(239, 68, 68, 0.2)',
+      color: isSuccess ? '#059669' : '#dc2626',
+      background: isSuccess ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.06)',
+      border: isSuccess ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(239, 68, 68, 0.2)',
       borderRadius: '8px',
       padding: '10px 14px',
-      fontSize: 13,
+      fontSize: '13px',
       fontWeight: 500,
-      marginTop: 8,
-      marginBottom: 8,
+      marginTop: '8px',
+      marginBottom: '16px',
       textAlign: 'center',
-      lineHeight: 1.4
+      lineHeight: 1.4,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
     }}>
-      {error}
+      <span>{isSuccess ? '✓' : 'ℹ️'}</span>
+      <span>{message}</span>
     </div>
   );
+}
+
+export function InlineError({ error }) {
+  return <CustomAlert type="error" message={error} />;
+}
+
+export function InlineSuccess({ message }) {
+  return <CustomAlert type="success" message={message} />;
 }
 
 // 9. Success State (Toast Manager)

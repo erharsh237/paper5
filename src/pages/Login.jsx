@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import './Auth.css'
-import { InlineError } from '../components/states'
+import { InlineError, InlineSuccess } from '../components/states'
 
 const maskEmail = (email) => {
   if (!email || !email.includes('@')) return email;
@@ -199,25 +199,21 @@ export default function Login({ accessDenied, denialReason }) {
           <p className="auth-subtitle">Login to your account</p>
 
           {accessDenied && (
-            <div style={{ marginBottom: 24 }}>
-              <InlineError error={`Access Denied: ${denialReason || "You don't have access to this page."}`} />
+            <div style={{ marginBottom: 16 }}>
+              <InlineError error={denialReason || "You don't have access to this page."} />
             </div>
           )}
 
           {displayError && (
-            <div style={{ marginBottom: 24 }}>
-              <InlineError error={`Error: ${displayError}`} />
+            <div style={{ marginBottom: 16 }}>
+              <InlineError error={displayError.replace(/^Error:\s*/i, '')} />
             </div>
           )}
 
-          {message && (message.includes('Code') || message.includes('verified') || message.includes('Test account')) ? (
-            <div className="auth-success">
-              {message}
-            </div>
+          {message && (message.includes('Code') || message.includes('verified') || message.includes('sent') || message.includes('Test account')) ? (
+            <InlineSuccess message={message} />
           ) : message && (
-            <div style={{ marginBottom: 24 }}>
-              <InlineError error={message} />
-            </div>
+            <InlineError error={message.replace(/^Error:\s*/i, '')} />
           )}
 
           <form onSubmit={step === 2 ? handleOtpVerification : (e) => e.preventDefault()} style={{ textAlign: 'left' }}>
