@@ -234,6 +234,46 @@ export default function Settings() {
     a.click()
     URL.revokeObjectURL(url)
   }
+
+  const handleDownloadAuditLogs = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .eq('workspace_id', workspaceId)
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      if (!data || data.length === 0) {
+        setAlertMessage('No audit logs recorded for this workspace yet.')
+        return
+      }
+
+      const headers = ['id', 'created_at', 'actor_id', 'action', 'resource', 'metadata']
+      const csvRows = [
+        headers.join(','),
+        ...data.map(row => [
+          row.id,
+          `"${row.created_at || ''}"`,
+          `"${row.actor_id || ''}"`,
+          `"${row.action || ''}"`,
+          `"${row.resource || ''}"`,
+          `"${JSON.stringify(row.metadata || {}).replace(/"/g, '""')}"`
+        ].join(','))
+      ]
+      
+      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `audit_report_${workspaceId}_${new Date().toISOString().slice(0,10)}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Failed to export audit logs:', err)
+      setAlertMessage('Failed to download audit report: ' + (err.message || 'Unknown error'))
+    }
+  }
   
   useEffect(() => {
     if (workspace && workspace.settings) {
@@ -735,7 +775,12 @@ export default function Settings() {
                     </div>
                   </div>
 
-                  <button type="submit" className="btn-primary" disabled={savingSettings}>{savingSettings ? 'Saving...' : 'Save Security Policies'}</button>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <button type="submit" className="btn-primary" disabled={savingSettings}>{savingSettings ? 'Saving...' : 'Save Security Policies'}</button>
+                    <button type="button" className="btn-ghost" onClick={handleDownloadAuditLogs}>
+                      📥 Download Audit Report (CSV)
+                    </button>
+                  </div>
                 </form>
               </div>
             )}

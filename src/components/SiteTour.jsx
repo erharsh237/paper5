@@ -5,28 +5,20 @@ import './SiteTour.css'
 
 const STEPS = [
   {
-    title: 'Welcome to the tracker',
-    body: "This is SprintOS - built to keep us shipping every Sunday instead of re-planning and missing deadlines. Quick tour, six steps, then you're in.",
+    title: 'Welcome to SprintOS by Paper5 🚀',
+    body: "SprintOS keeps your team aligned and shipping on time. Let's take a quick 4-step walkthrough of your workspace features.",
   },
   {
-    title: 'My tasks (this page)',
-    body: "This is your personal home page — only your tasks, your stats, and anything waiting on your review. The Team tab still has everyone's board if you need the full picture.",
+    title: 'My Tasks & Personal Focus 📌',
+    body: "This is your personal workspace hub. Track your active deadlines, overdue items, and sprint goals. Use the top navigation tabs to view the team board, meeting notes, and analytics.",
   },
   {
-    title: 'Sprints get locked',
-    body: "Every sprint has a goal and dates. Once it's locked (usually after Sunday planning) you can't add tasks or change owners/deadlines/estimates — but you can still update status, mark blocked, or submit work for review.",
+    title: 'Locked Sprints & Proof of Work ⚡',
+    body: "Keep scope creep out of your delivery cycle. Sprints lock task definitions, while completing tasks allows submitting proof of work (PR links or commit hashes) for team verification.",
   },
   {
-    title: "Done isn't just a click",
-    body: "To finish a task you submit evidence (a PR link, commit, screenshot, or notes) and someone else on the team approves it. Keeps 'done' meaning done.",
-  },
-  {
-    title: 'Blockers notify everyone',
-    body: "Stuck on something? Mark it blocked with a reason and who you need help from. Notifications go out to the whole team so nobody finds out at the next call.",
-  },
-  {
-    title: 'Meeting, Analytics, and more',
-    body: "Sunday sync has its own Meeting screen with the agenda built in. Analytics shows velocity and completion trends. That's the tour — you can always find these in the tabs up top.",
+    title: 'Real-time Notifications & Integrations 🔔',
+    body: "Stay updated with workspace bell alerts, meeting note broadcasts, and GitHub repo connections in Workspace Settings → Integrations.",
   },
 ]
 
@@ -39,7 +31,8 @@ export default function SiteTour({ currentUser, onFinish }) {
   async function handleClose() {
     setDismissing(true)
     try {
-      await markTourSeen(workspaceId, currentUser?.uid)
+      const uid = currentUser?.id || currentUser?.uid
+      await markTourSeen(uid)
     } finally {
       onFinish()
     }

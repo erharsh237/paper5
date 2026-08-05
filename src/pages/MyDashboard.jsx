@@ -47,13 +47,14 @@ export default function MyDashboard() {
 
 
   useEffect(() => {
-    if (!user?.email) return
+    const uid = user?.id || user?.uid
+    if (!uid) return
     let cancelled = false
-    hasSeenTour(user.email).then(seen => {
+    hasSeenTour(uid).then(seen => {
       if (!cancelled && !seen) setShowTour(true)
     })
     return () => { cancelled = true }
-  }, [user?.email])
+  }, [user])
 
   const myEmail = (user?.email || '').toLowerCase()
   const activeSprint = useMemo(() => sprints.find(s => s.status === 'active'), [sprints])
@@ -234,6 +235,10 @@ export default function MyDashboard() {
           </>
         )}
       </main>
+
+      {showTour && (
+        <SiteTour currentUser={user} onFinish={() => setShowTour(false)} />
+      )}
     </div>
   )
 }
