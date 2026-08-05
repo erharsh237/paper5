@@ -117,11 +117,7 @@ export default function MyDashboard() {
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                 <li style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-inset)', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border-hair)' }}>
                   <span style={{ color: 'var(--text-secondary)' }}>📦</span>
-                  <a href="https://github.com/securiq-App/securiq" target="_blank" rel="noreferrer" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: 500 }}>securiq</a>
-                </li>
-                <li style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-inset)', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border-hair)' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>📦</span>
-                  <a href="https://github.com/securiq-App/securiq-app" target="_blank" rel="noreferrer" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: 500 }}>securiq-app</a>
+                  <a href="https://github.com/erharsh237/paper5" target="_blank" rel="noreferrer" style={{ color: 'var(--text-primary)', textDecoration: 'none', fontWeight: 500 }}>paper5</a>
                 </li>
               </ul>
            </div>
