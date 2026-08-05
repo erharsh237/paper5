@@ -167,8 +167,9 @@ export default function Profile() {
 
   async function handleRetakeTour() {
     try {
-      await resetTourSeen(user.email)
-      navigate('/')
+      const uid = user?.id || user?.uid
+      await resetTourSeen(uid)
+      navigate(`/${workspaceId}?tour=true`)
     } catch (err) {
       console.error(err)
       setError('Could not restart the tour. Try again.')

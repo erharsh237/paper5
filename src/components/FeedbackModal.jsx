@@ -65,7 +65,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
 
   return (
     <div className="feedback-modal-overlay" onClick={handleResetAndClose}>
-      <div className="feedback-modal-card glass-panel" onClick={(e) => e.stopPropagation()}>
+      <div className="feedback-modal-card" onClick={(e) => e.stopPropagation()}>
         <button className="feedback-modal-close" onClick={handleResetAndClose} aria-label="Close modal">
           &times;
         </button>

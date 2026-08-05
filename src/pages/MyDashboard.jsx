@@ -49,6 +49,11 @@ export default function MyDashboard() {
   useEffect(() => {
     const uid = user?.id || user?.uid
     if (!uid) return
+    const forceTour = window.location.search.includes('tour=true')
+    if (forceTour) {
+      setShowTour(true)
+      return
+    }
     let cancelled = false
     hasSeenTour(uid).then(seen => {
       if (!cancelled && !seen) setShowTour(true)
