@@ -81,7 +81,7 @@ export default function Integrations() {
       clearTimeout(debounceRef.current)
       debounceRef.current = setTimeout(async () => {
         try {
-          await saveEventNote(workspaceId, undefined, eventId, nextNotes)
+          await saveEventNote(workspaceId, undefined, eventId, nextNotes, user?.email)
         } finally {
           setSavingNotes(false)
         }

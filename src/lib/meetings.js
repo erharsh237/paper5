@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { createNotification } from './notifications'
 
 export const AGENDA_STEPS = [
   { key: 'reviewPrevious', label: '1. Previous sprint review' },
@@ -75,7 +76,7 @@ export function subscribeEventNotes(workspaceId, teamId, callback) {
   return () => supabase.removeChannel(channel)
 }
 
-export async function saveEventNote(workspaceId, teamId, eventId, notesObj) {
+export async function saveEventNote(workspaceId, teamId, eventId, notesObj, currentUserEmail) {
   const { data: existing } = await supabase
     .from('teamSettings')
     .select('eventNotes')
@@ -94,6 +95,16 @@ export async function saveEventNote(workspaceId, teamId, eventId, notesObj) {
       eventNotes: updatedNotes, 
       updatedAt: new Date().toISOString() 
     })
+
+  // Broadcast Notification Bell update to all workspace members
+  const title = notesObj?.title || 'Meeting'
+  const creator = currentUserEmail ? ` by ${currentUserEmail}` : ''
+  createNotification(workspaceId, undefined, {
+    type: 'meeting_notes',
+    message: `📝 Meeting notes updated for "${title}"${creator}`,
+    forEmail: null, // Broadcast to all workspace members
+    createdBy: currentUserEmail
+  }).catch(err => console.error('Failed to dispatch meeting note notification:', err))
 }
 
 export async function deleteEventNote(workspaceId, teamId, eventId) {
