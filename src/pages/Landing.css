@@ -204,6 +204,7 @@
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
+  gap: 0.3em;
   width: 100%;
   line-height: 1.12;
   margin: 0;
@@ -214,8 +215,10 @@
 .modern-text-reveal-word {
   display: inline-block;
   white-space: nowrap;
-  margin-right: 0.25em;
-  position: relative;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  will-change: opacity, transform;
 }
 
 .modern-text-reveal span,
