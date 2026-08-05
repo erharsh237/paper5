@@ -218,12 +218,12 @@ export default function Login({ accessDenied, denialReason }) {
 
           <form onSubmit={step === 2 ? handleOtpVerification : (e) => e.preventDefault()} style={{ textAlign: 'left' }}>
             <div className="auth-input-group">
-              <label htmlFor="identifier">Email</label>
+              <label htmlFor="identifier">Email / Username</label>
               <input 
                 id="identifier"
                 type="text" 
                 className="auth-input"
-                placeholder="m@example.com"
+                placeholder="Email address or username"
                 value={identifier}
                 onChange={e => setIdentifier(e.target.value.toLowerCase())}
                 required
