@@ -9,8 +9,12 @@
 
 // Allowed origins for Header Validation
 const ALLOWED_ORIGINS = [
+  'https://paper5.co',
+  'https://app.paper5.co',
   'https://paper5.com',
   'https://app.paper5.com',
+  'https://paper5.dev',
+  'https://app.paper5.dev',
   'http://localhost:5173',
   'http://localhost:3000',
   'http://localhost:5174',
@@ -51,7 +55,14 @@ export function validateRequestHeaders() {
 
   // Validate Origin if in production
   if (import.meta.env.PROD) {
-    const isAllowed = ALLOWED_ORIGINS.some(origin => currentOrigin === origin || currentOrigin.endsWith('.paper5.com'))
+    const isAllowed = ALLOWED_ORIGINS.some(origin => 
+      currentOrigin === origin || 
+      currentOrigin.endsWith('.paper5.co') || 
+      currentOrigin.endsWith('.paper5.com') || 
+      currentOrigin.endsWith('.paper5.dev') ||
+      currentOrigin.includes('vercel.app') ||
+      currentOrigin.includes('localhost')
+    )
     if (!isAllowed) {
       throw new Error(`Header Validation Failed: Origin '${currentOrigin}' is not an authorized endpoint.`)
     }
