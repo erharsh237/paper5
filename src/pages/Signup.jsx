@@ -152,7 +152,7 @@ export default function Signup() {
       
       await sendSignupOtp(email)
       
-      setMessage('A verification code has been sent to your email.')
+      setMessage('Verification code dispatched to your registered email.')
       setStep(2)
       setCooldown(60)
       setFailedAttempts(0)
@@ -285,7 +285,7 @@ export default function Signup() {
             {step >= 2 && (
               <div className="auth-input-group" style={{ marginTop: '24px', opacity: step === 3 ? 0.6 : 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label htmlFor="otp">Verification Code (sent to {maskEmail(email)})</label>
+                  <label htmlFor="otp">Verification Code</label>
                   {step === 2 && (
                     <button 
                       type="button" 
