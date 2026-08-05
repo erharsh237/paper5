@@ -99,9 +99,6 @@ export default function MyDashboard() {
 
   return (
     <div className="dash">
-      {showTour && (
-        <SiteTour currentUserEmail={user?.email} onFinish={() => setShowTour(false)} />
-      )}
       <header className="dash-header">
         <div className="dash-header-inner">
           <div className="dash-brand">

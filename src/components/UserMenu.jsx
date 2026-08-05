@@ -104,15 +104,6 @@ export default function UserMenu() {
               </a>
             )}
 
-            <button
-              type="button"
-              className="nav-more-item"
-              onClick={() => { setOpen(false); setIsFeedbackOpen(true); }}
-              style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-            >
-              <FeedbackIcon /> Send Feedback
-            </button>
-
             <div style={{ margin: '4px 0', borderTop: '1px solid var(--border-subtle)' }} />
 
             <button 
