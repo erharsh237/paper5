@@ -115,8 +115,20 @@ export function SessionExpiredRedirect() {
 export function InlineError({ error }) {
   if (!error) return null;
   return (
-    <div style={{ color: 'var(--accent-critical)', fontSize: 13, marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-      <span>⚠️</span> {error}
+    <div style={{
+      color: '#dc2626',
+      background: 'rgba(239, 68, 68, 0.06)',
+      border: '1px solid rgba(239, 68, 68, 0.2)',
+      borderRadius: '8px',
+      padding: '10px 14px',
+      fontSize: 13,
+      fontWeight: 500,
+      marginTop: 8,
+      marginBottom: 8,
+      textAlign: 'center',
+      lineHeight: 1.4
+    }}>
+      {error}
     </div>
   );
 }

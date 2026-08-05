@@ -105,7 +105,9 @@ export function AuthProvider({ children }) {
     const msg = err?.message || (typeof err === 'string' ? err : JSON.stringify(err));
     if (msg.includes('Invalid login credentials')) return 'Invalid email or password.'
     if (msg.includes('already registered')) return 'This email address is already registered.'
-    if (msg === '{}') return 'SMTP Error: Please check your Supabase custom SMTP settings (Ensure Sender Email domain is verified in Resend, or if using onboarding@resend.dev, it can only send to your own registered email address).'
+    if (msg.includes('SMTP') || msg.includes('onboarding@resend.dev') || msg.includes('resend') || msg === '{}') {
+      return 'Unable to send verification code to this email address. Please double check the email or try again shortly.'
+    }
     return msg || 'An unknown authentication error occurred.'
   }
 
