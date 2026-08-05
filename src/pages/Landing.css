@@ -200,24 +200,12 @@
 }
 
 .modern-text-reveal-line {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 0.3em;
+  display: block;
   width: 100%;
   line-height: 1.12;
   margin: 0;
   padding: 0;
   position: relative;
-}
-
-.modern-text-reveal-word {
-  display: inline-block;
-  white-space: nowrap;
-  margin: 0;
-  padding: 0;
-  will-change: transform, opacity;
 }
 
 .modern-text-reveal span,

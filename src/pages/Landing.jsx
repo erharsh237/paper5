@@ -13,34 +13,42 @@ import AlertModal from '../components/ui/AlertModal'
 
 const ModernTextReveal = ({ text }) => {
   const [isStompDone, setIsStompDone] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const lines = text.split('<br />')
 
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const container = {
-    hidden: { opacity: 1 },
+    hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.18,
-        delayChildren: 0.1,
-      },
+      transition: { staggerChildren: 0.25, delayChildren: 0.1 },
     },
   }
 
   const child = {
-    hidden: {
-      opacity: 0,
-      y: 45,
-      scale: 0.88,
-    },
     visible: {
       opacity: 1,
       y: 0,
-      scale: 1,
-      transition: {
-        duration: 0.65,
-        ease: [0.175, 0.885, 0.32, 1.275],
-      },
+      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
     },
+    hidden: {
+      opacity: 0,
+      y: 30,
+      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+    },
+  }
+
+  if (!mounted) {
+    return (
+      <div className="modern-text-reveal-static">
+        {lines.map((line, i) => (
+          <div key={i} className="modern-text-reveal-line">{line}</div>
+        ))}
+      </div>
+    )
   }
 
   return (
@@ -55,9 +63,9 @@ const ModernTextReveal = ({ text }) => {
         <div key={lineIndex} className="modern-text-reveal-line">
           {line.trim().split(' ').map((word, index) => (
             <motion.span
-              key={`${lineIndex}-${index}`}
+              key={index}
               variants={child}
-              className="modern-text-reveal-word"
+              style={{ marginRight: '0.25em', display: 'inline-block' }}
             >
               {word}
             </motion.span>
