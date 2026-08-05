@@ -1,88 +1,104 @@
-import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
-import { db, storage } from './firebase'
+import { supabase } from './supabase'
 
-// One profile doc per user, id = lowercase email — same pattern as onboarding.js.
-function profileRef(email) {
-  return doc(db, 'profiles', (email || '').toLowerCase())
+export function subscribeProfile(workspaceId, uid, callback) {
+  if (!uid || !workspaceId) return () => {}
+  const fetchList = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('workspace_id', workspaceId)
+      .eq('id', uid)
+      .maybeSingle()
+    callback(data || null)
+  }
+  fetchList()
+  const channel = supabase.channel(`public:profiles:workspace_id=eq.${workspaceId}:id=eq.${uid}:${Math.random().toString(36).substring(7)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `workspace_id=eq.${workspaceId}` }, (payload) => {
+      // payload might not contain id if not explicitly in filter, but we are fetching on any change to this table with this workspace
+      // Actually we can just fetch
+      fetchList()
+    })
+    .subscribe()
+  return () => supabase.removeChannel(channel)
 }
 
-export function subscribeProfile(email, callback) {
-  if (!email) return () => {}
-  return onSnapshot(profileRef(email), (snap) => {
-    callback(snap.exists() ? { id: snap.id, ...snap.data() } : null)
-  })
-}
-
-export async function saveProfile(email, { name, phone, roleId, roleName, bio }) {
-  return setDoc(profileRef(email), {
-    email: (email || '').toLowerCase(),
-    name: name || '',
-    phone: phone || '',
-    roleId: roleId || null,
-    roleName: roleName || '',
-    bio: bio || '',
-    updatedAt: serverTimestamp(),
-  }, { merge: true })
+export async function saveProfile(workspaceId, uid, { email, name, phone, roleId, roleName, bio }) {
+  await supabase
+    .from('profiles')
+    .upsert({
+      workspace_id: workspaceId,
+      id: uid,
+      email: (email || '').toLowerCase(),
+      name: name || '',
+      phone: phone || '',
+      roleId: roleId || null,
+      roleName: roleName || '',
+      bio: bio || '',
+      updatedAt: new Date().toISOString()
+    })
 }
 
 const AIM_LOCK_DAYS = 45
 
-// The aim can only be (re)written if it's never been set, or the last save
-// is more than 45 days old. aimSavedAt is a Firestore Timestamp; the
-// Firestore rules enforce the same 45-day window server-side using
-// request.time, so this client check is a UX convenience, not the
-// enforcement point.
 export function getAimLockStatus(profile) {
-  const savedAt = profile?.aimSavedAt?.toDate ? profile.aimSavedAt.toDate() : null
+  const savedAt = profile?.aimSavedAt ? new Date(profile.aimSavedAt) : null
   if (!savedAt) return { locked: false, unlockDate: null }
   const unlockDate = new Date(savedAt.getTime() + AIM_LOCK_DAYS * 24 * 60 * 60 * 1000)
   return { locked: unlockDate > new Date(), unlockDate }
 }
 
-export async function saveAim(email, aim) {
-  return setDoc(profileRef(email), {
-    aim: aim || '',
-    aimSavedAt: serverTimestamp(),
-  }, { merge: true })
+export async function saveAim(workspaceId, uid, aim) {
+  await supabase
+    .from('profiles')
+    .upsert({
+      workspace_id: workspaceId,
+      id: uid,
+      aim: aim || '',
+      aimSavedAt: new Date().toISOString()
+    })
 }
 
-// Storage layout:
-//   profile-pics/{email}/{filename}
-//   resumes/{email}/{filename}
-// Keeping everything under the user's own email prefix makes the storage
-// rules simple: a user can only write under their own folder.
-
-export async function uploadProfilePic(email, file) {
-  const path = `profile-pics/${(email || '').toLowerCase()}/${Date.now()}-${file.name}`
-  const fileRef = ref(storage, path)
-  await uploadBytes(fileRef, file)
-  const url = await getDownloadURL(fileRef)
-  await setDoc(profileRef(email), { photoURL: url, photoPath: path, updatedAt: serverTimestamp() }, { merge: true })
-  return url
+export async function getProfileOnce(workspaceId, uid) {
+  const { data } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('workspace_id', workspaceId)
+    .eq('id', uid)
+    .maybeSingle()
+  return data || null
 }
 
-export async function uploadResume(email, file) {
-  const path = `resumes/${(email || '').toLowerCase()}/${Date.now()}-${file.name}`
-  const fileRef = ref(storage, path)
-  await uploadBytes(fileRef, file)
-  const url = await getDownloadURL(fileRef)
-  await setDoc(profileRef(email), {
-    resumeURL: url, resumePath: path, resumeName: file.name, updatedAt: serverTimestamp(),
-  }, { merge: true })
-  return url
+export async function uploadPhoto(workspaceId, uid, dataUrl) {
+  await supabase
+    .from('profiles')
+    .upsert({
+      workspace_id: workspaceId,
+      id: uid,
+      photoURL: dataUrl,
+      updatedAt: new Date().toISOString()
+    })
 }
 
-export async function removeResume(email, resumePath) {
-  if (resumePath) {
-    try { await deleteObject(ref(storage, resumePath)) } catch { /* already gone, ignore */ }
-  }
-  return setDoc(profileRef(email), {
-    resumeURL: null, resumePath: null, resumeName: null, updatedAt: serverTimestamp(),
-  }, { merge: true })
+export async function uploadResume(workspaceId, uid, resumeUrl, resumeName) {
+  await supabase
+    .from('profiles')
+    .upsert({
+      workspace_id: workspaceId,
+      id: uid,
+      resumeURL: resumeUrl,
+      resumeName: resumeName,
+      updatedAt: new Date().toISOString()
+    })
 }
 
-export async function getProfileOnce(email) {
-  const snap = await getDoc(profileRef(email))
-  return snap.exists() ? { id: snap.id, ...snap.data() } : null
+export async function deleteResume(workspaceId, uid) {
+  await supabase
+    .from('profiles')
+    .upsert({
+      workspace_id: workspaceId,
+      id: uid,
+      resumeURL: null,
+      resumeName: null,
+      updatedAt: new Date().toISOString()
+    })
 }

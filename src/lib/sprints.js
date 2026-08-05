@@ -1,66 +1,73 @@
-import {
-  collection, addDoc, updateDoc, deleteDoc, doc,
-  onSnapshot, query, where, orderBy, serverTimestamp, getDocs, writeBatch
-} from 'firebase/firestore'
-import { db } from './firebase'
+import { supabase } from './supabase'
 
-const sprintsCol = collection(db, 'sprints')
-
-// A sprint: { teamId, number, goal, startDate, endDate, status, locked, createdBy, createdAt }
-// status: 'planning' | 'active' | 'completed'
-// Only one sprint per team should be 'active' at a time — enforced in app
-// code (see setActiveSprint) since Firestore rules can't easily enforce
-// cross-document invariants without a Cloud Function.
-
-export function subscribeSprints(teamId, callback) {
-  const q = query(sprintsCol, where('teamId', '==', teamId), orderBy('number', 'desc'))
-  return onSnapshot(q, (snap) => {
-    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-  })
+export function subscribeSprints(workspaceId, teamId, callback) {
+  const fetchList = async () => {
+    const { data, error } = await supabase
+      .from('sprints')
+      .select('*')
+      .eq('workspace_id', workspaceId)
+      .order('number', { ascending: false })
+    if (!error) callback(data || [])
+  }
+  const channel = supabase.channel(`public:sprints:workspace_id=eq.${workspaceId}:${Math.random().toString(36).substring(7)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'sprints', filter: `workspace_id=eq.${workspaceId}` }, payload => {
+       fetchList()
+    })
+    .subscribe()
+  fetchList()
+  return () => supabase.removeChannel(channel)
 }
 
-export async function createSprint(teamId, { number, goal, startDate, endDate, createdBy, assigneeId, assigneeName }) {
-  return addDoc(sprintsCol, {
-    teamId,
+export async function createSprint(workspaceId, teamId, { number, goal, startDate, endDate, createdBy, assigneeId, assigneeName }) {
+  const { data, error } = await supabase.from('sprints').insert([{
+    workspace_id: workspaceId,
+    team_id: teamId,
     number,
     goal: goal || '',
-    startDate, // ISO string
-    endDate,   // ISO string
+    start_date: startDate,
+    end_date: endDate,
     status: 'planning',
     locked: false,
-    assigneeId: assigneeId || null,
-    assigneeName: assigneeName || null,
-    createdBy: (createdBy || '').toLowerCase(),
-    createdAt: serverTimestamp(),
-  })
+    assignee_id: assigneeId || null,
+    assignee_name: assigneeName || null,
+    created_by: (createdBy || '').toLowerCase(),
+    created_at: new Date().toISOString(),
+  }]).select()
+  if (error) throw error
+  return data[0]
 }
 
-export async function updateSprint(id, patch) {
-  return updateDoc(doc(db, 'sprints', id), patch)
+export async function updateSprint(workspaceId, id, patch) {
+  const { error } = await supabase.from('sprints').update(patch).eq('id', id).eq('workspace_id', workspaceId)
+  if (error) throw error
 }
 
-export async function deleteSprint(id) {
-  return deleteDoc(doc(db, 'sprints', id))
+export async function deleteSprint(workspaceId, id) {
+  const { error } = await supabase.from('sprints').delete().eq('id', id).eq('workspace_id', workspaceId)
+  if (error) throw error
 }
 
-// Activating a sprint deactivates any other active sprint for the team in
-// the same batch, so "only one active sprint" holds even under concurrent
-// clicks from different founders.
-export async function setActiveSprint(teamId, sprintId) {
-  const q = query(sprintsCol, where('teamId', '==', teamId), where('status', '==', 'active'))
-  const snap = await getDocs(q)
-  const batch = writeBatch(db)
-  snap.docs.forEach(d => {
-    if (d.id !== sprintId) batch.update(d.ref, { status: 'completed' })
-  })
-  batch.update(doc(db, 'sprints', sprintId), { status: 'active' })
-  await batch.commit()
+export async function setActiveSprint(workspaceId, teamId, sprintId) {
+  const { error: err1 } = await supabase.from('sprints')
+    .update({ status: 'completed' })
+    .eq('workspace_id', workspaceId)
+    .eq('status', 'active')
+    .neq('id', sprintId)
+  if (err1) throw err1
+
+  const { error: err2 } = await supabase.from('sprints')
+    .update({ status: 'active' })
+    .eq('id', sprintId)
+    .eq('workspace_id', workspaceId)
+  if (err2) throw err2
 }
 
-export async function lockSprint(id) {
-  return updateDoc(doc(db, 'sprints', id), { locked: true })
+export async function lockSprint(workspaceId, id) {
+  const { error } = await supabase.from('sprints').update({ locked: true }).eq('id', id).eq('workspace_id', workspaceId)
+  if (error) throw error
 }
 
-export async function unlockSprint(id) {
-  return updateDoc(doc(db, 'sprints', id), { locked: false })
+export async function unlockSprint(workspaceId, id) {
+  const { error } = await supabase.from('sprints').update({ locked: false }).eq('id', id).eq('workspace_id', workspaceId)
+  if (error) throw error
 }

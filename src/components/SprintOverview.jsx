@@ -2,9 +2,11 @@ import { useMemo, useState } from 'react'
 import { daysLeft, getUrgency } from '../lib/utils'
 import { setActiveSprint, lockSprint, unlockSprint } from '../lib/sprints'
 import NewSprintModal from './NewSprintModal'
+import { useWorkspace } from '../lib/WorkspaceContext'
 import './SprintOverview.css'
 
-export default function SprintOverview({ teamId, sprints, deadlines, currentUser, members = [] }) {
+export default function SprintOverview({ sprints, deadlines, currentUser, members = [] }) {
+  const { workspaceId } = useWorkspace();
   const [showNewSprint, setShowNewSprint] = useState(false)
   const active = useMemo(() => sprints.find(s => s.status === 'active'), [sprints])
 
@@ -33,10 +35,10 @@ export default function SprintOverview({ teamId, sprints, deadlines, currentUser
     try {
       if (active.locked) {
         if (!confirm('Unlock this sprint? This allows adding tasks, changing deadlines/owners/estimates again.')) return
-        await unlockSprint(active.id)
+        await unlockSprint(workspaceId, active.id)
       } else {
         if (!confirm('Lock this sprint? New tasks, deadline/owner/estimate changes will be blocked until unlocked.')) return
-        await lockSprint(active.id)
+        await lockSprint(workspaceId, active.id)
       }
     } catch (err) {
       setLockError(
@@ -48,7 +50,7 @@ export default function SprintOverview({ teamId, sprints, deadlines, currentUser
   }
 
   async function handleActivate(sprintId) {
-    await setActiveSprint(teamId, sprintId)
+    await setActiveSprint(workspaceId, undefined, sprintId)
   }
 
   return (
@@ -114,7 +116,6 @@ export default function SprintOverview({ teamId, sprints, deadlines, currentUser
 
       {showNewSprint && (
         <NewSprintModal
-          teamId={teamId}
           currentUser={currentUser}
           existingCount={sprints.length}
           members={members}
@@ -126,6 +127,7 @@ export default function SprintOverview({ teamId, sprints, deadlines, currentUser
 }
 
 function SprintStat({ label, value, tone }) {
+  const { workspaceId } = useWorkspace();
   return (
     <div className={`sprint-stat${tone ? ` sprint-stat--${tone}` : ''}`}>
       <div className="sprint-stat-value mono">{value}</div>

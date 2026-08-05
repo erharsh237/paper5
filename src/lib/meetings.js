@@ -1,12 +1,5 @@
-import {
-  collection, addDoc, updateDoc, doc, setDoc,
-  onSnapshot, query, where, orderBy, serverTimestamp, limit, deleteField
-} from 'firebase/firestore'
-import { db } from './firebase'
+import { supabase } from './supabase'
 
-const meetingsCol = collection(db, 'meetings')
-
-// A meeting: { teamId, sprintId, date, notes: { reviewPrevious, demo, blockers, planNext, assign, lockSprint }, createdBy, createdAt, updatedAt }
 export const AGENDA_STEPS = [
   { key: 'reviewPrevious', label: '1. Previous sprint review' },
   { key: 'demo', label: '2. Demo completed tasks' },
@@ -16,64 +9,148 @@ export const AGENDA_STEPS = [
   { key: 'lockSprint', label: '6. Lock sprint' },
 ]
 
-export function subscribeMeetings(teamId, callback) {
-  const q = query(meetingsCol, where('teamId', '==', teamId), orderBy('date', 'desc'), limit(30))
-  return onSnapshot(q, (snap) => {
-    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-  })
+export function subscribeMeetings(workspaceId, teamId, callback) {
+  const fetchList = async () => {
+    const { data } = await supabase
+      .from('meetings')
+      .select('*')
+      .eq('workspace_id', workspaceId)
+      .order('date', { ascending: false })
+      .limit(30)
+    if (data) callback(data)
+  }
+  fetchList()
+  const channel = supabase.channel(`public:meetings:workspace_id=eq.${workspaceId}:${Math.random().toString(36).substring(7)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'meetings', filter: `workspace_id=eq.${workspaceId}` }, () => {
+      fetchList()
+    })
+    .subscribe()
+  return () => supabase.removeChannel(channel)
 }
 
-export function subscribeUpcomingMeetings(teamId, callback) {
-  const now = new Date().toISOString()
-  const q = query(meetingsCol, where('teamId', '==', teamId), where('date', '>=', now), orderBy('date', 'asc'), limit(5))
-  return onSnapshot(q, (snap) => {
-    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-  })
+export function subscribeUpcomingMeetings(workspaceId, teamId, callback) {
+  const fetchList = async () => {
+    const now = new Date().toISOString()
+    const { data } = await supabase
+      .from('meetings')
+      .select('*')
+      .eq('workspace_id', workspaceId)
+      .gte('date', now)
+      .order('date', { ascending: true })
+      .limit(5)
+    if (data) callback(data)
+  }
+  fetchList()
+  const channel = supabase.channel(`public:meetings_upcoming:workspace_id=eq.${workspaceId}:${Math.random().toString(36).substring(7)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'meetings', filter: `workspace_id=eq.${workspaceId}` }, () => {
+      fetchList()
+    })
+    .subscribe()
+  return () => supabase.removeChannel(channel)
 }
 
-export function subscribeEventNotes(teamId, callback) {
-  return onSnapshot(doc(db, 'teamSettings', teamId), (snap) => {
-    if (snap.exists() && snap.data().eventNotes) {
-      callback(snap.data().eventNotes) // Returns an object { [eventId]: { title, date, notes } }
+export function subscribeEventNotes(workspaceId, teamId, callback) {
+  const fetchList = async () => {
+    const { data } = await supabase
+      .from('teamSettings')
+      .select('eventNotes')
+      .eq('workspace_id', workspaceId)
+      .eq('id', 'main')
+      .maybeSingle()
+    if (data && data.eventNotes) {
+      callback(data.eventNotes)
     } else {
       callback({})
     }
-  })
+  }
+  fetchList()
+  const channel = supabase.channel(`public:teamSettings:workspace_id=eq.${workspaceId}:${Math.random().toString(36).substring(7)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'teamSettings', filter: `workspace_id=eq.${workspaceId}` }, () => {
+      fetchList()
+    })
+    .subscribe()
+  return () => supabase.removeChannel(channel)
 }
 
-export function saveEventNote(teamId, eventId, notesObj) {
-  return setDoc(doc(db, 'teamSettings', teamId), {
-    eventNotes: {
-      [eventId]: notesObj
-    },
-    updatedAt: serverTimestamp(),
-  }, { merge: true })
+export async function saveEventNote(workspaceId, teamId, eventId, notesObj) {
+  const { data: existing } = await supabase
+    .from('teamSettings')
+    .select('eventNotes')
+    .eq('workspace_id', workspaceId)
+    .eq('id', 'main')
+    .maybeSingle()
+  
+  const currentNotes = existing?.eventNotes || {}
+  const updatedNotes = { ...currentNotes, [eventId]: notesObj }
+  
+  await supabase
+    .from('teamSettings')
+    .upsert({ 
+      workspace_id: workspaceId, 
+      id: 'main', 
+      eventNotes: updatedNotes, 
+      updatedAt: new Date().toISOString() 
+    })
 }
 
-export function deleteEventNote(teamId, eventId) {
-  return updateDoc(doc(db, 'teamSettings', teamId), {
-    [`eventNotes.${eventId}`]: deleteField(),
-    updatedAt: serverTimestamp(),
-  })
+export async function deleteEventNote(workspaceId, teamId, eventId) {
+  const { data: existing } = await supabase
+    .from('teamSettings')
+    .select('eventNotes')
+    .eq('workspace_id', workspaceId)
+    .eq('id', 'main')
+    .maybeSingle()
+    
+  if (existing && existing.eventNotes) {
+    const updatedNotes = { ...existing.eventNotes }
+    delete updatedNotes[eventId]
+    await supabase
+      .from('teamSettings')
+      .update({ 
+        eventNotes: updatedNotes, 
+        updatedAt: new Date().toISOString() 
+      })
+      .eq('workspace_id', workspaceId)
+      .eq('id', 'main')
+  }
 }
 
-export async function createMeeting(teamId, { sprintId, date, createdBy }) {
+export async function createMeeting(workspaceId, teamId, { sprintId, date, createdBy }) {
   const emptyNotes = AGENDA_STEPS.reduce((acc, s) => ({ ...acc, [s.key]: '' }), {})
-  return addDoc(meetingsCol, {
-    teamId,
-    sprintId: sprintId || null,
-    date, // ISO date string
-    notes: emptyNotes,
-    createdBy: (createdBy || '').toLowerCase(),
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  })
+  const { data, error } = await supabase
+    .from('meetings')
+    .insert({
+      workspace_id: workspaceId,
+      teamId,
+      sprintId: sprintId || null,
+      date,
+      notes: emptyNotes,
+      createdBy: (createdBy || '').toLowerCase(),
+    })
+    .select()
+    .maybeSingle()
+  
+  if (error) throw error
+  return { id: data.id }
 }
 
-// Notes auto-save per field so nobody loses work switching agenda steps.
-export async function updateMeetingNote(id, stepKey, value) {
-  return updateDoc(doc(db, 'meetings', id), {
-    [`notes.${stepKey}`]: value,
-    updatedAt: serverTimestamp(),
-  })
+export async function updateMeetingNote(workspaceId, id, stepKey, value) {
+  const { data: existing } = await supabase
+    .from('meetings')
+    .select('notes')
+    .eq('workspace_id', workspaceId)
+    .eq('id', id)
+    .maybeSingle()
+    
+  const notes = existing?.notes || {}
+  notes[stepKey] = value
+  
+  await supabase
+    .from('meetings')
+    .update({ 
+      notes, 
+      updatedAt: new Date().toISOString() 
+    })
+    .eq('workspace_id', workspaceId)
+    .eq('id', id)
 }

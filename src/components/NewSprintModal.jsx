@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { createSprint, setActiveSprint } from '../lib/sprints'
+import { useWorkspace } from '../lib/WorkspaceContext'
 
-export default function NewSprintModal({ teamId, currentUser, existingCount, members = [], onClose }) {
+export default function NewSprintModal({ currentUser, existingCount, members = [], onClose }) {
+  const { workspaceId } = useWorkspace();
   const [number, setNumber] = useState(existingCount + 1)
   const [goal, setGoal] = useState('')
   const [assigneeId, setAssigneeId] = useState('')
@@ -18,13 +20,13 @@ export default function NewSprintModal({ teamId, currentUser, existingCount, mem
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    if (!startDate || !endDate) return setError('Start and end dates are required.')
-    if (new Date(endDate) < new Date(startDate)) return setError('End date must be after start date.')
+    if (!startDate || !endDate) return setError('Both start and end dates must be specified to initialize a sprint.')
+    if (new Date(endDate) < new Date(startDate)) return setError('The sprint end date must chronologically follow the start date.')
 
     setSubmitting(true)
     try {
       const selectedMember = members.find(m => m.id === assigneeId)
-      const ref = await createSprint(teamId, {
+      const ref = await createSprint(workspaceId, undefined, {
         number: Number(number),
         goal: goal.trim(),
         startDate,
@@ -33,11 +35,11 @@ export default function NewSprintModal({ teamId, currentUser, existingCount, mem
         assigneeName: selectedMember ? selectedMember.name || selectedMember.email : null,
         createdBy: currentUser?.email,
       })
-      if (activateNow) await setActiveSprint(teamId, ref.id)
+      if (activateNow) await setActiveSprint(workspaceId, undefined, ref.id)
       onClose()
     } catch (err) {
       console.error(err)
-      setError('Could not create the sprint. Try again.')
+      setError('Unable to initialize the new sprint. Please try again later.')
     } finally {
       setSubmitting(false)
     }

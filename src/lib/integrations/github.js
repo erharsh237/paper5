@@ -25,7 +25,7 @@ export const github = {
   description: 'Link PRs and commits as task evidence, and surface CI status on the sprint board.',
   configFields: [
     { key: 'githubOwner', label: 'Repo owner/org', placeholder: 'e.g. your-org' },
-    { key: 'githubRepo', label: 'Repo name', placeholder: 'e.g. securiq' },
+    { key: 'githubRepo', label: 'Repo name', placeholder: 'e.g. paper5' },
   ],
   credentialFields: [
     { key: 'githubToken', label: 'Personal access token (optional — needed for private repos)', type: 'password' },

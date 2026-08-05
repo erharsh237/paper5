@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { subscribeReflections, submitReflection } from '../lib/reflections'
+import { useWorkspace } from '../lib/WorkspaceContext'
 import './ReflectionPanel.css'
 
-export default function ReflectionPanel({ teamId, sprint, currentUser, members }) {
+export default function ReflectionPanel({ sprint, currentUser, members }) {
+  const { workspaceId } = useWorkspace();
   const [reflections, setReflections] = useState([])
   const [completedTasks, setCompletedTasks] = useState(true)
   const [whyNot, setWhyNot] = useState('')
@@ -13,8 +15,8 @@ export default function ReflectionPanel({ teamId, sprint, currentUser, members }
 
   useEffect(() => {
     if (!sprint) return
-    return subscribeReflections(teamId, sprint.id, setReflections)
-  }, [teamId, sprint])
+    return subscribeReflections(workspaceId, undefined, sprint.id, setReflections)
+  }, [workspaceId, sprint])
 
   const myEmail = (currentUser?.email || '').toLowerCase()
   const mine = reflections.find(r => r.memberEmail === myEmail)
@@ -34,7 +36,8 @@ export default function ReflectionPanel({ teamId, sprint, currentUser, members }
     e.preventDefault()
     setSubmitting(true)
     try {
-      await submitReflection(teamId, sprint.id, {
+      await submitReflection(workspaceId, undefined, sprint.id, {
+        memberId: currentUser.uid,
         memberEmail: currentUser.email,
         memberName: currentUser.displayName || currentUser.email,
         completedTasks,

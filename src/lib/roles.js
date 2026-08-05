@@ -1,21 +1,73 @@
-import { collection, doc, setDoc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore'
-import { db } from './firebase'
+import { supabase } from './supabase'
 
-const rolesCol = collection(db, 'roles')
-
-// A role: { name, createdAt }. Doc id is a slug of the name so adding the
-// same role twice just re-touches the same doc instead of duplicating.
-export function subscribeRoles(callback) {
-  const q = query(rolesCol, orderBy('name'))
-  return onSnapshot(q, (snap) => {
-    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-  })
+export function subscribeRoles(workspaceId, callback) {
+  const fetchList = async () => {
+    const { data, error } = await supabase
+      .from('roles')
+      .select('*')
+      .eq('workspace_id', workspaceId)
+      .order('createdAt', { ascending: true })
+    if (!error) callback(data || [])
+  }
+  const channel = supabase.channel(`public:roles:workspace_id=eq.${workspaceId}:${Math.random().toString(36).substring(7)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'roles', filter: `workspace_id=eq.${workspaceId}` }, payload => {
+       fetchList()
+    })
+    .subscribe()
+  fetchList()
+  return () => supabase.removeChannel(channel)
 }
 
-export async function addRole(name) {
-  const trimmed = name.trim()
-  if (!trimmed) return null
-  const id = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-  await setDoc(doc(db, 'roles', id), { name: trimmed, createdAt: serverTimestamp() }, { merge: true })
-  return id
+export async function createRole(workspaceId, id, name, permissions) {
+  const { error } = await supabase.from('roles').insert([{
+    id,
+    workspace_id: workspaceId,
+    name,
+    permissions
+  }])
+  if (error) throw error
+}
+
+export async function updateRole(workspaceId, id, name, permissions) {
+  const { error } = await supabase.from('roles').update({ name, permissions }).eq('workspace_id', workspaceId).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteRole(workspaceId, id) {
+  const { error } = await supabase.from('roles').delete().eq('workspace_id', workspaceId).eq('id', id)
+  if (error) throw error
+}
+
+export function subscribeUserRoles(workspaceId, callback) {
+  const fetchList = async () => {
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('*')
+      .eq('workspace_id', workspaceId)
+    if (!error) callback(data || [])
+  }
+  const channel = supabase.channel(`public:user_roles:workspace_id=eq.${workspaceId}:${Math.random().toString(36).substring(7)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'user_roles', filter: `workspace_id=eq.${workspaceId}` }, payload => {
+       fetchList()
+    })
+    .subscribe()
+  fetchList()
+  return () => supabase.removeChannel(channel)
+}
+
+export async function assignUserRole(workspaceId, userId, roleId) {
+  const { error } = await supabase.from('user_roles').insert([{
+    workspace_id: workspaceId,
+    user_id: userId,
+    role_id: roleId
+  }])
+  if (error) throw error
+}
+
+export async function removeUserRole(workspaceId, userId, roleId) {
+  const { error } = await supabase.from('user_roles').delete()
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', userId)
+    .eq('role_id', roleId)
+  if (error) throw error
 }

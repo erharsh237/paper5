@@ -1,0 +1,272 @@
+.settings-section {
+  background: var(--bg-panel);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-panel);
+}
+
+.settings-section h2 {
+  font-size: 16px;
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.settings-form .field {
+  margin-bottom: 16px;
+}
+
+.settings-form label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.settings-form input[type="text"] {
+  width: 100%;
+  max-width: 400px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-inset);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+
+.settings-form select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-inset);
+  color: var(--text-primary);
+  font-size: 14px;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+  cursor: pointer;
+}
+
+.settings-form select:focus,
+.settings-form input[type="text"]:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+.settings-form select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.settings-form input[type="text"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.members-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.members-table th {
+  text-align: left;
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.members-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.members-table tr:last-child td {
+  border-bottom: none;
+}
+
+.invite-box {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.invite-box h3 {
+  font-size: 14px;
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.settings-layout {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  margin-top: 16px;
+}
+
+.settings-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: sticky;
+  top: 120px;
+  width: 56px;
+  z-index: 50;
+}
+
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.settings-nav-item:not(.settings-nav-item--active):hover {
+  background: var(--bg-layer-2);
+  color: var(--text-primary);
+}
+
+.settings-nav-item--active {
+  background: var(--accent);
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.settings-nav-item--active svg {
+  stroke: #fff;
+}
+
+.settings-nav-item--danger {
+  color: var(--text-secondary);
+}
+
+.settings-nav-item--danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--accent-critical);
+}
+
+.settings-nav-item--danger.settings-nav-item--active {
+  background: var(--accent-critical);
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.settings-content-area {
+  flex: 1;
+  min-width: 0;
+  animation: fadeInSettings 0.3s ease-out;
+}
+
+@keyframes fadeInSettings {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Tooltip styles */
+.settings-nav-item .tooltip {
+  position: absolute;
+  right: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%) translateX(8px);
+  background: var(--bg-layer);
+  color: var(--text-primary);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-panel);
+  z-index: 10;
+}
+
+/* Tooltip Arrow */
+.settings-nav-item .tooltip::before {
+  content: '';
+  position: absolute;
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  background: var(--bg-layer);
+  border-right: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+}
+
+.settings-nav-item:hover .tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* ── Toggle Switch ─────────────────────────────────────── */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: #d1d5db;
+  border-radius: 999px;
+  transition: background-color 0.25s ease, box-shadow 0.25s ease;
+}
+.toggle-slider:before {
+  content: "";
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  top: 3px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  transition: transform 0.25s ease;
+}
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #6366f1;
+}
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+.toggle-switch input:focus-visible + .toggle-slider {
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.35);
+}

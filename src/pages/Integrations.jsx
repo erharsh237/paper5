@@ -1,28 +1,32 @@
 import { useEffect, useState, useRef } from 'react'
+import { Navigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { INTEGRATIONS } from '../lib/integrations'
 import { subscribeIntegrationConfig, saveIntegrationConfig, subscribeIntegrationCredentials, saveIntegrationCredentials } from '../lib/integrations/config'
 import { loadGis } from '../lib/integrations/googleCalendar'
 import { subscribeEventNotes, saveEventNote, deleteEventNote } from '../lib/meetings'
-import { subscribeProfile, saveProfile, saveAim, getAimLockStatus, uploadProfilePic, uploadResume, removeResume } from '../lib/profile'
-import { subscribeRoles } from '../lib/roles'
-import { resetTourSeen } from '../lib/onboarding'
-import { getAllowedUsers, addAllowedUser, removeAllowedUser } from '../lib/allowlist'
-import NotificationBell from '../components/NotificationBell'
+
 import NavTabs from '../components/NavTabs'
+import UserMenu from '../components/UserMenu'
 import Breadcrumbs from '../components/Breadcrumbs'
+import { useWorkspace } from '../lib/WorkspaceContext'
 import './Dashboard.css'
 import './Integrations.css'
-
-const TEAM_ID = 'default-team'
+import { Eye, EyeOff } from 'lucide-react'
+import AlertModal from '../components/ui/AlertModal'
+import ConfirmModal from '../components/ui/ConfirmModal'
 
 export default function Integrations() {
-  const { user, logout } = useAuth()
+  const [alertMessage, setAlertMessage] = useState(null)
+  const { workspaceId, workspace, isAdmin } = useWorkspace();
+  const { user } = useAuth()
   
-  const appRoleNormalized = (user?.appRole || '').toLowerCase().replace(/[\s-]/g, '')
-  const isAdminRole = ['admin', 'owner', 'founder', 'cofounder'].some(r => appRoleNormalized.includes(r))
-  const isAdminEmail = ['erharsh237@gmail.com', 'kanishkaldh@gmail.com', 'shrutisinha2205@gmail.com'].includes(user?.email?.toLowerCase())
-  const isAdmin = isAdminRole || isAdminEmail
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false })
+  const openConfirm = (opts) => setConfirmModal({ isOpen: true, ...opts })
+  const closeConfirm = () => setConfirmModal({ isOpen: false })
+
+  const [showSecrets, setShowSecrets] = useState({})
+  const toggleShowSecret = (key) => setShowSecrets(prev => ({ ...prev, [key]: !prev[key] }))
   
   const [config, setConfig] = useState({})
   const [credentials, setCredentials] = useState({})
@@ -38,36 +42,30 @@ export default function Integrations() {
   const [fetchingCalendar, setFetchingCalendar] = useState(false)
   const [expandedCards, setExpandedCards] = useState({})
   
-  const [allowedUsers, setAllowedUsers] = useState([])
-  const [newAllowedEmail, setNewAllowedEmail] = useState('')
-  const [newAllowedRole, setNewAllowedRole] = useState('')
-  const [loadingUsers, setLoadingUsers] = useState(false)
+  if (isAdmin === false) {
+    return <Navigate to={`/${workspaceId}`} replace />
+  }
   
   const googleCalendar = INTEGRATIONS.find(i => i.id === 'google_calendar')
 
   useEffect(() => {
-    loadGis().catch(console.error)
-    const unsub1 = subscribeIntegrationConfig(TEAM_ID, (c) => { setConfig(c); setFormConfig(prev => ({ ...c, ...prev })) })
-    const unsub2 = subscribeIntegrationCredentials(user?.email, (c) => { setCredentials(c); setFormCredentials(prev => ({ ...c, ...prev })) })
-    const unsub3 = subscribeEventNotes(TEAM_ID, (notes) => { setEventNotes(notes) })
+    loadGis().catch(() => {}) // GIS script loads silently; errors shown when user actually tries to connect
+    const unsub1 = subscribeIntegrationConfig(workspaceId, (c) => { setConfig(c); setFormConfig(prev => ({ ...c, ...prev })) })
+    const unsub2 = subscribeIntegrationCredentials(workspaceId, user?.uid, (c) => { setCredentials(c); setFormCredentials(prev => ({ ...c, ...prev })) })
+    const unsub3 = subscribeEventNotes(workspaceId, undefined, (notes) => { setEventNotes(notes) })
     
-    if (isAdmin) {
-      setLoadingUsers(true)
-      getAllowedUsers()
-        .then(setAllowedUsers)
-        .catch(console.error)
-        .finally(() => setLoadingUsers(false))
+    return () => {
+      clearTimeout(debounceRef.current) // flush any pending debounced save on unmount
+      unsub1(); unsub2(); unsub3()
     }
-
-    return () => { unsub1(); unsub2(); unsub3() }
-  }, [user?.email, isAdmin])
+  }, [workspaceId, user?.uid, isAdmin])
 
   useEffect(() => {
     if (googleCalendar.isConfigured(config, credentials) && googleCalendar.actions.hasValidToken()) {
       setFetchingCalendar(true)
       googleCalendar.actions.fetchUpcomingEvents(config, credentials)
         .then(setCalendarEvents)
-        .catch(console.error)
+        .catch(() => setAlertMessage('Failed to load calendar events. Please reconnect Google Calendar.'))
         .finally(() => setFetchingCalendar(false))
     }
   }, [config, credentials])
@@ -83,7 +81,7 @@ export default function Integrations() {
       clearTimeout(debounceRef.current)
       debounceRef.current = setTimeout(async () => {
         try {
-          await saveEventNote(TEAM_ID, eventId, nextNotes)
+          await saveEventNote(workspaceId, undefined, eventId, nextNotes)
         } finally {
           setSavingNotes(false)
         }
@@ -93,15 +91,22 @@ export default function Integrations() {
     })
   }
 
-  async function handleDeleteNote(eventId) {
-    if (!window.confirm('Delete this meeting note permanently?')) return
-    try {
-      await deleteEventNote(TEAM_ID, eventId)
-      setSelectedEventId('')
-    } catch (err) {
-      console.error(err)
-      alert('Could not delete note.')
-    }
+  function handleDeleteNote(eventId) {
+    openConfirm({
+      title: 'Delete Meeting Note',
+      message: 'Are you sure you want to permanently delete this meeting note? This cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger',
+      onConfirm: async () => {
+        closeConfirm()
+        try {
+          await deleteEventNote(workspaceId, undefined, eventId)
+          setSelectedEventId('')
+        } catch (err) {
+          setAlertMessage('Failed to permanently delete the note. Please check your connection and try again.')
+        }
+      }
+    })
   }
 
   function toggleCard(id) {
@@ -157,37 +162,14 @@ export default function Integrations() {
       integration.credentialFields.forEach(f => { credPatch[f.key] = formCredentials[f.key] || '' })
 
       await Promise.all([
-        Object.keys(configPatch).length ? saveIntegrationConfig(TEAM_ID, configPatch) : Promise.resolve(),
-        Object.keys(credPatch).length && user?.email ? saveIntegrationCredentials(user.email, credPatch) : Promise.resolve(),
+        Object.keys(configPatch).length ? saveIntegrationConfig(workspaceId, configPatch) : Promise.resolve(),
+        Object.keys(credPatch).length && user?.uid ? saveIntegrationCredentials(workspaceId, user.uid, credPatch) : Promise.resolve(),
       ])
       setTestResults(prev => ({ ...prev, [integration.id]: { ok: 'Saved.' } }))
     } catch (err) {
-      setTestResults(prev => ({ ...prev, [integration.id]: { error: err.message } }))
+      setTestResults(prev => ({ ...prev, [integration.id]: { error: 'Connection failed. Please check your credentials.' } }))
     } finally {
       setSavingId(null)
-    }
-  }
-
-  async function handleAddAllowedUser(e) {
-    e.preventDefault()
-    if (!newAllowedEmail || !newAllowedEmail.includes('@')) return
-    try {
-      await addAllowedUser(newAllowedEmail, user?.email, newAllowedRole)
-      setNewAllowedEmail('')
-      setNewAllowedRole('')
-      getAllowedUsers().then(setAllowedUsers)
-    } catch (err) {
-      alert(err.message)
-    }
-  }
-
-  async function handleRemoveAllowedUser(email) {
-    if (!window.confirm(`Remove ${email} from allowlist? They will immediately lose access.`)) return
-    try {
-      await removeAllowedUser(email)
-      getAllowedUsers().then(setAllowedUsers)
-    } catch (err) {
-      alert(err.message)
     }
   }
 
@@ -196,7 +178,7 @@ export default function Integrations() {
     try {
       let ok
       if (integration.id === 'discord' || integration.id === 'slack') {
-        await integration.actions.postMessage(formConfig, formCredentials, { text: `Test message from Securiq (${user?.displayName || user?.email})` })
+        await integration.actions.postMessage(formConfig, formCredentials, { text: `Test message from Paper5 (${user?.displayName || user?.email})` })
         ok = 'Sent — check the channel.'
       } else if (integration.id === 'github') {
         if (!formConfig.githubOwner || !formConfig.githubRepo) throw new Error('Fill in repo owner/name first.')
@@ -214,7 +196,7 @@ export default function Integrations() {
       }
       setTestResults(prev => ({ ...prev, [integration.id]: { ok } }))
     } catch (err) {
-      setTestResults(prev => ({ ...prev, [integration.id]: { error: err.message } }))
+      setTestResults(prev => ({ ...prev, [integration.id]: { error: 'Connection failed. Please check your credentials.' } }))
     }
   }
 
@@ -224,26 +206,24 @@ export default function Integrations() {
         <div className="dash-header-inner">
           <div className="dash-brand">
             <span className="dash-brand-dot" />
-            <span className="mono">SECURIQ <span className="dash-brand-sub">| Integrations</span></span>
+            <span className="mono">Paper5 <span className="dash-brand-sub" style={{ whiteSpace: "nowrap" }}>{workspace?.name ? `| ${workspace.name}` : ''}</span></span>
           </div>
           <div className="dash-header-actions">
             <NavTabs />
-            <NotificationBell teamId={TEAM_ID} currentUser={user} />
-            <span className="dash-user">{user?.displayName || user?.email}</span>
-            <button className="btn-ghost btn-sm" onClick={logout}>Sign out</button>
+            <UserMenu />
           </div>
         </div>
       </header>
 
       <main className="dash-body">
-        <Breadcrumbs trail={[{ label: 'Integrations' }]} />
-
         <p className="integrations-intro">
           These are live — Discord/Slack actually post, GitHub actually reads your repo, Vercel actually checks
           deployment status. 
           {isAdmin 
-            ? ' Config fields (repo names, webhook URLs) are shared with the whole team. Credential fields are private to you only.'
-            : ' Only admins can edit shared team config fields, but you can configure your personal integrations (like your Google Calendar) below.'}
+            ? ' Config fields (repo names, webhook URLs) are shared with the whole workspace. Credential fields are private to you only.'
+            : ' Only admins can edit shared workspace config fields, but you can configure your personal integrations (like your Google Calendar) below.'}
+          <br /><br />
+          <strong>Privacy Note:</strong> By providing personal access tokens, you consent to us processing them on your behalf in accordance with our <a href="/legal/privacy" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>Privacy Policy</a> and DPA.
         </p>
 
         <div className="integrations-grid">
@@ -363,75 +343,6 @@ export default function Integrations() {
             </div>
           </div>
 
-          {isAdmin && (
-            <div className="integration-card" style={{ gridColumn: '1 / -1' }}>
-              <div className="integration-card-top">
-                <h3>Team Access (Allowlist)</h3>
-                <span className="integration-status integration-status--ready">
-                  {loadingUsers ? 'Loading...' : 'Admin Only'}
-                </span>
-              </div>
-              <p className="integration-desc">Manage who can log into the tracker. Users must sign in with the exact Google email listed below.</p>
-              
-              <div className="integration-fields" style={{ marginTop: '8px' }}>
-                <form onSubmit={handleAddAllowedUser} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                  <input
-                    type="email"
-                    value={newAllowedEmail}
-                    onChange={e => setNewAllowedEmail(e.target.value)}
-                    placeholder="teammate@gmail.com"
-                    style={{ flex: 1.5 }}
-                  />
-                  <input
-                    type="text"
-                    value={newAllowedRole}
-                    onChange={e => setNewAllowedRole(e.target.value)}
-                    placeholder="Role (e.g. Owner)"
-                    style={{ flex: 1 }}
-                  />
-                  <button type="submit" className="btn-primary btn-sm" disabled={!newAllowedEmail || !newAllowedEmail.includes('@')}>
-                    Add User
-                  </button>
-                </form>
-
-                <div 
-                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', marginBottom: '8px', cursor: 'pointer', userSelect: 'none', padding: '4px 8px', background: 'var(--bg-inset)', borderRadius: '4px' }}
-                  onClick={() => toggleCard('allowlist-users')}
-                >
-                  <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)' }}>Existing Members ({allowedUsers.length})</span>
-                  <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', transform: expandedCards['allowlist-users'] ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
-                </div>
-
-                {expandedCards['allowlist-users'] && (
-                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    {allowedUsers.map(u => (
-                      <li key={u.email} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--bg-layer-2)', padding: '6px 12px', borderRadius: '4px', fontSize: '13px' }}>
-                        <button 
-                          className="btn-ghost btn-sm" 
-                          style={{ color: 'var(--accent-critical)', minWidth: 'auto', padding: '2px 8px', marginLeft: '-8px' }}
-                          onClick={() => handleRemoveAllowedUser(u.email)}
-                        >
-                          Remove
-                        </button>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-                          <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{u.email}</span>
-                          {u.Note ? (
-                            <span style={{ fontSize: '11px', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{u.Note}</span>
-                          ) : (
-                            <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>No role</span>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                    {allowedUsers.length === 0 && !loadingUsers && (
-                      <li style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>No users found.</li>
-                    )}
-                  </ul>
-                )}
-              </div>
-            </div>
-          )}
-
           {INTEGRATIONS.map(integration => {
             const configured = integration.isConfigured(formConfig, formCredentials)
             const result = testResults[integration.id]
@@ -456,28 +367,73 @@ export default function Integrations() {
                     <p className="integration-desc">{integration.description}</p>
 
                     <div className="integration-fields">
-                      {integration.configFields.map(f => (
-                        <div className="field" key={f.key}>
-                          <label>{f.label}</label>
-                          <input
-                            type="text"
-                            value={formConfig[f.key] || ''}
-                            placeholder={f.placeholder}
-                            onChange={(e) => setFormConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
-                            disabled={!isAdmin}
-                          />
-                        </div>
-                      ))}
-                      {integration.credentialFields.map(f => (
-                        <div className="field" key={f.key}>
-                          <label>{f.label} <span className="integration-private-tag">(private to you)</span></label>
-                          <input
-                            type={f.type || 'text'}
-                            value={formCredentials[f.key] || ''}
-                            onChange={(e) => setFormCredentials(prev => ({ ...prev, [f.key]: e.target.value }))}
-                          />
-                        </div>
-                      ))}
+                      {integration.configFields.map(f => {
+                        const isPassword = f.type === 'password'
+                        const isShown = showSecrets[f.key]
+                        const inputType = isPassword ? (isShown ? 'text' : 'password') : 'text'
+
+                        return (
+                          <div className="field" key={f.key}>
+                            <label>{f.label}</label>
+                            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                              <input
+                                type={inputType}
+                                value={formConfig[f.key] || ''}
+                                placeholder={f.placeholder}
+                                onChange={(e) => setFormConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
+                                disabled={!isAdmin}
+                                style={{ width: '100%', paddingRight: isPassword ? '36px' : '12px' }}
+                              />
+                              {isPassword && (
+                                <button
+                                  type="button"
+                                  className="btn-ghost"
+                                  onClick={() => toggleShowSecret(f.key)}
+                                  style={{
+                                    position: 'absolute', right: '6px', padding: '4px 6px',
+                                    color: 'var(--text-tertiary)', background: 'transparent',
+                                    border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center'
+                                  }}
+                                  title={isShown ? 'Hide secret key' : 'Show secret key'}
+                                >
+                                  {isShown ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                      {integration.credentialFields.map(f => {
+                        const isShown = showSecrets[f.key]
+                        const inputType = isShown ? 'text' : 'password'
+
+                        return (
+                          <div className="field" key={f.key}>
+                            <label>{f.label} <span className="integration-private-tag">(private to you)</span></label>
+                            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                              <input
+                                type={inputType}
+                                value={formCredentials[f.key] || ''}
+                                onChange={(e) => setFormCredentials(prev => ({ ...prev, [f.key]: e.target.value }))}
+                                style={{ width: '100%', paddingRight: '36px' }}
+                              />
+                              <button
+                                type="button"
+                                className="btn-ghost"
+                                onClick={() => toggleShowSecret(f.key)}
+                                style={{
+                                  position: 'absolute', right: '6px', padding: '4px 6px',
+                                  color: 'var(--text-tertiary)', background: 'transparent',
+                                  border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center'
+                                }}
+                                title={isShown ? 'Hide secret key' : 'Show secret key'}
+                              >
+                                {isShown ? <EyeOff size={16} /> : <Eye size={16} />}
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
 
                     <div className="integration-actions-row" style={{ marginTop: '4px' }}>
@@ -498,6 +454,17 @@ export default function Integrations() {
           })}
         </div>
       </main>
+      <AlertModal message={alertMessage} onClose={() => setAlertMessage(null)} />
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText || 'Confirm'}
+        cancelText={confirmModal.cancelText || 'Cancel'}
+        variant={confirmModal.variant || 'default'}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={closeConfirm}
+      />
     </div>
   )
 }

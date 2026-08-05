@@ -1,5 +1,4 @@
-import { collection, getDocs } from 'firebase/firestore'
-import { db } from './firebase'
+import { supabase } from './supabase'
 
 const STATUS_LABEL = {
   not_started: 'Not started',
@@ -15,8 +14,6 @@ function toJsDate(dueDateIso) {
 // Firestore Timestamp, JS Date, or ISO string -> JS Date
 function coerceDate(value) {
   if (!value) return null
-  if (typeof value.toDate === 'function') return value.toDate()
-  if (value instanceof Date) return value
   return new Date(value)
 }
 
@@ -56,8 +53,11 @@ export async function downloadMonthlyReport(deadlines, members, { year, month })
 
   const extraWorkEntries = await Promise.all(
     dueInMonth.map(async (d) => {
-      const snap = await getDocs(collection(db, 'deadlines', d.id, 'extraWork'))
-      return [d.id, snap.docs.map(doc => doc.data())]
+      const { data } = await supabase
+        .from('extraWork')
+        .select('*')
+        .eq('deadlineId', d.id)
+      return [d.id, data || []]
     })
   )
   const extraWorkByDeadline = new Map(extraWorkEntries)

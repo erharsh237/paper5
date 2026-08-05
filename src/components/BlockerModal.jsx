@@ -1,8 +1,12 @@
 import { useState } from 'react'
 import { setBlocked } from '../lib/deadlines'
 import { createNotification, NOTIFICATION_TYPES } from '../lib/notifications'
+import { BLOCKER_CATEGORIES } from '../lib/utils'
+import { useWorkspace } from '../lib/WorkspaceContext'
 
-export default function BlockerModal({ teamId, deadline, currentUser, onClose }) {
+export default function BlockerModal({ deadline, currentUser, onClose }) {
+  const { workspaceId } = useWorkspace();
+  const [category, setCategory] = useState(BLOCKER_CATEGORIES[0].key)
   const [reason, setReason] = useState('')
   const [needHelpFrom, setNeedHelpFrom] = useState('')
   const [description, setDescription] = useState('')
@@ -15,12 +19,13 @@ export default function BlockerModal({ teamId, deadline, currentUser, onClose })
     setError('')
     setSubmitting(true)
     try {
-      await setBlocked(deadline.id, {
+      await setBlocked(workspaceId, deadline.id, {
+        category,
         reason: reason.trim(),
         needHelpFrom: needHelpFrom.trim(),
         description: description.trim(),
       })
-      await createNotification(teamId, {
+      await createNotification(workspaceId, undefined, {
         type: NOTIFICATION_TYPES.BLOCKER,
         message: `${currentUser?.displayName || currentUser?.email} blocked "${deadline.title}" — ${reason.trim()}`,
         deadlineId: deadline.id,
@@ -45,6 +50,13 @@ export default function BlockerModal({ teamId, deadline, currentUser, onClose })
         </div>
 
         <form className="modal-form" onSubmit={handleSubmit}>
+          <div className="field">
+            <label htmlFor="blocker-category">Category</label>
+            <select id="blocker-category" value={category} onChange={(e) => setCategory(e.target.value)}>
+              {BLOCKER_CATEGORIES.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
+            </select>
+          </div>
+
           <div className="field">
             <label htmlFor="blocker-reason">Reason</label>
             <input

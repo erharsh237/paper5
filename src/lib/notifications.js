@@ -1,16 +1,5 @@
-import {
-  collection, addDoc, updateDoc, doc,
-  onSnapshot, query, where, orderBy, serverTimestamp, limit, arrayUnion
-} from 'firebase/firestore'
-import { db } from './firebase'
+import { supabase } from './supabase'
 
-const notificationsCol = collection(db, 'notifications')
-
-// A notification: { teamId, type, message, deadlineId, forEmail, createdBy, createdAt, readBy }
-// forEmail: null means "everyone on the team" (e.g. new blocker); a specific
-// lowercase email targets one founder (e.g. "review pending" to the reviewer).
-// readBy is an array of emails that have dismissed it — lets one broadcast
-// doc serve every founder without N copies.
 export const NOTIFICATION_TYPES = {
   BLOCKER: 'blocker',
   REVIEW_PENDING: 'review_pending',
@@ -18,37 +7,65 @@ export const NOTIFICATION_TYPES = {
   TASK_APPROVED: 'task_approved',
 }
 
-export async function createNotification(teamId, { type, message, deadlineId, forEmail, createdBy }) {
-  return addDoc(notificationsCol, {
-    teamId,
-    type,
-    message,
-    deadlineId: deadlineId || null,
-    forEmail: forEmail ? forEmail.toLowerCase() : null,
-    createdBy: (createdBy || '').toLowerCase(),
-    createdAt: serverTimestamp(),
-    readBy: [],
-  })
+export async function createNotification(workspaceId, teamId, { type, message, deadlineId, forEmail, createdBy }) {
+  const { data, error } = await supabase
+    .from('notifications')
+    .insert({
+      workspace_id: workspaceId,
+      teamId,
+      type,
+      message,
+      deadlineId: deadlineId || null,
+      forEmail: forEmail ? forEmail.toLowerCase() : null,
+      createdBy: (createdBy || '').toLowerCase(),
+      readBy: [],
+    })
+    .select()
+    .maybeSingle()
+  if (error) throw error
+  return { id: data.id }
 }
 
-// Subscribes to the most recent notifications relevant to userEmail
-// (broadcasts + anything targeted at them specifically). Filtering by
-// audience happens client-side since Firestore can't OR two `where`s
-// on different fields without a composite "in" trick that doesn't fit
-// the null-vs-email shape here.
-export function subscribeNotifications(teamId, userEmail, callback) {
-  const q = query(notificationsCol, where('teamId', '==', teamId), orderBy('createdAt', 'desc'), limit(50))
-  return onSnapshot(q, (snap) => {
-    const email = (userEmail || '').toLowerCase()
-    const items = snap.docs
-      .map(d => ({ id: d.id, ...d.data() }))
-      .filter(n => n.forEmail === null || n.forEmail === email)
-    callback(items)
-  })
+export function subscribeNotifications(workspaceId, teamId, userEmail, callback) {
+  const fetchList = async () => {
+    const { data } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('workspace_id', workspaceId)
+      .order('createdAt', { ascending: false })
+      .limit(50)
+      
+    if (data) {
+      const email = (userEmail || '').toLowerCase()
+      const items = data.filter(n => n.forEmail === null || n.forEmail === email)
+      callback(items)
+    }
+  }
+  fetchList()
+  const channel = supabase.channel(`public:notifications:workspace_id=eq.${workspaceId}:${Math.random().toString(36).substring(7)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `workspace_id=eq.${workspaceId}` }, () => {
+      fetchList()
+    })
+    .subscribe()
+  return () => supabase.removeChannel(channel)
 }
 
-export async function markNotificationRead(id, userEmail) {
+export async function markNotificationRead(workspaceId, id, userEmail) {
   const email = (userEmail || '').toLowerCase()
-  const ref = doc(db, 'notifications', id)
-  return updateDoc(ref, { readBy: arrayUnion(email) })
+  const { data: existing } = await supabase
+    .from('notifications')
+    .select('readBy')
+    .eq('workspace_id', workspaceId)
+    .eq('id', id)
+    .maybeSingle()
+    
+  const readBy = existing?.readBy || []
+  if (!readBy.includes(email)) {
+    readBy.push(email)
+    await supabase
+      .from('notifications')
+      .update({ readBy })
+      .eq('workspace_id', workspaceId)
+      .eq('id', id)
+  }
 }

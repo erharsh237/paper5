@@ -1,20 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
-import { subscribeProfile, saveProfile, saveAim, getAimLockStatus, uploadProfilePic, uploadResume, removeResume } from '../lib/profile'
-import { subscribeRoles } from '../lib/roles'
+import { subscribeProfile, saveProfile, saveAim, getAimLockStatus, uploadPhoto, uploadResume, deleteResume } from '../lib/profile'
 import { resetTourSeen } from '../lib/onboarding'
-import { getAllowedUser } from '../lib/allowlist'
-import CalendarWidget from '../components/CalendarWidget'
-import NotificationBell from '../components/NotificationBell'
+
 import NavTabs from '../components/NavTabs'
 import Breadcrumbs from '../components/Breadcrumbs'
+import UserMenu from '../components/UserMenu'
+import CalendarWidget from '../components/CalendarWidget'
+import { useWorkspace } from '../lib/WorkspaceContext'
 import './Dashboard.css'
 import './Profile.css'
 
-const TEAM_ID = 'default-team'
+const TOTAL_STEPS = 4
 const MAX_PIC_MB = 5
-const MAX_RESUME_MB = 10
 
 function getUserColor(identifier) {
   if (!identifier) return '#5e5ce6';
@@ -27,30 +26,29 @@ function getUserColor(identifier) {
 }
 
 export default function Profile() {
-  const { user, logout } = useAuth()
+  const { user, logout, userData } = useAuth()
+  const workspaceContext = useWorkspace()
+  const workspaceRole = workspaceContext?.workspaceRole
+  const isOwner = workspaceContext?.isOwner
+  const isAdmin = workspaceContext?.isAdmin
+
   const navigate = useNavigate()
   const [profile, setProfile] = useState(null)
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [bio, setBio] = useState('')
   const [aim, setAim] = useState('')
-  const [adminRole, setAdminRole] = useState('')
-  
   const [saving, setSaving] = useState(false)
   const [savedFlash, setSavedFlash] = useState(false)
-  const [picUploading, setPicUploading] = useState(false)
-  const [resumeUploading, setResumeUploading] = useState(false)
   const [error, setError] = useState('')
-  
+  const [picUploading, setPicUploading] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
-  const TOTAL_STEPS = 4
+
+  const prevStep = () => setCurrentStep(s => Math.max(0, s - 1))
+  const nextStep = () => setCurrentStep(s => Math.min(TOTAL_STEPS - 1, s + 1))
 
   useEffect(() => {
     if (!user?.email) return
-    
-    getAllowedUser(user.email).then(data => {
-      if (data?.Note) setAdminRole(data.Note)
-    }).catch(console.error)
 
     return subscribeProfile(user.email, (p) => {
       setProfile(p)
@@ -68,8 +66,8 @@ export default function Profile() {
   const aimLock = getAimLockStatus(profile)
 
   async function handleSaveAll() {
-    if (!name.trim() || !phone.trim() || !bio.trim() || !aim.trim() || !profile?.resumeURL) {
-      setError('Please fill in all details (Name, Phone, Bio, Aim, and upload Resume) before saving.');
+    if (!name.trim() || !phone.trim() || !bio.trim() || !aim.trim()) {
+      setError('Please fill in Name, Phone, Bio, and Aim before saving.');
       return;
     }
     
@@ -80,7 +78,7 @@ export default function Profile() {
         name: name.trim(),
         phone: phone.trim(),
         roleId: profile?.roleId || '',
-        roleName: adminRole || profile?.roleName || '',
+        roleName: profile?.roleName || '',
         bio: bio.trim(),
       })
 
@@ -101,47 +99,69 @@ export default function Profile() {
   async function handlePicChange(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (!file.type.startsWith('image/')) return setError('Profile photo must be an image.')
-    if (file.size > MAX_PIC_MB * 1024 * 1024) return setError(`Photo must be under ${MAX_PIC_MB}MB.`)
+    if (file.size > MAX_PIC_MB * 1024 * 1024) {
+      setError(`Image file must be under ${MAX_PIC_MB}MB.`)
+      return
+    }
     setError('')
     setPicUploading(true)
     try {
-      await uploadProfilePic(user.email, file)
+      const reader = new FileReader()
+      reader.onload = async () => {
+        const dataUrl = reader.result
+        const uid = user?.id || user?.email
+        await uploadPhoto(workspaceId, uid, dataUrl)
+        setProfile(prev => ({ ...prev, photoURL: dataUrl }))
+        setSavedFlash(true)
+        setTimeout(() => setSavedFlash(false), 3000)
+        setPicUploading(false)
+      }
+      reader.readAsDataURL(file)
     } catch (err) {
       console.error(err)
-      setError('Photo upload failed. Try again.')
-    } finally {
+      setError('Could not upload photo. Please try again.')
       setPicUploading(false)
-      e.target.value = ''
     }
+    e.target.value = ''
   }
 
   async function handleResumeChange(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    const okType = file.type === 'application/pdf' || /\.(pdf|docx?)$/i.test(file.name)
-    if (!okType) return setError('Resume must be a PDF or Word doc.')
-    if (file.size > MAX_RESUME_MB * 1024 * 1024) return setError(`Resume must be under ${MAX_RESUME_MB}MB.`)
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Resume file must be under 10MB.')
+      return
+    }
     setError('')
-    setResumeUploading(true)
     try {
-      await uploadResume(user.email, file)
+      const reader = new FileReader()
+      reader.onload = async () => {
+        const resumeUrl = reader.result
+        const uid = user?.id || user?.email
+        await uploadResume(workspaceId, uid, resumeUrl, file.name)
+        setProfile(prev => ({ ...prev, resumeURL: resumeUrl, resumeName: file.name }))
+        setSavedFlash(true)
+        setTimeout(() => setSavedFlash(false), 3000)
+      }
+      reader.readAsDataURL(file)
     } catch (err) {
       console.error(err)
-      setError('Resume upload failed. Try again.')
-    } finally {
-      setResumeUploading(false)
-      e.target.value = ''
+      setError('Could not upload resume. Please try again.')
     }
+    e.target.value = ''
   }
 
   async function handleRemoveResume() {
-    if (!confirm('Remove your uploaded resume?')) return
+    setError('')
     try {
-      await removeResume(user.email, profile?.resumePath)
+      const uid = user?.id || user?.email
+      await deleteResume(workspaceId, uid)
+      setProfile(prev => ({ ...prev, resumeURL: null, resumeName: null }))
+      setSavedFlash(true)
+      setTimeout(() => setSavedFlash(false), 3000)
     } catch (err) {
       console.error(err)
-      setError('Could not remove resume. Try again.')
+      setError('Could not remove resume.')
     }
   }
 
@@ -155,13 +175,7 @@ export default function Profile() {
     }
   }
 
-  function nextStep() {
-    if (currentStep < TOTAL_STEPS - 1) setCurrentStep(c => c + 1)
-  }
 
-  function prevStep() {
-    if (currentStep > 0) setCurrentStep(c => c - 1)
-  }
 
   return (
     <div className="dash">
@@ -169,20 +183,17 @@ export default function Profile() {
         <div className="dash-header-inner">
           <div className="dash-brand">
             <span className="dash-brand-dot" />
-            <span className="mono">SECURIQ <span className="dash-brand-sub">| My profile</span></span>
+            <span className="mono">Paper5 <span className="dash-brand-sub" style={{ whiteSpace: "nowrap" }}>{workspace?.name ? `| ${workspace.name}` : ''}</span></span>
           </div>
           <div className="dash-header-actions">
             <NavTabs />
-            <NotificationBell teamId={TEAM_ID} currentUser={user} />
-            <span className="dash-user">{user?.displayName || user?.email}</span>
-            <button className="btn-ghost btn-sm" onClick={logout}>Sign out</button>
+            <UserMenu />
           </div>
         </div>
       </header>
 
       <main className="dash-body">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Breadcrumbs trail={[{ label: 'Profile Wizard' }]} />
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '16px' }}>
           <button type="button" className="btn-ghost btn-sm" onClick={handleRetakeTour}>
             Retake site tour
           </button>
@@ -204,11 +215,14 @@ export default function Profile() {
               
               <div className="profile-name-area">
                 <h1 className="profile-name">{name || user?.email}</h1>
-                {adminRole || profile?.roleName ? (
-                  <div className="role-badge">{adminRole || profile?.roleName}</div>
-                ) : (
-                  <div className="role-badge empty">Role pending assignment</div>
-                )}
+                <div className="role-badge">
+                  {profile?.roleName || (
+                    isOwner ? 'Workspace Owner' :
+                    isAdmin ? 'Workspace Admin' :
+                    workspaceRole ? `Workspace ${workspaceRole.charAt(0).toUpperCase() + workspaceRole.slice(1)}` :
+                    'Workspace Admin'
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -253,10 +267,10 @@ export default function Profile() {
 
                   {/* Slide 2: Aim */}
                   <div className="profile-slide" style={{ height: currentStep === 1 ? 'auto' : 0, overflow: 'hidden', opacity: currentStep === 1 ? 1 : 0, transition: 'opacity 0.3s' }}>
-                    <h2 className="profile-section-title">Step 2: Securiq Aim</h2>
+                    <h2 className="profile-section-title">Step 2: Your {workspace?.name || 'Workspace'} Aim</h2>
                     <div className="premium-field">
                       <label htmlFor="p-aim" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span>What do you want to achieve from Securiq?</span>
+                        <span>What do you want to achieve on {workspace?.name || 'this workspace'}?</span>
                         {aimLock.locked && (
                           <span className="profile-aim-lock-note">Locked until {aimLock.unlockDate.toLocaleDateString()}</span>
                         )}
@@ -286,8 +300,8 @@ export default function Profile() {
                       </div>
                       <div className="profile-resume-actions">
                         <label className="btn-ghost btn-sm profile-upload-btn">
-                          {resumeUploading ? 'Uploading…' : profile?.resumeURL ? 'Replace' : 'Upload Resume'}
-                          <input type="file" accept=".pdf,.doc,.docx" hidden onChange={handleResumeChange} disabled={resumeUploading} />
+                          {profile?.resumeURL ? 'Replace' : 'Upload Resume'}
+                          <input type="file" accept=".pdf,.doc,.docx" hidden onChange={handleResumeChange} />
                         </label>
                         {profile?.resumeURL && (
                           <button type="button" className="dcard-delete btn-sm" onClick={handleRemoveResume}>Remove</button>
@@ -337,13 +351,9 @@ export default function Profile() {
             <button type="button" className="btn-ghost btn-sm" style={{ color: 'var(--accent-critical)', borderColor: 'var(--accent-critical)' }} onClick={async () => {
               if (confirm('Are you absolutely sure you want to delete your account? You will lose access immediately.')) {
                 try {
-                  const { doc, deleteDoc, getFirestore } = await import('firebase/firestore')
-                  const db = getFirestore()
-                  // Delete personal profile doc
-                  await deleteDoc(doc(db, 'profiles', user.uid))
-                  // Delete allowlist doc (triggers session revocation via AuthContext)
-                  await deleteDoc(doc(db, 'allowedUsers', user.email.toLowerCase()))
-                  // Note: auth account deletion requires re-authentication, so we just remove their access here.
+                  const { supabase } = await import('../lib/supabase')
+                  const { error } = await supabase.functions.invoke('delete-user')
+                  if (error) throw error
                   logout()
                 } catch (err) {
                   console.error('Failed to delete account:', err)

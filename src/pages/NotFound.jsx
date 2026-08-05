@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useMemo } from 'react'
-import logo from '../assets/securiq-logo.png'
+import logo from '../assets/logo.png'
 import './NotFound.css'
 
 const GRID = ['·', '·', '·', '·', 'not_started', 'hit', '·', '·', '·', 'not_started', '·', '·', '·', '·', '·', '·']
@@ -10,8 +11,8 @@ export default function NotFound() {
 
   return (
     <div className="nf-wrap">
-      <div className="nf-card">
-        <img src={logo} alt="Securiq" className="nf-logo" />
+      <div className="nf-card glass-panel">
+        <img src={logo} alt="Paper5" className="nf-logo" />
 
         <div className="nf-badge">
           <span className="nf-dot" />

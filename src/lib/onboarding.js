@@ -1,27 +1,31 @@
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from './firebase'
+import { supabase } from './supabase'
 
-// One doc per user, id = lowercase email, so "seen the tour" persists
-// across devices/browsers instead of living in localStorage.
-function onboardingRef(email) {
-  return doc(db, 'onboarding', (email || '').toLowerCase())
+export async function hasSeenTour(workspaceId, uid) {
+  if (!uid) return true 
+  const { data } = await supabase
+    .from('onboarding')
+    .select('tourCompleted')
+    .eq('id', uid)
+    .eq('tourCompleted', true)
+    .limit(1)
+    .maybeSingle()
+  return !!data
 }
 
-export async function hasSeenTour(email) {
-  if (!email) return true // fail safe: don't force a tour if we can't identify the user
-  const snap = await getDoc(onboardingRef(email))
-  return snap.exists() && snap.data()?.tourCompleted === true
+export async function markTourSeen(workspaceId, uid) {
+  await supabase
+    .from('onboarding')
+    .upsert({
+      workspace_id: workspaceId,
+      id: uid,
+      tourCompleted: true,
+      completedAt: new Date().toISOString()
+    })
 }
 
-export async function markTourSeen(email) {
-  return setDoc(onboardingRef(email), {
-    tourCompleted: true,
-    completedAt: serverTimestamp(),
-  }, { merge: true })
-}
-
-export async function resetTourSeen(email) {
-  return setDoc(onboardingRef(email), {
-    tourCompleted: false,
-  }, { merge: true })
+export async function resetTourSeen(workspaceId, uid) {
+  await supabase
+    .from('onboarding')
+    .update({ tourCompleted: false })
+    .eq('id', uid)
 }

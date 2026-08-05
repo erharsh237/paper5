@@ -1,10 +1,16 @@
 import { Suspense, lazy } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './lib/AuthContext'
-import { firebaseConfigError } from './lib/firebase'
+import { WorkspaceProvider, useWorkspace } from './lib/WorkspaceContext'
+import LockedOverlay from './components/LockedOverlay'
 import Login from './pages/Login'
-import ConfigErrorPage from './pages/ConfigErrorPage'
-
+import Signup from './pages/Signup'
+import VerifyEmail from './pages/VerifyEmail'
+import WorkspacePicker from './pages/WorkspacePicker'
+import JoinWorkspace from './pages/JoinWorkspace'
+import Landing from './pages/Landing'
+import AuthAction from './pages/AuthAction'
+import ForcePasswordReset from './pages/ForcePasswordReset'
 // Route-based code splitting: each page ships as its own chunk, loaded only when visited.
 const MyDashboard = lazy(() => import('./pages/MyDashboard'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -12,8 +18,21 @@ const Meeting = lazy(() => import('./pages/Meeting'))
 const Analytics = lazy(() => import('./pages/Analytics'))
 const Integrations = lazy(() => import('./pages/Integrations'))
 const Profile = lazy(() => import('./pages/Profile'))
+const Settings = lazy(() => import('./pages/Settings'))
+const Legal = lazy(() => import('./pages/Legal'))
 const NotFound = lazy(() => import('./pages/NotFound'))
-import AIAssistantWidget from './components/AIAssistantWidget'
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+import ErrorPage from './pages/ErrorPage'
+import LegalConsentModal from './components/LegalConsentModal'
+
+// Marketing Pages
+const Features = lazy(() => import('./pages/Features'))
+const AboutUs = lazy(() => import('./pages/AboutUs'))
+import { 
+  ProductIntegrations, Changelog, Documentation, ApiReference, Security 
+} from './pages/MarketingPages'
+
+import { getDomainConfig, getAppUrl, getMainUrl } from './lib/domain'
 
 function PageLoading() {
   return (
@@ -26,35 +45,137 @@ function PageLoading() {
   )
 }
 
-export default function App() {
-  const { user, loading, accessDenied, denialReason } = useAuth()
-
-  if (firebaseConfigError) {
-    return <ConfigErrorPage message={firebaseConfigError} />
+function CrossDomainRedirect({ toApp = false, path = '' }) {
+  const target = toApp 
+    ? getAppUrl(path || window.location.pathname + window.location.search) 
+    : getMainUrl(path || window.location.pathname + window.location.search)
+  
+  if (target.startsWith('http')) {
+    window.location.href = target
+    return <PageLoading />
   }
+  return <Navigate to={target} replace />
+}
+
+function WorkspaceGuard({ children }) {
+  const { isLocked, is2FABlocked, loadingWorkspace } = useWorkspace()
+  if (loadingWorkspace) return <PageLoading />
+  
+  if (is2FABlocked) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-layer-1)' }}>
+        <div style={{ padding: '32px', background: 'var(--bg-layer-2)', border: '1px solid var(--border)', borderRadius: '12px', maxWidth: '400px', textAlign: 'center' }}>
+          <h2 style={{ margin: '0 0 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <span style={{ color: 'var(--accent-signal)' }}>🛡️</span> 2FA Required
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
+            This workspace enforces Two-Factor Authentication. Please enable 2FA in your Account Settings to access this workspace.
+          </p>
+          <a href="/workspace" className="btn-primary" style={{ display: 'inline-block', textDecoration: 'none' }}>Return to Pick Workspace</a>
+        </div>
+      </div>
+    )
+  }
+
+  if (isLocked) return <LockedOverlay />
+  return children
+}
+
+export default function App() {
+  const { user, userData, loading, isPending2FA } = useAuth()
+  const { isAppSubdomain } = getDomainConfig()
 
   if (loading) {
     return <PageLoading />
+  }
+
+  // If the user just accepted an invite and has no password, force them to set it
+  if (userData?.requiresPasswordReset) {
+    return <ForcePasswordReset />
+  }
+
+  // If user is logged in but not verified, force them to the verify screen for all protected routes
+  const requireAuthAndVerification = (children) => {
+    if (!user) return <Navigate to="/login" replace />
+    if (!user.emailVerified) return <Navigate to="/verify" replace />
+    return children
   }
 
   return (
     <>
       <Suspense fallback={<PageLoading />}>
         <Routes>
-          <Route path="/" element={user ? <MyDashboard /> : <Login accessDenied={accessDenied} denialReason={denialReason} />} />
-          <Route path="/team" element={user ? <Dashboard /> : <Login accessDenied={accessDenied} denialReason={denialReason} />} />
-          <Route path="/meeting" element={user ? <Meeting /> : <Login accessDenied={accessDenied} denialReason={denialReason} />} />
-          <Route path="/analytics" element={user ? <Analytics /> : <Login accessDenied={accessDenied} denialReason={denialReason} />} />
-          <Route path="/integrations" element={
-            !user ? <Login accessDenied={accessDenied} denialReason={denialReason} /> : 
-            ['erharsh237@gmail.com', 'kanishkaldh@gmail.com'].includes(user?.email?.toLowerCase()) ? <Integrations /> :
-            <NotFound />
+          {/* Subdomain-aware Root Path */}
+          <Route path="/" element={
+            isAppSubdomain 
+              ? (!user ? <Navigate to="/login" replace /> : <Navigate to="/workspace" replace />)
+              : <Landing />
           } />
-          <Route path="/profile" element={user ? <Profile /> : <Login accessDenied={accessDenied} denialReason={denialReason} />} />
+
+          <Route path="/auth/action" element={<AuthAction />} />
+          <Route path="/reset-password" element={<AuthAction />} />
+          <Route path="/workspace" element={
+            !user ? <Navigate to="/login" replace /> :
+            !user.emailVerified ? <Navigate to="/verify" replace /> :
+            !userData?.username ? <Navigate to="/signup" replace /> :
+            <WorkspacePicker />
+          } />
+          <Route path="/login" element={user && user.emailVerified && userData?.username && !isPending2FA ? <Navigate to="/workspace" replace /> : <Login />} />
+          <Route path="/signup" element={user && user.emailVerified && userData?.username ? <Navigate to="/workspace" replace /> : <Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/verify" element={
+            (user && user.emailVerified) ? <Navigate to="/workspace" replace /> : 
+            <VerifyEmail />
+          } />
+          
+          <Route path="/join" element={
+            !user ? <Navigate to={`/signup${window.location.search}`} replace /> :
+            !user.emailVerified ? <Navigate to={`/verify${window.location.search}`} replace /> :
+            !userData?.username ? <Navigate to={`/signup${window.location.search}`} replace /> :
+            <JoinWorkspace />
+          } />
+          
+          <Route path="/legal" element={<Navigate to="/legal/terms" replace />} />
+          <Route path="/legal/:docId" element={<Legal />} />
+          <Route path="/error" element={<ErrorPage />} />
+
+          {/* Marketing Pages - Redirect to paper5.com if visited on app.paper5.com */}
+          <Route path="/features" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <Features />} />
+          <Route path="/about" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <AboutUs />} />
+          <Route path="/product-integrations" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <ProductIntegrations />} />
+          <Route path="/changelog" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <Changelog />} />
+          <Route path="/docs" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <Documentation />} />
+          <Route path="/docs/api" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <ApiReference />} />
+          <Route path="/security" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <Security />} />
+
+          {/* Workspace paths */}
+          <Route path="/:workspaceId/*" element={
+            requireAuthAndVerification(
+              <WorkspaceProvider>
+                <WorkspaceGuard>
+                  <Routes>
+                    <Route path="" element={<MyDashboard />} />
+                    <Route path="team" element={<Dashboard />} />
+                    <Route path="meeting" element={<Meeting />} />
+                    <Route path="analytics" element={<Analytics />} />
+                    <Route path="integrations" element={<Integrations />} />
+                    <Route path="settings" element={<Settings />} />
+                    <Route path="profile" element={<Profile />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </WorkspaceGuard>
+              </WorkspaceProvider>
+            )
+          } />
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
-      {user && <AIAssistantWidget />}
+      {user && user.emailVerified && (
+        <>
+          <LegalConsentModal />
+        </>
+      )}
     </>
   )
 }

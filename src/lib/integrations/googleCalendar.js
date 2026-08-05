@@ -30,11 +30,11 @@ export function loadGis() {
   return gisScriptPromise
 }
 
-// Access tokens from the implicit flow are short-lived (~1hr) and
-// intentionally not persisted — re-prompting occasionally is the correct
-// tradeoff for a client-only app with no refresh-token storage.
-let cachedToken = localStorage.getItem('gcal_token') || null
-let cachedTokenExpiry = parseInt(localStorage.getItem('gcal_token_expiry') || '0', 10)
+// SEC-3: OAuth tokens must NEVER be stored in localStorage (XSS risk).
+// Using module-level in-memory variables instead — tokens are short-lived (~1hr)
+// and will be re-fetched on page reload, which is the correct security tradeoff.
+let cachedToken = null
+let cachedTokenExpiry = 0
 
 async function ensureAccessToken(clientId) {
   if (cachedToken && Date.now() < cachedTokenExpiry) return cachedToken
@@ -56,8 +56,6 @@ async function ensureAccessToken(clientId) {
           if (response.error) return reject(new Error(`Google auth failed: ${response.error}`))
           cachedToken = response.access_token
           cachedTokenExpiry = Date.now() + (response.expires_in - 60) * 1000
-          localStorage.setItem('gcal_token', cachedToken)
-          localStorage.setItem('gcal_token_expiry', cachedTokenExpiry.toString())
           resolve(cachedToken)
         },
       })
@@ -81,8 +79,6 @@ async function createEvent(credentials, accessToken, event) {
   )
   if (!res.ok) {
     if (res.status === 401) {
-      localStorage.removeItem('gcal_token')
-      localStorage.removeItem('gcal_token_expiry')
       cachedToken = null
       cachedTokenExpiry = 0
     }
@@ -97,7 +93,7 @@ export const googleCalendar = {
   name: 'Google Calendar',
   description: 'Push sprint start/end dates and the weekly meeting slot onto the team calendar.',
   configFields: [
-    { key: 'googleCalendarClientId', label: 'OAuth Client ID', placeholder: '....apps.googleusercontent.com' },
+    { key: 'googleCalendarClientId', label: 'OAuth Client ID', placeholder: '....apps.googleusercontent.com', type: 'password' },
   ],
   credentialFields: [
     { key: 'googleCalendarId', label: 'Calendar ID (optional — defaults to "primary")', placeholder: 'primary' },
@@ -134,7 +130,7 @@ export const googleCalendar = {
       const token = await ensureAccessToken(config.googleCalendarClientId)
       const now = new Date()
       return createEvent(credentials, token, {
-        summary: 'Securiq Calendar Sync Test',
+        summary: 'Paper5 Calendar Sync Test',
         description: 'If you are seeing this, your personal Google Calendar integration is working successfully!',
         start: { dateTime: now.toISOString() },
         end: { dateTime: new Date(now.getTime() + 30 * 60000).toISOString() },
@@ -154,8 +150,6 @@ export const googleCalendar = {
       )
       if (!res.ok) {
         if (res.status === 401) {
-          localStorage.removeItem('gcal_token')
-          localStorage.removeItem('gcal_token_expiry')
           cachedToken = null
           cachedTokenExpiry = 0
           throw new Error('Your session expired. Please click connect again.')
@@ -164,13 +158,10 @@ export const googleCalendar = {
         throw new Error(body.error?.message || `Google Calendar API error (${res.status}).`)
       }
       const data = await res.json()
-      console.log('[Calendar Sync] Raw events returned by Google API:', data.items)
       return data.items || []
     },
 
     disconnectCalendar() {
-      localStorage.removeItem('gcal_token')
-      localStorage.removeItem('gcal_token_expiry')
       cachedToken = null
       cachedTokenExpiry = 0
     },

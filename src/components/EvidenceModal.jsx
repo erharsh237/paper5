@@ -1,17 +1,13 @@
 import { useState } from 'react'
 import { submitForReview } from '../lib/deadlines'
 import { createNotification, NOTIFICATION_TYPES } from '../lib/notifications'
+import { useWorkspace } from '../lib/WorkspaceContext'
 
-const EVIDENCE_TYPES = [
-  { key: 'pr', label: 'GitHub PR link' },
-  { key: 'commit', label: 'GitHub commit link' },
-  { key: 'screenshot', label: 'Screenshot (describe / link)' },
-  { key: 'video', label: 'Video (describe / link)' },
-  { key: 'notes', label: 'Notes' },
-]
+import { EVIDENCE_TYPES } from '../lib/utils'
 
-export default function EvidenceModal({ teamId, deadline, currentUser, onClose }) {
-  const [evidenceType, setEvidenceType] = useState('pr')
+export default function EvidenceModal({ deadline, currentUser, onClose }) {
+  const { workspaceId } = useWorkspace();
+  const [evidenceType, setEvidenceType] = useState(EVIDENCE_TYPES[0].key)
   const [evidenceContent, setEvidenceContent] = useState('')
   const [repoName, setRepoName] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -19,8 +15,8 @@ export default function EvidenceModal({ teamId, deadline, currentUser, onClose }
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!evidenceContent.trim()) return setError('Add a link, description, or notes as evidence.')
-    if ((evidenceType === 'pr' || evidenceType === 'commit') && !repoName) return setError('Select a repository.')
+    if (!evidenceContent.trim()) return setError('Please provide a link, description, or detailed notes as evidence.')
+    if ((evidenceType === 'pr' || evidenceType === 'commit') && !repoName) return setError('Please select a repository to proceed.')
     if (!deadline.definitionOfDone?.trim()) {
       // Not a hard block — DoD is optional metadata in Phase 1 — but flag it
       // so founders notice it wasn't set.
@@ -28,13 +24,13 @@ export default function EvidenceModal({ teamId, deadline, currentUser, onClose }
     setError('')
     setSubmitting(true)
     try {
-      await submitForReview(deadline.id, {
+      await submitForReview(workspaceId, deadline.id, {
         evidenceType,
         evidenceContent: evidenceContent.trim(),
-        repoName: (evidenceType === 'pr' || evidenceType === 'commit') ? repoName : null,
+        repoName: (evidenceType === 'github_pr' || evidenceType === 'github_commit') ? repoName : null,
         submittedBy: currentUser?.email,
       })
-      await createNotification(teamId, {
+      await createNotification(workspaceId, undefined, {
         type: NOTIFICATION_TYPES.REVIEW_PENDING,
         message: `${currentUser?.displayName || currentUser?.email} submitted "${deadline.title}" for review`,
         deadlineId: deadline.id,
@@ -44,7 +40,7 @@ export default function EvidenceModal({ teamId, deadline, currentUser, onClose }
       onClose()
     } catch (err) {
       console.error(err)
-      setError('Could not submit for review. Try again.')
+      setError('Unable to submit evidence for review. Please verify your connection and try again.')
     } finally {
       setSubmitting(false)
     }
@@ -72,13 +68,13 @@ export default function EvidenceModal({ teamId, deadline, currentUser, onClose }
             </select>
           </div>
 
-          {(evidenceType === 'pr' || evidenceType === 'commit') && (
+          {(evidenceType === 'github_pr' || evidenceType === 'github_commit') && (
             <div className="field">
               <label htmlFor="ev-repo">Repository</label>
               <select id="ev-repo" value={repoName} onChange={(e) => setRepoName(e.target.value)}>
                 <option value="">Select a repository...</option>
-                <option value="securiq">securiq</option>
-                <option value="securiq-app">securiq-app</option>
+                <option value="paper5">paper5</option>
+                <option value="paper5-app">paper5-app</option>
               </select>
             </div>
           )}

@@ -1,16 +1,18 @@
 import { useEffect, useState, useRef, useMemo } from 'react'
 import { subscribeNotifications, markNotificationRead } from '../lib/notifications'
+import { useWorkspace } from '../lib/WorkspaceContext'
 import './NotificationBell.css'
 
-export default function NotificationBell({ teamId, currentUser }) {
+export default function NotificationBell({ currentUser }) {
+  const { workspaceId } = useWorkspace();
   const [notifications, setNotifications] = useState([])
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
   useEffect(() => {
     if (!currentUser?.email) return
-    return subscribeNotifications(teamId, currentUser.email, setNotifications)
-  }, [teamId, currentUser?.email])
+    return subscribeNotifications(workspaceId, undefined, currentUser.email, setNotifications)
+  }, [workspaceId, currentUser?.email])
 
   useEffect(() => {
     function onClickOutside(e) {
@@ -26,7 +28,7 @@ export default function NotificationBell({ teamId, currentUser }) {
   }, [notifications, currentUser?.email])
 
   function handleDismiss(id) {
-    markNotificationRead(id, currentUser.email)
+    markNotificationRead(workspaceId, id, currentUser.email)
   }
 
   return (

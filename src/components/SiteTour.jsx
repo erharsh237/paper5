@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { markTourSeen } from '../lib/onboarding'
+import { useWorkspace } from '../lib/WorkspaceContext'
 import './SiteTour.css'
 
 const STEPS = [
   {
     title: 'Welcome to the tracker',
-    body: "This is FounderOS — built to keep us shipping every Sunday instead of re-planning and missing deadlines. Quick tour, six steps, then you're in.",
+    body: "This is SprintOS - built to keep us shipping every Sunday instead of re-planning and missing deadlines. Quick tour, six steps, then you're in.",
   },
   {
     title: 'My tasks (this page)',
@@ -29,7 +30,8 @@ const STEPS = [
   },
 ]
 
-export default function SiteTour({ currentUserEmail, onFinish }) {
+export default function SiteTour({ currentUser, onFinish }) {
+  const { workspaceId } = useWorkspace();
   const [step, setStep] = useState(0)
   const [dismissing, setDismissing] = useState(false)
   const isLast = step === STEPS.length - 1
@@ -37,7 +39,7 @@ export default function SiteTour({ currentUserEmail, onFinish }) {
   async function handleClose() {
     setDismissing(true)
     try {
-      await markTourSeen(currentUserEmail)
+      await markTourSeen(workspaceId, currentUser?.uid)
     } finally {
       onFinish()
     }

@@ -1,15 +1,18 @@
 import { useState } from 'react'
 import { createDeadline } from '../lib/deadlines'
 import { sendDeadlineEmail } from '../lib/email'
-import { PRIORITIES } from '../lib/utils'
+import { PRIORITIES, EVIDENCE_TYPES } from '../lib/utils'
+import { useWorkspace } from '../lib/WorkspaceContext'
 
-export default function NewDeadlineModal({ teamId, members, currentUser, activeSprint, onClose }) {
+export default function NewDeadlineModal({ members, currentUser, activeSprint, onClose }) {
+  const { workspaceId } = useWorkspace();
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [priority, setPriority] = useState('medium')
   const [assigneeId, setAssigneeId] = useState(members[0]?.id || '')
   const [dueDate, setDueDate] = useState('')
   const [estimatedHours, setEstimatedHours] = useState('')
+  const [requiredEvidence, setRequiredEvidence] = useState([])
   const [notifyEmail, setNotifyEmail] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [emailStatus, setEmailStatus] = useState(null) // null | 'sending' | 'sent' | 'failed' | 'skipped'
@@ -22,21 +25,21 @@ export default function NewDeadlineModal({ teamId, members, currentUser, activeS
     e.preventDefault()
     setError('')
 
-    if (!title.trim()) return setError('Title is required.')
-    if (!dueDate) return setError('Due date is required.')
+    if (!title.trim()) return setError('A title is required to create a new deadline.')
+    if (!dueDate) return setError('A valid due date is required for this deadline.')
 
     const parsedDate = new Date(dueDate)
     if (isNaN(parsedDate.getTime())) {
-      return setError('That due date looks invalid. Please pick it using the calendar icon instead of typing it.')
+      return setError('The provided due date format is invalid. Please use the calendar picker to select a valid date.')
     }
 
-    if (!assignee) return setError('Select a team member to assign.')
-    if (!currentUser?.email) return setError('Your account has no email on file — cannot assign ownership.')
-    if (sprintLocked) return setError('The active sprint is locked — new tasks can\'t be added until it\'s unlocked.')
+    if (!assignee) return setError('Please assign a team member to this deadline.')
+    if (!currentUser?.email) return setError('Ownership assignment failed: No email address is associated with your account.')
+    if (sprintLocked) return setError('The current sprint is locked. Unlock the sprint to add new deadlines.')
 
     setSubmitting(true)
     try {
-      await createDeadline(teamId, {
+      await createDeadline(workspaceId, undefined, {
         title: title.trim(),
         description: description.trim(),
         priority,
@@ -48,6 +51,7 @@ export default function NewDeadlineModal({ teamId, members, currentUser, activeS
         createdByName: currentUser?.displayName || currentUser?.email || 'Someone',
         sprintId: activeSprint?.id || null,
         estimatedHours: estimatedHours === '' ? null : Number(estimatedHours),
+        requiredEvidence: requiredEvidence.map(type => ({ type, status: 'pending' })),
       })
 
       if (notifyEmail) {
@@ -76,7 +80,7 @@ export default function NewDeadlineModal({ teamId, members, currentUser, activeS
       }
     } catch (err) {
       console.error(err)
-      setError('Could not save the deadline. Try again.')
+      setError('Failed to save the deadline. Please ensure your inputs are correct and try again.')
     } finally {
       setSubmitting(false)
     }
@@ -146,6 +150,25 @@ export default function NewDeadlineModal({ teamId, members, currentUser, activeS
                 onChange={(e) => setEstimatedHours(e.target.value)}
                 placeholder="e.g. 4"
               />
+            </div>
+          </div>
+
+          <div className="field">
+            <label>Required Evidence (Proof of Work)</label>
+            <div className="checkbox-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '8px' }}>
+              {EVIDENCE_TYPES.map(ev => (
+                <label key={ev.key} className="checkbox-row" style={{ fontSize: '13px' }}>
+                  <input
+                    type="checkbox"
+                    checked={requiredEvidence.includes(ev.key)}
+                    onChange={(e) => {
+                      if (e.target.checked) setRequiredEvidence([...requiredEvidence, ev.key])
+                      else setRequiredEvidence(requiredEvidence.filter(k => k !== ev.key))
+                    }}
+                  />
+                  {ev.label}
+                </label>
+              ))}
             </div>
           </div>
 

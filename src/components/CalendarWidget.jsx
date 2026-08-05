@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { INTEGRATIONS } from '../lib/integrations'
 import { subscribeIntegrationConfig, subscribeIntegrationCredentials } from '../lib/integrations/config'
 import { loadGis } from '../lib/integrations/googleCalendar'
+import { useWorkspace } from '../lib/WorkspaceContext'
 
-const TEAM_ID = 'default-team'
+// Calendar Widget
 const googleCalendar = INTEGRATIONS.find(i => i.id === 'google_calendar')
 
 export default function CalendarWidget({ user, onSelectEvent, selectedEventId }) {
+  const { workspaceId } = useWorkspace();
   const [config, setConfig] = useState({})
   const [credentials, setCredentials] = useState({})
   const [calendarEvents, setCalendarEvents] = useState([])
@@ -14,11 +16,11 @@ export default function CalendarWidget({ user, onSelectEvent, selectedEventId })
   const [calendarError, setCalendarError] = useState('')
 
   useEffect(() => {
-    loadGis().catch(console.error)
-    const unsub1 = subscribeIntegrationConfig(TEAM_ID, setConfig)
-    const unsub2 = subscribeIntegrationCredentials(user?.email, setCredentials)
+    loadGis().catch(() => {})
+    const unsub1 = subscribeIntegrationConfig(workspaceId, setConfig)
+    const unsub2 = subscribeIntegrationCredentials(workspaceId, user?.uid, setCredentials)
     return () => { unsub1(); unsub2() }
-  }, [user?.email])
+  }, [workspaceId, user?.uid])
 
   useEffect(() => {
     if (googleCalendar.isConfigured(config) && googleCalendar.actions.hasValidToken() && calendarEvents.length === 0 && !fetchingEvents) {
@@ -31,7 +33,6 @@ export default function CalendarWidget({ user, onSelectEvent, selectedEventId })
     setCalendarError('')
     try {
       if (!googleCalendar.isConfigured(config)) {
-        console.warn('[Calendar Mock] Google Calendar not configured. Returning mock events.')
         await new Promise(r => setTimeout(r, 1000))
         setCalendarEvents([
           { id: 'mock-1', summary: 'Sprint Planning', start: { dateTime: new Date(Date.now() + 2 * 3600000).toISOString() }, end: { dateTime: new Date(Date.now() + 3 * 3600000).toISOString() } },
@@ -43,8 +44,7 @@ export default function CalendarWidget({ user, onSelectEvent, selectedEventId })
       const events = await googleCalendar.actions.fetchUpcomingEvents(config, credentials)
       setCalendarEvents(events)
     } catch (err) {
-      console.error(err)
-      setCalendarError(err.message || 'Could not connect to Google Calendar.')
+      setCalendarError('Could not connect to Google Calendar. Please try again.')
     } finally {
       setFetchingEvents(false)
     }
@@ -81,19 +81,22 @@ export default function CalendarWidget({ user, onSelectEvent, selectedEventId })
       </div>
       
       {!googleCalendar.actions.hasValidToken() && !fetchingEvents && calendarEvents.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '24px 0' }}>
-          <p className="profile-hint" style={{ marginBottom: '16px' }}>
-            Connect your personal Google Calendar to view your upcoming meetings.
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', background: 'var(--bg-inset)', borderRadius: '8px', border: '1px dashed var(--border-hair)', textAlign: 'center' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--bg-panel)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-sm)' }}>
+             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          </div>
+          <h3 style={{ margin: '0 0 6px 0', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>No calendar connected</h3>
+          <p style={{ margin: '0 0 20px 0', fontSize: '12px', color: 'var(--text-secondary)', maxWidth: '240px', lineHeight: 1.5 }}>
+            Sync your Google Calendar to view upcoming meetings directly on your dashboard.
           </p>
           <button 
-            className="btn-primary" 
+            className="btn-primary btn-sm" 
             onClick={handleConnectCalendar} 
             disabled={fetchingEvents}
-            style={{ width: '100%' }}
           >
-            {fetchingEvents ? 'Connecting...' : 'Connect with Calendar'}
+            {fetchingEvents ? 'Connecting...' : 'Connect Google Calendar'}
           </button>
-          {calendarError && <div className="form-error" style={{ marginTop: '12px', textAlign: 'left' }}>{calendarError}</div>}
+          {calendarError && <div className="form-error" style={{ marginTop: '12px', textAlign: 'center', fontSize: '12px' }}>{calendarError}</div>}
         </div>
       ) : (
         <div>

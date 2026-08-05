@@ -1,34 +1,45 @@
-import { doc, setDoc, onSnapshot, collection, query, where, serverTimestamp } from 'firebase/firestore'
-import { db } from './firebase'
+import { supabase } from './supabase'
 
-const reflectionsCol = collection(db, 'reflections')
-
-// One reflection per (sprint, founder) — deterministic doc id so re-submitting
-// updates the same doc instead of creating duplicates.
-function reflectionId(sprintId, email) {
-  return `${sprintId}_${(email || '').toLowerCase()}`
+function reflectionId(sprintId, uid) {
+  return `${sprintId}_${uid}`
 }
 
-export function subscribeReflections(teamId, sprintId, callback) {
-  const q = query(reflectionsCol, where('teamId', '==', teamId), where('sprintId', '==', sprintId))
-  return onSnapshot(q, (snap) => {
-    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-  })
+export function subscribeReflections(workspaceId, teamId, sprintId, callback) {
+  const fetchList = async () => {
+    const { data } = await supabase
+      .from('reflections')
+      .select('*')
+      .eq('workspace_id', workspaceId)
+      .eq('sprintId', sprintId)
+    if (data) callback(data)
+  }
+  fetchList()
+  const channel = supabase.channel(`public:reflections:workspace_id=eq.${workspaceId}:sprintId=eq.${sprintId}:${Math.random().toString(36).substring(7)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'reflections', filter: `workspace_id=eq.${workspaceId}` }, () => {
+      fetchList()
+    })
+    .subscribe()
+  return () => supabase.removeChannel(channel)
 }
 
-export async function submitReflection(teamId, sprintId, {
-  memberEmail, memberName, completedTasks, whyNot, biggestBlocker, improvement,
+export async function submitReflection(workspaceId, teamId, sprintId, {
+  memberId, memberEmail, memberName, completedTasks, whyNot, biggestBlocker, improvement,
 }) {
-  const id = reflectionId(sprintId, memberEmail)
-  return setDoc(doc(db, 'reflections', id), {
-    teamId,
-    sprintId,
-    memberEmail: (memberEmail || '').toLowerCase(),
-    memberName,
-    completedTasks,
-    whyNot: whyNot || '',
-    biggestBlocker: biggestBlocker || '',
-    improvement: improvement || '',
-    submittedAt: serverTimestamp(),
-  })
+  const id = reflectionId(sprintId, memberId)
+  await supabase
+    .from('reflections')
+    .upsert({
+      workspace_id: workspaceId,
+      id,
+      teamId,
+      sprintId,
+      memberId,
+      memberEmail: (memberEmail || '').toLowerCase(),
+      memberName,
+      completedTasks,
+      whyNot: whyNot || '',
+      biggestBlocker: biggestBlocker || '',
+      improvement: improvement || '',
+      submittedAt: new Date().toISOString()
+    })
 }

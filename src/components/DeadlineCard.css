@@ -1,12 +1,19 @@
 .dcard {
   background: var(--bg-panel);
-  border: 1px solid var(--border-hair);
-  border-left: 3px solid var(--border-hair);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border);
   border-radius: var(--radius-md);
-  transition: border-color 0.15s ease, transform 0.1s ease;
+  box-shadow: var(--shadow-panel);
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
 }
 
-.dcard:hover { border-color: var(--border-hair-bright); }
+.dcard:hover { 
+  border-color: var(--border-bright);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+}
 
 .dcard--overdue { border-left-color: var(--accent-critical); }
 .dcard--critical { border-left-color: var(--accent-critical); }

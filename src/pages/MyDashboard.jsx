@@ -9,21 +9,22 @@ import NotificationBell from '../components/NotificationBell'
 import NavTabs from '../components/NavTabs'
 import SiteTour from '../components/SiteTour'
 import Breadcrumbs from '../components/Breadcrumbs'
+import UserMenu from '../components/UserMenu'
 import CalendarWidget from '../components/CalendarWidget'
+import { useWorkspace } from '../lib/WorkspaceContext'
 import './Dashboard.css'
 import './MyDashboard.css'
 
-const TEAM_ID = 'default-team'
-
 export default function MyDashboard() {
+  const { workspaceId, workspace } = useWorkspace();
   const { user, logout } = useAuth()
-  const { deadlines, hasMore, loadMore, loadingMore } = useDeadlines(TEAM_ID)
+  const { deadlines, hasMore, loadMore, loadingMore } = useDeadlines(workspaceId)
   const [sprints, setSprints] = useState([])
   const [showTour, setShowTour] = useState(false)
 
   useEffect(() => {
-    return subscribeSprints(TEAM_ID, setSprints)
-  }, [])
+    return subscribeSprints(workspaceId, undefined, setSprints)
+  }, [workspaceId])
 
 
 
@@ -86,20 +87,17 @@ export default function MyDashboard() {
         <div className="dash-header-inner">
           <div className="dash-brand">
             <span className="dash-brand-dot" />
-            <span className="mono">SECURIQ <span className="dash-brand-sub">| My tasks</span></span>
+            <span className="mono">Paper5 <span className="dash-brand-sub" style={{ whiteSpace: "nowrap" }}>{workspace?.name ? `| ${workspace.name}` : ''}</span></span>
           </div>
           <div className="dash-header-actions">
             <NavTabs />
-            <NotificationBell teamId={TEAM_ID} currentUser={user} />
-            <span className="dash-user">{user?.displayName || user?.email}</span>
-            <button className="btn-ghost btn-sm" onClick={logout}>Sign out</button>
+            <NotificationBell currentUser={user} />
+            <UserMenu />
           </div>
         </div>
       </header>
 
       <main className="dash-body">
-        <Breadcrumbs trail={[{ label: 'My tasks' }]} />
-
         <section className="mydash-top-row" style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
           <div className="mydash-hello" style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <h1 style={{ margin: '0 0 8px 0' }}>Welcome back, {user?.displayName?.split(' ')[0] || 'there'}</h1>

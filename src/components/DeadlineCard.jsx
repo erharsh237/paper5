@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { UrgencyBadge, PriorityBadge } from './Badge'
-import { getUrgency, formatDue, STATUSES } from '../lib/utils'
+import { getUrgency, formatWorkspaceDate, STATUSES, EVIDENCE_TYPES } from '../lib/utils'
 import {
   updateDeadlineStatus, addExtraWork, approveReview, rejectReview, clearBlocked,
   subscribeEvidence, subscribeExtraWork,
@@ -8,9 +8,11 @@ import {
 import { createNotification, NOTIFICATION_TYPES } from '../lib/notifications'
 import BlockerModal from './BlockerModal'
 import EvidenceModal from './EvidenceModal'
+import { useWorkspace } from '../lib/WorkspaceContext'
 import './DeadlineCard.css'
 
-export default function DeadlineCard({ deadline, currentUser, sprintLocked, teamId }) {
+export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
+  const { workspaceId, workspace } = useWorkspace();
   const [expanded, setExpanded] = useState(false)
   const [draftStatus, setDraftStatus] = useState(deadline.status)
   const [saving, setSaving] = useState(false)
@@ -25,7 +27,7 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked, team
   const [evidence, setEvidence] = useState([])
   const [extraWork, setExtraWork] = useState([])
   const urgency = getUrgency(deadline.dueDate, deadline.status)
-  const due = formatDue(deadline.dueDate)
+  const due = formatWorkspaceDate(deadline.dueDate, workspace?.settings)
   const isAssignee = currentUser?.email &&
     deadline.assigneeEmail?.toLowerCase() === currentUser.email.toLowerCase()
   // Only the assignee moves their own progress.
@@ -52,8 +54,8 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked, team
   // for cards nobody's looking at.
   useEffect(() => {
     if (!expanded) return
-    const unsub1 = subscribeEvidence(deadline.id, setEvidence)
-    const unsub2 = subscribeExtraWork(deadline.id, setExtraWork)
+    const unsub1 = subscribeEvidence(workspaceId, deadline.id, setEvidence)
+    const unsub2 = subscribeExtraWork(workspaceId, deadline.id, setExtraWork)
     return () => { unsub1(); unsub2() }
   }, [expanded, deadline.id])
 
@@ -62,7 +64,7 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked, team
     setSaving(true)
     setStatusError(null)
     try {
-      await updateDeadlineStatus(deadline.id, draftStatus)
+      await updateDeadlineStatus(workspaceId, deadline.id, draftStatus)
     } catch (err) {
       console.error('Failed to update status:', err)
       setStatusError(
@@ -80,7 +82,7 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked, team
     setSaving(true)
     setStatusError(null)
     try {
-      await clearBlocked(deadline.id, 'in_progress')
+      await clearBlocked(workspaceId, deadline.id, 'in_progress')
     } catch (err) {
       console.error(err)
       setStatusError('Could not clear the blocker. Try again.')
@@ -93,8 +95,8 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked, team
     if (!confirm(`Approve "${deadline.title}" as done?`)) return
     setSaving(true)
     try {
-      await approveReview(deadline.id, { reviewerEmail: currentUser.email, reviewerName: currentUser.displayName || currentUser.email })
-      await createNotification(teamId, {
+      await approveReview(workspaceId, deadline.id, { reviewerEmail: currentUser.email, reviewerName: currentUser.displayName || currentUser.email })
+      await createNotification(workspaceId, undefined, {
         type: NOTIFICATION_TYPES.TASK_APPROVED,
         message: `${currentUser?.displayName || currentUser?.email} approved "${deadline.title}"`,
         deadlineId: deadline.id,
@@ -113,12 +115,12 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked, team
     if (!rejectNote.trim()) return
     setSaving(true)
     try {
-      await rejectReview(deadline.id, {
+      await rejectReview(workspaceId, deadline.id, {
         reviewerEmail: currentUser.email,
         reviewerName: currentUser.displayName || currentUser.email,
         reviewNote: rejectNote.trim(),
       })
-      await createNotification(teamId, {
+      await createNotification(workspaceId, undefined, {
         type: NOTIFICATION_TYPES.REVIEW_REJECTED,
         message: `${currentUser?.displayName || currentUser?.email} sent "${deadline.title}" back — ${rejectNote.trim()}`,
         deadlineId: deadline.id,
@@ -140,7 +142,7 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked, team
     if (!note) return
     setSavingExtra(true)
     try {
-      await addExtraWork(deadline.id, {
+      await addExtraWork(workspaceId, deadline.id, {
         note,
         addedBy: currentUser?.email,
         addedByName: currentUser?.displayName || currentUser?.email,
@@ -180,6 +182,21 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked, team
       {expanded && (
         <div className="dcard-expanded">
           {deadline.description && <p className="dcard-desc">{deadline.description}</p>}
+
+          {deadline.requiredEvidence && deadline.requiredEvidence.length > 0 && (
+            <div className="dcard-blocker">
+              <div className="dcard-extrawork-title">Required Evidence</div>
+              {deadline.requiredEvidence.map(req => {
+                const isSubmitted = evidence.some(ev => ev.type === req.type)
+                return (
+                  <div key={req.type} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', marginBottom: '4px' }}>
+                    <span style={{ fontFamily: 'var(--mono)' }}>{isSubmitted ? '[✓]' : '[ ]'}</span>
+                    <span>{EVIDENCE_TYPES.find(t => t.key === req.type)?.label || req.type}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
           {deadline.status === 'blocked' && deadline.blockerInfo && (
             <div className="dcard-blocker">
@@ -335,10 +352,10 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked, team
       )}
 
       {showBlockerModal && (
-        <BlockerModal teamId={teamId} deadline={deadline} currentUser={currentUser} onClose={() => setShowBlockerModal(false)} />
+        <BlockerModal deadline={deadline} currentUser={currentUser} onClose={() => setShowBlockerModal(false)} />
       )}
       {showEvidenceModal && (
-        <EvidenceModal teamId={teamId} deadline={deadline} currentUser={currentUser} onClose={() => setShowEvidenceModal(false)} />
+        <EvidenceModal deadline={deadline} currentUser={currentUser} onClose={() => setShowEvidenceModal(false)} />
       )}
     </div>
   )

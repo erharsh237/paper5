@@ -9,7 +9,7 @@ export const slack = {
   name: 'Slack',
   description: 'Mirror in-app notifications (blockers, review requests) into a team channel.',
   configFields: [
-    { key: 'slackWebhookUrl', label: 'Webhook URL', placeholder: 'https://hooks.slack.com/services/...' },
+    { key: 'slackWebhookUrl', label: 'Webhook URL', placeholder: 'https://hooks.slack.com/services/...', type: 'password' },
   ],
   credentialFields: [],
 

@@ -7,13 +7,14 @@ import NotificationBell from '../components/NotificationBell'
 import NavTabs from '../components/NavTabs'
 import ReflectionPanel from '../components/ReflectionPanel'
 import Breadcrumbs from '../components/Breadcrumbs'
+import UserMenu from '../components/UserMenu'
 import CalendarWidget from '../components/CalendarWidget'
+import { useWorkspace } from '../lib/WorkspaceContext'
 import './Dashboard.css'
 import './Meeting.css'
 
-const TEAM_ID = 'default-team'
-
 export default function Meeting() {
+  const { workspaceId, workspace } = useWorkspace();
   const { user, logout } = useAuth()
   const [sprints, setSprints] = useState([])
   const [members, setMembers] = useState([])
@@ -23,11 +24,11 @@ export default function Meeting() {
   const [selectedEventId, setSelectedEventId] = useState('')
 
   useEffect(() => {
-    const unsub1 = subscribeSprints(TEAM_ID, setSprints)
-    const unsub2 = subscribeMembers(TEAM_ID, setMembers)
-    const unsub3 = subscribeEventNotes(TEAM_ID, setEventNotes)
+    const unsub1 = subscribeSprints(workspaceId, undefined, setSprints)
+    const unsub2 = subscribeMembers(workspaceId, undefined, setMembers)
+    const unsub3 = subscribeEventNotes(workspaceId, setEventNotes)
     return () => { unsub1(); unsub2(); unsub3() }
-  }, [user?.email])
+  }, [workspaceId])
 
   const activeSprint = sprints.find(s => s.status === 'active')
 
@@ -37,20 +38,17 @@ export default function Meeting() {
         <div className="dash-header-inner">
           <div className="dash-brand">
             <span className="dash-brand-dot" />
-            <span className="mono">SECURIQ <span className="dash-brand-sub">| Meeting</span></span>
+            <span className="mono">Paper5 <span className="dash-brand-sub" style={{ whiteSpace: "nowrap" }}>{workspace?.name ? `| ${workspace.name}` : ''}</span></span>
           </div>
           <div className="dash-header-actions">
             <NavTabs />
-            <NotificationBell teamId={TEAM_ID} currentUser={user} />
-            <span className="dash-user">{user?.displayName || user?.email}</span>
-            <button className="btn-ghost btn-sm" onClick={logout}>Sign out</button>
+            <NotificationBell currentUser={user} />
+            <UserMenu />
           </div>
         </div>
       </header>
 
       <main className="dash-body">
-        <Breadcrumbs trail={[{ label: 'Meeting' }]} />
-
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'stretch' }}>
           {/* Calendar Top Area */}
           <div>

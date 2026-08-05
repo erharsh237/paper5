@@ -7,35 +7,31 @@ import { useAuth } from '../lib/AuthContext'
 import { subscribeDeadlines, subscribeMembers } from '../lib/deadlines'
 import { subscribeSprints } from '../lib/sprints'
 import { computeAccountability } from '../lib/accountability'
-import NotificationBell from '../components/NotificationBell'
 import NavTabs from '../components/NavTabs'
+import UserMenu from '../components/UserMenu'
 import Breadcrumbs from '../components/Breadcrumbs'
+import { useWorkspace } from '../lib/WorkspaceContext'
 import './Dashboard.css'
 import './Analytics.css'
 
-const TEAM_ID = 'default-team'
-
-// Analytics needs the full aggregate (velocity, completion trends across
-// sprints), not one page at a time, so this deliberately doesn't use the
-// paginated useDeadlines hook — a partial page would silently skew every
-// chart on this page toward whatever happened to load. Still bounded
-// rather than truly unlimited, at a size generous enough that a small
-// team won't hit it for a long while; revisit with real cursor pagination
-// (or a server-aggregated rollup doc) if that ever changes.
 const ANALYTICS_DEADLINES_CAP = 1000
 
 export default function Analytics() {
-  const { user, logout } = useAuth()
+  const { workspaceId, workspace } = useWorkspace();
+  const { user, userData } = useAuth()
+  
+  const planId = userData?.billing?.planId || 'free'
+  const isScale = planId === 'scale'
   const [deadlines, setDeadlines] = useState([])
   const [members, setMembers] = useState([])
   const [sprints, setSprints] = useState([])
 
   useEffect(() => {
-    const unsub1 = subscribeDeadlines(TEAM_ID, setDeadlines, ANALYTICS_DEADLINES_CAP)
-    const unsub2 = subscribeMembers(TEAM_ID, setMembers)
-    const unsub3 = subscribeSprints(TEAM_ID, setSprints)
+    const unsub1 = subscribeDeadlines(workspaceId, undefined, setDeadlines, ANALYTICS_DEADLINES_CAP)
+    const unsub2 = subscribeMembers(workspaceId, undefined, setMembers)
+    const unsub3 = subscribeSprints(workspaceId, undefined, setSprints)
     return () => { unsub1(); unsub2(); unsub3() }
-  }, [])
+  }, [workspaceId])
 
   const sprintStats = useMemo(() => {
     const bySprintNumber = [...sprints].sort((a, b) => (a.number || 0) - (b.number || 0))
@@ -104,20 +100,16 @@ export default function Analytics() {
         <div className="dash-header-inner">
           <div className="dash-brand">
             <span className="dash-brand-dot" />
-            <span className="mono">SECURIQ <span className="dash-brand-sub">| Analytics</span></span>
+            <span className="mono">Paper5 <span className="dash-brand-sub" style={{ whiteSpace: "nowrap" }}>{workspace?.name ? `| ${workspace.name}` : ''}</span></span>
           </div>
           <div className="dash-header-actions">
             <NavTabs />
-            <NotificationBell teamId={TEAM_ID} currentUser={user} />
-            <span className="dash-user">{user?.displayName || user?.email}</span>
-            <button className="btn-ghost btn-sm" onClick={logout}>Sign out</button>
+            <UserMenu />
           </div>
         </div>
       </header>
 
       <main className="dash-body">
-        <Breadcrumbs trail={[{ label: 'Analytics' }]} />
-
         <section className="stat-strip">
           <StatTile label="Completion rate" value={`${overall.completionRate}%`} tone="signal" />
           <StatTile label="Currently blocked" value={overall.blocked} tone="critical" />
@@ -128,15 +120,26 @@ export default function Analytics() {
         {accountability.length > 0 && (
           <section className="sprint-overview">
             <h2 className="mono">ACCOUNTABILITY STATUS</h2>
-            <div className="accountability-list">
-              {accountability.map(a => (
-                <div key={a.member.id} className={`accountability-row accountability-row--level${a.level}`}>
-                  <span className="accountability-name">{a.member.name}</span>
-                  <span className="accountability-level mono">LEVEL {a.level}</span>
-                  <span className="accountability-rec">{a.recommendation}</span>
-                </div>
-              ))}
-            </div>
+            {!isScale ? (
+              <div style={{ padding: '24px', background: 'var(--bg-inset)', borderRadius: '8px', border: '1px solid var(--border)', textAlign: 'center' }}>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                  Advanced Accountability Tracking is only available on the Scale plan.
+                </p>
+                <button className="btn-primary btn-sm" onClick={() => window.open('/#pricing', '_blank')} style={{ margin: '0 auto' }}>
+                  Upgrade to Scale
+                </button>
+              </div>
+            ) : (
+              <div className="accountability-list">
+                {accountability.map(a => (
+                  <div key={a.member.id} className={`accountability-row accountability-row--level${a.level}`}>
+                    <span className="accountability-name">{a.member.name}</span>
+                    <span className="accountability-level mono">LEVEL {a.level}</span>
+                    <span className="accountability-rec">{a.recommendation}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         )}
 
@@ -182,17 +185,28 @@ export default function Analytics() {
 
             <section className="sprint-overview">
               <h2 className="mono">OVERDUE TASKS BY PRIORITY (most delayed categories)</h2>
-              <div className="chart-wrap">
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={priorityDelay}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-hair)" />
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
-                    <Tooltip />
-                    <Bar dataKey="overdue" name="Overdue now" fill="#ff5470" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              {!isScale ? (
+                <div style={{ padding: '32px', background: 'var(--bg-inset)', borderRadius: '8px', border: '1px solid var(--border)', textAlign: 'center', height: '220px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                    Advanced Risk Analytics is only available on the Scale plan.
+                  </p>
+                  <button className="btn-primary btn-sm" onClick={() => window.open('/#pricing', '_blank')}>
+                    Upgrade to Scale
+                  </button>
+                </div>
+              ) : (
+                <div className="chart-wrap">
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={priorityDelay}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border-hair)" />
+                      <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+                      <Tooltip />
+                      <Bar dataKey="overdue" name="Overdue now" fill="#ff5470" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </section>
           </>
         )}

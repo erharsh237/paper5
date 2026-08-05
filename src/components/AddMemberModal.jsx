@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { addMember } from '../lib/deadlines'
+import { useWorkspace } from '../lib/WorkspaceContext'
 
 export default function AddMemberModal({ teamId, currentUser, onClose }) {
+  const { workspaceId } = useWorkspace();
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
@@ -12,7 +14,7 @@ export default function AddMemberModal({ teamId, currentUser, onClose }) {
     if (!name.trim() || !email.trim()) return setError('Name and email are both required.')
     setSubmitting(true)
     try {
-      await addMember(teamId, { name: name.trim(), email: email.trim(), addedBy: currentUser?.email })
+      await addMember(workspaceId, teamId, { name: name.trim(), email: email.trim(), addedBy: currentUser?.email })
       onClose()
     } catch (err) {
       console.error(err)

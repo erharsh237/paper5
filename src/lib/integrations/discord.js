@@ -8,7 +8,7 @@ export const discord = {
   name: 'Discord',
   description: 'Mirror in-app notifications (blockers, review requests) into a team channel.',
   configFields: [
-    { key: 'discordWebhookUrl', label: 'Webhook URL', placeholder: 'https://discord.com/api/webhooks/...' },
+    { key: 'discordWebhookUrl', label: 'Webhook URL', placeholder: 'https://discord.com/api/webhooks/...', type: 'password' },
   ],
   credentialFields: [],
 

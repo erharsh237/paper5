@@ -1,0 +1,69 @@
+.marketing-content-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 80px 24px;
+  min-height: 60vh;
+}
+
+.content-page-header {
+  margin-bottom: 64px;
+  text-align: center;
+}
+
+.content-page-header h1 {
+  font-family: var(--display);
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: var(--text-primary);
+  margin: 0 0 16px 0;
+}
+
+.last-updated {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+.content-page-body {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  background: var(--bg-panel);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-panel);
+  border-radius: var(--radius-lg);
+  padding: 48px;
+}
+
+.content-page-body h2 {
+  font-family: var(--display);
+  font-size: 28px;
+  color: var(--text-primary);
+  margin: 0 0 24px 0;
+}
+.content-page-body h2:not(:first-child) {
+  margin-top: 48px;
+}
+
+.content-page-body h3 {
+  font-family: var(--display);
+  font-size: 20px;
+  color: var(--text-primary);
+  margin: 32px 0 16px 0;
+}
+
+.content-page-body p {
+  margin-bottom: 24px;
+}
+
+.content-page-body ul {
+  margin-bottom: 24px;
+  padding-left: 24px;
+}
+
+.content-page-body li {
+  margin-bottom: 8px;
+}

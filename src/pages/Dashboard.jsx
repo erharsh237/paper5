@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../lib/AuthContext'
-import { subscribeAllowedUsers } from '../lib/allowlist'
+import { subscribeMembers } from '../lib/deadlines'
 import { useDeadlines } from '../lib/useDeadlines'
 import { subscribeSprints } from '../lib/sprints'
 import { getUrgency } from '../lib/utils'
@@ -11,15 +11,17 @@ import WorkloadPanel from '../components/WorkloadPanel'
 import SprintOverview from '../components/SprintOverview'
 import NotificationBell from '../components/NotificationBell'
 import NavTabs from '../components/NavTabs'
-import Breadcrumbs from '../components/Breadcrumbs'
+import UserMenu from '../components/UserMenu'
+import { useWorkspace } from '../lib/WorkspaceContext'
 import './Dashboard.css'
 
 // Single shared team workspace for this internal tool.
 const TEAM_ID = 'default-team'
 
 export default function Dashboard() {
-  const { user, logout } = useAuth()
-  const { deadlines, hasMore, loadMore, loadingMore } = useDeadlines(TEAM_ID)
+  const { workspaceId, workspace } = useWorkspace();
+  const { user } = useAuth()
+  const { deadlines, hasMore, loadMore, loadingMore } = useDeadlines(workspaceId, undefined)
   const [members, setMembers] = useState([])
   const [sprints, setSprints] = useState([])
   const [showNewModal, setShowNewModal] = useState(false)
@@ -42,10 +44,10 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    const unsub2 = subscribeAllowedUsers(setMembers)
-    const unsub3 = subscribeSprints(TEAM_ID, setSprints)
+    const unsub2 = subscribeMembers(workspaceId, undefined, setMembers)
+    const unsub3 = subscribeSprints(workspaceId, undefined, setSprints)
     return () => { unsub2(); unsub3() }
-  }, [])
+  }, [workspaceId])
 
   const activeSprint = useMemo(() => sprints.find(s => s.status === 'active'), [sprints])
 
@@ -72,21 +74,18 @@ export default function Dashboard() {
         <div className="dash-header-inner">
           <div className="dash-brand">
             <span className="dash-brand-dot" />
-            <span className="mono">SECURIQ <span className="dash-brand-sub">| Deadline Tracker</span></span>
+            <span className="mono">Paper5 <span className="dash-brand-sub" style={{ whiteSpace: "nowrap" }}>{workspace?.name ? `| ${workspace.name}` : ''}</span></span>
           </div>
           <div className="dash-header-actions">
             <NavTabs />
-            <NotificationBell teamId={TEAM_ID} currentUser={user} />
-            <span className="dash-user">{user?.displayName || user?.email}</span>
-            <button className="btn-ghost btn-sm" onClick={logout}>Sign out</button>
+            <NotificationBell currentUser={user} />
+            <UserMenu />
           </div>
         </div>
       </header>
 
       <main className="dash-body">
-        <Breadcrumbs trail={[{ label: 'Team' }]} />
-
-        <SprintOverview teamId={TEAM_ID} sprints={sprints} deadlines={deadlines} currentUser={user} members={members} />
+        <SprintOverview sprints={sprints} deadlines={deadlines} currentUser={user} members={members} />
 
         <section className="stat-strip">
           <StatTile label="Active" value={stats.active} tone="info" />

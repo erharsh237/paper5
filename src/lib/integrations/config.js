@@ -1,31 +1,78 @@
-import { doc, setDoc, onSnapshot } from 'firebase/firestore'
-import { db } from '../firebase'
+import { supabase } from '../supabase'
 
-// Team-shared, non-secret-ish settings (repo names, project IDs, webhook
-// URLs). Webhook URLs ARE bearer-token-equivalent — anyone holding one can
-// post to the channel — but that matches how Discord/Slack webhooks are
-// actually meant to be used by a small trusted team, same trust level as
-// this app's sprints/meetings collections.
-export function subscribeIntegrationConfig(teamId, callback) {
-  return onSnapshot(doc(db, 'integrationConfig', teamId), (snap) => {
-    callback(snap.exists() ? snap.data() : {})
-  })
+export function subscribeIntegrationConfig(workspaceId, callback) {
+  const fetchList = async () => {
+    const { data } = await supabase
+      .from('integrationConfig')
+      .select('*')
+      .eq('workspace_id', workspaceId)
+      .eq('id', 'default')
+      .maybeSingle()
+    callback(data || {})
+  }
+  fetchList()
+  const channel = supabase.channel(`public:integrationConfig:workspace_id=eq.${workspaceId}:${Math.random().toString(36).substring(7)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'integrationConfig', filter: `workspace_id=eq.${workspaceId}` }, () => {
+      fetchList()
+    })
+    .subscribe()
+  return () => supabase.removeChannel(channel)
 }
 
-export async function saveIntegrationConfig(teamId, patch) {
-  return setDoc(doc(db, 'integrationConfig', teamId), patch, { merge: true })
+export async function saveIntegrationConfig(workspaceId, patch) {
+  const { data: existing } = await supabase
+    .from('integrationConfig')
+    .select('*')
+    .eq('workspace_id', workspaceId)
+    .eq('id', 'default')
+    .maybeSingle()
+    
+  const updated = { ...(existing || {}), ...patch }
+  
+  await supabase
+    .from('integrationConfig')
+    .upsert({ 
+      workspace_id: workspaceId, 
+      id: 'default', 
+      ...updated 
+    })
 }
 
-// Personal API credentials (GitHub/Vercel personal access tokens) tied to
-// one person's own account on that service — never team-readable, unlike
-// integrationConfig above. Doc id is the owning user's lowercase email.
-export function subscribeIntegrationCredentials(email, callback) {
-  if (!email) return () => {}
-  return onSnapshot(doc(db, 'integrationCredentials', email.toLowerCase()), (snap) => {
-    callback(snap.exists() ? snap.data() : {})
-  })
+export function subscribeIntegrationCredentials(workspaceId, uid, callback) {
+  if (!uid) return () => {}
+  const fetchList = async () => {
+    const { data } = await supabase
+      .from('integrationCredentials')
+      .select('*')
+      .eq('workspace_id', workspaceId)
+      .eq('id', uid)
+      .maybeSingle()
+    callback(data || {})
+  }
+  fetchList()
+  const channel = supabase.channel(`public:integrationCredentials:workspace_id=eq.${workspaceId}:id=eq.${uid}:${Math.random().toString(36).substring(7)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'integrationCredentials', filter: `workspace_id=eq.${workspaceId}` }, () => {
+      fetchList()
+    })
+    .subscribe()
+  return () => supabase.removeChannel(channel)
 }
 
-export async function saveIntegrationCredentials(email, patch) {
-  return setDoc(doc(db, 'integrationCredentials', email.toLowerCase()), patch, { merge: true })
+export async function saveIntegrationCredentials(workspaceId, uid, patch) {
+  const { data: existing } = await supabase
+    .from('integrationCredentials')
+    .select('*')
+    .eq('workspace_id', workspaceId)
+    .eq('id', uid)
+    .maybeSingle()
+    
+  const updated = { ...(existing || {}), ...patch }
+  
+  await supabase
+    .from('integrationCredentials')
+    .upsert({ 
+      workspace_id: workspaceId, 
+      id: uid, 
+      ...updated 
+    })
 }
