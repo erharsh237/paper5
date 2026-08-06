@@ -56,14 +56,23 @@ import {
 } from './pages/MarketingPages'
 
 import { getDomainConfig, getAppUrl, getMainUrl } from './lib/domain'
+import InitialPreloader from './components/InitialPreloader'
+import { Cardio } from 'ldrs/react'
+import 'ldrs/react/Cardio.css'
 
 function PageLoading() {
   return (
     <div style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      color: 'var(--text-tertiary)', fontFamily: 'var(--mono)', fontSize: 13,
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '16px',
+      background: 'var(--bg-layer-1, #09090b)',
+      color: 'var(--text-primary, #ffffff)',
     }}>
-      loading…
+      <Cardio size="50" stroke="4" speed="2" color="black" />
     </div>
   )
 }
@@ -125,7 +134,7 @@ export default function App() {
   }
 
   return (
-    <>
+    <InitialPreloader>
       <Suspense fallback={<PageLoading />}>
         <Routes>
           {/* Subdomain-aware Root Path */}
@@ -200,6 +209,6 @@ export default function App() {
         </>
       )}
       <VercelAnalytics />
-    </>
+    </InitialPreloader>
   )
 }
