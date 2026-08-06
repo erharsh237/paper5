@@ -43,7 +43,7 @@ const ModernTextReveal = ({ text }) => {
 
   if (!mounted) {
     return (
-      <div className="modern-text-reveal-static">
+      <div className="modern-text-reveal-static" style={{ opacity: 0, visibility: 'hidden' }}>
         {lines.map((line, i) => (
           <div key={i} className="modern-text-reveal-line">{line}</div>
         ))}

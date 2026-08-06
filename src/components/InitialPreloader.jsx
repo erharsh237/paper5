@@ -36,16 +36,16 @@ export default function InitialPreloader({ children }) {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '16px',
-            background: 'var(--bg-panel, #09090b)',
-            color: 'var(--text-primary, #ffffff)',
-            transition: 'opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s',
+            background: 'var(--bg-surface, #ffffff)',
+            color: 'var(--text-primary, #111827)',
+            transition: 'opacity 0.35s ease, visibility 0.35s ease',
             opacity: fadingOut ? 0 : 1,
             pointerEvents: fadingOut ? 'none' : 'all',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#0f9d63', display: 'inline-block' }} />
-            <span style={{ fontFamily: 'var(--mono, monospace)', fontWeight: 700, fontSize: '16px', letterSpacing: '-0.02em', color: 'var(--text-primary, #ffffff)' }}>
+            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
+            <span style={{ fontFamily: 'var(--mono, monospace)', fontWeight: 700, fontSize: '16px', letterSpacing: '-0.02em', color: 'var(--text-primary, #111827)' }}>
               Paper5 <span style={{ opacity: 0.6, fontWeight: 400 }}>| SprintOS</span>
             </span>
           </div>
@@ -54,10 +54,10 @@ export default function InitialPreloader({ children }) {
             size="50"
             stroke="4"
             speed="2"
-            color="black"
+            color="var(--accent-signal, #10b981)"
           />
 
-          <span style={{ fontFamily: 'var(--mono, monospace)', fontSize: '11px', color: 'var(--text-tertiary, #9ca3af)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '4px' }}>
+          <span style={{ fontFamily: 'var(--mono, monospace)', fontSize: '11px', color: 'var(--text-tertiary, #6b7280)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '4px' }}>
             Loading Workspace...
           </span>
         </div>
