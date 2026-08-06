@@ -66,7 +66,7 @@ export function Security() {
       <p>Security is not an afterthought at Paper5. It is built into the foundation of our architecture.</p>
       <ul>
         <li><strong>Data Isolation:</strong> Cryptographically isolated workspace environments.</li>
-        <li><strong>Compliance:</strong> SOC2 Type II, GDPR, and DPDP compliant.</li>
+        <li><strong>Compliance:</strong> Powered by SOC2 Type II certified infrastructure with native GDPR and DPDP compliance.</li>
         <li><strong>Authentication:</strong> Enforced email verification and optional Multi-Factor Authentication.</li>
       </ul>
     </MarketingContentPage>

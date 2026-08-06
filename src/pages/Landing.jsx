@@ -189,7 +189,7 @@ export default function Landing() {
 
         {/* Security / Trust Section */}
         <section className="trust-section">
-          <p className="trust-text">Enterprise-grade security and reliability. SOC2 Type II, GDPR, and DPDP compliant infrastructure.</p>
+          <p className="trust-text">Enterprise-grade security and reliability. Powered by SOC2 Type II certified infrastructure with GDPR and DPDP compliance.</p>
         </section>
 
         {/* Features Carousel */}
