@@ -461,7 +461,8 @@
 .trust-text {
   font-family: var(--mono);
   font-size: 13px;
-  color: var(--text-secondary, #4b5563);
+  color: #374151;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   max-width: 600px;
