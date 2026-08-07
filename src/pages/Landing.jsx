@@ -24,7 +24,7 @@ const ModernTextReveal = ({ text }) => {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.25, delayChildren: 0.1 },
+      transition: { staggerChildren: 0.08, delayChildren: 0.02 },
     },
   }
 
@@ -32,12 +32,12 @@ const ModernTextReveal = ({ text }) => {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+      transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] },
     },
     hidden: {
       opacity: 0,
-      y: 30,
-      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
+      y: 20,
+      transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] },
     },
   }
 
