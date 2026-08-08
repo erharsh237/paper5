@@ -142,7 +142,7 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
               <li>GitHub, Discord, Google Calendar & Webhooks</li>
               <li>Advanced Velocity & Risk Analytics</li>
               <li>Strict Auditing Mode & CSV Export</li>
-              <li>Developer API Key Access</li>
+              <li>⚡ 1-Click API Webhook & REST Sync</li>
             </ul>
           </div>
         </div>

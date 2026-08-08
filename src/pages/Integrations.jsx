@@ -15,11 +15,23 @@ import './Integrations.css'
 import { Eye, EyeOff } from 'lucide-react'
 import AlertModal from '../components/ui/AlertModal'
 import ConfirmModal from '../components/ui/ConfirmModal'
+import PricingModal from '../components/PricingModal'
+import { getPlanLimits } from '../lib/plans'
 
 export default function Integrations() {
   const [alertMessage, setAlertMessage] = useState(null)
-  const { workspaceId, workspace, isAdmin } = useWorkspace();
+  const { workspaceId, workspace, isAdmin, updateWorkspacePlan } = useWorkspace();
   const { user } = useAuth()
+  
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false)
+  const currentPlan = getPlanLimits(workspace?.plan || workspace?.subscription_tier || 'starter')
+  const isScalePlan = currentPlan.id === 'scale' || Boolean(currentPlan.hasOneClickApi)
+
+  const handleGenerateApiKey = async () => {
+    const newApiKey = `sp_live_${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}`
+    await saveIntegrationConfig(workspaceId, { ...config, api_key: newApiKey })
+    setAlertMessage('⚡ 1-Click API Key generated successfully!')
+  }
   
   const [confirmModal, setConfirmModal] = useState({ isOpen: false })
   const openConfirm = (opts) => setConfirmModal({ isOpen: true, ...opts })
@@ -227,6 +239,93 @@ export default function Integrations() {
         </p>
 
         <div className="integrations-grid">
+          {/* ⚡ 1-Click API Webhook & REST Sync (Scale Plan Exclusive) */}
+          <div className="integration-card" style={{ gridColumn: '1 / -1', border: isScalePlan ? '1px solid var(--accent)' : '1px dashed var(--border)' }}>
+            <div className="integration-card-top">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 style={{ margin: 0 }}>⚡ 1-Click API Webhook & REST Sync</h3>
+                <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', background: isScalePlan ? 'var(--accent-dim)' : 'rgba(245, 158, 11, 0.1)', color: isScalePlan ? 'var(--accent)' : '#f59e0b', padding: '2px 8px', borderRadius: '100px' }}>
+                  {isScalePlan ? 'Scale Tier Active' : 'Scale Tier Exclusive'}
+                </span>
+              </div>
+              <span className={`integration-status ${isScalePlan && config.api_key ? 'integration-status--ready' : ''}`}>
+                {isScalePlan ? (config.api_key ? 'Active ✓' : 'Ready to Generate') : 'Locked (Scale Tier)'}
+              </span>
+            </div>
+            <p className="integration-desc">
+              Trigger real-time sprint syncs, push automated proof of work, and fetch workspace velocity metrics with a single 1-Click API call from GitHub, GitLab, Linear, or custom webhooks.
+            </p>
+
+            {isScalePlan ? (
+              <div className="integration-fields" style={{ marginTop: '16px' }}>
+                <div className="field-row" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                  <div className="field" style={{ flex: 1, minWidth: '280px' }}>
+                    <label>Workspace 1-Click API Key</label>
+                    <div style={{ position: 'relative', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <input 
+                        type={showSecrets['api_key'] ? 'text' : 'password'}
+                        value={config.api_key || 'No API Key generated yet'} 
+                        readOnly 
+                        style={{ width: '100%', fontFamily: 'var(--mono)', fontSize: '13px', background: 'var(--bg-layer-2)', paddingRight: '40px' }} 
+                      />
+                      <button 
+                        type="button"
+                        className="btn-ghost" 
+                        onClick={() => toggleShowSecret('api_key')}
+                        style={{ position: 'absolute', right: '140px', padding: '4px 6px', color: 'var(--text-tertiary)', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                        title={showSecrets['api_key'] ? 'Hide Key' : 'Show Key'}
+                      >
+                        {showSecrets['api_key'] ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                      <button 
+                        className="btn-primary btn-sm" 
+                        onClick={handleGenerateApiKey}
+                        style={{ whiteSpace: 'nowrap' }}
+                      >
+                        {config.api_key ? 'Re-Generate Key' : '⚡ 1-Click Generate API Key'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {config.api_key && (
+                  <div style={{ marginTop: '16px', padding: '16px', background: 'var(--bg-inset)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                    <div style={{ fontWeight: 600, fontSize: '13px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                      <span>Instant 1-Click Webhook Sync Endpoint:</span>
+                      <button 
+                        className="btn-ghost btn-sm" 
+                        onClick={() => {
+                          const url = `https://paper5.co/api/v1/sync?workspace=${workspaceId}&key=${config.api_key}`
+                          navigator.clipboard.writeText(url)
+                          setAlertMessage('⚡ 1-Click Webhook Sync Endpoint copied to clipboard!')
+                        }}
+                      >
+                        📋 Copy 1-Click Webhook URL
+                      </button>
+                    </div>
+                    <code style={{ display: 'block', padding: '8px 12px', background: 'var(--bg-layer-2)', borderRadius: '4px', fontSize: '12px', fontFamily: 'var(--mono)', wordBreak: 'break-all' }}>
+                      https://paper5.co/api/v1/sync?workspace={workspaceId}&key={config.api_key}
+                    </code>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(245, 158, 11, 0.04)', border: '1px dashed rgba(245, 158, 11, 0.3)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>1-Click API Webhook & REST Sync is exclusive to the Scale Plan.</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>Upgrade your workspace to Scale to unlock instant 1-Click API keys, custom webhooks, and unlimited team seats.</div>
+                </div>
+                <button 
+                  className="btn-primary"
+                  onClick={() => setIsPricingModalOpen(true)}
+                  style={{ whiteSpace: 'nowrap' }}
+                >
+                  ⚡ Upgrade to Scale Plan
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="integration-card" style={{ gridColumn: '1 / -1' }}>
             <div className="integration-card-top">
               <h3>Meeting Notes</h3>
@@ -464,6 +563,18 @@ export default function Integrations() {
         variant={confirmModal.variant || 'default'}
         onConfirm={confirmModal.onConfirm}
         onCancel={closeConfirm}
+      />
+      <PricingModal
+        isOpen={isPricingModalOpen}
+        onClose={() => setIsPricingModalOpen(false)}
+        currentPlan={workspace?.plan || workspace?.subscription_tier || 'starter'}
+        onSelectPlan={async (planId) => {
+          if (updateWorkspacePlan) {
+            await updateWorkspacePlan(planId)
+          }
+          setIsPricingModalOpen(false)
+          setAlertMessage(`Plan updated to ${planId.toUpperCase()} successfully!`)
+        }}
       />
     </div>
   )

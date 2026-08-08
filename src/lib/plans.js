@@ -28,6 +28,7 @@ export const PLANS = {
     maxWorkspaces: 10,
     maxMembers: Infinity,
     allowedIntegrations: ['github', 'slack', 'vercel', 'discord', 'googleCalendar'],
+    hasOneClickApi: true,
     hasAdvancedAnalytics: true,
     hasPrioritySupport: true,
   }
