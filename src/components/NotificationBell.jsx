@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from 'react'
-import { subscribeNotifications, markNotificationRead } from '../lib/notifications'
+import { subscribeNotifications, markNotificationRead, playBellChimeSound } from '../lib/notifications'
 import { useWorkspace } from '../lib/WorkspaceContext'
 import './NotificationBell.css'
 
@@ -8,10 +8,26 @@ export default function NotificationBell({ currentUser }) {
   const [notifications, setNotifications] = useState([])
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
+  const isInitialFetchRef = useRef(true)
+  const prevCountRef = useRef(0)
 
   useEffect(() => {
     if (!currentUser?.email) return
-    return subscribeNotifications(workspaceId, undefined, currentUser.email, setNotifications)
+    isInitialFetchRef.current = true
+
+    return subscribeNotifications(workspaceId, undefined, currentUser.email, (items) => {
+      setNotifications(items)
+
+      const email = (currentUser?.email || '').toLowerCase()
+      const currentUnread = items.filter(n => !n.readBy?.includes(email)).length
+
+      if (!isInitialFetchRef.current && currentUnread > prevCountRef.current) {
+        playBellChimeSound()
+      }
+
+      prevCountRef.current = currentUnread
+      isInitialFetchRef.current = false
+    })
   }, [workspaceId, currentUser?.email])
 
   useEffect(() => {

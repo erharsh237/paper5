@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { createNotification } from './notifications'
+import { createNotification, playBellChimeSound } from './notifications'
 
 export const AGENDA_STEPS = [
   { key: 'reviewPrevious', label: '1. Previous sprint review' },
@@ -95,6 +95,9 @@ export async function saveEventNote(workspaceId, teamId, eventId, notesObj, curr
       eventNotes: updatedNotes, 
       updatedAt: new Date().toISOString() 
     })
+
+  // Play crystal bell chime sound
+  playBellChimeSound()
 
   // Broadcast Notification Bell update to all workspace members
   const title = notesObj?.title || 'Meeting'
