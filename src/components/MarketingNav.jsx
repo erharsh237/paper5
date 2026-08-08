@@ -98,7 +98,7 @@ export default function MarketingNav() {
               </div>
             ) : (
               <>
-                <button className="btn-primary" onClick={handleSignIn}>Sign In</button>
+                <button className="btn-primary" onClick={handleSignIn}>Sign In &rarr;</button>
               </>
             )}
           </div>
