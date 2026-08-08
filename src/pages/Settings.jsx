@@ -25,6 +25,7 @@ import CapacityBanner from '../components/CapacityBanner'
 import { checkMemberCapacity } from '../lib/plans'
 import AlertModal from '../components/ui/AlertModal'
 import ConfirmModal from '../components/ui/ConfirmModal'
+import DeleteWorkspaceModal from '../components/ui/DeleteWorkspaceModal'
 
 function SettingsIcon() {
   return (
@@ -101,6 +102,7 @@ export default function Settings() {
   
   const [activeTab, setActiveTab] = useState('general')
   const [alertMessage, setAlertMessage] = useState(null)
+  const [isDeleteWorkspaceModalOpen, setIsDeleteWorkspaceModalOpen] = useState(false)
   
   const [members, setMembers] = useState([])
   const [invites, setInvites] = useState([])
@@ -555,25 +557,20 @@ export default function Settings() {
   }
 
   const handleDeleteWorkspace = () => {
-    openConfirm({
-      title: 'Delete Workspace',
-      message: `This is permanent and cannot be undone. All data, members, and settings for "${workspace?.name}" will be destroyed.`,
-      confirmText: 'Delete Forever',
-      variant: 'danger',
-      requiresTyping: `DELETE ${workspace?.name}`,
-      onConfirm: async () => {
-        closeConfirm()
-        setDeleting(true)
-        try {
-          const { error } = await supabase.from('workspaces').delete().eq('id', workspaceId)
-          if (error) throw error
-          window.location.href = '/'
-        } catch (err) {
-          setAlertMessage('System error: Unable to complete workspace deletion.')
-          setDeleting(false)
-        }
-      }
-    })
+    setIsDeleteWorkspaceModalOpen(true)
+  }
+
+  const handleConfirmDeleteWorkspace = async () => {
+    setIsDeleteWorkspaceModalOpen(false)
+    setDeleting(true)
+    try {
+      const { error } = await supabase.from('workspaces').delete().eq('id', workspaceId)
+      if (error) throw error
+      window.location.href = '/'
+    } catch (err) {
+      setAlertMessage('System error: Unable to complete workspace deletion.')
+      setDeleting(false)
+    }
   }
 
   const handleSelectPlan = async (newPlanId) => {
@@ -1174,6 +1171,13 @@ export default function Settings() {
         requiresTyping={confirmModal.requiresTyping}
         onConfirm={confirmModal.onConfirm}
         onCancel={closeConfirm}
+      />
+      <DeleteWorkspaceModal
+        isOpen={isDeleteWorkspaceModalOpen}
+        onClose={() => setIsDeleteWorkspaceModalOpen(false)}
+        workspaceName={workspace?.name || 'Workspace'}
+        memberCount={members?.length || 1}
+        onConfirm={handleConfirmDeleteWorkspace}
       />
     </div>
   )
