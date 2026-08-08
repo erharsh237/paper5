@@ -1,5 +1,11 @@
 import { useEffect, useState, useRef, useMemo } from 'react'
-import { subscribeNotifications, markNotificationRead, playBellChimeSound } from '../lib/notifications'
+import { 
+  subscribeNotifications, 
+  markNotificationRead, 
+  playBellChimeSound, 
+  triggerChromeNotification,
+  requestNotificationPermission 
+} from '../lib/notifications'
 import { useWorkspace } from '../lib/WorkspaceContext'
 import './NotificationBell.css'
 
@@ -12,6 +18,10 @@ export default function NotificationBell({ currentUser }) {
   const prevCountRef = useRef(0)
 
   useEffect(() => {
+    requestNotificationPermission()
+  }, [])
+
+  useEffect(() => {
     if (!currentUser?.email) return
     isInitialFetchRef.current = true
 
@@ -19,10 +29,18 @@ export default function NotificationBell({ currentUser }) {
       setNotifications(items)
 
       const email = (currentUser?.email || '').toLowerCase()
-      const currentUnread = items.filter(n => !n.readBy?.includes(email)).length
+      const unreadItems = items.filter(n => !n.readBy?.includes(email))
+      const currentUnread = unreadItems.length
 
       if (!isInitialFetchRef.current && currentUnread > prevCountRef.current) {
         playBellChimeSound()
+        const latestNotif = unreadItems[0]
+        if (latestNotif?.message) {
+          triggerChromeNotification('SprintOS Notification 🔔', {
+            body: latestNotif.message,
+            tag: `notif-${latestNotif.id || Date.now()}`
+          })
+        }
       }
 
       prevCountRef.current = currentUnread

@@ -50,6 +50,45 @@ export function subscribeNotifications(workspaceId, teamId, userEmail, callback)
   return () => supabase.removeChannel(channel)
 }
 
+export function requestNotificationPermission() {
+  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission().catch(() => {})
+  }
+}
+
+export function triggerChromeNotification(title, options = {}) {
+  if (typeof window === 'undefined' || !('Notification' in window)) return
+
+  const dispatch = () => {
+    try {
+      const notif = new Notification(title, {
+        icon: '/logo.png',
+        badge: '/logo.png',
+        tag: options.tag || `sprintos-${Date.now()}`,
+        renotify: true,
+        body: options.body || '',
+        ...options,
+      })
+      notif.onclick = () => {
+        window.focus()
+        notif.close()
+      }
+    } catch (err) {
+      console.error('Chrome notification error:', err)
+    }
+  }
+
+  if (Notification.permission === 'granted') {
+    dispatch()
+  } else if (Notification.permission !== 'denied') {
+    Notification.requestPermission().then(permission => {
+      if (permission === 'granted') {
+        dispatch()
+      }
+    })
+  }
+}
+
 export function playBellChimeSound() {
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext
