@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import MarketingNav from '../components/MarketingNav'
@@ -78,7 +78,7 @@ const ModernTextReveal = ({ text }) => {
 
 const CapabilitiesCarousel = () => {
   const [scrollIndex, setScrollIndex] = useState(0)
-  const carouselRef = useState(null)
+  const carouselRef = useRef(null)
 
   const capabilities = [
     {
@@ -103,12 +103,28 @@ const CapabilitiesCarousel = () => {
     }
   ]
 
+  const scrollToCard = (index) => {
+    setScrollIndex(index)
+    if (carouselRef.current) {
+      const container = carouselRef.current
+      const card = container.children[index]
+      if (card) {
+        const containerLeft = container.getBoundingClientRect().left
+        const cardLeft = card.getBoundingClientRect().left
+        const offset = cardLeft - containerLeft + container.scrollLeft
+        container.scrollTo({ left: offset, behavior: 'smooth' })
+      }
+    }
+  }
+
   const handleNext = () => {
-    setScrollIndex((prev) => (prev + 1) % capabilities.length)
+    const nextIdx = (scrollIndex + 1) % capabilities.length
+    scrollToCard(nextIdx)
   }
 
   const handlePrev = () => {
-    setScrollIndex((prev) => (prev - 1 + capabilities.length) % capabilities.length)
+    const prevIdx = (scrollIndex - 1 + capabilities.length) % capabilities.length
+    scrollToCard(prevIdx)
   }
 
   return (
@@ -118,7 +134,7 @@ const CapabilitiesCarousel = () => {
         <button 
           onClick={handlePrev}
           className="btn-ghost btn-sm"
-          style={{ width: '36px', height: '36px', borderRadius: '50%', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-panel)', border: '1px solid var(--border)' }}
+          style={{ width: '36px', height: '36px', borderRadius: '50%', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-panel)', border: '1px solid var(--border)', cursor: 'pointer' }}
           aria-label="Previous capability"
         >
           <ChevronLeft size={18} />
@@ -126,7 +142,7 @@ const CapabilitiesCarousel = () => {
         <button 
           onClick={handleNext}
           className="btn-ghost btn-sm"
-          style={{ width: '36px', height: '36px', borderRadius: '50%', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-panel)', border: '1px solid var(--border)' }}
+          style={{ width: '36px', height: '36px', borderRadius: '50%', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-panel)', border: '1px solid var(--border)', cursor: 'pointer' }}
           aria-label="Next capability"
         >
           <ChevronRight size={18} />
@@ -134,7 +150,7 @@ const CapabilitiesCarousel = () => {
       </div>
 
       {/* Track & Cards */}
-      <div className="features-carousel" style={{ scrollBehavior: 'smooth' }}>
+      <div ref={carouselRef} className="features-carousel" style={{ scrollBehavior: 'smooth' }}>
         {capabilities.map((cap, idx) => (
           <div 
             key={idx} 
@@ -143,8 +159,10 @@ const CapabilitiesCarousel = () => {
               padding: '32px',
               border: idx === scrollIndex ? '1px solid var(--accent)' : '1px solid var(--border)',
               boxShadow: idx === scrollIndex ? '0 8px 24px -4px rgba(16, 185, 129, 0.15)' : 'none',
-              transition: 'all 0.3s ease'
+              transition: 'all 0.3s ease',
+              cursor: 'pointer'
             }}
+            onClick={() => scrollToCard(idx)}
           >
             <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
               {cap.icon}
@@ -162,7 +180,7 @@ const CapabilitiesCarousel = () => {
         {capabilities.map((_, idx) => (
           <span 
             key={idx}
-            onClick={() => setScrollIndex(idx)}
+            onClick={() => scrollToCard(idx)}
             style={{
               width: idx === scrollIndex ? '24px' : '8px',
               height: '8px',
