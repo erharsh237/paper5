@@ -69,9 +69,6 @@ export default function MarketingFooter({ hideCTA = false }) {
       <div className="footer-bottom">
         <div className="footer-bottom-content">
           <span>&copy; {new Date().getFullYear()} Paper5™. SprintOS™ is a trademark of Paper5. All rights reserved.</span>
-          <div className="footer-status">
-            <span className="status-dot"></span> All systems normal
-          </div>
         </div>
       </div>
       
