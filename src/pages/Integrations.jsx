@@ -245,9 +245,9 @@ export default function Integrations() {
           <strong>Privacy Note:</strong> By providing personal access tokens, you consent to us processing them on your behalf in accordance with our <a href="/legal/privacy" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>Privacy Policy</a> and DPA.
         </p>
 
-        <div className="integrations-grid">
-          {/* ⚡ 1-Click API Webhook & REST Sync Studio (Scale Plan Exclusive) */}
-          <div className="integration-card" style={{ gridColumn: '1 / -1', border: isScalePlan ? '1px solid #10b981' : '1px dashed var(--border)', background: 'var(--bg-layer-1)' }}>
+        <div className="integrations-bento-grid">
+          {/* ⚡ 1-Click API Webhook & REST Sync Studio (Bento Tile: Spans 12 Columns - Hero Tile) */}
+          <div className="bento-tile-12 bento-card bento-card-api">
             <div className="integration-card-top" style={{ flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -266,7 +266,7 @@ export default function Integrations() {
             </div>
 
             {isScalePlan ? (
-              <div style={{ marginTop: '20px' }}>
+              <div style={{ marginTop: '12px' }}>
                 {/* API Studio Navigation Sub-Tabs */}
                 <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
                   <button
@@ -380,28 +380,6 @@ export default function Integrations() {
                         Click <strong>"⚡ 1-Click Generate Key"</strong> above to provision your live API secret and webhook sync endpoint.
                       </div>
                     )}
-
-                    {/* Endpoints Directory */}
-                    <div style={{ marginTop: '8px' }}>
-                      <h4 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 10px 0', color: 'var(--text-secondary)' }}>AVAILABLE REST API & WORKFLOW ENDPOINTS:</h4>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
-                        <div style={{ padding: '12px', background: 'var(--bg-inset)', borderRadius: '8px', border: '1px solid var(--border-subtle)', fontSize: '12px' }}>
-                          <span style={{ fontWeight: 700, color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 6px', borderRadius: '4px', marginRight: '6px' }}>POST</span>
-                          <code>/api/v1/sync</code>
-                          <p style={{ margin: '4px 0 0 0', color: 'var(--text-tertiary)', fontSize: '11px' }}>Sync task status, workflow columns & commits</p>
-                        </div>
-                        <div style={{ padding: '12px', background: 'var(--bg-inset)', borderRadius: '8px', border: '1px solid var(--border-subtle)', fontSize: '12px' }}>
-                          <span style={{ fontWeight: 700, color: '#8b5cf6', background: 'rgba(139,92,246,0.1)', padding: '2px 6px', borderRadius: '4px', marginRight: '6px' }}>GET / POST</span>
-                          <code>/api/v1/workflow</code>
-                          <p style={{ margin: '4px 0 0 0', color: 'var(--text-tertiary)', fontSize: '11px' }}>Fetch or trigger Agile Workflow transitions</p>
-                        </div>
-                        <div style={{ padding: '12px', background: 'var(--bg-inset)', borderRadius: '8px', border: '1px solid var(--border-subtle)', fontSize: '12px' }}>
-                          <span style={{ fontWeight: 700, color: '#3b82f6', background: 'rgba(59,130,246,0.1)', padding: '2px 6px', borderRadius: '4px', marginRight: '6px' }}>GET</span>
-                          <code>/api/v1/metrics</code>
-                          <p style={{ margin: '4px 0 0 0', color: 'var(--text-tertiary)', fontSize: '11px' }}>Fetch real-time sprint velocity & burndown math</p>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 )}
 
@@ -500,7 +478,7 @@ print(response.json())`}
                 {apiStudioTab === 'test' && (
                   <div>
                     <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>
-                      JSON Request Body Payload (Includes Agile Workflow & Board Column Alignment):
+                      JSON Request Body Payload:
                     </label>
                     <textarea
                       rows={6}
@@ -536,11 +514,8 @@ print(response.json())`}
                                 response: {
                                   status: 'success',
                                   code: 200,
-                                  message: '1-Click API Webhook payload & Agile Workflow transition successfully processed.',
+                                  message: '1-Click API Webhook & Agile Workflow transition processed.',
                                   workspace_id: workspaceId,
-                                  timestamp: new Date().toISOString(),
-                                  active_agile_workflow: parsed.agile_workflow ? parsed.agile_workflow.toUpperCase() : (workspace?.settings?.agile_workflow || 'Scrum').toUpperCase(),
-                                  board_column_synced: parsed.workflow_column || 'Sprint Backlog ➔ In Progress',
                                   received_payload: parsed
                                 }
                               })
@@ -550,7 +525,7 @@ print(response.json())`}
                                 ok: false,
                                 latency: '12ms',
                                 response: {
-                                  error: 'Invalid JSON payload structure',
+                                  error: 'Invalid JSON',
                                   message: e.message
                                 }
                               })
@@ -560,7 +535,7 @@ print(response.json())`}
                           }, 600)
                         }}
                       >
-                        {simulating ? 'Executing Test Request...' : '▶ Run API & Workflow Test Request'}
+                        {simulating ? 'Executing...' : '▶ Run Test Request'}
                       </button>
                     </div>
 
@@ -568,10 +543,7 @@ print(response.json())`}
                       <div style={{ marginTop: '16px', padding: '16px', background: simulationResponse.ok ? 'rgba(16, 185, 129, 0.05)' : 'rgba(239, 68, 68, 0.05)', borderRadius: '8px', border: simulationResponse.ok ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                           <span style={{ fontSize: '13px', fontWeight: 700, color: simulationResponse.ok ? '#10b981' : '#ef4444' }}>
-                            HTTP Response: {simulationResponse.status} {simulationResponse.ok ? 'OK' : 'Bad Request'}
-                          </span>
-                          <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--mono)' }}>
-                            Latency: {simulationResponse.latency}
+                            HTTP {simulationResponse.status}
                           </span>
                         </div>
                         <pre style={{ margin: 0, padding: '12px', background: '#0d1117', color: '#e6edf3', borderRadius: '6px', fontSize: '12px', fontFamily: 'var(--mono)', overflowX: 'auto' }}>
@@ -586,33 +558,34 @@ print(response.json())`}
               <div style={{ marginTop: '16px', padding: '20px', background: 'rgba(245, 158, 11, 0.04)', border: '1px dashed rgba(245, 158, 11, 0.3)', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>1-Click API Webhook & REST Sync Studio is exclusive to the Scale Plan.</div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: 1.4 }}>
-                    Upgrade your workspace to Scale to unlock live 1-Click API keys, custom webhook endpoints, REST API access, and unlimited team seats.
-                  </div>
                 </div>
                 <button 
                   className="btn-primary"
                   onClick={() => setIsPricingModalOpen(true)}
                   style={{ whiteSpace: 'nowrap', padding: '10px 18px' }}
                 >
-                  ⚡ Upgrade to Scale Plan
+                  ⚡ Upgrade to Scale
                 </button>
               </div>
             )}
           </div>
 
-          <div className="integration-card" style={{ gridColumn: '1 / -1' }}>
+          {/* Bento Tile: Spans 8 Columns - Meeting Notes & Google Calendar Sync */}
+          <div className="bento-tile-8 bento-card bento-card-google">
             <div className="integration-card-top">
-              <h3>Meeting Notes</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '18px' }}>📅</span>
+                <h3 style={{ margin: 0 }}>Google Calendar & Meeting Notes Sync</h3>
+              </div>
               <span className="integration-status integration-status--ready">
                 {savingNotes ? 'Saving...' : 'Auto-saved ✓'}
               </span>
             </div>
-            <p className="integration-desc">Select a meeting below to add notes. They will be visible on the Meeting page when that event is clicked.</p>
+            <p className="integration-desc">Select a meeting to add notes. They automatically sync to the Meeting Agenda page when that event is clicked.</p>
             
-            <div className="integration-fields" style={{ marginTop: '8px' }}>
+            <div className="integration-fields" style={{ marginTop: '4px' }}>
               <div className="field">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <label style={{ margin: 0 }}>Select Calendar Meeting</label>
                   {isAdmin && (
                     <button 
@@ -632,7 +605,7 @@ print(response.json())`}
                   <select 
                     onChange={handleSelectCalendarEvent}
                     value={selectedEventId}
-                    style={{ width: '100%', padding: '6px 12px', fontSize: '14px', background: 'var(--bg-layer-2)', border: '1px solid var(--border-subtle)', borderRadius: '4px', color: 'var(--text-primary)', cursor: 'pointer' }}
+                    style={{ width: '100%', padding: '8px 12px', fontSize: '13px', background: 'var(--bg-layer-2)', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'var(--text-primary)', cursor: 'pointer' }}
                   >
                     <option value="" disabled>Choose a meeting...</option>
                     
@@ -655,7 +628,7 @@ print(response.json())`}
                     )}
                   </select>
                 ) : (
-                  <div style={{ padding: '8px', background: 'var(--bg-inset)', borderRadius: '4px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                  <div style={{ padding: '10px', background: 'var(--bg-inset)', borderRadius: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>
                     Connect Google Calendar below to select an event{isAdmin ? ', or click "+ Custom Note" to add one manually.' : '.'}
                   </div>
                 )}
@@ -663,7 +636,7 @@ print(response.json())`}
 
               {selectedEventId && (
                 <>
-                  <div className="field-row">
+                  <div className="field-row" style={{ display: 'flex', gap: '12px' }}>
                     <div className="field" style={{ flex: 2 }}>
                       <label style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         Meeting Title
@@ -678,20 +651,10 @@ print(response.json())`}
                         style={{ cursor: !canEdit ? 'default' : 'text', background: !canEdit ? 'transparent' : '' }}
                       />
                     </div>
-                    <div className="field" style={{ flex: 1 }}>
-                      <label>Date</label>
-                      <input
-                        type="date"
-                        value={eventNotes[selectedEventId]?.date || ''}
-                        onChange={(e) => canEdit && handleNotesChange(selectedEventId, { date: e.target.value })}
-                        disabled={!canEdit}
-                        style={{ cursor: !canEdit ? 'default' : 'text', background: !canEdit ? 'transparent' : '' }}
-                      />
-                    </div>
                   </div>
                   <div className="field">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                      <label style={{ margin: 0 }}>Notes</label>
+                      <label style={{ margin: 0 }}>Notes Summary</label>
                       {canEdit && (
                         <button 
                           className="btn-ghost btn-sm" 
@@ -704,8 +667,8 @@ print(response.json())`}
                     </div>
                     <textarea
                       className="meeting-notes-input"
-                      rows={10}
-                      style={{ width: '100%', background: !canEdit ? 'transparent' : 'var(--bg-layer-2)', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)', borderRadius: '4px', padding: '12px', fontFamily: 'inherit', resize: 'vertical', cursor: !canEdit ? 'default' : 'text' }}
+                      rows={4}
+                      style={{ width: '100%', background: !canEdit ? 'transparent' : 'var(--bg-layer-2)', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)', borderRadius: '6px', padding: '10px', fontFamily: 'inherit', resize: 'vertical', cursor: !canEdit ? 'default' : 'text' }}
                       value={eventNotes[selectedEventId]?.notes || ''}
                       onChange={(e) => canEdit && handleNotesChange(selectedEventId, { notes: e.target.value })}
                       placeholder="Type or paste meeting notes here..."
@@ -717,29 +680,36 @@ print(response.json())`}
             </div>
           </div>
 
+          {/* Bento Tiles: Spans 4 Columns Each for GitHub, Discord, Slack, Vercel */}
           {INTEGRATIONS.map(integration => {
             const configured = integration.isConfigured(formConfig, formCredentials)
             const result = testResults[integration.id]
+            const brandIcon = integration.id === 'github' ? '🐙' : integration.id === 'discord' ? '💬' : integration.id === 'slack' ? '📣' : integration.id === 'vercel' ? '🚀' : '🔌'
+            const brandClass = `bento-tile-4 bento-card bento-card-${integration.id}`
+
             return (
-              <div key={integration.id} className="integration-card">
+              <div key={integration.id} className={brandClass}>
                 <div 
                   className="integration-card-top" 
                   style={{ cursor: 'pointer', userSelect: 'none' }} 
                   onClick={() => toggleCard(integration.id)}
                 >
-                  <h3>{integration.name}</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '18px' }}>{brandIcon}</span>
+                    <h3>{integration.name}</h3>
+                  </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span className={`integration-status${configured ? ' integration-status--ready' : ''}`}>
-                      {configured ? 'Configured' : 'Not configured'}
+                      {configured ? 'Active ✓' : 'Setup'}
                     </span>
                     <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', transform: expandedCards[integration.id] ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
                   </div>
                 </div>
 
-                {expandedCards[integration.id] && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <p className="integration-desc">{integration.description}</p>
+                <p className="integration-desc">{integration.description}</p>
 
+                {expandedCards[integration.id] && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
                     <div className="integration-fields">
                       {integration.configFields.map(f => {
                         const isPassword = f.type === 'password'
@@ -749,31 +719,12 @@ print(response.json())`}
                         return (
                           <div className="field" key={f.key}>
                             <label>{f.label}</label>
-                            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                              <input
-                                type={inputType}
-                                value={formConfig[f.key] || ''}
-                                placeholder={f.placeholder}
-                                onChange={(e) => setFormConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
-                                disabled={!isAdmin}
-                                style={{ width: '100%', paddingRight: isPassword ? '36px' : '12px' }}
-                              />
-                              {isPassword && (
-                                <button
-                                  type="button"
-                                  className="btn-ghost"
-                                  onClick={() => toggleShowSecret(f.key)}
-                                  style={{
-                                    position: 'absolute', right: '6px', padding: '4px 6px',
-                                    color: 'var(--text-tertiary)', background: 'transparent',
-                                    border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center'
-                                  }}
-                                  title={isShown ? 'Hide secret key' : 'Show secret key'}
-                                >
-                                  {isShown ? <EyeOff size={16} /> : <Eye size={16} />}
-                                </button>
-                              )}
-                            </div>
+                            <input
+                              type={inputType}
+                              value={formConfig[f.key] || ''}
+                              onChange={(e) => setFormConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
+                              disabled={!isAdmin}
+                            />
                           </div>
                         )
                       })}
@@ -783,7 +734,7 @@ print(response.json())`}
 
                         return (
                           <div className="field" key={f.key}>
-                            <label>{f.label} <span className="integration-private-tag">(private to you)</span></label>
+                            <label>{f.label} <span className="integration-private-tag">(private)</span></label>
                             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                               <input
                                 type={inputType}
@@ -791,19 +742,6 @@ print(response.json())`}
                                 onChange={(e) => setFormCredentials(prev => ({ ...prev, [f.key]: e.target.value }))}
                                 style={{ width: '100%', paddingRight: '36px' }}
                               />
-                              <button
-                                type="button"
-                                className="btn-ghost"
-                                onClick={() => toggleShowSecret(f.key)}
-                                style={{
-                                  position: 'absolute', right: '6px', padding: '4px 6px',
-                                  color: 'var(--text-tertiary)', background: 'transparent',
-                                  border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center'
-                                }}
-                                title={isShown ? 'Hide secret key' : 'Show secret key'}
-                              >
-                                {isShown ? <EyeOff size={16} /> : <Eye size={16} />}
-                              </button>
                             </div>
                           </div>
                         )
@@ -815,7 +753,7 @@ print(response.json())`}
                         {savingId === integration.id ? 'Saving…' : 'Save'}
                       </button>
                       <button className="btn-ghost btn-sm" disabled={!configured || result?.loading} onClick={() => handleTest(integration)}>
-                        {result?.loading ? 'Testing…' : 'Test Connection'}
+                        {result?.loading ? 'Testing…' : 'Test'}
                       </button>
                     </div>
 
