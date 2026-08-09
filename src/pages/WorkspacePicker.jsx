@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { subscribeUserWorkspaces, createWorkspace } from '../lib/workspaces'
+import { TEAM_SIZE_OPTIONS, WORKFLOWS, getRecommendedWorkflow, isWorkflowUnlocked } from '../lib/workflows'
 import './WorkspacePicker.css'
 
 export default function WorkspacePicker() {
@@ -11,6 +12,8 @@ export default function WorkspacePicker() {
   const [loading, setLoading] = useState(true)
   const [isCreating, setIsCreating] = useState(false)
   const [newName, setNewName] = useState('')
+  const [teamSize, setTeamSize] = useState('2-5')
+  const [selectedWorkflow, setSelectedWorkflow] = useState('kanban')
   const [createError, setCreateError] = useState('')
 
   useEffect(() => {
@@ -22,13 +25,23 @@ export default function WorkspacePicker() {
     return unsub
   }, [user?.uid])
 
+  const userPlan = userData?.billing_plan_id || 'free'
+
+  const handleTeamSizeChange = (newSize) => {
+    setTeamSize(newSize)
+    const rec = getRecommendedWorkflow(newSize)
+    if (rec && isWorkflowUnlocked(rec.id, userPlan)) {
+      setSelectedWorkflow(rec.id)
+    }
+  }
+
   const handleCreate = async (e) => {
     e.preventDefault()
     if (!newName.trim()) return
     setCreateError('')
     setIsCreating(true)
     try {
-      const newId = await createWorkspace(user.uid, user.email, newName.trim())
+      const newId = await createWorkspace(user.uid, user.email, newName.trim(), teamSize, selectedWorkflow)
       navigate(`/${newId}`)
     } catch (err) {
       console.error('Failed to create workspace:', err)
@@ -57,7 +70,6 @@ export default function WorkspacePicker() {
   const isAdmin = workspaces.some(w => w.role === 'owner' || w.role === 'admin')
   const ownedCount = workspaces.filter(w => w.role === 'owner' || w.role === 'admin').length
   
-  const userPlan = userData?.billing_plan_id || 'free'
   let maxWorkspaces = 1
   if (userPlan === 'team') maxWorkspaces = 5
   if (userPlan === 'scale') maxWorkspaces = 10
@@ -152,10 +164,52 @@ export default function WorkspacePicker() {
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
                   required
+                  style={{ marginBottom: '12px' }}
                 />
-                {createError && <div style={{ background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', padding: '12px', borderRadius: '8px', fontSize: '13px', marginTop: '12px' }}>{createError}</div>}
+
+                <div style={{ marginBottom: '12px', textAlign: 'left' }}>
+                  <label style={{ fontSize: '12px', color: 'var(--text-secondary, #6b7280)', marginBottom: '4px', display: 'block', fontWeight: 600 }}>
+                    Team Size (Admin Config):
+                  </label>
+                  <select
+                    className="wp-input"
+                    value={teamSize}
+                    onChange={(e) => handleTeamSizeChange(e.target.value)}
+                    style={{ margin: 0, padding: '10px 12px' }}
+                  >
+                    {TEAM_SIZE_OPTIONS.map(opt => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ marginBottom: '16px', textAlign: 'left' }}>
+                  <label style={{ fontSize: '12px', color: 'var(--text-secondary, #6b7280)', marginBottom: '4px', display: 'block', fontWeight: 600 }}>
+                    Aligned Agile Workflow:
+                  </label>
+                  <select
+                    className="wp-input"
+                    value={selectedWorkflow}
+                    onChange={(e) => setSelectedWorkflow(e.target.value)}
+                    style={{ margin: 0, padding: '10px 12px' }}
+                  >
+                    {WORKFLOWS.map(wf => {
+                      const unlocked = isWorkflowUnlocked(wf.id, userPlan)
+                      return (
+                        <option key={wf.id} value={wf.id} disabled={!unlocked}>
+                          {wf.num}. {wf.name} ({wf.teamSizeLabel}) {!unlocked ? `🔒 [${userPlan === 'team' ? 'Scale Only' : 'Team/Scale Only'}]` : ''}
+                        </option>
+                      )
+                    })}
+                  </select>
+                </div>
+
+                {createError && <div style={{ background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', padding: '12px', borderRadius: '8px', fontSize: '13px', marginBottom: '12px' }}>{createError}</div>}
+                
                 <button type="submit" className="wp-submit-btn" disabled={isCreating || !newName.trim()}>
-                  {isCreating ? 'Creating...' : 'Create Workspace'}
+                  {isCreating ? 'Creating Workspace...' : 'Create Workspace'}
                 </button>
               </form>
             ) : (

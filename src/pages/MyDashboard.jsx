@@ -14,6 +14,7 @@ import CalendarWidget from '../components/CalendarWidget'
 import { useWorkspace } from '../lib/WorkspaceContext'
 import { Link } from 'react-router-dom'
 import { subscribeIntegrationConfig } from '../lib/integrations/config'
+import { getWorkflowById } from '../lib/workflows'
 import './Dashboard.css'
 import './MyDashboard.css'
 
@@ -119,6 +120,82 @@ export default function MyDashboard() {
       </header>
 
       <main className="dash-body">
+        {/* Active Agile Workflow Banner */}
+        {(() => {
+          const currentWorkflowId = workspace?.settings?.agile_workflow || 'scrum'
+          const activeWf = getWorkflowById(currentWorkflowId)
+          return (
+            <div style={{
+              marginBottom: '1.5rem',
+              padding: '14px 18px',
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.02) 100%)',
+              border: '1px solid rgba(16, 185, 129, 0.25)',
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  background: '#10b981',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 800,
+                  fontSize: '15px'
+                }}>
+                  #{activeWf.num}
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>
+                      {activeWf.name}
+                    </span>
+                    <span style={{ fontSize: '11px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '2px 8px', borderRadius: '100px', fontWeight: 600 }}>
+                      {activeWf.badge}
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>
+                      (Team Size: {workspace?.settings?.team_size || activeWf.teamSizeLabel})
+                    </span>
+                  </div>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    {activeWf.description}
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 600 }}>
+                  Columns: {activeWf.columns.map(c => c.title).join(' ➔ ')}
+                </div>
+                {isAdmin && (
+                  <Link 
+                    to={`/${workspaceId}/settings`} 
+                    style={{ 
+                      fontSize: '12px', 
+                      color: '#10b981', 
+                      background: 'var(--bg-layer-1)', 
+                      padding: '6px 12px', 
+                      borderRadius: '6px', 
+                      border: '1px solid rgba(16, 185, 129, 0.3)',
+                      textDecoration: 'none', 
+                      fontWeight: 600 
+                    }}
+                  >
+                    ⚙️ Change Workflow
+                  </Link>
+                )}
+              </div>
+            </div>
+          )
+        })()}
+
         <section className="mydash-top-row" style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
           <div className="mydash-hello" style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <h1 style={{ margin: '0 0 8px 0' }}>Welcome back, {user?.displayName?.split(' ')[0] || 'there'}</h1>

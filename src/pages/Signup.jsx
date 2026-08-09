@@ -11,8 +11,22 @@ const maskEmail = (email) => {
   return `${name.substring(0, 2)}***${name.substring(name.length - 1)}@${domain}`;
 }
 
-import { validateRequestHeaders, checkAccountLockout, recordFailedAttempt, resetSecurityState, checkIpBlocked } from '../lib/security'
-import { validateEmail, validatePassword, validateUsername } from '../lib/validation'
+import { 
+  validateRequestHeaders, 
+  checkAccountLockout, 
+  checkIpBlocked,
+  recordFailedAttempt, 
+  resetSecurityState 
+} from '../lib/security'
+import { validateEmail, validatePassword } from '../lib/validation'
+
+import {
+  TEAM_SIZE_OPTIONS,
+  WORKFLOWS,
+  getRecommendedWorkflow,
+  getUnlockedWorkflowsForPlan,
+  isWorkflowUnlocked
+} from '../lib/workflows'
 import { getMainUrl } from '../lib/domain'
 
 export default function Signup() {
@@ -37,7 +51,28 @@ export default function Signup() {
   const [otp, setOtp] = useState('')
   const [password, setPassword] = useState('')
   const [selectedPlan, setSelectedPlan] = useState('free')
+  const [teamSize, setTeamSize] = useState('2-5')
+  const [selectedWorkflow, setSelectedWorkflow] = useState('kanban')
   const [loading, setLoading] = useState(false)
+
+  const handleTeamSizeChange = (newSize) => {
+    setTeamSize(newSize)
+    const rec = getRecommendedWorkflow(newSize)
+    if (rec && isWorkflowUnlocked(rec.id, selectedPlan)) {
+      setSelectedWorkflow(rec.id)
+    } else {
+      const unlocked = getUnlockedWorkflowsForPlan(selectedPlan)
+      if (unlocked.length > 0) setSelectedWorkflow(unlocked[0].id)
+    }
+  }
+
+  const handlePlanChange = (newPlan) => {
+    setSelectedPlan(newPlan)
+    if (!isWorkflowUnlocked(selectedWorkflow, newPlan)) {
+      const unlocked = getUnlockedWorkflowsForPlan(newPlan)
+      if (unlocked.length > 0) setSelectedWorkflow(unlocked[0].id)
+    }
+  }
   const [message, setMessage] = useState('')
   const [cooldown, setCooldown] = useState(0)
   const [failedAttempts, setFailedAttempts] = useState(0)
@@ -416,11 +451,11 @@ export default function Signup() {
                 )}
 
                 {step === 3 && (
-                  <div style={{ marginTop: '20px' }}>
+                  <div style={{ marginTop: '20px', textAlign: 'left' }}>
                     <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary, #4b5563)', marginBottom: '8px', display: 'block' }}>
-                      Select Account Tier (Early Access Unlocked):
+                      1. Select Account Tier (Early Access Unlocked):
                     </label>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '16px' }}>
                       {[
                         { id: 'free', name: 'Starter', price: 'Free', desc: '1 Workspace (3 Seats)' },
                         { id: 'team', name: 'Team', price: '$29/mo', desc: '5 Workspaces (7 Seats)' },
@@ -428,7 +463,7 @@ export default function Signup() {
                       ].map(p => (
                         <div 
                           key={p.id}
-                          onClick={() => setSelectedPlan(p.id)}
+                          onClick={() => handlePlanChange(p.id)}
                           style={{
                             padding: '10px 8px',
                             borderRadius: '8px',
@@ -444,6 +479,87 @@ export default function Signup() {
                           <div style={{ fontSize: '11px', color: 'var(--text-tertiary, #6b7280)' }}>{p.desc}</div>
                         </div>
                       ))}
+                    </div>
+
+                    {/* 2. Team Size Selection */}
+                    <div style={{ marginBottom: '16px' }}>
+                      <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary, #4b5563)', marginBottom: '6px', display: 'block' }}>
+                        2. Expected Team Size (Admin Configuration):
+                      </label>
+                      <select
+                        value={teamSize}
+                        onChange={(e) => handleTeamSizeChange(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '9px 12px',
+                          borderRadius: '8px',
+                          border: '1px solid var(--border-bright, #d1d5db)',
+                          background: 'var(--bg-layer-1, #ffffff)',
+                          color: 'var(--text-primary, #111827)',
+                          fontSize: '14px',
+                          fontWeight: 500
+                        }}
+                      >
+                        {TEAM_SIZE_OPTIONS.map(opt => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* 3. Aligned Agile Workflow Selection */}
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary, #4b5563)', margin: 0 }}>
+                          3. Aligned Agile Workflow:
+                        </label>
+                        <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 600 }}>
+                          Auto-Aligned to Team Size
+                        </span>
+                      </div>
+                      
+                      <select
+                        value={selectedWorkflow}
+                        onChange={(e) => setSelectedWorkflow(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '9px 12px',
+                          borderRadius: '8px',
+                          border: '1px solid var(--border-bright, #d1d5db)',
+                          background: 'var(--bg-layer-1, #ffffff)',
+                          color: 'var(--text-primary, #111827)',
+                          fontSize: '14px',
+                          fontWeight: 500
+                        }}
+                      >
+                        {WORKFLOWS.map(wf => {
+                          const unlocked = isWorkflowUnlocked(wf.id, selectedPlan)
+                          return (
+                            <option key={wf.id} value={wf.id} disabled={!unlocked}>
+                              {wf.num}. {wf.name} ({wf.teamSizeLabel}) {!unlocked ? `🔒 [${selectedPlan === 'team' ? 'Scale Only' : 'Team/Scale Only'}]` : ''}
+                            </option>
+                          )
+                        })}
+                      </select>
+
+                      {/* Active Workflow Details Card */}
+                      {(() => {
+                        const wf = WORKFLOWS.find(w => w.id === selectedWorkflow)
+                        if (!wf) return null
+                        return (
+                          <div style={{ marginTop: '10px', padding: '12px', background: 'var(--bg-inset, rgba(16, 185, 129, 0.05))', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{wf.name}</span>
+                              <span style={{ fontSize: '11px', background: '#10b981', color: '#fff', padding: '2px 8px', borderRadius: '100px', fontWeight: 600 }}>{wf.badge}</span>
+                            </div>
+                            <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>{wf.description}</p>
+                            <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 600 }}>
+                              Board Columns: {wf.columns.map(c => c.title).join(' ➔ ')}
+                            </div>
+                          </div>
+                        )
+                      })()}
                     </div>
                   </div>
                 )}

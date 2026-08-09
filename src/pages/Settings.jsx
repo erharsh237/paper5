@@ -26,6 +26,14 @@ import { checkMemberCapacity } from '../lib/plans'
 import AlertModal from '../components/ui/AlertModal'
 import ConfirmModal from '../components/ui/ConfirmModal'
 import DeleteWorkspaceModal from '../components/ui/DeleteWorkspaceModal'
+import {
+  TEAM_SIZE_OPTIONS,
+  WORKFLOWS,
+  getRecommendedWorkflow,
+  getUnlockedWorkflowsForPlan,
+  isWorkflowUnlocked,
+  getWorkflowById
+} from '../lib/workflows'
 
 function SettingsIcon() {
   return (
@@ -678,6 +686,99 @@ export default function Settings() {
                         {savingName ? 'Saving...' : 'Save Workspace Name'}
                       </button>
                       {nameSuccess && <span style={{ color: 'var(--accent-signal)', fontSize: '13px' }}>Saved!</span>}
+                    </div>
+                  )}
+                </form>
+
+                {/* Agile Workflow & Team Size Section */}
+                <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '32px 0' }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '16px' }}>Agile Workflow & Team Alignment</h3>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                      {isAdminOrOwner 
+                        ? 'Configure your workspace methodology based on team size and process requirements.'
+                        : 'Active workflow configured by workspace admins. Visible to all team members.'}
+                    </p>
+                  </div>
+                  {!isAdminOrOwner && (
+                    <span style={{ fontSize: '11px', background: 'var(--bg-layer-2)', color: 'var(--text-tertiary)', padding: '4px 10px', borderRadius: '100px', fontWeight: 600 }}>
+                      🔒 Admin Only Edit
+                    </span>
+                  )}
+                </div>
+
+                <form onSubmit={handleSaveAdvancedSettings} className="settings-form" style={{ marginBottom: '32px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div className="form-group">
+                      <label>Target Team Size</label>
+                      <select 
+                        value={wsSettings.team_size || '2-5'} 
+                        disabled={!isAdminOrOwner}
+                        onChange={e => {
+                          const newSize = e.target.value
+                          const rec = getRecommendedWorkflow(newSize)
+                          const planId = workspace?.plan || workspace?.billing_plan_id || 'free'
+                          const recId = (rec && isWorkflowUnlocked(rec.id, planId)) ? rec.id : (wsSettings.agile_workflow || 'scrum')
+                          setWsSettings(prev => ({ ...prev, team_size: newSize, agile_workflow: recId }))
+                        }}
+                      >
+                        {TEAM_SIZE_OPTIONS.map(opt => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label>Active Agile Workflow</label>
+                      <select 
+                        value={wsSettings.agile_workflow || 'scrum'} 
+                        disabled={!isAdminOrOwner}
+                        onChange={e => setWsSettings(prev => ({ ...prev, agile_workflow: e.target.value }))}
+                      >
+                        {WORKFLOWS.map(wf => {
+                          const planId = workspace?.plan || workspace?.billing_plan_id || 'free'
+                          const unlocked = isWorkflowUnlocked(wf.id, planId)
+                          return (
+                            <option key={wf.id} value={wf.id} disabled={!unlocked}>
+                              {wf.num}. {wf.name} ({wf.teamSizeLabel}) {!unlocked ? `🔒 [${planId === 'team' ? 'Scale Only' : 'Team/Scale Only'}]` : ''}
+                            </option>
+                          )
+                        })}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Active Workflow Card Details */}
+                  {(() => {
+                    const activeWf = getWorkflowById(wsSettings.agile_workflow || 'scrum')
+                    return (
+                      <div style={{ marginTop: '16px', padding: '16px', background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '10px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                            ⚡ Active: {activeWf.name}
+                          </span>
+                          <span style={{ fontSize: '11px', background: 'var(--accent-dim)', color: 'var(--accent)', padding: '2px 10px', borderRadius: '100px', fontWeight: 600 }}>
+                            {activeWf.badge}
+                          </span>
+                        </div>
+                        <p style={{ margin: '0 0 10px 0', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                          {activeWf.description}
+                        </p>
+                        <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 600 }}>
+                          Board Columns: {activeWf.columns.map(c => c.title).join(' ➔ ')}
+                        </div>
+                      </div>
+                    )
+                  })()}
+
+                  {isAdminOrOwner && (
+                    <div style={{ marginTop: '16px' }}>
+                      <button type="submit" className="btn-primary" disabled={savingSettings}>
+                        {savingSettings ? 'Saving Settings...' : 'Save Workflow & Preferences'}
+                      </button>
                     </div>
                   )}
                 </form>

@@ -139,7 +139,7 @@ export function subscribeInvites(workspaceId, callback) {
   return () => supabase.removeChannel(channel)
 }
 
-export async function createWorkspace(uid, email, name) {
+export async function createWorkspace(uid, email, name, teamSize = '2-5', agileWorkflow = 'scrum') {
   const { data: authData } = await supabase.auth.getUser()
   const creatorId = uid || authData?.user?.id
   if (!creatorId) {
@@ -158,6 +158,16 @@ export async function createWorkspace(uid, email, name) {
     console.error('RPC Error:', error)
     throw error
   }
+
+  // Update workspace settings with team_size and agile_workflow
+  await supabase.from('workspaces').update({
+    settings: {
+      team_size: teamSize,
+      agile_workflow: agileWorkflow,
+      configured_by: creatorId,
+      configured_at: new Date().toISOString()
+    }
+  }).eq('id', newWorkspaceId).catch(err => console.error('Failed to update workspace workflow settings:', err))
 
   return newWorkspaceId
 }
