@@ -1,6 +1,51 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from './supabase'
 
+/**
+ * Thin client for the /api/auth/session Vercel serverless function.
+ * Keeps httpOnly cookies in sync with the in-memory Supabase session.
+ */
+const sessionCookieApi = {
+  /** Restore a persisted session from httpOnly cookies on page load. */
+  async get() {
+    try {
+      const res = await fetch('/api/auth/session', { credentials: 'same-origin' })
+      if (res.status === 204) return null // no session cookie
+      if (!res.ok) return null
+      return await res.json() // { access_token, refresh_token, expires_at }
+    } catch {
+      return null // network error — treat as no session
+    }
+  },
+  /** Persist a new/refreshed session to httpOnly cookies. */
+  async set(session) {
+    if (!session?.access_token || !session?.refresh_token) return
+    try {
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          access_token:  session.access_token,
+          refresh_token: session.refresh_token,
+          expires_at:    session.expires_at,
+        }),
+      })
+    } catch {
+      // Non-fatal: session still works in memory; cookie just won't persist after refresh
+      console.warn('[SessionCookieApi] Failed to sync session to cookie.')
+    }
+  },
+  /** Clear session cookies on sign-out. */
+  async clear() {
+    try {
+      await fetch('/api/auth/session', { method: 'DELETE', credentials: 'same-origin' })
+    } catch {
+      console.warn('[SessionCookieApi] Failed to clear session cookie.')
+    }
+  },
+}
+
 export const CURRENT_LEGAL_VERSION = '1.0'
 
 export const AuthContext = createContext(null)
@@ -71,14 +116,35 @@ export function AuthProvider({ children }) {
         .subscribe()
     }
 
+    // ── Hydrate session from httpOnly cookie on page load ──────────────────
+    // Since we no longer use localStorage, we restore the persisted session by
+    // reading tokens from the server-side httpOnly cookie and calling setSession.
+    const hydrateFromCookie = async () => {
+      const stored = await sessionCookieApi.get()
+      if (stored?.access_token && stored?.refresh_token) {
+        const { data: { session }, error } = await supabase.auth.setSession({
+          access_token:  stored.access_token,
+          refresh_token: stored.refresh_token,
+        })
+        if (error) {
+          // Stored tokens are expired/invalid — clear the stale cookie
+          await sessionCookieApi.clear()
+        } else if (session) {
+          // setSession triggers onAuthStateChange internally; setupUser runs from there
+          return
+        }
+      }
+      // No valid stored session — fall through to getSession() for magic link / URL flows
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        currentUserId = session?.user?.id ?? null
+        setupUser(session)
+      })
+    }
+
     // Listen for auth changes
     let currentUserId = null
 
-    // Initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      currentUserId = session?.user?.id ?? null
-      setupUser(session)
-    })
+    hydrateFromCookie()
     const { data: authSubscription } = supabase.auth.onAuthStateChange(async (event, session) => {
       // Supabase's internal `visibilitychange` listener runs session recovery
       // every time the tab regains focus. Depending on internal state this can
@@ -87,6 +153,17 @@ export function AuthProvider({ children }) {
       // nothing to re-setup — skip it so we don't reset loading, refetch user
       // data, and tear down/recreate the realtime channel on every tab switch.
       const sameUser = session?.user?.id != null && session.user.id === currentUserId
+
+      // ── Sync session tokens to httpOnly cookie ────────────────────────────
+      // We do this BEFORE the sameUser early-return so TOKEN_REFRESHED events
+      // always persist the latest access token even when the user hasn't changed.
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        await sessionCookieApi.set(session)
+      } else if (event === 'SIGNED_OUT') {
+        await sessionCookieApi.clear()
+      }
+      // ─────────────────────────────────────────────────────────────────────
+
       if (sameUser && (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN')) {
         return
       }

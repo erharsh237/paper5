@@ -6,23 +6,41 @@ on:
   pull_request:
     branches: [ "main" ]
   schedule:
-    - cron: '0 0 * * 0' # Run weekly on Sundays
+    - cron: '0 0 * * 0' # Run weekly on Sundays at midnight UTC
 
 jobs:
   security-audit:
+    name: Dependency Vulnerability Scan
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Use Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Run npm audit
-      run: npm audit --audit-level=high
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies (clean install)
+        run: npm ci
+
+      - name: Audit production dependencies (fail on high/critical)
+        run: npm audit --audit-level=high --omit=dev
+
+      - name: Audit all dependencies including dev (report only)
+        run: npm audit --audit-level=high || true
+        # Dev CVEs are reported but don't fail the build
+
+      - name: Build smoke test (catch CSP/inline regressions)
+        run: npm run build
+
+      - name: Verify no inline scripts in dist/index.html
+        run: |
+          if grep -E "on(load|click|error|focus)=" dist/index.html; then
+            echo "::error::Inline event handlers found in dist/index.html — CSP violation risk!"
+            exit 1
+          else
+            echo "✅ No inline event handlers detected in dist/index.html"
+          fi

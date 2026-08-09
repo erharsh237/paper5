@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../lib/AuthContext'
+import { useSubmitRateLimit } from '../hooks/useSubmitRateLimit'
 import './FeedbackModal.css'
 
 export default function FeedbackModal({ isOpen, onClose }) {
@@ -12,6 +13,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState(null)
+  const { isLockedOut, isHardLocked, cooldownRemaining, startCooldown } = useSubmitRateLimit(30, 5)
 
   if (!isOpen) return null
 
@@ -54,6 +56,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
       setError(err?.message || 'Something went wrong. Please try again.')
     } finally {
       setSubmitting(false)
+      startCooldown() // Start cooldown after every attempt (success or failure)
     }
   }
 
@@ -148,9 +151,23 @@ export default function FeedbackModal({ isOpen, onClose }) {
               <button type="button" className="btn-ghost" onClick={handleResetAndClose}>
                 Cancel
               </button>
-              <button type="submit" className="btn-primary" disabled={submitting}>
-                {submitting ? 'Sending...' : 'Send Feedback'}
-              </button>
+              {isHardLocked ? (
+                <button type="button" className="btn-primary" disabled>
+                  Too many attempts
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={submitting || isLockedOut}
+                >
+                  {submitting
+                    ? 'Sending...'
+                    : isLockedOut
+                    ? `Wait ${cooldownRemaining}s`
+                    : 'Send Feedback'}
+                </button>
+              )}
             </div>
           </form>
         )}

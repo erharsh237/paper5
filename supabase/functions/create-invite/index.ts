@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3"
 import * as crypto from "https://deno.land/std@0.177.0/crypto/mod.ts"
+import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -26,6 +27,17 @@ serve(async (req) => {
 
     const { data: { user } } = await supabaseClient.auth.getUser()
     if (!user) throw new Error('Unauthenticated')
+
+    // ── Server-side rate limiting (real, not bypassable from the client) ──
+    // 10 invite creates per user per 60 seconds. Uses the shared sliding-window
+    // Postgres counter in rate_limit_log. A bot making raw HTTP requests will
+    // hit this limit regardless of what the UI does.
+    const isLimited = await checkRateLimit(supabaseAdmin, user.id, 'invite_create', {
+      maxRequests: 10,
+      windowSeconds: 60,
+    })
+    if (isLimited) return rateLimitResponse(60)
+    // ─────────────────────────────────────────────────────────────────────
 
     const { workspaceId, email, role, permissions = [], password, sendEmail = false } = await req.json()
     if (!workspaceId || !email || !role) throw new Error('Missing parameters')
