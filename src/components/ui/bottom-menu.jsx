@@ -63,10 +63,11 @@ export function MenuBar({ items, className = "", ...props }) {
       >
         {items.map((item, index) => {
           const Icon = item.icon
+          const isActive = item.isActive
           return (
             <button 
               key={index}
-              className="bottom-menu-item"
+              className={`bottom-menu-item ${isActive ? 'active' : ''}`}
               onMouseEnter={() => setActiveIndex(index)}
               onMouseLeave={() => setActiveIndex(null)}
               onClick={item.action}

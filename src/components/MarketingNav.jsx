@@ -37,16 +37,17 @@ export default function MarketingNav() {
     }
   }, [isMobileMenuOpen])
 
-  const isActive = (path) => location.pathname === path ? 'active-nav-link' : ''
-
   const baseItems = [
-    { icon: Home, label: "Home", action: () => navigate('/') },
-    { icon: Star, label: "Features", action: () => navigate('/features') },
-    { icon: Blocks, label: "Integrations", action: () => navigate('/product-integrations') },
-    { icon: Book, label: "Docs", action: () => navigate('/docs') },
-    { icon: Info, label: "About", action: () => navigate('/about') },
-    { icon: Mail, label: "Contact", action: () => setIsContactOpen(true) },
-  ]
+    { icon: Home, label: "Home", path: '/', action: () => navigate('/') },
+    { icon: Star, label: "Features", path: '/features', action: () => navigate('/features') },
+    { icon: Blocks, label: "Integrations", path: '/product-integrations', action: () => navigate('/product-integrations') },
+    { icon: Book, label: "Docs", path: '/docs', action: () => navigate('/docs') },
+    { icon: Info, label: "About", path: '/about', action: () => navigate('/about') },
+    { icon: Mail, label: "Contact", path: null, action: () => setIsContactOpen(true) },
+  ].map(item => ({
+    ...item,
+    isActive: item.path ? (item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)) : false
+  }))
 
   return (
     <>
