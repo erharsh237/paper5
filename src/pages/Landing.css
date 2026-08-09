@@ -464,9 +464,17 @@
   color: #374151;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  max-width: 600px;
+  letter-spacing: 0.04em;
+  max-width: 1100px;
   margin: 0 auto;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .trust-text {
+    white-space: normal;
+    font-size: 12px;
+  }
 }
 
 /* ---------------- Features Grid (Linear Style) ---------------- */
