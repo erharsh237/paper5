@@ -1,19 +1,6 @@
-import React from 'react'
-import MarketingContentPage from './MarketingContentPage'
+import ProductIntegrationsPage from './ProductIntegrationsPage'
 
-export function ProductIntegrations() {
-  return (
-    <MarketingContentPage title="Integrations" lastUpdated="Oct 10, 2026">
-      <h2>Connect your entire stack</h2>
-      <p>Paper5 integrates natively with the tools your team already uses. No messy webhooks required.</p>
-      <ul>
-        <li><strong>GitHub:</strong> Automatically sync pull requests to sprint tasks.</li>
-        <li><strong>Slack:</strong> Run automated standups and receive sprint alerts in-channel.</li>
-        <li><strong>Vercel:</strong> Track deployment velocity against sprint deadlines.</li>
-      </ul>
-    </MarketingContentPage>
-  )
-}
+export const ProductIntegrations = ProductIntegrationsPage
 
 export function Changelog() {
   return (
