@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import './Auth.css'
 import { InlineError, InlineSuccess } from '../components/states'
+import Turnstile from '../components/Turnstile'
 
 const maskEmail = (email) => {
   if (!email || !email.includes('@')) return email;
@@ -41,6 +42,8 @@ export default function Login({ accessDenied, denialReason }) {
   const [failedAttempts, setFailedAttempts] = useState(0)
   const [lockoutTimer, setLockoutTimer] = useState(0)
   const [displayError, setDisplayError] = useState(null)
+  const [turnstileToken, setTurnstileToken] = useState(null)
+  const turnstileRef = useRef(null)
 
   useEffect(() => {
     if (authError) setDisplayError(authError)
@@ -144,6 +147,7 @@ export default function Login({ accessDenied, denialReason }) {
       resetSecurityState(identifier)
     } catch (err) {
       setIsPending2FA(false)
+      if (turnstileRef.current) turnstileRef.current.reset()
       const result = recordFailedAttempt(identifier)
       setFailedAttempts(result.failedAttempts)
       if (result.lockoutSeconds > 0) {
@@ -364,10 +368,16 @@ export default function Login({ accessDenied, denialReason }) {
                 </button>
               )}
             </div>
+
+            <Turnstile ref={turnstileRef} action="login" onSuccess={setTurnstileToken} />
           </form>
 
           <div className="auth-footer">
             Don't have an account? <Link to="/signup" style={{ textDecoration: 'underline' }}>Sign up</Link>
+          </div>
+          
+          <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle, #f0f0f0)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-tertiary, #888)', fontFamily: 'var(--mono)' }}>
+            <span style={{ color: '#10b981' }}>🛡️</span> Protected by Cloudflare Turnstile Anti-Bot Challenge Tokens
           </div>
         </div>
       </div>

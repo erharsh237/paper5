@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import './Auth.css'
 import { InlineError } from '../components/states'
 import { validateEmail } from '../lib/validation'
 import logo from '../assets/logo.png'
+import Turnstile from '../components/Turnstile'
 
 export default function ForgotPassword() {
   const { resetPassword, authError, clearAuthError } = useAuth()
@@ -12,6 +13,8 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState(null)
+  const [turnstileToken, setTurnstileToken] = useState(null)
+  const turnstileRef = useRef(null)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -31,6 +34,7 @@ export default function ForgotPassword() {
       setSubmitted(true)
     } catch (err) {
       console.error('Password reset error:', err)
+      if (turnstileRef.current) turnstileRef.current.reset()
       setError(err?.message || 'Failed to send password reset email. Please try again.')
     } finally {
       setLoading(false)
@@ -113,6 +117,8 @@ export default function ForgotPassword() {
               >
                 {loading ? 'Sending Link...' : 'Send Reset Link'}
               </button>
+
+              <Turnstile ref={turnstileRef} action="forgot-password" onSuccess={setTurnstileToken} />
             </form>
           )}
 
