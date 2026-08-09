@@ -136,8 +136,8 @@ export default function AboutUs() {
         </section>
 
         {/* Security Commitment */}
-        <section className="about-section" style={{ textAlign: 'center', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, var(--bg-panel) 100%)' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', marginBottom: '16px' }}>
+        <section className="about-section" style={{ textAlign: 'center', background: '#ffffff' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', borderRadius: '12px', background: '#000000', color: '#ffffff', marginBottom: '16px' }}>
             <ShieldCheck size={26} />
           </div>
           <h2 style={{ fontSize: '26px', fontWeight: 800, margin: '0 0 12px 0', color: 'var(--text-primary)' }}>

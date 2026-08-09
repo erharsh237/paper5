@@ -1,28 +1,28 @@
 :root {
-  /* Core Colors */
-  --bg-void: #F8F8F8; /* Premium off-white */
+  /* Core Colors - Strict Black, White & Neutral Gray */
+  --bg-void: #ffffff;
   --bg-layer: #ffffff;
   --bg-layer-2: #f4f5f7;
-  --bg-panel: rgba(255, 255, 255, 0.65); /* Translucent base for glass */
+  --bg-panel: #ffffff;
   --bg-inset: rgba(0, 0, 0, 0.02);
   
-  --border: rgba(0, 0, 0, 0.04);
-  --border-subtle: rgba(0, 0, 0, 0.02);
-  --border-bright: rgba(0, 0, 0, 0.08);
+  --border: rgba(0, 0, 0, 0.08);
+  --border-subtle: rgba(0, 0, 0, 0.04);
+  --border-bright: rgba(0, 0, 0, 0.16);
 
-  --text-primary: #0A0A0A;
-  --text-secondary: #3F3F46;
-  --text-tertiary: #52525B;
+  --text-primary: #000000;
+  --text-secondary: #27272a;
+  --text-tertiary: #52525b;
 
-  /* Semantic Colors - Glass Adapted */
-  --accent: #10B981; /* Emerald */
-  --accent-hover: #059669;
-  --accent-dim: rgba(16, 185, 129, 0.1);
+  /* Strict Black Buttons & Accents */
+  --accent: #000000;
+  --accent-hover: #18181b;
+  --accent-dim: rgba(0, 0, 0, 0.05);
   
-  --accent-signal: #10B981;
-  --accent-warn: #F59E0B;
-  --accent-critical: #EF4444;
-  --accent-info: #3B82F6;
+  --accent-signal: #000000;
+  --accent-warn: #27272a;
+  --accent-critical: #ef4444;
+  --accent-info: #000000;
 
   /* Typography */
   --mono: 'JetBrains Mono', 'Fira Code', monospace;
@@ -33,8 +33,8 @@
   --radius-sm: 6px; 
   --radius-md: 12px; 
   --radius-lg: 16px; 
-  --shadow-panel: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 10px 15px -3px rgba(0, 0, 0, 0.04);
-  --shadow-glow: 0 0 20px rgba(16, 185, 129, 0.15);
+  --shadow-panel: 0 4px 12px rgba(0, 0, 0, 0.04);
+  --shadow-glow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
 /* Glassmorphism Utility */

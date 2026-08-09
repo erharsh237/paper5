@@ -1,4 +1,4 @@
-/* Product Integrations Showcase Page - SprintOS by Paper5 */
+/* Product Integrations Showcase Page - SprintOS by Paper5 (Strict Black, White & Gray Theme) */
 
 .integrations-hero {
   padding: 100px 24px 50px 24px;
@@ -7,25 +7,11 @@
   margin: 0 auto;
 }
 
-.integrations-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(16, 185, 129, 0.12);
-  color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  padding: 6px 14px;
-  border-radius: 100px;
-  font-size: 13px;
-  font-weight: 700;
-  margin-bottom: 24px;
-}
-
 .integrations-title {
   font-family: var(--display, sans-serif);
   font-size: 52px;
   font-weight: 800;
-  color: var(--text-primary, #0a0a0a);
+  color: #000000;
   letter-spacing: -0.03em;
   line-height: 1.15;
   margin-bottom: 20px;
@@ -33,7 +19,7 @@
 
 .integrations-subtitle {
   font-size: 19px;
-  color: var(--text-secondary, #3f3f46);
+  color: #27272a;
   line-height: 1.6;
   margin-bottom: 36px;
   max-width: 780px;
@@ -53,9 +39,9 @@
 .filter-pill {
   padding: 8px 16px;
   border-radius: 100px;
-  border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
-  background: var(--bg-panel, rgba(255, 255, 255, 0.65));
-  color: var(--text-secondary, #3f3f46);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #ffffff;
+  color: #27272a;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -63,9 +49,9 @@
 }
 
 .filter-pill:hover, .filter-pill.active {
-  background: #10b981;
+  background: #000000;
   color: #ffffff;
-  border-color: #10b981;
+  border-color: #000000;
 }
 
 /* Showcase Container */
@@ -88,16 +74,14 @@
 .bento-tile-4  { grid-column: span 4; }
 
 .showcase-card {
-  background: var(--bg-panel, rgba(255, 255, 255, 0.7));
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border, rgba(0, 0, 0, 0.06));
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 20px;
   padding: 32px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
   transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
   position: relative;
   overflow: hidden;
@@ -105,17 +89,9 @@
 
 .showcase-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.08);
+  border-color: #000000;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
 }
-
-/* Specific Integration Brand Styles */
-.card-github:hover { border-color: rgba(45, 164, 78, 0.6); }
-.card-api { border: 1px solid rgba(16, 185, 129, 0.4); background: linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, var(--bg-panel) 100%); }
-.card-api:hover { border-color: #10b981; }
-.card-discord:hover { border-color: rgba(88, 101, 242, 0.6); }
-.card-slack:hover { border-color: rgba(224, 30, 90, 0.6); }
-.card-vercel:hover { border-color: rgba(0, 0, 0, 0.4); }
-.card-google:hover { border-color: rgba(66, 133, 244, 0.6); }
 
 .card-header-row {
   display: flex;
@@ -128,7 +104,8 @@
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: var(--bg-layer-2, #f4f5f7);
+  background: #f4f5f7;
+  color: #000000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -142,20 +119,20 @@
   text-transform: uppercase;
   padding: 4px 10px;
   border-radius: 100px;
-  background: rgba(16, 185, 129, 0.12);
-  color: #10b981;
+  background: #000000;
+  color: #ffffff;
 }
 
 .card-title {
   font-size: 20px;
   font-weight: 800;
-  color: var(--text-primary, #0a0a0a);
+  color: #000000;
   margin: 0 0 10px 0;
 }
 
 .card-desc {
   font-size: 14px;
-  color: var(--text-secondary, #3f3f46);
+  color: #27272a;
   line-height: 1.6;
   margin: 0 0 20px 0;
 }
@@ -171,7 +148,7 @@
 
 .card-feature-list li {
   font-size: 13px;
-  color: var(--text-secondary, #3f3f46);
+  color: #27272a;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -179,15 +156,15 @@
 
 .card-feature-list li::before {
   content: "✓";
-  color: #10b981;
+  color: #000000;
   font-weight: 800;
 }
 
 /* 3-Step Integration Flow Section */
 .integration-steps-section {
   margin-top: 70px;
-  background: var(--bg-panel, rgba(255, 255, 255, 0.7));
-  border: 1px solid var(--border, rgba(0, 0, 0, 0.06));
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 20px;
   padding: 48px 32px;
 }
@@ -200,17 +177,17 @@
 }
 
 .step-card {
-  background: var(--bg-layer-2, #f4f5f7);
+  background: #f4f5f7;
   padding: 24px;
   border-radius: 14px;
-  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.03));
+  border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .step-number {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 800;
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.12);
+  color: #ffffff;
+  background: #000000;
   padding: 4px 10px;
   border-radius: 100px;
   display: inline-block;

@@ -157,14 +157,14 @@ const CapabilitiesCarousel = () => {
             className="bento-card" 
             style={{ 
               padding: '32px',
-              border: idx === scrollIndex ? '1px solid var(--accent)' : '1px solid var(--border)',
-              boxShadow: idx === scrollIndex ? '0 8px 24px -4px rgba(16, 185, 129, 0.15)' : 'none',
+              border: idx === scrollIndex ? '1px solid #000000' : '1px solid var(--border)',
+              boxShadow: idx === scrollIndex ? '0 8px 24px -4px rgba(0, 0, 0, 0.12)' : 'none',
               transition: 'all 0.3s ease',
               cursor: 'pointer'
             }}
             onClick={() => scrollToCard(idx)}
           >
-            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#f4f5f7', color: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
               {cap.icon}
             </div>
             <h3 style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 10px 0', color: 'var(--text-primary)' }}>{cap.title}</h3>
@@ -185,7 +185,7 @@ const CapabilitiesCarousel = () => {
               width: idx === scrollIndex ? '24px' : '8px',
               height: '8px',
               borderRadius: '100px',
-              background: idx === scrollIndex ? '#10b981' : 'rgba(0,0,0,0.15)',
+              background: idx === scrollIndex ? '#000000' : 'rgba(0,0,0,0.15)',
               cursor: 'pointer',
               transition: 'all 0.3s ease'
             }}
@@ -246,7 +246,7 @@ export default function Landing() {
         {/* Trust & Security Banner */}
         <section className="trust-section">
           <p className="trust-text" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-            <ShieldCheck size={18} color="#10b981" /> Powered by SOC2 Type II certified infrastructure with native GDPR and DPDP compliance.
+            <ShieldCheck size={18} color="#000000" /> Powered by SOC2 Type II certified infrastructure with native GDPR and DPDP compliance.
           </p>
         </section>
 
