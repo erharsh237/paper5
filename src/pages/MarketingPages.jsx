@@ -1,6 +1,5 @@
-import ProductIntegrationsPage from './ProductIntegrationsPage'
-
-export const ProductIntegrations = ProductIntegrationsPage
+import React from 'react'
+import MarketingContentPage from './MarketingContentPage'
 
 export function Changelog() {
   return (

@@ -17,11 +17,17 @@ export default function ErrorPage({ error, errorInfo, resetError }) {
 
   const handleReturnHome = () => {
     if (resetError) resetError()
-    window.location.href = '/workspace'
+    window.location.href = '/'
   }
 
   const handleReload = () => {
     if (resetError) resetError()
+    sessionStorage.clear()
+    if ('caches' in window) {
+      caches.keys().then((names) => {
+        names.forEach((name) => caches.delete(name))
+      })
+    }
     window.location.reload()
   }
 

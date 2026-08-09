@@ -51,8 +51,9 @@ import { Analytics as VercelAnalytics } from '@vercel/analytics/react'
 // Marketing Pages
 const Features = safeLazy(() => import('./pages/Features'))
 const AboutUs = safeLazy(() => import('./pages/AboutUs'))
+const ProductIntegrations = safeLazy(() => import('./pages/ProductIntegrationsPage'))
 import { 
-  ProductIntegrations, Changelog, Documentation, ApiReference, Security 
+  Changelog, Documentation, ApiReference, Security 
 } from './pages/MarketingPages'
 
 import { getDomainConfig, getAppUrl, getMainUrl } from './lib/domain'
