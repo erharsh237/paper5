@@ -245,8 +245,8 @@ export default function Landing() {
 
         {/* Trust & Security Banner */}
         <section className="trust-section">
-          <p className="trust-text" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-            <ShieldCheck size={18} color="#000000" /> Powered by SOC2 Type II certified infrastructure with native GDPR and DPDP compliance.
+          <p className="trust-text" style={{ textAlign: 'center' }}>
+            Powered by SOC2 Type II certified infrastructure with native GDPR and DPDP compliance.
           </p>
         </section>
 
