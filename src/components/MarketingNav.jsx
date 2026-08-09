@@ -3,7 +3,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import ContactModal from './ContactModal'
 import { MenuBar } from './ui/bottom-menu'
-import { Star, Blocks, Book, Info, Mail } from 'lucide-react'
+import { Home, Star, Blocks, Book, Info, Mail } from 'lucide-react'
 import logo from '../assets/logo.png'
 import '../pages/Landing.css'
 
@@ -40,6 +40,7 @@ export default function MarketingNav() {
   const isActive = (path) => location.pathname === path ? 'active-nav-link' : ''
 
   const baseItems = [
+    { icon: Home, label: "Home", action: () => navigate('/') },
     { icon: Star, label: "Features", action: () => navigate('/features') },
     { icon: Blocks, label: "Integrations", action: () => navigate('/product-integrations') },
     { icon: Book, label: "Docs", action: () => navigate('/docs') },
@@ -51,7 +52,7 @@ export default function MarketingNav() {
     <>
     <nav className="landing-nav">
       <div className="nav-container">
-        <div className="nav-logo" onClick={() => navigate('/')} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+        <div className="nav-logo" style={{ display: 'flex', alignItems: 'center', cursor: 'default' }}>
           <img src={logo} alt="Paper5 Logo" style={{ width: '32px', height: '32px', marginRight: '8px', objectFit: 'contain' }} />
           <span style={{ fontSize: '18px', fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>PAPER5</span>
         </div>
@@ -113,6 +114,9 @@ export default function MarketingNav() {
     {isMobileMenuOpen && (
       <div className="mobile-drawer" style={{ paddingTop: '100px' }}>
         <div className="mobile-drawer-links">
+          <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="mobile-drawer-link">
+            <span>Home</span>
+          </Link>
           <Link to="/features" onClick={() => setIsMobileMenuOpen(false)} className="mobile-drawer-link">
             <span>Features</span>
           </Link>
