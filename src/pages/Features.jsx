@@ -18,9 +18,6 @@ export default function Features() {
 
       {/* Hero Header */}
       <section className="features-hero">
-        <div className="features-badge">
-          <span>⚡</span> SprintOS™ 1.0 Complete Feature Suite
-        </div>
         <h1 className="features-title">
           Architected for High-Velocity Engineering Teams.
         </h1>

@@ -27,9 +27,6 @@ export default function ProductIntegrationsPage() {
 
       {/* Hero Header */}
       <section className="integrations-hero">
-        <div className="integrations-badge">
-          <span>🔌</span> SprintOS™ Ecosystem & Integration Hub
-        </div>
         <h1 className="integrations-title">
           Connect Your Entire Developer Stack in Seconds.
         </h1>
