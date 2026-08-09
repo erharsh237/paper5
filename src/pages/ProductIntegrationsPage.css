@@ -81,6 +81,12 @@
   gap: 24px;
 }
 
+/* Bento Tile Span Classes */
+.bento-tile-12 { grid-column: span 12; }
+.bento-tile-8  { grid-column: span 8; }
+.bento-tile-6  { grid-column: span 6; }
+.bento-tile-4  { grid-column: span 4; }
+
 .showcase-card {
   background: var(--bg-panel, rgba(255, 255, 255, 0.7));
   backdrop-filter: blur(20px);
