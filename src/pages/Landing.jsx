@@ -128,7 +128,7 @@ const CapabilitiesCarousel = () => {
   }
 
   return (
-    <div style={{ position: 'relative', maxWidth: '1100px', margin: '0 auto' }}>
+    <div style={{ position: 'relative', width: '100%', maxWidth: '1200px', margin: '0 auto' }}>
       {/* Navigation Arrow Controls */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginBottom: '16px' }}>
         <button 
@@ -150,7 +150,7 @@ const CapabilitiesCarousel = () => {
       </div>
 
       {/* Track & Cards */}
-      <div ref={carouselRef} className="features-carousel" style={{ scrollBehavior: 'smooth' }}>
+      <div ref={carouselRef} className="features-carousel" style={{ scrollBehavior: 'smooth', padding: '12px 4px' }}>
         {capabilities.map((cap, idx) => (
           <div 
             key={idx} 

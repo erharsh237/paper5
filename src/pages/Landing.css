@@ -499,10 +499,11 @@
 .features-carousel {
   display: flex;
   overflow-x: auto;
-  gap: 24px;
+  gap: 20px;
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 16px 24px;
+  padding: 12px 4px;
   scroll-snap-type: x mandatory;
   -ms-overflow-style: none; /* IE/Edge */
   scrollbar-width: none; /* Firefox */
@@ -513,10 +514,11 @@
 }
 
 .features-carousel .bento-card {
-  width: 360px;
-  flex: 0 0 360px;
-  scroll-snap-align: center;
+  flex: 0 0 calc(33.333% - 14px);
+  min-width: 300px;
+  scroll-snap-align: start;
   white-space: normal;
+  box-sizing: border-box;
 }
 
 .bento-card {
