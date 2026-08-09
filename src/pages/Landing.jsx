@@ -6,10 +6,10 @@ import MarketingFooter from '../components/MarketingFooter'
 import { AnimatedGridBackgroundSection } from '../components/AnimatedGridBackground'
 import ErrorBoundary from '../components/ErrorBoundary'
 import { motion } from 'framer-motion'
-import logo from '../assets/logo.png'
 import SEOHead from '../components/SEOHead'
-import './Landing.css'
 import AlertModal from '../components/ui/AlertModal'
+import { Zap, Code2, ShieldCheck, GitPullRequest, Layers, FileText, ArrowRight, CheckCircle2 } from 'lucide-react'
+import './Landing.css'
 
 const ModernTextReveal = ({ text }) => {
   const [isStompDone, setIsStompDone] = useState(false)
@@ -80,84 +80,17 @@ export default function Landing() {
   const [alertMessage, setAlertMessage] = useState(null)
   const { user } = useAuth()
   const navigate = useNavigate()
-  const [isBillingAnnual, setIsBillingAnnual] = useState(false)
-  const [loadingPriceId, setLoadingPriceId] = useState(null)
-
-  const loadRazorpayScript = () => {
-    return new Promise((resolve, reject) => {
-      if (window.Razorpay) return resolve(true)
-      const script = document.createElement('script')
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js'
-      script.onload = () => resolve(true)
-      script.onerror = () => reject(new Error('Razorpay failed to load'))
-      document.body.appendChild(script)
-    })
-  }
 
   useEffect(() => {
-    document.title = "Paper5 | Engineering Execution Platform"
-    const metaDesc = document.querySelector('meta[name="description"]')
-    if (metaDesc) metaDesc.content = "Strict compliance, automated standups, and crystal-clear analytics—so you can focus on shipping."
+    document.title = "Paper5 | Engineering Execution & Sprint Tracking Platform"
   }, [])
-
-  const handleSubscribe = async (priceId) => {
-    if (!user) {
-      navigate('/signup')
-      return
-    }
-    
-    try {
-      setLoadingPriceId(priceId)
-      
-      try {
-        await loadRazorpayScript()
-      } catch (err) {
-        setAlertMessage("Checkout initialization failed. Please disable any active ad blockers and retry.")
-        return
-      }
-      
-      const createSubscription = httpsCallable(functions, 'createRazorpaySubscription')
-      const result = await createSubscription({ planId: priceId })
-      const { subscriptionId, keyId, mock } = result.data
-
-
-
-      const options = {
-        key: keyId,
-        subscription_id: subscriptionId,
-        name: 'SprintOS',
-        description: 'Engineering Execution Platform Subscription',
-        handler: function (response) {
-          window.location.assign('/workspace?billing=success')
-        },
-        prefill: {
-          email: user.email,
-        },
-        theme: {
-          color: '#111827'
-        }
-      }
-
-      const rzp = new window.Razorpay(options)
-      rzp.on('payment.failed', function (response){
-        setAlertMessage("Transaction failed. Please verify your payment details and try again.")
-        setLoadingPriceId(null)
-      })
-      rzp.open()
-
-    } catch (error) {
-      console.error('Checkout error:', error)
-      setAlertMessage('Unable to establish a secure checkout session. Please try again later.')
-      setLoadingPriceId(null)
-    }
-  }
 
   return (
     <div className="landing-page">
       <SEOHead 
         title="Paper5 | Engineering Execution & Sprint Tracking Platform" 
-        description="SprintOS by Paper5 is the engineering execution platform for tech startups. Streamline sprint planning, automate stack integrations (GitHub, Slack, Discord, Vercel), and track team velocity."
-        canonicalUrl="https://paper5.com"
+        description="SprintOS™ by Paper5™ is the high-velocity engineering execution platform. 8-tier Agile workflows, 1-Click REST API webhooks, GitHub PR sync, and vector PDF data export."
+        canonicalUrl="https://paper5.co"
       />
       <MarketingNav />
 
@@ -165,21 +98,24 @@ export default function Landing() {
         {/* Asymmetric Hero */}
         <AnimatedGridBackgroundSection>
           <section className="hero-section">
-            <div className="hero-grid">
+            <div className="hero-grid" style={{ gridTemplateColumns: '1fr', textAlign: 'center', maxWidth: '900px', margin: '0 auto' }}>
               <div className="hero-content">
                 <h1>
                   <ErrorBoundary>
                     <ModernTextReveal text="Everything on paper.<br />Nothing on trust." />
                   </ErrorBoundary>
                 </h1>
-                <p>
-                  Strict compliance, automated standups, and crystal-clear analytics—so you can focus on shipping.
+                <p style={{ fontSize: '19px', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '780px', margin: '0 auto 36px auto' }}>
+                  SprintOS™ by Paper5™ is the zero-friction engineering execution platform. Unites 8-tier Agile methodologies, 1-Click API webhooks, GitHub PR sync, and vector PDF data export in one interface.
                 </p>
-                <div className="hero-cta-group">
+                <div className="hero-cta-group" style={{ justifyContent: 'center' }}>
                   {user ? (
-                    <button className="btn-primary btn-lg" onClick={() => navigate('/workspace')}>Open Dashboard</button>
+                    <button className="btn-primary btn-lg" onClick={() => navigate('/workspace')}>🚀 Open Workspace Dashboard</button>
                   ) : (
-                    <button className="btn-primary btn-lg" onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}>Start for free</button>
+                    <>
+                      <button className="btn-primary btn-lg" onClick={() => navigate('/signup')}>🚀 Start Free Workspace</button>
+                      <button className="btn-ghost btn-lg" onClick={() => navigate('/features')}>⚡ Explore Features Suite</button>
+                    </>
                   )}
                 </div>
               </div>
@@ -187,40 +123,70 @@ export default function Landing() {
           </section>
         </AnimatedGridBackgroundSection>
 
-        {/* Security / Trust Section */}
+        {/* Trust & Security Banner */}
         <section className="trust-section">
-          <p className="trust-text">Enterprise-grade security and reliability. Powered by SOC2 Type II certified infrastructure with GDPR and DPDP compliance.</p>
+          <p className="trust-text" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <ShieldCheck size={18} color="#10b981" /> Powered by SOC2 Type II certified infrastructure with native GDPR and DPDP compliance.
+          </p>
         </section>
 
-        {/* Features Carousel */}
-        <section className="features-section">
-          <div className="section-header">
-            <h2>Engineering-grade tracking.</h2>
-            <p>Designed to stay out of your way until you need it.</p>
+        {/* Engineering Capabilities Grid */}
+        <section className="features-section" style={{ maxWidth: '1200px', margin: '0 auto', padding: '60px 24px' }}>
+          <div className="section-header" style={{ textAlign: 'center', marginBottom: '48px' }}>
+            <h2>Engineering-grade execution.</h2>
+            <p>Built to stay out of your way until you need it.</p>
           </div>
-          <div className="features-carousel">
-            <div className="bento-card">
-              <h3>Strict Data Isolation</h3>
-              <p>Every workspace is cryptographically isolated. We meet DPDP standards out of the box so you don't have to think about compliance.</p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+            {/* Capability 1 */}
+            <div className="bento-card" style={{ padding: '32px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                <Layers size={22} />
+              </div>
+              <h3 style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 10px 0' }}>8-Tier Agile Workflows</h3>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                Align board columns dynamically for 1 Solo Developer up to 500+ SAFe Enterprise tribes.
+              </p>
             </div>
-            <div className="bento-card">
-              <h3>Automated Standups</h3>
-              <p>Daily digests delivered straight to your inbox, keeping the team aligned without useless meetings.</p>
+
+            {/* Capability 2 */}
+            <div className="bento-card" style={{ padding: '32px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                <Code2 size={22} />
+              </div>
+              <h3 style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 10px 0' }}>1-Click REST API Studio</h3>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                Provision live API keys (`sp_live_...`), copy cURL/Node code snippets, and execute live HTTP tests.
+              </p>
             </div>
-            <div className="bento-card">
-              <h3>Velocity Analytics</h3>
-              <p>Real-time burndown charts and risk detection. Know if a sprint is failing before the deadline hits.</p>
+
+            {/* Capability 3 */}
+            <div className="bento-card" style={{ padding: '32px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                <GitPullRequest size={22} />
+              </div>
+              <h3 style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 10px 0' }}>GitHub & Stack Sync</h3>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                Auto-close tasks on PR merge. Broadcast standup digests into Discord and Slack channels.
+              </p>
             </div>
-            <div className="bento-card">
-              <h3>Deep Integrations</h3>
-              <p>Connect GitHub, Slack, and Vercel. Paper5 lives where your code lives, updating automatically based on your real activity.</p>
+
+            {/* Capability 4 */}
+            <div className="bento-card" style={{ padding: '32px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                <FileText size={22} />
+              </div>
+              <h3 style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 10px 0' }}>Vector PDF Data Export</h3>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                Export structured printable PDF workspace reports or CSV audit trails with selective section controls.
+              </p>
             </div>
           </div>
         </section>
 
         {/* Pricing Section */}
         <section id="pricing" className="pricing-section">
-          <div className="section-header">
+          <div className="section-header" style={{ textAlign: 'center' }}>
             <h2>Everything is 100% Free during Launch.</h2>
             <p>Full unrestricted access to all features, integrations, and workspaces.</p>
           </div>

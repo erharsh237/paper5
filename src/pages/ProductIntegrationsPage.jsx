@@ -239,19 +239,6 @@ export default function ProductIntegrationsPage() {
             </div>
           </div>
         </section>
-
-        {/* CTA Footer Box */}
-        <div style={{ marginTop: '60px', padding: '48px', borderRadius: '20px', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, var(--bg-panel) 100%)', border: '1px solid rgba(16, 185, 129, 0.3)', textAlign: 'center' }}>
-          <h2 style={{ fontSize: '32px', fontWeight: 800, margin: '0 0 12px 0', color: 'var(--text-primary)' }}>
-            Ready to Connect Your Stack?
-          </h2>
-          <p style={{ fontSize: '16px', color: 'var(--text-secondary)', margin: '0 0 28px 0' }}>
-            Start shipping faster with native integrations and 1-Click API Webhook automation.
-          </p>
-          <button className="btn-primary" style={{ padding: '12px 28px', fontSize: '15px' }} onClick={() => navigate('/signup')}>
-            🚀 Launch Free Workspace
-          </button>
-        </div>
       </div>
     </MarketingLayout>
   )

@@ -52,8 +52,9 @@ import { Analytics as VercelAnalytics } from '@vercel/analytics/react'
 const Features = safeLazy(() => import('./pages/Features'))
 const AboutUs = safeLazy(() => import('./pages/AboutUs'))
 const ProductIntegrations = safeLazy(() => import('./pages/ProductIntegrationsPage'))
+const DocsPage = safeLazy(() => import('./pages/DocsPage'))
 import { 
-  Changelog, Documentation, ApiReference, Security 
+  Changelog, Security 
 } from './pages/MarketingPages'
 
 import { getDomainConfig, getAppUrl, getMainUrl } from './lib/domain'
@@ -177,8 +178,8 @@ export default function App() {
           <Route path="/about" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <AboutUs />} />
           <Route path="/product-integrations" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <ProductIntegrations />} />
           <Route path="/changelog" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <Changelog />} />
-          <Route path="/docs" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <Documentation />} />
-          <Route path="/docs/api" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <ApiReference />} />
+          <Route path="/docs" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <DocsPage />} />
+          <Route path="/docs/api" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <DocsPage />} />
           <Route path="/security" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <Security />} />
 
           {/* Workspace paths */}
