@@ -248,20 +248,6 @@ export default function Features() {
             </table>
           </div>
         </section>
-
-        {/* CTA Footer Box */}
-        <div className="features-cta-box">
-          <h2>Ready to Accelerate Your Engineering Velocity?</h2>
-          <p>Join engineering teams shipping faster with SprintOS™ by Paper5™.</p>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
-            <button className="btn-primary" style={{ padding: '12px 28px', fontSize: '15px' }} onClick={() => navigate('/signup')}>
-              🚀 Start Free Workspace
-            </button>
-            <button className="btn-ghost" style={{ padding: '12px 28px', fontSize: '15px' }} onClick={() => navigate('/login')}>
-              🔑 Sign In to Workspace
-            </button>
-          </div>
-        </div>
       </div>
     </MarketingLayout>
   )
