@@ -26,6 +26,7 @@ import { checkMemberCapacity } from '../lib/plans'
 import AlertModal from '../components/ui/AlertModal'
 import ConfirmModal from '../components/ui/ConfirmModal'
 import DeleteWorkspaceModal from '../components/ui/DeleteWorkspaceModal'
+import DataExportModal from '../components/DataExportModal'
 import {
   TEAM_SIZE_OPTIONS,
   WORKFLOWS,
@@ -111,6 +112,7 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState('general')
   const [alertMessage, setAlertMessage] = useState(null)
   const [isDeleteWorkspaceModalOpen, setIsDeleteWorkspaceModalOpen] = useState(false)
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
   
   const [members, setMembers] = useState([])
   const [invites, setInvites] = useState([])
@@ -544,21 +546,55 @@ export default function Settings() {
   const handleExportData = async () => {
     setExporting(true)
     try {
-      const { data, error } = await supabase.functions.invoke('export-workspace-data', { body: { workspaceId } })
-      if (error) throw error
-      if (data?.error) throw new Error(data.error)
+      const [
+        wsRes,
+        membersRes,
+        deadlinesRes,
+        sprintsRes,
+        meetingsRes,
+        integrationsRes
+      ] = await Promise.all([
+        supabase.from('workspaces').select('*').eq('id', workspaceId).maybeSingle(),
+        supabase.from('workspace_members').select('*, users(email, full_name)').eq('workspace_id', workspaceId),
+        supabase.from('deadlines').select('*').eq('workspace_id', workspaceId),
+        supabase.from('sprints').select('*').eq('workspace_id', workspaceId),
+        supabase.from('meetings').select('*').eq('workspace_id', workspaceId).catch(() => ({ data: [] })),
+        supabase.from('integrations_config').select('*').eq('workspace_id', workspaceId).maybeSingle()
+      ])
+
+      const fullExport = {
+        app: 'SprintOS by Paper5™',
+        version: '1.0.0',
+        exported_at: new Date().toISOString(),
+        exported_by: user?.email || user?.uid,
+        workspace: wsRes.data || workspace,
+        members: (membersRes.data || []).map(m => ({
+          user_id: m.user_id,
+          role: m.role,
+          email: m.users?.email,
+          full_name: m.users?.full_name,
+          joined_at: m.joined_at
+        })),
+        tasks_and_deadlines: deadlinesRes.data || [],
+        sprints: sprintsRes.data || [],
+        meeting_notes: meetingsRes?.data || [],
+        integrations: integrationsRes?.data || {},
+      }
       
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+      const blob = new Blob([JSON.stringify(fullExport, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `workspace_export_${workspaceId}.json`
+      const wsSlug = (workspace?.name || 'sprintos').toLowerCase().replace(/[^a-z0-9]/g, '_')
+      a.download = `sprintos_full_export_${wsSlug}_${new Date().toISOString().slice(0, 10)}.json`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
+      setAlertMessage('Complete workspace data export successfully generated and downloaded!')
     } catch (err) {
-      setAlertMessage('Data export failed. Please verify your connection and try again.')
+      console.error('Data export error:', err)
+      setAlertMessage('Data export failed: ' + (err.message || 'Unable to fetch workspace data.'))
     } finally {
       setExporting(false)
     }
@@ -834,14 +870,18 @@ export default function Settings() {
                       <button type="submit" className="btn-ghost" disabled={savingSettings} style={{ marginTop: '16px' }}>{savingSettings ? 'Saving...' : 'Save Preferences'}</button>
                     </form>
 
+                    {/* Data Export & Backup Section */}
                     <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '32px 0' }} />
-                    
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: 'var(--bg-layer-2)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                      <div>
-                        <h3 style={{ margin: '0 0 4px 0', fontSize: '15px' }}>Workspace Backup</h3>
-                        <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>Download a complete JSON dump of your workspace settings and members.</p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', background: 'var(--bg-panel)', padding: '20px', borderRadius: '10px', border: '1px solid var(--border)' }}>
+                      <div style={{ flex: '1 1 300px' }}>
+                        <h3 style={{ margin: '0 0 4px 0', fontSize: '15px', color: 'var(--text-primary)' }}>Data Ownership & Complete PDF Reports</h3>
+                        <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                          Download printable PDF reports and structured data exports for any workspace. Select custom sections including tasks, sprints, meeting notes, and team roster.
+                        </p>
                       </div>
-                      <button className="btn-ghost" onClick={handleDownloadBackup}>Download JSON</button>
+                      <button className="btn-primary" onClick={() => setIsExportModalOpen(true)}>
+                        📄 Export PDF & Data Reports
+                      </button>
                     </div>
                   </>
                 )}
@@ -882,8 +922,8 @@ export default function Settings() {
 
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <button type="submit" className="btn-primary" disabled={savingSettings}>{savingSettings ? 'Saving...' : 'Save Security Policies'}</button>
-                    <button type="button" className="btn-ghost" onClick={handleDownloadAuditLogs}>
-                      📥 Download Audit Report (CSV)
+                    <button type="button" className="btn-ghost" onClick={() => setIsExportModalOpen(true)}>
+                      📑 Export Audit Report (PDF / CSV)
                     </button>
                   </div>
                 </form>
@@ -1223,12 +1263,12 @@ export default function Settings() {
                 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid var(--border-subtle)' }}>
                   <div>
-                    <p style={{ margin: '0 0 4px 0', fontWeight: 500, color: 'var(--text-primary)' }}>Export Workspace Data</p>
-                    <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>Download a complete JSON export of all your workspace data, including tasks, members, and sprints.</p>
+                    <p style={{ margin: '0 0 4px 0', fontWeight: 500, color: 'var(--text-primary)' }}>Export Workspace Data (PDF / Reports)</p>
+                    <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>Download formatted PDF reports and data backups for any workspace you manage.</p>
                   </div>
                   <div>
-                    <button className="btn-ghost" onClick={handleExportData} disabled={exporting}>
-                      {exporting ? 'Exporting...' : 'Export JSON'}
+                    <button className="btn-ghost" onClick={() => setIsExportModalOpen(true)}>
+                      📄 Export PDF
                     </button>
                   </div>
                 </div>
@@ -1279,6 +1319,12 @@ export default function Settings() {
         workspaceName={workspace?.name || 'Workspace'}
         memberCount={members?.length || 1}
         onConfirm={handleConfirmDeleteWorkspace}
+      />
+      <DataExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        currentWorkspaceId={workspaceId}
+        currentUser={user}
       />
     </div>
   )

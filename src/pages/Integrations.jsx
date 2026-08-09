@@ -54,6 +54,13 @@ export default function Integrations() {
   const [fetchingCalendar, setFetchingCalendar] = useState(false)
   const [expandedCards, setExpandedCards] = useState({})
   
+  // API Studio Redesign States
+  const [apiStudioTab, setApiStudioTab] = useState('keys') // 'keys' | 'snippets' | 'test'
+  const [snippetLang, setSnippetLang] = useState('curl') // 'curl' | 'node' | 'python'
+  const [simulatedPayload, setSimulatedPayload] = useState('{\n  "event": "sprint_task_updated",\n  "task_title": "CI/CD Deployment Verified",\n  "status": "done",\n  "agile_workflow": "scrum",\n  "workflow_column": "In Progress"\n}')
+  const [simulating, setSimulating] = useState(false)
+  const [simulationResponse, setSimulationResponse] = useState(null)
+  
   if (isAdmin === false) {
     return <Navigate to={`/${workspaceId}`} replace />
   }
@@ -239,86 +246,354 @@ export default function Integrations() {
         </p>
 
         <div className="integrations-grid">
-          {/* ⚡ 1-Click API Webhook & REST Sync (Scale Plan Exclusive) */}
-          <div className="integration-card" style={{ gridColumn: '1 / -1', border: isScalePlan ? '1px solid var(--accent)' : '1px dashed var(--border)' }}>
-            <div className="integration-card-top">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ margin: 0 }}>⚡ 1-Click API Webhook & REST Sync</h3>
-                <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', background: isScalePlan ? 'var(--accent-dim)' : 'rgba(245, 158, 11, 0.1)', color: isScalePlan ? 'var(--accent)' : '#f59e0b', padding: '2px 8px', borderRadius: '100px' }}>
-                  {isScalePlan ? 'Scale Tier Active' : 'Scale Tier Exclusive'}
-                </span>
+          {/* ⚡ 1-Click API Webhook & REST Sync Studio (Scale Plan Exclusive) */}
+          <div className="integration-card" style={{ gridColumn: '1 / -1', border: isScalePlan ? '1px solid #10b981' : '1px dashed var(--border)', background: 'var(--bg-layer-1)' }}>
+            <div className="integration-card-top" style={{ flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <h3 style={{ margin: 0, fontSize: '18px' }}>⚡ 1-Click API Webhook & REST Sync Studio</h3>
+                  <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', background: isScalePlan ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)', color: isScalePlan ? '#10b981' : '#f59e0b', padding: '3px 10px', borderRadius: '100px' }}>
+                    {isScalePlan ? 'Scale Tier Active ✓' : 'Scale Tier Exclusive 🔒'}
+                  </span>
+                </div>
+                <p className="integration-desc" style={{ marginTop: '4px', marginBottom: 0 }}>
+                  Automate sprint task status updates, push automated proof of work, and query velocity metrics in real time from GitHub Actions, GitLab CI, Linear, or custom webhooks.
+                </p>
               </div>
               <span className={`integration-status ${isScalePlan && config.api_key ? 'integration-status--ready' : ''}`}>
-                {isScalePlan ? (config.api_key ? 'Active ✓' : 'Ready to Generate') : 'Locked (Scale Tier)'}
+                {isScalePlan ? (config.api_key ? '● Webhook Ready' : '● Setup Key') : 'Locked (Scale Tier)'}
               </span>
             </div>
-            <p className="integration-desc">
-              Trigger real-time sprint syncs, push automated proof of work, and fetch workspace velocity metrics with a single 1-Click API call from GitHub, GitLab, Linear, or custom webhooks.
-            </p>
 
             {isScalePlan ? (
-              <div className="integration-fields" style={{ marginTop: '16px' }}>
-                <div className="field-row" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                  <div className="field" style={{ flex: 1, minWidth: '280px' }}>
-                    <label>Workspace 1-Click API Key</label>
-                    <div style={{ position: 'relative', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <input 
-                        type={showSecrets['api_key'] ? 'text' : 'password'}
-                        value={config.api_key || 'No API Key generated yet'} 
-                        readOnly 
-                        style={{ width: '100%', fontFamily: 'var(--mono)', fontSize: '13px', background: 'var(--bg-layer-2)', paddingRight: '40px' }} 
-                      />
+              <div style={{ marginTop: '20px' }}>
+                {/* API Studio Navigation Sub-Tabs */}
+                <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => setApiStudioTab('keys')}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: apiStudioTab === 'keys' ? '#10b981' : 'var(--bg-layer-2)',
+                      color: apiStudioTab === 'keys' ? '#ffffff' : 'var(--text-secondary)',
+                      fontWeight: 600,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    🔑 1-Click Keys & Endpoint
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setApiStudioTab('snippets')}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: apiStudioTab === 'snippets' ? '#10b981' : 'var(--bg-layer-2)',
+                      color: apiStudioTab === 'snippets' ? '#ffffff' : 'var(--text-secondary)',
+                      fontWeight: 600,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    💻 Code Snippets & SDKs
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setApiStudioTab('test')}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: apiStudioTab === 'test' ? '#10b981' : 'var(--bg-layer-2)',
+                      color: apiStudioTab === 'test' ? '#ffffff' : 'var(--text-secondary)',
+                      fontWeight: 600,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    🧪 Interactive API Simulator
+                  </button>
+                </div>
+
+                {/* Tab 1: Keys & Endpoints */}
+                {apiStudioTab === 'keys' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ background: 'var(--bg-panel)', padding: '16px', borderRadius: '10px', border: '1px solid var(--border)' }}>
+                      <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>
+                        Workspace 1-Click Live API Secret Key:
+                      </label>
+                      <div style={{ position: 'relative', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <input 
+                          type={showSecrets['api_key'] ? 'text' : 'password'}
+                          value={config.api_key || 'No API Key generated yet'} 
+                          readOnly 
+                          style={{ width: '100%', fontFamily: 'var(--mono)', fontSize: '13px', background: 'var(--bg-inset)', padding: '10px 45px 10px 12px', borderRadius: '6px', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }} 
+                        />
+                        <button 
+                          type="button"
+                          className="btn-ghost" 
+                          onClick={() => toggleShowSecret('api_key')}
+                          style={{ position: 'absolute', right: '145px', padding: '6px', color: 'var(--text-tertiary)', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                          title={showSecrets['api_key'] ? 'Hide Key' : 'Show Key'}
+                        >
+                          {showSecrets['api_key'] ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                        <button 
+                          className="btn-primary" 
+                          onClick={handleGenerateApiKey}
+                          style={{ whiteSpace: 'nowrap', padding: '9px 16px' }}
+                        >
+                          {config.api_key ? '🔄 Re-Generate Key' : '⚡ 1-Click Generate Key'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {config.api_key ? (
+                      <div style={{ padding: '16px', background: 'rgba(16, 185, 129, 0.04)', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                        <div style={{ fontWeight: 700, fontSize: '13px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', color: '#10b981' }}>
+                          <span>1-Click Live Webhook Sync Endpoint:</span>
+                          <button 
+                            className="btn-ghost btn-sm" 
+                            style={{ color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)' }}
+                            onClick={() => {
+                              const url = `https://paper5.co/api/v1/sync?workspace=${workspaceId}&key=${config.api_key}`
+                              navigator.clipboard.writeText(url)
+                              setAlertMessage('⚡ 1-Click Webhook Sync Endpoint copied to clipboard!')
+                            }}
+                          >
+                            📋 Copy Webhook URL
+                          </button>
+                        </div>
+                        <code style={{ display: 'block', padding: '10px 14px', background: 'var(--bg-layer-2)', borderRadius: '6px', fontSize: '12px', fontFamily: 'var(--mono)', wordBreak: 'break-all', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)' }}>
+                          https://paper5.co/api/v1/sync?workspace={workspaceId}&key={config.api_key}
+                        </code>
+                      </div>
+                    ) : (
+                      <div style={{ padding: '14px', background: 'var(--bg-inset)', borderRadius: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                        Click <strong>"⚡ 1-Click Generate Key"</strong> above to provision your live API secret and webhook sync endpoint.
+                      </div>
+                    )}
+
+                    {/* Endpoints Directory */}
+                    <div style={{ marginTop: '8px' }}>
+                      <h4 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 10px 0', color: 'var(--text-secondary)' }}>AVAILABLE REST API & WORKFLOW ENDPOINTS:</h4>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
+                        <div style={{ padding: '12px', background: 'var(--bg-inset)', borderRadius: '8px', border: '1px solid var(--border-subtle)', fontSize: '12px' }}>
+                          <span style={{ fontWeight: 700, color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 6px', borderRadius: '4px', marginRight: '6px' }}>POST</span>
+                          <code>/api/v1/sync</code>
+                          <p style={{ margin: '4px 0 0 0', color: 'var(--text-tertiary)', fontSize: '11px' }}>Sync task status, workflow columns & commits</p>
+                        </div>
+                        <div style={{ padding: '12px', background: 'var(--bg-inset)', borderRadius: '8px', border: '1px solid var(--border-subtle)', fontSize: '12px' }}>
+                          <span style={{ fontWeight: 700, color: '#8b5cf6', background: 'rgba(139,92,246,0.1)', padding: '2px 6px', borderRadius: '4px', marginRight: '6px' }}>GET / POST</span>
+                          <code>/api/v1/workflow</code>
+                          <p style={{ margin: '4px 0 0 0', color: 'var(--text-tertiary)', fontSize: '11px' }}>Fetch or trigger Agile Workflow transitions</p>
+                        </div>
+                        <div style={{ padding: '12px', background: 'var(--bg-inset)', borderRadius: '8px', border: '1px solid var(--border-subtle)', fontSize: '12px' }}>
+                          <span style={{ fontWeight: 700, color: '#3b82f6', background: 'rgba(59,130,246,0.1)', padding: '2px 6px', borderRadius: '4px', marginRight: '6px' }}>GET</span>
+                          <code>/api/v1/metrics</code>
+                          <p style={{ margin: '4px 0 0 0', color: 'var(--text-tertiary)', fontSize: '11px' }}>Fetch real-time sprint velocity & burndown math</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab 2: Code Snippets */}
+                {apiStudioTab === 'snippets' && (
+                  <div>
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                      {['curl', 'node', 'python'].map(lang => (
+                        <button
+                          key={lang}
+                          type="button"
+                          onClick={() => setSnippetLang(lang)}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '4px',
+                            border: '1px solid var(--border-subtle)',
+                            background: snippetLang === lang ? 'var(--bg-layer-2)' : 'transparent',
+                            color: snippetLang === lang ? '#10b981' : 'var(--text-secondary)',
+                            fontWeight: 600,
+                            fontSize: '12px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {lang === 'curl' ? 'cURL' : lang === 'node' ? 'Node.js (Fetch)' : 'Python (requests)'}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div style={{ position: 'relative' }}>
+                      <pre style={{
+                        padding: '16px',
+                        background: '#0d1117',
+                        color: '#e6edf3',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontFamily: 'var(--mono)',
+                        overflowX: 'auto',
+                        lineHeight: 1.5,
+                        margin: 0
+                      }}>
+                        {snippetLang === 'curl' && `curl -X POST "https://paper5.co/api/v1/sync?workspace=${workspaceId}&key=${config.api_key || 'sp_live_YOUR_KEY'}" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "event": "sprint_task_updated",
+    "task_title": "Fix CI Pipeline Auth Bug",
+    "status": "done",
+    "agile_workflow": "${workspace?.settings?.agile_workflow || 'scrum'}",
+    "workflow_column": "Sprint Backlog"
+  }'`}
+                        {snippetLang === 'node' && `const response = await fetch("https://paper5.co/api/v1/sync?workspace=${workspaceId}&key=${config.api_key || 'sp_live_YOUR_KEY'}", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    event: "proof_of_work_submitted",
+    task_title: "Deploy Vercel Edge Function",
+    author: "${user?.email || 'developer@company.com'}",
+    agile_workflow: "${workspace?.settings?.agile_workflow || 'scrum'}",
+    workflow_column: "In Progress"
+  })
+});
+const data = await response.json();
+console.log("Synced to Board Column:", data.board_column_synced);`}
+                        {snippetLang === 'python' && `import requests
+
+url = "https://paper5.co/api/v1/sync?workspace=${workspaceId}&key=${config.api_key || 'sp_live_YOUR_KEY'}"
+payload = {
+    "event": "sprint_velocity_sync",
+    "status": "completed",
+    "story_points": 13,
+    "agile_workflow": "${workspace?.settings?.agile_workflow || 'scrum'}",
+    "workflow_column": "Done"
+}
+response = requests.post(url, json=payload)
+print(response.json())`}
+                      </pre>
                       <button 
-                        type="button"
-                        className="btn-ghost" 
-                        onClick={() => toggleShowSecret('api_key')}
-                        style={{ position: 'absolute', right: '140px', padding: '4px 6px', color: 'var(--text-tertiary)', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                        title={showSecrets['api_key'] ? 'Hide Key' : 'Show Key'}
+                        className="btn-ghost btn-sm" 
+                        style={{ position: 'absolute', top: '10px', right: '10px', color: '#10b981', background: 'rgba(255,255,255,0.1)' }}
+                        onClick={() => {
+                          const text = snippetLang === 'curl' 
+                            ? `curl -X POST "https://paper5.co/api/v1/sync?workspace=${workspaceId}&key=${config.api_key || 'sp_live_YOUR_KEY'}" -H "Content-Type: application/json" -d '{"event": "sprint_task_updated", "task_title": "Fix CI Pipeline Auth Bug", "status": "done", "agile_workflow": "${workspace?.settings?.agile_workflow || 'scrum'}", "workflow_column": "Sprint Backlog"}'`
+                            : snippetLang === 'node'
+                            ? `const response = await fetch("https://paper5.co/api/v1/sync?workspace=${workspaceId}&key=${config.api_key || 'sp_live_YOUR_KEY'}", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event: "proof_of_work_submitted", task_title: "Deploy Vercel Edge Function", agile_workflow: "${workspace?.settings?.agile_workflow || 'scrum'}", workflow_column: "In Progress" }) });`
+                            : `import requests\nurl = "https://paper5.co/api/v1/sync?workspace=${workspaceId}&key=${config.api_key || 'sp_live_YOUR_KEY'}"\nresponse = requests.post(url, json={"event": "sprint_velocity_sync", "agile_workflow": "${workspace?.settings?.agile_workflow || 'scrum'}"})\nprint(response.json())`
+                          navigator.clipboard.writeText(text)
+                          setAlertMessage('📋 Code snippet copied to clipboard!')
+                        }}
                       >
-                        {showSecrets['api_key'] ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                      <button 
-                        className="btn-primary btn-sm" 
-                        onClick={handleGenerateApiKey}
-                        style={{ whiteSpace: 'nowrap' }}
-                      >
-                        {config.api_key ? 'Re-Generate Key' : '⚡ 1-Click Generate API Key'}
+                        📋 Copy Code
                       </button>
                     </div>
                   </div>
-                </div>
+                )}
 
-                {config.api_key && (
-                  <div style={{ marginTop: '16px', padding: '16px', background: 'var(--bg-inset)', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
-                    <div style={{ fontWeight: 600, fontSize: '13px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                      <span>Instant 1-Click Webhook Sync Endpoint:</span>
-                      <button 
-                        className="btn-ghost btn-sm" 
+                {/* Tab 3: Interactive Simulator */}
+                {apiStudioTab === 'test' && (
+                  <div>
+                    <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>
+                      JSON Request Body Payload (Includes Agile Workflow & Board Column Alignment):
+                    </label>
+                    <textarea
+                      rows={6}
+                      value={simulatedPayload}
+                      onChange={e => setSimulatedPayload(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '1px solid var(--border-subtle)',
+                        background: '#0d1117',
+                        color: '#e6edf3',
+                        fontFamily: 'var(--mono)',
+                        fontSize: '12px',
+                        resize: 'vertical'
+                      }}
+                    />
+
+                    <div style={{ marginTop: '12px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      <button
+                        className="btn-primary"
+                        disabled={simulating}
                         onClick={() => {
-                          const url = `https://paper5.co/api/v1/sync?workspace=${workspaceId}&key=${config.api_key}`
-                          navigator.clipboard.writeText(url)
-                          setAlertMessage('⚡ 1-Click Webhook Sync Endpoint copied to clipboard!')
+                          setSimulating(true)
+                          setSimulationResponse(null)
+                          setTimeout(() => {
+                            try {
+                              const parsed = JSON.parse(simulatedPayload)
+                              setSimulationResponse({
+                                status: 200,
+                                ok: true,
+                                latency: '38ms',
+                                response: {
+                                  status: 'success',
+                                  code: 200,
+                                  message: '1-Click API Webhook payload & Agile Workflow transition successfully processed.',
+                                  workspace_id: workspaceId,
+                                  timestamp: new Date().toISOString(),
+                                  active_agile_workflow: parsed.agile_workflow ? parsed.agile_workflow.toUpperCase() : (workspace?.settings?.agile_workflow || 'Scrum').toUpperCase(),
+                                  board_column_synced: parsed.workflow_column || 'Sprint Backlog ➔ In Progress',
+                                  received_payload: parsed
+                                }
+                              })
+                            } catch (e) {
+                              setSimulationResponse({
+                                status: 400,
+                                ok: false,
+                                latency: '12ms',
+                                response: {
+                                  error: 'Invalid JSON payload structure',
+                                  message: e.message
+                                }
+                              })
+                            } finally {
+                              setSimulating(false)
+                            }
+                          }, 600)
                         }}
                       >
-                        📋 Copy 1-Click Webhook URL
+                        {simulating ? 'Executing Test Request...' : '▶ Run API & Workflow Test Request'}
                       </button>
                     </div>
-                    <code style={{ display: 'block', padding: '8px 12px', background: 'var(--bg-layer-2)', borderRadius: '4px', fontSize: '12px', fontFamily: 'var(--mono)', wordBreak: 'break-all' }}>
-                      https://paper5.co/api/v1/sync?workspace={workspaceId}&key={config.api_key}
-                    </code>
+
+                    {simulationResponse && (
+                      <div style={{ marginTop: '16px', padding: '16px', background: simulationResponse.ok ? 'rgba(16, 185, 129, 0.05)' : 'rgba(239, 68, 68, 0.05)', borderRadius: '8px', border: simulationResponse.ok ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '13px', fontWeight: 700, color: simulationResponse.ok ? '#10b981' : '#ef4444' }}>
+                            HTTP Response: {simulationResponse.status} {simulationResponse.ok ? 'OK' : 'Bad Request'}
+                          </span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--mono)' }}>
+                            Latency: {simulationResponse.latency}
+                          </span>
+                        </div>
+                        <pre style={{ margin: 0, padding: '12px', background: '#0d1117', color: '#e6edf3', borderRadius: '6px', fontSize: '12px', fontFamily: 'var(--mono)', overflowX: 'auto' }}>
+                          {JSON.stringify(simulationResponse.response, null, 2)}
+                        </pre>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             ) : (
-              <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(245, 158, 11, 0.04)', border: '1px dashed rgba(245, 158, 11, 0.3)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ marginTop: '16px', padding: '20px', background: 'rgba(245, 158, 11, 0.04)', border: '1px dashed rgba(245, 158, 11, 0.3)', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>1-Click API Webhook & REST Sync is exclusive to the Scale Plan.</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>Upgrade your workspace to Scale to unlock instant 1-Click API keys, custom webhooks, and unlimited team seats.</div>
+                  <div style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>1-Click API Webhook & REST Sync Studio is exclusive to the Scale Plan.</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: 1.4 }}>
+                    Upgrade your workspace to Scale to unlock live 1-Click API keys, custom webhook endpoints, REST API access, and unlimited team seats.
+                  </div>
                 </div>
                 <button 
                   className="btn-primary"
                   onClick={() => setIsPricingModalOpen(true)}
-                  style={{ whiteSpace: 'nowrap' }}
+                  style={{ whiteSpace: 'nowrap', padding: '10px 18px' }}
                 >
                   ⚡ Upgrade to Scale Plan
                 </button>
