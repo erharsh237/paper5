@@ -195,14 +195,14 @@ export default function App() {
                     <Route path="integrations" element={<Integrations />} />
                     <Route path="settings" element={<Settings />} />
                     <Route path="profile" element={<Profile />} />
-                    <Route path="*" element={<NotFound />} />
+                    <Route path="*" element={<Navigate to="/login" replace />} />
                   </Routes>
                 </WorkspaceGuard>
               </WorkspaceProvider>
             )
           } />
           
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Suspense>
       {user && user.emailVerified && (
