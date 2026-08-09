@@ -8,7 +8,7 @@ import ErrorBoundary from '../components/ErrorBoundary'
 import { motion } from 'framer-motion'
 import SEOHead from '../components/SEOHead'
 import AlertModal from '../components/ui/AlertModal'
-import { Zap, Code2, ShieldCheck, GitPullRequest, Layers, FileText, ArrowRight, CheckCircle2 } from 'lucide-react'
+import { Zap, Code2, ShieldCheck, GitPullRequest, Layers, FileText, ArrowRight, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react'
 import './Landing.css'
 
 const ModernTextReveal = ({ text }) => {
@@ -76,6 +76,108 @@ const ModernTextReveal = ({ text }) => {
   )
 }
 
+const CapabilitiesCarousel = () => {
+  const [scrollIndex, setScrollIndex] = useState(0)
+  const carouselRef = useState(null)
+
+  const capabilities = [
+    {
+      icon: <Layers size={22} />,
+      title: "8-Tier Agile Workflows",
+      desc: "Align board columns dynamically for 1 Solo Developer up to 500+ SAFe Enterprise tribes."
+    },
+    {
+      icon: <Code2 size={22} />,
+      title: "1-Click REST API Studio",
+      desc: "Provision live API keys (`sp_live_...`), copy cURL/Node code snippets, and execute live HTTP tests."
+    },
+    {
+      icon: <GitPullRequest size={22} />,
+      title: "GitHub & Stack Sync",
+      desc: "Auto-close tasks on PR merge. Broadcast standup digests into Discord and Slack channels."
+    },
+    {
+      icon: <FileText size={22} />,
+      title: "Vector PDF Data Export",
+      desc: "Export structured printable PDF workspace reports or CSV audit trails with selective section controls."
+    }
+  ]
+
+  const handleNext = () => {
+    setScrollIndex((prev) => (prev + 1) % capabilities.length)
+  }
+
+  const handlePrev = () => {
+    setScrollIndex((prev) => (prev - 1 + capabilities.length) % capabilities.length)
+  }
+
+  return (
+    <div style={{ position: 'relative', maxWidth: '1100px', margin: '0 auto' }}>
+      {/* Navigation Arrow Controls */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginBottom: '16px' }}>
+        <button 
+          onClick={handlePrev}
+          className="btn-ghost btn-sm"
+          style={{ width: '36px', height: '36px', borderRadius: '50%', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-panel)', border: '1px solid var(--border)' }}
+          aria-label="Previous capability"
+        >
+          <ChevronLeft size={18} />
+        </button>
+        <button 
+          onClick={handleNext}
+          className="btn-ghost btn-sm"
+          style={{ width: '36px', height: '36px', borderRadius: '50%', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-panel)', border: '1px solid var(--border)' }}
+          aria-label="Next capability"
+        >
+          <ChevronRight size={18} />
+        </button>
+      </div>
+
+      {/* Track & Cards */}
+      <div className="features-carousel" style={{ scrollBehavior: 'smooth' }}>
+        {capabilities.map((cap, idx) => (
+          <div 
+            key={idx} 
+            className="bento-card" 
+            style={{ 
+              padding: '32px',
+              border: idx === scrollIndex ? '1px solid var(--accent)' : '1px solid var(--border)',
+              boxShadow: idx === scrollIndex ? '0 8px 24px -4px rgba(16, 185, 129, 0.15)' : 'none',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+              {cap.icon}
+            </div>
+            <h3 style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 10px 0', color: 'var(--text-primary)' }}>{cap.title}</h3>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+              {cap.desc}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Dots Indicator Bar */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '20px' }}>
+        {capabilities.map((_, idx) => (
+          <span 
+            key={idx}
+            onClick={() => setScrollIndex(idx)}
+            style={{
+              width: idx === scrollIndex ? '24px' : '8px',
+              height: '8px',
+              borderRadius: '100px',
+              background: idx === scrollIndex ? '#10b981' : 'rgba(0,0,0,0.15)',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease'
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Landing() {
   const [alertMessage, setAlertMessage] = useState(null)
   const { user } = useAuth()
@@ -130,58 +232,14 @@ export default function Landing() {
           </p>
         </section>
 
-        {/* Engineering Capabilities Grid */}
+        {/* Engineering Capabilities Carousel */}
         <section className="features-section" style={{ maxWidth: '1200px', margin: '0 auto', padding: '60px 24px' }}>
-          <div className="section-header" style={{ textAlign: 'center', marginBottom: '48px' }}>
+          <div className="section-header" style={{ textAlign: 'center', marginBottom: '40px' }}>
             <h2>Engineering-grade execution.</h2>
             <p>Built to stay out of your way until you need it.</p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
-            {/* Capability 1 */}
-            <div className="bento-card" style={{ padding: '32px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
-                <Layers size={22} />
-              </div>
-              <h3 style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 10px 0' }}>8-Tier Agile Workflows</h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-                Align board columns dynamically for 1 Solo Developer up to 500+ SAFe Enterprise tribes.
-              </p>
-            </div>
-
-            {/* Capability 2 */}
-            <div className="bento-card" style={{ padding: '32px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
-                <Code2 size={22} />
-              </div>
-              <h3 style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 10px 0' }}>1-Click REST API Studio</h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-                Provision live API keys (`sp_live_...`), copy cURL/Node code snippets, and execute live HTTP tests.
-              </p>
-            </div>
-
-            {/* Capability 3 */}
-            <div className="bento-card" style={{ padding: '32px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
-                <GitPullRequest size={22} />
-              </div>
-              <h3 style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 10px 0' }}>GitHub & Stack Sync</h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-                Auto-close tasks on PR merge. Broadcast standup digests into Discord and Slack channels.
-              </p>
-            </div>
-
-            {/* Capability 4 */}
-            <div className="bento-card" style={{ padding: '32px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
-                <FileText size={22} />
-              </div>
-              <h3 style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 10px 0' }}>Vector PDF Data Export</h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-                Export structured printable PDF workspace reports or CSV audit trails with selective section controls.
-              </p>
-            </div>
-          </div>
+          <CapabilitiesCarousel />
         </section>
 
         {/* Pricing Section */}
