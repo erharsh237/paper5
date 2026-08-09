@@ -1,4 +1,4 @@
-/* Features Page Stylesheet - Ultra-Clean Linear Layout (Strict Black, White & Neutral Gray) */
+/* Features Page Stylesheet - Minimalist Linear & Tabbed Layout */
 
 .features-hero {
   padding: 100px 24px 60px 24px;
@@ -34,32 +34,33 @@
   flex-wrap: wrap;
 }
 
-/* Feature Category Container */
 .features-container {
-  max-width: 1200px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 0 24px 80px 24px;
 }
 
-.feature-category {
-  margin-bottom: 70px;
+/* Linear Section Block */
+.features-linear-section {
+  padding: 60px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.feature-category-header {
-  margin-bottom: 28px;
+.section-head {
+  margin-bottom: 32px;
 }
 
-.feature-category-tag {
-  font-size: 12px;
+.section-label {
+  font-size: 11px;
   font-weight: 800;
-  text-transform: uppercase;
   letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: #000000;
-  margin-bottom: 8px;
   display: block;
+  margin-bottom: 8px;
 }
 
-.feature-category-title {
+.section-head h2 {
   font-size: 32px;
   font-weight: 800;
   color: #000000;
@@ -67,52 +68,200 @@
   margin: 0 0 10px 0;
 }
 
-.feature-category-desc {
-  font-size: 15px;
+.section-head p {
+  font-size: 16px;
   color: #27272a;
-  max-width: 680px;
   margin: 0;
-  line-height: 1.5;
+  max-width: 700px;
 }
 
-/* Clean Feature Card Grids */
-.workflows-clean-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+/* Tabbed Workflow Selector Bar */
+.workflow-tabs-bar {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 6px;
+  background: #f4f5f7;
+  border-radius: 12px;
+  margin-bottom: 32px;
+  scrollbar-width: none;
 }
 
-.clean-three-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+.workflow-tabs-bar::-webkit-scrollbar {
+  display: none;
 }
 
-.clean-two-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-}
-
-.clean-feature-card {
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 16px;
-  padding: 28px;
+.workflow-tab-btn {
+  flex: 1;
+  min-width: 110px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #27272a;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: all 0.2s ease;
+}
+
+.workflow-tab-btn span {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+
+.workflow-tab-btn strong {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.workflow-tab-btn.active {
+  background: #000000;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.workflow-tab-btn.active span {
+  opacity: 0.9;
+}
+
+/* Workflow Showcase Box */
+.workflow-detail-box {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 20px;
+  padding: 36px;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 40px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.workflow-header-row {
+  display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  gap: 16px;
+  margin-bottom: 16px;
 }
 
-.clean-feature-card:hover {
-  transform: translateY(-3px);
+.wf-tag {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #52525b;
+}
+
+.wf-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #000000;
+  margin: 4px 0 0 0;
+}
+
+.wf-size-pill {
+  padding: 6px 14px;
+  background: #f4f5f7;
+  color: #000000;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 100px;
+  white-space: nowrap;
+}
+
+.wf-desc {
+  font-size: 15px;
+  color: #27272a;
+  line-height: 1.65;
+  margin: 0 0 24px 0;
+}
+
+.practice-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #000000;
+  font-weight: 500;
+}
+
+.workflow-columns-preview {
+  background: #f4f5f7;
+  padding: 24px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.cols-flow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.col-flow-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  font-size: 13px;
+  font-weight: 600;
+  color: #000000;
+}
+
+.col-idx {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #000000;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* Linear Feature Rows List */
+.linear-feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.linear-feature-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 28px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.linear-feature-row:hover {
   border-color: #000000;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+  transform: translateX(4px);
 }
 
-.clean-card-icon {
+.linear-feature-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.linear-icon {
   width: 40px;
   height: 40px;
   border-radius: 10px;
@@ -121,50 +270,39 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
-.clean-card-title {
-  font-size: 18px;
+.linear-feature-info h3 {
+  font-size: 17px;
   font-weight: 700;
   color: #000000;
-  margin: 0 0 10px 0;
+  margin: 0 0 6px 0;
 }
 
-.clean-card-desc {
+.linear-feature-info p {
   font-size: 14px;
   color: #27272a;
-  line-height: 1.55;
-  margin: 0 0 16px 0;
+  line-height: 1.5;
+  margin: 0;
 }
 
-.clean-card-tag {
-  display: inline-block;
-  padding: 4px 10px;
+.linear-feature-badge {
+  padding: 6px 14px;
   background: #f4f5f7;
   color: #000000;
-  border-radius: 100px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  width: fit-content;
-}
-
-.workflow-badge {
-  font-size: 11px;
-  font-weight: 800;
-  color: #ffffff;
-  background: #000000;
-  padding: 3px 9px;
   border-radius: 100px;
+  white-space: nowrap;
 }
 
-/* Feature Comparison Table */
+/* Table Wrapper */
 .feature-table-wrapper {
   background: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
 }
 
 .feature-table {
@@ -188,25 +326,10 @@
   color: #27272a;
 }
 
-.feature-table tr:last-child td {
-  border-bottom: none;
-}
-
-.feature-table tr:hover {
-  background: rgba(0, 0, 0, 0.02);
-}
-
 /* Responsive Rules */
-@media (max-width: 1024px) {
-  .workflows-clean-grid { grid-template-columns: repeat(2, 1fr); }
-  .clean-three-grid { grid-template-columns: repeat(2, 1fr); }
-}
-
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .features-title { font-size: 38px; }
   .features-subtitle { font-size: 16px; }
-  .feature-category-title { font-size: 26px; }
-  .workflows-clean-grid { grid-template-columns: 1fr; }
-  .clean-three-grid { grid-template-columns: 1fr; }
-  .clean-two-grid { grid-template-columns: 1fr; }
+  .workflow-detail-box { grid-template-columns: 1fr; gap: 24px; }
+  .linear-feature-row { flex-direction: column; align-items: flex-start; gap: 16px; }
 }

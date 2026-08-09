@@ -1,13 +1,16 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MarketingLayout from '../components/MarketingLayout'
 import SEOHead from '../components/SEOHead'
 import { WORKFLOWS } from '../lib/workflows'
-import { Layers, Code2, GitPullRequest, FileText, CheckCircle2, ShieldCheck } from 'lucide-react'
+import { Code2, GitPullRequest, FileText, ShieldCheck, ChevronRight, Check } from 'lucide-react'
 import './Features.css'
 
 export default function Features() {
   const navigate = useNavigate()
+  const [activeWorkflowId, setActiveWorkflowId] = useState('scrum')
+
+  const selectedWorkflow = WORKFLOWS.find(w => w.id === activeWorkflowId) || WORKFLOWS[5]
 
   return (
     <MarketingLayout>
@@ -36,156 +39,194 @@ export default function Features() {
       </section>
 
       <div className="features-container">
-        {/* Category 1: 8-Tier Agile Workflows */}
-        <section className="feature-category">
-          <div className="feature-category-header">
-            <span className="feature-category-tag">Methodology Engine</span>
-            <h2 className="feature-category-title">8-Tier Agile Workflow Alignment</h2>
-            <p className="feature-category-desc">
-              SprintOS™ dynamically aligns your board columns based on team size—from solo indie founders up to 500+ developer enterprise tribes.
-            </p>
+        {/* Interactive Feature Section 1: 8-Tier Methodology Selector */}
+        <section className="features-linear-section">
+          <div className="section-head">
+            <span className="section-label">01 / METHODOLOGY ENGINE</span>
+            <h2>8-Tier Agile Workflow Alignment</h2>
+            <p>Select your team size to preview the dynamic board column architecture.</p>
           </div>
 
-          <div className="workflows-clean-grid">
+          {/* Workflow Tabs Bar */}
+          <div className="workflow-tabs-bar">
             {WORKFLOWS.map((wf) => (
-              <div key={wf.id} className="clean-feature-card">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                  <span className="workflow-badge">Tier {wf.num}</span>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#52525b' }}>{wf.teamSizeLabel}</span>
-                </div>
-                <h3 style={{ fontSize: '17px', fontWeight: 700, margin: '0 0 8px 0', color: '#000000' }}>
-                  {wf.name}
-                </h3>
-                <p style={{ fontSize: '13px', color: '#27272a', lineHeight: 1.5, margin: '0 0 16px 0' }}>
-                  {wf.description}
-                </p>
-                <div style={{ fontSize: '11px', color: '#52525b', fontFamily: 'var(--mono)', borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '10px' }}>
-                  Columns: {wf.columns.map(c => c.title).join(' ➔ ')}
-                </div>
-              </div>
+              <button
+                key={wf.id}
+                onClick={() => setActiveWorkflowId(wf.id)}
+                className={`workflow-tab-btn ${wf.id === activeWorkflowId ? 'active' : ''}`}
+              >
+                <span>Tier {wf.num}</span>
+                <strong>{wf.name.split(' ')[0]}</strong>
+              </button>
             ))}
           </div>
-        </section>
 
-        {/* Category 2: 1-Click API Studio */}
-        <section className="feature-category">
-          <div className="feature-category-header">
-            <span className="feature-category-tag">Developer Automation</span>
-            <h2 className="feature-category-title">1-Click API Webhook & REST Sync Studio</h2>
-            <p className="feature-category-desc">
-              Connect custom webhooks, CI/CD scripts, and developer tools in a single click. Trigger automated task transitions and query velocity metrics in real time.
-            </p>
-          </div>
-
-          <div className="clean-three-grid">
-            <div className="clean-feature-card">
-              <div className="clean-card-icon"><Code2 size={20} /></div>
-              <h3 className="clean-card-title">1-Click Live API Keys</h3>
-              <p className="clean-card-desc">
-                Provision secret API keys instantly with one click (`sp_live_...`). Show, hide, or rotate keys anytime from your workspace integrations dashboard.
-              </p>
-              <span className="clean-card-tag">REST API & Webhooks</span>
+          {/* Selected Workflow Showcase */}
+          <div className="workflow-detail-box">
+            <div className="workflow-detail-main">
+              <div className="workflow-header-row">
+                <div>
+                  <span className="wf-tag">Tier {selectedWorkflow.num} Methodology</span>
+                  <h3 className="wf-title">{selectedWorkflow.name}</h3>
+                </div>
+                <div className="wf-size-pill">
+                  Team Size: {selectedWorkflow.teamSizeLabel}
+                </div>
+              </div>
+              <p className="wf-desc">{selectedWorkflow.description}</p>
+              
+              <div className="wf-practices-list">
+                <h4 style={{ fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#000000', margin: '0 0 12px 0' }}>Core Engineering Practices</h4>
+                {selectedWorkflow.practices.map((practice, idx) => (
+                  <div key={idx} className="practice-row">
+                    <Check size={16} color="#000000" />
+                    <span>{practice}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="clean-feature-card">
-              <div className="clean-card-icon"><Code2 size={20} /></div>
-              <h3 className="clean-card-title">Interactive API Simulator</h3>
-              <p className="clean-card-desc">
-                Test custom JSON payloads directly in your browser. View real-time HTTP response status codes (`200 OK`), response latency (`38ms`), and payload state.
-              </p>
-              <span className="clean-card-tag">Live Test Console</span>
-            </div>
-
-            <div className="clean-feature-card">
-              <div className="clean-card-icon"><Code2 size={20} /></div>
-              <h3 className="clean-card-title">Multi-Language Code Snippets</h3>
-              <p className="clean-card-desc">
-                Copy battle-tested code snippets for cURL, Node.js (Fetch API), and Python (requests). Pass custom agile parameters to automate board movement.
-              </p>
-              <span className="clean-card-tag">cURL · Node.js · Python</span>
+            <div className="workflow-columns-preview">
+              <h4 style={{ fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#000000', margin: '0 0 16px 0' }}>Dynamic Board Column Structure</h4>
+              <div className="cols-flow-list">
+                {selectedWorkflow.columns.map((col, idx) => (
+                  <div key={col.id} className="col-flow-item">
+                    <span className="col-idx">{idx + 1}</span>
+                    <span className="col-name">{col.title}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Category 3: Live Stack Integrations */}
-        <section className="feature-category">
-          <div className="feature-category-header">
-            <span className="feature-category-tag">Developer Ecosystem</span>
-            <h2 className="feature-category-title">Native Stack Integrations</h2>
-            <p className="feature-category-desc">
-              Paper5™ lives where your code lives. Keep code commits, PR merges, chat alerts, and deployment updates synchronized without leaving your terminal.
-            </p>
+        {/* Feature Section 2: Developer Automation */}
+        <section className="features-linear-section">
+          <div className="section-head">
+            <span className="section-label">02 / DEVELOPER AUTOMATION</span>
+            <h2>1-Click API Webhook & REST Sync Studio</h2>
+            <p>Connect custom webhooks, CI/CD scripts, and developer tools in a single click.</p>
           </div>
 
-          <div className="clean-three-grid">
-            <div className="clean-feature-card">
-              <div className="clean-card-icon"><GitPullRequest size={20} /></div>
-              <h3 className="clean-card-title">GitHub Repository PR Sync</h3>
-              <p className="clean-card-desc">
-                Automatically transition sprint tasks to 'Merged' when pull requests are merged into your repository's main branch.
-              </p>
-              <span className="clean-card-tag">GitHub Action</span>
+          <div className="linear-feature-list">
+            <div className="linear-feature-row">
+              <div className="linear-feature-info">
+                <div className="linear-icon"><Code2 size={20} /></div>
+                <div>
+                  <h3>1-Click Live API Keys</h3>
+                  <p>Provision secret API keys instantly with one click (`sp_live_...`). Show, hide, or rotate keys anytime from your workspace integrations dashboard.</p>
+                </div>
+              </div>
+              <span className="linear-feature-badge">REST API & Webhooks</span>
             </div>
 
-            <div className="clean-feature-card">
-              <div className="clean-card-icon"><GitPullRequest size={20} /></div>
-              <h3 className="clean-card-title">Discord & Slack Standups</h3>
-              <p className="clean-card-desc">
-                Broadcast daily sprint digests and blocked task alerts directly to your team's chat channels without extra bot setup.
-              </p>
-              <span className="clean-card-tag">Discord & Slack</span>
+            <div className="linear-feature-row">
+              <div className="linear-feature-info">
+                <div className="linear-icon"><Code2 size={20} /></div>
+                <div>
+                  <h3>Interactive API Simulator</h3>
+                  <p>Test custom JSON payloads directly in your browser. View real-time HTTP response status codes (`200 OK`), response latency (`38ms`), and payload state.</p>
+                </div>
+              </div>
+              <span className="linear-feature-badge">Live Test Console</span>
             </div>
 
-            <div className="clean-feature-card">
-              <div className="clean-card-icon"><GitPullRequest size={20} /></div>
-              <h3 className="clean-card-title">Google Calendar & Vercel Sync</h3>
-              <p className="clean-card-desc">
-                Bind sprint demo deadlines into Google Calendar agendas and track live Vercel production build statuses in your sprint header.
-              </p>
-              <span className="clean-card-tag">Calendar & Vercel</span>
-            </div>
-          </div>
-        </section>
-
-        {/* Category 4: PDF Ownership & Compliance */}
-        <section className="feature-category">
-          <div className="feature-category-header">
-            <span className="feature-category-tag">Data Ownership & Security</span>
-            <h2 className="feature-category-title">Vector PDF Ownership & Compliance</h2>
-            <p className="feature-category-desc">
-              Your data belongs to you. Export high-resolution vector PDF reports and audit logs whenever you need offline archival or stakeholder compliance.
-            </p>
-          </div>
-
-          <div className="clean-two-grid">
-            <div className="clean-feature-card">
-              <div className="clean-card-icon"><FileText size={20} /></div>
-              <h3 className="clean-card-title">Vector Printable PDF Data Export</h3>
-              <p className="clean-card-desc">
-                Generate clean, printable PDF documents of your active sprint metrics, member velocity, and task backlog with customizable section toggles.
-              </p>
-              <span className="clean-card-tag">Printable PDF</span>
-            </div>
-
-            <div className="clean-feature-card">
-              <div className="clean-card-icon"><ShieldCheck size={20} /></div>
-              <h3 className="clean-card-title">Strict Audit Logs & Compliance</h3>
-              <p className="clean-card-desc">
-                Export complete workspace security audit trails in CSV format. Track team membership changes, permission updates, and API key rotations.
-              </p>
-              <span className="clean-card-tag">CSV Audit Log</span>
+            <div className="linear-feature-row">
+              <div className="linear-feature-info">
+                <div className="linear-icon"><Code2 size={20} /></div>
+                <div>
+                  <h3>Multi-Language Code Snippets</h3>
+                  <p>Copy battle-tested code snippets for cURL, Node.js (Fetch API), and Python (requests). Pass custom agile parameters to automate board movement.</p>
+                </div>
+              </div>
+              <span className="linear-feature-badge">cURL · Node.js · Python</span>
             </div>
           </div>
         </section>
 
-        {/* Entitlements Table */}
-        <section className="feature-category" style={{ marginBottom: 0 }}>
-          <div className="feature-category-header">
-            <span className="feature-category-tag">Tier Entitlements</span>
-            <h2 className="feature-category-title">Plan Capability Matrix</h2>
-            <p className="feature-category-desc">
-              Every plan includes full access during launch. Explore entitlement limits across plans.
-            </p>
+        {/* Feature Section 3: Native Stack Integrations */}
+        <section className="features-linear-section">
+          <div className="section-head">
+            <span className="section-label">03 / DEVELOPER ECOSYSTEM</span>
+            <h2>Native Stack Integrations</h2>
+            <p>Paper5™ lives where your code lives. Keep code commits, PR merges, and deployment updates synchronized.</p>
+          </div>
+
+          <div className="linear-feature-list">
+            <div className="linear-feature-row">
+              <div className="linear-feature-info">
+                <div className="linear-icon"><GitPullRequest size={20} /></div>
+                <div>
+                  <h3>GitHub Repository PR Sync</h3>
+                  <p>Automatically transition sprint tasks to 'Merged' when pull requests are merged into your repository's main branch.</p>
+                </div>
+              </div>
+              <span className="linear-feature-badge">GitHub Action</span>
+            </div>
+
+            <div className="linear-feature-row">
+              <div className="linear-feature-info">
+                <div className="linear-icon"><GitPullRequest size={20} /></div>
+                <div>
+                  <h3>Discord & Slack Standups</h3>
+                  <p>Broadcast daily sprint digests and blocked task alerts directly to your team's chat channels without extra bot setup.</p>
+                </div>
+              </div>
+              <span className="linear-feature-badge">Discord & Slack</span>
+            </div>
+
+            <div className="linear-feature-row">
+              <div className="linear-feature-info">
+                <div className="linear-icon"><GitPullRequest size={20} /></div>
+                <div>
+                  <h3>Google Calendar & Vercel Sync</h3>
+                  <p>Bind sprint demo deadlines into Google Calendar agendas and track live Vercel production build statuses in your sprint header.</p>
+                </div>
+              </div>
+              <span className="linear-feature-badge">Calendar & Vercel</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Feature Section 4: PDF Ownership & Audit Logs */}
+        <section className="features-linear-section">
+          <div className="section-head">
+            <span className="section-label">04 / DATA OWNERSHIP & SECURITY</span>
+            <h2>Vector PDF Ownership & Compliance</h2>
+            <p>Your data belongs to you. Export high-resolution vector PDF reports and audit logs whenever you need offline archival.</p>
+          </div>
+
+          <div className="linear-feature-list">
+            <div className="linear-feature-row">
+              <div className="linear-feature-info">
+                <div className="linear-icon"><FileText size={20} /></div>
+                <div>
+                  <h3>Vector Printable PDF Data Export</h3>
+                  <p>Generate clean, printable PDF documents of your active sprint metrics, member velocity, and task backlog with customizable section toggles.</p>
+                </div>
+              </div>
+              <span className="linear-feature-badge">Printable PDF</span>
+            </div>
+
+            <div className="linear-feature-row">
+              <div className="linear-feature-info">
+                <div className="linear-icon"><ShieldCheck size={20} /></div>
+                <div>
+                  <h3>Strict Audit Logs & Compliance</h3>
+                  <p>Export complete workspace security audit trails in CSV format. Track team membership changes, permission updates, and API key rotations.</p>
+                </div>
+              </div>
+              <span className="linear-feature-badge">CSV Audit Log</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Plan Matrix Table */}
+        <section className="features-linear-section" style={{ borderBottom: 'none' }}>
+          <div className="section-head">
+            <span className="section-label">05 / TIER ENTITLEMENTS</span>
+            <h2>Plan Capability Matrix</h2>
+            <p>Explore entitlement limits across plans during our free launch special.</p>
           </div>
 
           <div className="feature-table-wrapper">
