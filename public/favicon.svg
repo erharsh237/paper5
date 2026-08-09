@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090d16"/>
+      <stop offset="100%" stop-color="#04140d"/>
+    </linearGradient>
+    <linearGradient id="bolt" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+  </defs>
+  <!-- Background Card -->
+  <rect width="32" height="32" rx="8" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="31" height="31" rx="7.5" fill="none" stroke="#10b981" stroke-opacity="0.3" stroke-width="1"/>
+  <!-- Velocity Sprint Bolt / Paper5 Icon -->
+  <path d="M18 4L8 17H15L14 28L24 15H17L18 4Z" fill="url(#bolt)"/>
+  <!-- Signal Dot -->
+  <circle cx="25" cy="7" r="2" fill="#10b981"/>
+</svg>
