@@ -59,7 +59,7 @@ export default function Legal() {
         </article>
       </main>
       
-      <MarketingFooter />
+      <MarketingFooter hideCTA={true} />
     </div>
   )
 }
