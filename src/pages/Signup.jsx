@@ -19,7 +19,7 @@ import {
   recordFailedAttempt, 
   resetSecurityState 
 } from '../lib/security'
-import { validateEmail, validatePassword } from '../lib/validation'
+import { validateEmail, validatePassword, validateUsername } from '../lib/validation'
 
 import {
   TEAM_SIZE_OPTIONS,
@@ -286,7 +286,7 @@ export default function Signup() {
             </div>
           ) : null}
 
-          {!lockoutTimer && message && !(message.includes('already') || message.includes('must') || message.includes('required') || message.includes('failed') || message.includes('unable') || message.includes('locked')) ? (
+          {!lockoutTimer && message && (message.includes('dispatched') || message.includes('verified') || message.includes('success')) ? (
             <InlineSuccess message={message} />
           ) : !lockoutTimer && message && (
             <InlineError error={message.replace(/^Error:\s*/i, '')} />
