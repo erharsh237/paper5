@@ -253,6 +253,7 @@ export function AuthProvider({ children }) {
         id: data.user.id, 
         email: data.user.email,
         username,
+        billing_plan_id: 'unselected',
         updated_at: new Date().toISOString() 
       })
 

@@ -88,13 +88,12 @@ export default function OnboardingWizardModal() {
   const publicAuthPaths = ['/login', '/signup', '/forgot-password', '/verify', '/auth/action']
   const isAuthPage = publicAuthPaths.some(p => location.pathname.startsWith(p))
 
-  // Hard gating: modal renders ONLY if user is logged in & verified, userData is loaded, AND missing tier selection on non-auth pages
+  // Hard gating: modal renders ONLY if user is logged in, userData is loaded, AND missing tier/legal selection on non-auth pages
   const needsOnboarding = Boolean(
     !isAuthPage &&
     user && 
-    user.emailVerified && 
     userData &&
-    (!userData.billing_plan_id || userData.billing_plan_id === 'none' || userData.billing_plan_id === 'unselected')
+    (!userData.billing_plan_id || userData.billing_plan_id === 'none' || userData.billing_plan_id === 'unselected' || !userData.legal_accepted_at)
   )
 
   if (!needsOnboarding) return null
