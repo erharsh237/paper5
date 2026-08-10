@@ -65,6 +65,7 @@ export function validatePassword(password) {
 
   const errors = []
   if (!requirements.minLength) errors.push('At least 8 characters long')
+  if (password.length > 72) errors.push('Password cannot exceed 72 characters.')
   if (!requirements.hasUpper) errors.push('At least one uppercase letter (A-Z)')
   if (!requirements.hasLower) errors.push('At least one lowercase letter (a-z)')
   if (!requirements.hasNumber) errors.push('At least one number (0-9)')

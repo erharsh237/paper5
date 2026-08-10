@@ -252,6 +252,7 @@ export default function Login({ accessDenied, denialReason }) {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
+                  maxLength={72}
                   disabled={step > 1}
                   autoComplete="current-password"
                   style={{ width: '100%', paddingRight: '40px' }}

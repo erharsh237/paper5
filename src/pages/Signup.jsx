@@ -401,6 +401,7 @@ export default function Signup() {
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     required={step === 3}
+                    maxLength={72}
                     disabled={step < 3}
                     style={{ width: '100%', paddingRight: '40px' }}
                   />

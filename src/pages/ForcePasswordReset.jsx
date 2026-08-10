@@ -42,10 +42,15 @@ export default function ForcePasswordReset() {
     e.preventDefault()
     setError('')
 
+    if (password.length > 72) {
+      setError('Security requirement: Password cannot exceed 72 characters.')
+      return
+    }
+
     if (requiresStrict) {
-      const strictRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$/;
+      const strictRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,72}$/;
       if (!strictRegex.test(password)) {
-        setError('Security requirement: Your workspace enforces strict passwords (12+ characters, uppercase, lowercase, number, symbol).')
+        setError('Security requirement: Your workspace enforces strict passwords (12-72 characters, uppercase, lowercase, number, symbol).')
         return
       }
     } else {
@@ -104,7 +109,7 @@ export default function ForcePasswordReset() {
           You've been invited to join a workspace. To secure your account, please set a password before continuing.
           {requiresStrict && (
             <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-critical)', borderRadius: '6px', fontSize: '13px' }}>
-              <strong>Strict Password Policy Enforced:</strong> Requires 12+ characters, uppercase, lowercase, number, and symbol.
+              <strong>Strict Password Policy Enforced:</strong> Requires 12-72 characters, uppercase, lowercase, number, and symbol.
             </div>
           )}
         </p>
@@ -118,6 +123,7 @@ export default function ForcePasswordReset() {
               onChange={e => setPassword(e.target.value)}
               required
               minLength={8}
+              maxLength={72}
               style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-layer)', color: 'var(--text-primary)' }}
             />
           </div>
@@ -130,6 +136,7 @@ export default function ForcePasswordReset() {
               onChange={e => setConfirmPassword(e.target.value)}
               required
               minLength={8}
+              maxLength={72}
               style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-layer)', color: 'var(--text-primary)' }}
             />
           </div>
