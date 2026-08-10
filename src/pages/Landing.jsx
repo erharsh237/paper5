@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import MarketingNav from '../components/MarketingNav'
 import MarketingFooter from '../components/MarketingFooter'
@@ -199,11 +199,21 @@ const CapabilitiesCarousel = () => {
 export default function Landing() {
   const [alertMessage, setAlertMessage] = useState(null)
   const { user } = useAuth()
-  const navigate = useNavigate()
+  const location = useLocation()
 
   useEffect(() => {
     document.title = "Paper5 | Engineering Execution & Sprint Tracking Platform"
-  }, [])
+
+    if (location.hash === '#pricing' || window.location.hash === '#pricing') {
+      const timer = setTimeout(() => {
+        const el = document.getElementById('pricing')
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 150)
+      return () => clearTimeout(timer)
+    }
+  }, [location.hash])
 
   return (
     <div className="landing-page">
