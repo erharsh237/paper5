@@ -79,6 +79,7 @@ export default function WorkspacePicker() {
     )
   }
 
+  const userPlan = userData?.billing_plan_id || 'free'
   const isAdmin = workspaces.some(w => w.role === 'owner' || w.role === 'admin')
   const ownedCount = workspaces.filter(w => w.role === 'owner' || w.role === 'admin').length
   
@@ -193,7 +194,6 @@ export default function WorkspacePicker() {
             {/* Realtime Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid #f4f4f5' }}>
               <div style={{ fontSize: '15px', fontWeight: 800, color: '#09090b', letterSpacing: '-0.01em', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
                 SprintOS {newName.trim() ? `| ${newName.trim()}` : ''}
               </div>
               <div style={{ fontSize: '12px', fontWeight: 700, color: '#71717a', background: '#f4f4f5', padding: '4px 10px', borderRadius: '20px' }}>
