@@ -217,7 +217,12 @@ export default function Login({ accessDenied, denialReason }) {
             </div>
           )}
 
-          {message && (message.includes('Code') || message.includes('verified') || message.includes('sent') || message.includes('Test account')) ? (
+          {message && (
+            (message.toLowerCase().includes('success') || message.toLowerCase().includes('verified') || message.toLowerCase().includes('password validated')) &&
+            !message.toLowerCase().includes('invalid') &&
+            !message.toLowerCase().includes('error') &&
+            !message.toLowerCase().includes('failed')
+          ) ? (
             <InlineSuccess message={message} />
           ) : message && (
             <InlineError error={message.replace(/^Error:\s*/i, '')} />

@@ -255,7 +255,12 @@ export default function Signup() {
             </div>
           ) : null}
 
-          {!lockoutTimer && message && (message.includes('dispatched') || message.includes('verified') || message.includes('success') || message.includes('sent')) ? (
+          {!lockoutTimer && message && (
+            (message.toLowerCase().includes('success') || message.toLowerCase().includes('verified') || message.toLowerCase().includes('an 8-digit')) &&
+            !message.toLowerCase().includes('invalid') &&
+            !message.toLowerCase().includes('error') &&
+            !message.toLowerCase().includes('failed')
+          ) ? (
             <InlineSuccess message={message} />
           ) : !lockoutTimer && message && (
             <InlineError error={message.replace(/^Error:\s*/i, '')} />
