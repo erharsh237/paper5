@@ -79,8 +79,8 @@ export default function OnboardingWizardModal() {
   const [teamSize, setTeamSize] = useState('2-5')
   const [agileWorkflow, setAgileWorkflow] = useState('kanban')
 
-  // Step 4: Data Storing Consent State
-  const [saveData, setSaveData] = useState(true)
+  // Step 4: Data Storing Consent State (Default Turned Off)
+  const [saveData, setSaveData] = useState(false)
   
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -567,37 +567,41 @@ export default function OnboardingWizardModal() {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Database size={20} color="#10b981" />
+                  <Database size={20} color={saveData ? '#10b981' : '#64748b'} />
                   <span style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>Cloud Data Persistence</span>
                 </div>
                 
-                <label style={{ position: 'relative', display: 'inline-block', width: '48px', height: '26px', cursor: 'pointer' }}>
-                  <input 
-                    type="checkbox"
-                    checked={saveData}
-                    onChange={e => setSaveData(e.target.checked)}
-                    style={{ opacity: 0, width: 0, height: 0 }}
-                  />
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={saveData}
+                  onClick={() => setSaveData(!saveData)}
+                  style={{
+                    position: 'relative',
+                    display: 'inline-block',
+                    width: '48px',
+                    height: '26px',
+                    borderRadius: '34px',
+                    border: 'none',
+                    backgroundColor: saveData ? '#10b981' : '#cbd5e1',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.2s ease',
+                    padding: 0,
+                    outline: 'none'
+                  }}
+                >
                   <span style={{
                     position: 'absolute',
-                    inset: 0,
-                    backgroundColor: saveData ? '#10b981' : '#cbd5e1',
-                    borderRadius: '34px',
-                    transition: '0.2s ease'
-                  }}>
-                    <span style={{
-                      position: 'absolute',
-                      content: '""',
-                      height: '20px',
-                      width: '20px',
-                      left: saveData ? '24px' : '3px',
-                      bottom: '3px',
-                      backgroundColor: '#ffffff',
-                      borderRadius: '50%',
-                      transition: '0.2s ease'
-                    }} />
-                  </span>
-                </label>
+                    height: '20px',
+                    width: '20px',
+                    left: saveData ? '25px' : '3px',
+                    top: '3px',
+                    backgroundColor: '#ffffff',
+                    borderRadius: '50%',
+                    transition: 'left 0.2s ease',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                  }} />
+                </button>
               </div>
 
               {saveData ? (
