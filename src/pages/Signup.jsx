@@ -268,228 +268,241 @@ export default function Signup() {
 
           <form onSubmit={handleCompleteSignup} style={{ textAlign: 'left' }}>
             {/* Step 1: Info */}
-            <div className="auth-input-group">
-              <label htmlFor="username">Username</label>
-              <input 
-                id="username"
-                type="text" 
-                className="auth-input"
-                placeholder="e.g. acmeadmin"
-                value={username}
-                onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ''))}
-                required
-                disabled={step > 1 || lockoutTimer > 0}
-                autoComplete="off"
-              />
-            </div>
-            
-            <div className="auth-input-group">
-              <label htmlFor="email">Work email</label>
-              <input 
-                id="email"
-                type="email" 
-                className="auth-input"
-                placeholder="you@company.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                disabled={step > 1 || lockoutTimer > 0}
-              />
-            </div>
-
+            {/* Step 1: Username & Work Email */}
             {step === 1 && (
-              <button 
-                type="button" 
-                className="auth-submit-btn" 
-                onClick={handleSendOtp} 
-                disabled={loading || !username || !email || lockoutTimer > 0}
-                style={lockoutTimer > 0 ? { opacity: 0.5, cursor: 'not-allowed', background: '#9ca3af', borderColor: '#9ca3af' } : {}}
-              >
-                {loading 
-                  ? 'Sending Code...' 
-                  : lockoutTimer > 0 
-                    ? `Try again in ${Math.floor(lockoutTimer / 60)}m ${lockoutTimer % 60}s` 
-                    : 'Verify Email with OTP'}
-              </button>
+              <>
+                <div className="auth-input-group">
+                  <label htmlFor="username">Username</label>
+                  <input 
+                    id="username"
+                    type="text" 
+                    className="auth-input"
+                    placeholder="e.g. acmeadmin"
+                    value={username}
+                    onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ''))}
+                    required
+                    autoComplete="off"
+                  />
+                </div>
+                
+                <div className="auth-input-group">
+                  <label htmlFor="email">Work email</label>
+                  <input 
+                    id="email"
+                    type="email" 
+                    className="auth-input"
+                    placeholder="you@company.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div style={{ marginTop: '24px' }}>
+                  <button 
+                    type="button" 
+                    className="auth-submit-btn" 
+                    onClick={handleSendOtp} 
+                    disabled={loading || !username || !email || lockoutTimer > 0}
+                    style={lockoutTimer > 0 ? { opacity: 0.5, cursor: 'not-allowed', background: '#9ca3af', borderColor: '#9ca3af' } : {}}
+                  >
+                    {loading 
+                      ? 'Sending Code...' 
+                      : lockoutTimer > 0 
+                        ? `Try again in ${Math.floor(lockoutTimer / 60)}m ${lockoutTimer % 60}s` 
+                        : 'Verify Email with OTP'}
+                  </button>
+                </div>
+              </>
             )}
 
-            {/* Step 2: OTP (Only visible after Step 1) */}
-            {step >= 2 && (
-              <div className="auth-input-group" style={{ marginTop: '24px', opacity: step === 3 ? 0.6 : 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label htmlFor="otp">Verification Code</label>
-                  {step === 2 && (
+            {/* Step 2: 8-Digit Verification Code */}
+            {step === 2 && (
+              <>
+                <div className="auth-input-group" style={{ marginBottom: '16px', padding: '12px', background: 'var(--bg-layer-2, #f9fafb)', borderRadius: '8px', border: '1px solid var(--border-subtle, #e5e7eb)' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-tertiary, #6b7280)', marginBottom: '2px' }}>Account Details</div>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>@{username} • {email}</div>
+                </div>
+
+                <div className="auth-input-group">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label htmlFor="otp">Verification Code</label>
                     <button 
                       type="button" 
                       onClick={handleSendOtp} 
                       disabled={loading || cooldown > 0}
-                      style={{ background: 'none', border: 'none', color: cooldown > 0 ? '#999' : 'var(--accent-primary)', fontSize: '12px', cursor: cooldown > 0 ? 'not-allowed' : 'pointer', padding: 0 }}
+                      style={{ background: 'none', border: 'none', color: cooldown > 0 ? '#999' : 'var(--accent-primary, #10b981)', fontSize: '12px', cursor: cooldown > 0 ? 'not-allowed' : 'pointer', padding: 0, fontWeight: 600 }}
                     >
                       {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend Code'}
                     </button>
-                  )}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
-                    <button
-                      type="button"
-                      onClick={() => setShowOtp(!showOtp)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: 'var(--text-secondary, #666)',
-                        fontSize: '11px',
-                        padding: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}
-                      disabled={step === 3}
-                    >
-                      {showOtp ? (
-                        <>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                          Hide Digits
-                        </>
-                      ) : (
-                        <>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                          Show Digits
-                        </>
-                      )}
-                    </button>
                   </div>
 
-                  <OtpInput 
-                    value={otp} 
-                    onChange={setOtp} 
-                    length={8} 
-                    disabled={step === 3} 
-                    showOtp={showOtp}
-                  />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setShowOtp(!showOtp)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: 'var(--text-secondary, #666)',
+                          fontSize: '11px',
+                          padding: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        {showOtp ? (
+                          <>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                            Hide Digits
+                          </>
+                        ) : (
+                          <>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            Show Digits
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <OtpInput 
+                      value={otp} 
+                      onChange={setOtp} 
+                      length={8} 
+                      showOtp={showOtp}
+                    />
+                  </div>
                 </div>
-                
-                {step === 2 && (
+
+                <div style={{ marginTop: '24px' }}>
                   <button type="button" className="auth-submit-btn" onClick={handleVerifyOtp} disabled={loading || otp.length < 6}>
                     {loading ? 'Verifying...' : 'Confirm Verification Code'}
                   </button>
-                )}
-              </div>
+                </div>
+              </>
             )}
 
-            {/* Step 3: Password (Only visible after Step 2) */}
-            <div style={{ marginTop: '24px', opacity: step < 3 ? 0.4 : 1, pointerEvents: step < 3 ? 'none' : 'auto' }}>
-              <div className="auth-input-group">
-                <label htmlFor="password">Secure Password</label>
-                <div style={{ position: 'relative' }}>
-                  <input 
-                    id="password"
-                    type={showSignupPassword ? 'text' : 'password'} 
-                    className="auth-input"
-                    placeholder="Min 8 chars (A-Z, a-z, 0-9, special)"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    onFocus={() => setIsPasswordFocused(true)}
-                    onBlur={() => setIsPasswordFocused(false)}
-                    required={step === 3}
-                    maxLength={72}
-                    disabled={step < 3}
-                    style={{ width: '100%', paddingRight: '40px' }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowSignupPassword(!showSignupPassword)}
-                    style={{
-                      position: 'absolute',
-                      right: '10px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: '#666',
-                      padding: 0,
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}
-                    disabled={step < 3}
-                  >
-                    {showSignupPassword ? (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                    ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                    )}
-                  </button>
-
-                  {/* Password Requirements Tooltip (Right side, black bg) */}
-                  {step === 3 && (isPasswordFocused || password.length > 0) && (
-                    <div style={{
-                      position: 'absolute',
-                      left: 'calc(100% + 14px)',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      width: '210px',
-                      background: '#09090b',
-                      color: '#ffffff',
-                      padding: '12px 14px',
-                      borderRadius: '10px',
-                      border: '1px solid #27272a',
-                      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.4)',
-                      fontSize: '11px',
-                      zIndex: 1000,
-                      pointerEvents: 'none'
-                    }}>
-                      {/* Pointer Arrow */}
-                      <div style={{
-                        position: 'absolute',
-                        left: '-6px',
-                        top: '50%',
-                        transform: 'translateY(-50%) rotate(45deg)',
-                        width: '10px',
-                        height: '10px',
-                        background: '#09090b',
-                        borderLeft: '1px solid #27272a',
-                        borderBottom: '1px solid #27272a'
-                      }} />
-
-                      <div style={{ fontWeight: 700, marginBottom: '6px', color: '#f4f4f5', fontSize: '11px', letterSpacing: '0.02em' }}>
-                        Password Requirements:
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: validatePassword(password).requirements.minLength ? '#10b981' : '#a1a1aa' }}>
-                          <span style={{ fontWeight: 700 }}>{validatePassword(password).requirements.minLength ? '✓' : '○'}</span>
-                          <span>Min 8 chars</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: validatePassword(password).requirements.hasUpper ? '#10b981' : '#a1a1aa' }}>
-                          <span style={{ fontWeight: 700 }}>{validatePassword(password).requirements.hasUpper ? '✓' : '○'}</span>
-                          <span>Uppercase (A-Z)</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: validatePassword(password).requirements.hasLower ? '#10b981' : '#a1a1aa' }}>
-                          <span style={{ fontWeight: 700 }}>{validatePassword(password).requirements.hasLower ? '✓' : '○'}</span>
-                          <span>Lowercase (a-z)</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: validatePassword(password).requirements.hasNumber ? '#10b981' : '#a1a1aa' }}>
-                          <span style={{ fontWeight: 700 }}>{validatePassword(password).requirements.hasNumber ? '✓' : '○'}</span>
-                          <span>Number (0-9)</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: validatePassword(password).requirements.hasSpecial ? '#10b981' : '#a1a1aa' }}>
-                          <span style={{ fontWeight: 700 }}>{validatePassword(password).requirements.hasSpecial ? '✓' : '○'}</span>
-                          <span>Special char (!@#$%^&*)</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+            {/* Step 3: Password Creation */}
+            {step === 3 && (
+              <>
+                <div className="auth-input-group" style={{ marginBottom: '16px', padding: '12px', background: 'var(--bg-layer-2, #f9fafb)', borderRadius: '8px', border: '1px solid var(--border-subtle, #e5e7eb)' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-tertiary, #6b7280)', marginBottom: '2px' }}>Verified Account</div>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>✓</span> @{username} ({email})
+                  </div>
                 </div>
 
-              </div>
-            </div>
+                <div className="auth-input-group">
+                  <label htmlFor="password">Secure Password</label>
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      id="password"
+                      type={showSignupPassword ? 'text' : 'password'} 
+                      className="auth-input"
+                      placeholder="Min 8 chars (A-Z, a-z, 0-9, special)"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      onFocus={() => setIsPasswordFocused(true)}
+                      onBlur={() => setIsPasswordFocused(false)}
+                      required
+                      maxLength={72}
+                      style={{ width: '100%', paddingRight: '40px' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSignupPassword(!showSignupPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: '10px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#666',
+                        padding: 0,
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                    >
+                      {showSignupPassword ? (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                      ) : (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                      )}
+                    </button>
 
-            <div style={{ marginTop: '24px', opacity: step < 3 ? 0.4 : 1, pointerEvents: step < 3 ? 'none' : 'auto' }}>
-              <button type="submit" className="auth-submit-btn" disabled={loading || step < 3 || password.length < 6}>
-                {loading && step === 3 ? 'Processing...' : 'Create Account'}
-              </button>
-            </div>
+                    {/* Password Requirements Tooltip (Right side, black bg) */}
+                    {(isPasswordFocused || password.length > 0) && (
+                      <div style={{
+                        position: 'absolute',
+                        left: 'calc(100% + 14px)',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        width: '210px',
+                        background: '#09090b',
+                        color: '#ffffff',
+                        padding: '12px 14px',
+                        borderRadius: '10px',
+                        border: '1px solid #27272a',
+                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.4)',
+                        fontSize: '11px',
+                        zIndex: 1000,
+                        pointerEvents: 'none'
+                      }}>
+                        {/* Pointer Arrow */}
+                        <div style={{
+                          position: 'absolute',
+                          left: '-6px',
+                          top: '50%',
+                          transform: 'translateY(-50%) rotate(45deg)',
+                          width: '10px',
+                          height: '10px',
+                          background: '#09090b',
+                          borderLeft: '1px solid #27272a',
+                          borderBottom: '1px solid #27272a'
+                        }} />
+
+                        <div style={{ fontWeight: 700, marginBottom: '6px', color: '#f4f4f5', fontSize: '11px', letterSpacing: '0.02em' }}>
+                          Password Requirements:
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: validatePassword(password).requirements.minLength ? '#10b981' : '#a1a1aa' }}>
+                            <span style={{ fontWeight: 700 }}>{validatePassword(password).requirements.minLength ? '✓' : '○'}</span>
+                            <span>Min 8 chars</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: validatePassword(password).requirements.hasUpper ? '#10b981' : '#a1a1aa' }}>
+                            <span style={{ fontWeight: 700 }}>{validatePassword(password).requirements.hasUpper ? '✓' : '○'}</span>
+                            <span>Uppercase (A-Z)</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: validatePassword(password).requirements.hasLower ? '#10b981' : '#a1a1aa' }}>
+                            <span style={{ fontWeight: 700 }}>{validatePassword(password).requirements.hasLower ? '✓' : '○'}</span>
+                            <span>Lowercase (a-z)</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: validatePassword(password).requirements.hasNumber ? '#10b981' : '#a1a1aa' }}>
+                            <span style={{ fontWeight: 700 }}>{validatePassword(password).requirements.hasNumber ? '✓' : '○'}</span>
+                            <span>Number (0-9)</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: validatePassword(password).requirements.hasSpecial ? '#10b981' : '#a1a1aa' }}>
+                            <span style={{ fontWeight: 700 }}>{validatePassword(password).requirements.hasSpecial ? '✓' : '○'}</span>
+                            <span>Special char (!@#$%^&*)</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '24px' }}>
+                  <button type="submit" className="auth-submit-btn" disabled={loading || !validatePassword(password).valid}>
+                    {loading ? 'Creating Account...' : 'Complete Account Registration'}
+                  </button>
+                </div>
+              </>
+            )}
 
             <Turnstile ref={turnstileRef} action="signup" onSuccess={setTurnstileToken} />
           </form>
