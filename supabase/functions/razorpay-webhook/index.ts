@@ -38,6 +38,38 @@ serve(async (req) => {
 
     const event = JSON.parse(bodyText)
 
+    // 1. Timestamp Verification (Replay Protection: 5 minute max age)
+    if (event.created_at && typeof event.created_at === 'number') {
+      const nowSeconds = Math.floor(Date.now() / 1000)
+      const maxAgeSeconds = 300 // 5 minutes
+      if (Math.abs(nowSeconds - event.created_at) > maxAgeSeconds) {
+        throw new Error('Webhook timestamp expired or stale request (over 5 minutes old)')
+      }
+    }
+
+    // 2. Idempotency Tracking (Prevent duplicate processing of replayed webhook events)
+    const eventId = event.event_id || (event.payload?.subscription?.entity?.id ? `${event.payload.subscription.entity.id}_${event.created_at}` : null)
+    
+    if (eventId) {
+      const { data: existingEvent } = await supabase
+        .from('rate_limit_log')
+        .select('id')
+        .eq('identifier', `evt_${eventId}`)
+        .eq('action', 'razorpay_webhook')
+        .single()
+
+      if (existingEvent) {
+        return new Response(JSON.stringify({ received: true, status: 'already_processed' }), {
+          headers: { 'Content-Type': 'application/json' },
+          status: 200
+        })
+      }
+
+      await supabase
+        .from('rate_limit_log')
+        .insert({ identifier: `evt_${eventId}`, action: 'razorpay_webhook' })
+    }
+
     if (['subscription.charged', 'subscription.halted', 'subscription.cancelled'].includes(event.event)) {
       const subscription = event.payload.subscription.entity
       const userId = subscription.notes?.userId
