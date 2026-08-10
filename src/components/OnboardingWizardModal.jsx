@@ -247,7 +247,9 @@ export default function OnboardingWizardModal() {
         <div style={{ marginBottom: '24px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
             <img src={logo} alt="SprintOS Logo" style={{ height: '32px', width: 'auto' }} />
-            <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', color: '#09090b' }}>SprintOS™ Onboarding</span>
+            <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', color: '#09090b' }}>
+              SprintOS {wsName.trim() ? `| ${wsName.trim()}` : ''}
+            </span>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>

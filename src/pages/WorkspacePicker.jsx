@@ -14,30 +14,25 @@ export default function WorkspacePicker() {
   const [newName, setNewName] = useState('')
   const [teamSize, setTeamSize] = useState('2-5')
   const [selectedWorkflow, setSelectedWorkflow] = useState('kanban')
-  const [saveData, setSaveData] = useState(true)
-  const [createError, setCreateError] = useState('')
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [modalStep, setModalStep] = useState(1) // 1: Details, 2: Data Consent
+  const [saveData, setSaveData] = useState(false) // default off
 
   useEffect(() => {
-    if (!user?.uid) return
-    const unsub = subscribeUserWorkspaces(user.uid, (list) => {
-      setWorkspaces(list)
-      setLoading(false)
-    })
-    return unsub
-  }, [user?.uid])
-
-  const userPlan = userData?.billing_plan_id || 'free'
-
-  const handleTeamSizeChange = (newSize) => {
-    setTeamSize(newSize)
-    const rec = getRecommendedWorkflow(newSize)
-    if (rec && isWorkflowUnlocked(rec.id, userPlan)) {
-      setSelectedWorkflow(rec.id)
+    if (!loading && workspaces.length === 0) {
+      setShowCreateModal(true)
     }
+  }, [loading, workspaces])
+
+  const handleNextStep = (e) => {
+    if (e) e.preventDefault()
+    if (!newName.trim()) return
+    setCreateError('')
+    setModalStep(2)
   }
 
   const handleCreate = async (e) => {
-    e.preventDefault()
+    if (e) e.preventDefault()
     if (!newName.trim()) return
     setCreateError('')
     setIsCreating(true)
@@ -76,30 +71,15 @@ export default function WorkspacePicker() {
   if (userPlan === 'scale') maxWorkspaces = 10
   
   const canCreate = ownedCount < maxWorkspaces
-
   const isPickerForced = window.location.search.includes('picker=true')
   
   // Routing logic
   if (!isPickerForced && workspaces.length > 0) {
     if (!isAdmin) {
-      // Non-admins always auto-redirect to their first assigned workspace
       return <Navigate to={`/${workspaces[0].workspaceId}`} replace />
     } else if (workspaces.length === 1) {
-      // Admins with exactly 1 workspace auto-redirect
       return <Navigate to={`/${workspaces[0].workspaceId}`} replace />
     }
-  }
-
-  if (isPickerForced && workspaces.length === 1) {
-    return (
-      <div className="workspace-picker-page">
-         <div className="wp-container" style={{ textAlign: 'center', padding: '40px 20px' }}>
-            <h1 style={{ color: 'var(--accent-critical)', marginBottom: '12px' }}>Access Denied</h1>
-            <p style={{ color: '#666', fontSize: '15px' }}>You need to be a member of more than one workspace to access this page.</p>
-            <button onClick={() => navigate(-1)} className="wp-submit-btn" style={{ marginTop: '24px', maxWidth: '200px', margin: '24px auto 0' }}>Go Back</button>
-         </div>
-      </div>
-    )
   }
 
   return (
@@ -112,7 +92,6 @@ export default function WorkspacePicker() {
       </div>
       
       <div className="wp-container">
-        
         {workspaces.length > 0 && (
           <button 
             className="wp-back-btn"
@@ -125,7 +104,7 @@ export default function WorkspacePicker() {
 
         <div className="wp-header">
           <div className="wp-brand">
-            Paper5 | SprintOS {newName.trim() ? `| ${newName.trim()}` : ''}
+            SprintOS {newName.trim() ? `| ${newName.trim()}` : ''}
           </div>
           <h1 className="wp-title">Select Workspace</h1>
           <p className="wp-subtitle">
@@ -148,35 +127,105 @@ export default function WorkspacePicker() {
           </div>
         )}
 
-        {(workspaces.length === 0 || isAdmin) && (
-          <div className="wp-create-section" style={{ borderTop: workspaces.length === 0 ? 'none' : undefined, paddingTop: workspaces.length === 0 ? 0 : undefined }}>
-            <h3 className="wp-create-title">
-              {workspaces.length === 0 ? 'Create your first workspace' : 'Create new workspace'}
-            </h3>
-            
-            {canCreate ? (
-              <form onSubmit={handleCreate}>
-                <label htmlFor="workspace-name" className="sr-only" style={{ display: 'none' }}>Workspace Name</label>
-                <input
-                  id="workspace-name"
-                  type="text"
-                  className="wp-input"
-                  placeholder="Workspace Name (e.g. Acme Corp)"
-                  value={newName}
-                  onChange={e => setNewName(e.target.value)}
-                  required
-                  style={{ marginBottom: '12px' }}
-                />
+        {canCreate && (
+          <div style={{ marginTop: '24px', textAlign: 'center' }}>
+            <button
+              type="button"
+              className="wp-submit-btn"
+              onClick={() => {
+                setModalStep(1)
+                setShowCreateModal(true)
+              }}
+            >
+              + Create New Workspace
+            </button>
+          </div>
+        )}
 
-                <div style={{ marginBottom: '12px', textAlign: 'left' }}>
-                  <label style={{ fontSize: '12px', color: 'var(--text-secondary, #6b7280)', marginBottom: '4px', display: 'block', fontWeight: 600 }}>
-                    Team Size (Admin Config):
+        <div className="wp-footer">
+          <button className="wp-footer-btn" onClick={logout}>Sign out securely</button>
+        </div>
+      </div>
+
+      {/* POPUP MODAL WHITE BG FOR WORKSPACE CREATION & DATA CONSENT */}
+      {showCreateModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 999999,
+          background: 'rgba(9, 9, 11, 0.85)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+          overflowY: 'auto'
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            maxWidth: '560px',
+            width: '100%',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+            border: '1px solid #e4e4e7',
+            padding: '32px',
+            textAlign: 'left',
+            color: '#18181b',
+            position: 'relative'
+          }}>
+            {/* Realtime Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid #f4f4f5' }}>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#09090b', letterSpacing: '-0.01em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
+                SprintOS {newName.trim() ? `| ${newName.trim()}` : ''}
+              </div>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#71717a', background: '#f4f4f5', padding: '4px 10px', borderRadius: '20px' }}>
+                Step {modalStep} of 2
+              </div>
+            </div>
+
+            {createError && (
+              <div style={{ background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', padding: '12px', borderRadius: '8px', fontSize: '13px', marginBottom: '20px' }}>
+                {createError}
+              </div>
+            )}
+
+            {/* STEP 1: Workspace Details Modal */}
+            {modalStep === 1 && (
+              <form onSubmit={handleNextStep}>
+                <h2 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 6px 0', color: '#09090b', letterSpacing: '-0.02em' }}>
+                  Create Your Workspace
+                </h2>
+                <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#71717a' }}>
+                  Set up your workspace configuration to collaborate with your team.
+                </p>
+
+                <div style={{ marginBottom: '18px' }}>
+                  <label htmlFor="modal-ws-name" style={{ fontSize: '13px', fontWeight: 700, color: '#27272a', marginBottom: '6px', display: 'block' }}>
+                    Workspace Name
+                  </label>
+                  <input
+                    id="modal-ws-name"
+                    type="text"
+                    className="wp-input"
+                    placeholder="e.g. Acme Corp"
+                    value={newName}
+                    onChange={e => setNewName(e.target.value)}
+                    required
+                    style={{ margin: 0, padding: '12px 14px', fontSize: '14px', borderRadius: '8px', border: '1px solid #d4d4d8' }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '18px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 700, color: '#27272a', marginBottom: '6px', display: 'block' }}>
+                    Team Size (Admin Config)
                   </label>
                   <select
                     className="wp-input"
                     value={teamSize}
                     onChange={(e) => handleTeamSizeChange(e.target.value)}
-                    style={{ margin: 0, padding: '10px 12px' }}
+                    style={{ margin: 0, padding: '12px 14px', fontSize: '14px', borderRadius: '8px', border: '1px solid #d4d4d8' }}
                   >
                     {TEAM_SIZE_OPTIONS.map(opt => (
                       <option key={opt.value} value={opt.value}>
@@ -186,15 +235,15 @@ export default function WorkspacePicker() {
                   </select>
                 </div>
 
-                <div style={{ marginBottom: '16px', textAlign: 'left' }}>
-                  <label style={{ fontSize: '12px', color: 'var(--text-secondary, #6b7280)', marginBottom: '4px', display: 'block', fontWeight: 600 }}>
-                    Aligned Agile Workflow:
+                <div style={{ marginBottom: '28px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 700, color: '#27272a', marginBottom: '6px', display: 'block' }}>
+                    Aligned Agile Workflow
                   </label>
                   <select
                     className="wp-input"
                     value={selectedWorkflow}
                     onChange={(e) => setSelectedWorkflow(e.target.value)}
-                    style={{ margin: 0, padding: '10px 12px' }}
+                    style={{ margin: 0, padding: '12px 14px', fontSize: '14px', borderRadius: '8px', border: '1px solid #d4d4d8' }}
                   >
                     {WORKFLOWS.map(wf => {
                       const unlocked = isWorkflowUnlocked(wf.id, userPlan)
@@ -207,60 +256,160 @@ export default function WorkspacePicker() {
                   </select>
                 </div>
 
-                <div style={{ marginBottom: '16px', padding: '12px 14px', background: 'var(--bg-layer-2, #f9fafb)', borderRadius: '8px', border: '1px solid var(--border-subtle, #e5e7eb)', textAlign: 'left' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                    <div>
-                      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary, #111)' }}>
-                        💾 Save Data to Cloud Database
-                      </div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-secondary, #666)', marginTop: '2px', lineHeight: 1.3 }}>
-                        {saveData ? 'Cloud Storage: Sprint & task items saved to database.' : '🔒 Zero-Data Retention: Data kept in browser memory only.'}
-                      </div>
-                    </div>
-                    <label className="toggle-switch" style={{ flexShrink: 0 }}>
-                      <input type="checkbox" checked={saveData} onChange={e => setSaveData(e.target.checked)} />
-                      <span className="toggle-slider"></span>
-                    </label>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  {workspaces.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateModal(false)}
+                      style={{
+                        padding: '12px 20px',
+                        borderRadius: '8px',
+                        background: '#f4f4f5',
+                        color: '#27272a',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        border: '1px solid #e4e4e7',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={!newName.trim()}
+                    style={{
+                      flex: 1,
+                      padding: '12px 20px',
+                      borderRadius: '8px',
+                      background: !newName.trim() ? '#9ca3af' : '#09090b',
+                      color: '#ffffff',
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      border: 'none',
+                      cursor: !newName.trim() ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    Next: Data Storage Consent →
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* STEP 2: Data Storing Consent Modal */}
+            {modalStep === 2 && (
+              <div>
+                <h2 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 6px 0', color: '#09090b', letterSpacing: '-0.02em' }}>
+                  Data Storage & Persistence Preference
+                </h2>
+                <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#71717a' }}>
+                  Choose how workspace task data and sprint items are stored.
+                </p>
+
+                <div style={{
+                  background: '#f8fafc',
+                  borderRadius: '12px',
+                  border: '1px solid #e2e8f0',
+                  padding: '20px',
+                  marginBottom: '28px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>
+                      Cloud Data Persistence
+                    </span>
+                    
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={saveData}
+                      onClick={() => setSaveData(!saveData)}
+                      style={{
+                        position: 'relative',
+                        display: 'inline-block',
+                        width: '48px',
+                        height: '26px',
+                        borderRadius: '34px',
+                        border: 'none',
+                        backgroundColor: saveData ? '#10b981' : '#cbd5e1',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.2s ease',
+                        padding: 0,
+                        outline: 'none'
+                      }}
+                    >
+                      <span style={{
+                        position: 'absolute',
+                        height: '20px',
+                        width: '20px',
+                        left: saveData ? '25px' : '3px',
+                        top: '3px',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '50%',
+                        transition: 'left 0.2s ease',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                      }} />
+                    </button>
                   </div>
 
-                  <div style={{ 
-                    padding: '8px 10px', 
-                    borderRadius: '6px', 
-                    fontSize: '11px', 
-                    lineHeight: 1.4,
-                    background: saveData ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
-                    color: saveData ? '#047857' : '#b91c1c',
-                    border: saveData ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)'
-                  }}>
-                    <strong>Disclaimer:</strong> {saveData 
-                      ? 'Workspace data is encrypted and backed up daily in our secure cloud database. While automated snapshots and point-in-time recovery are maintained, administrators remain responsible for maintaining local offline backups via Workspace Settings → Export.'
-                      : 'Data is stored solely in volatile browser session memory. Closing your tab, clearing cache, or logging out will permanently erase workspace data. Neither Paper5™ nor SprintOS™ will be held responsible or liable for any data loss resulting from Zero-Data Retention Mode.'}
-                  </div>
+                  {saveData ? (
+                    <div style={{ fontSize: '13px', color: '#334155', lineHeight: 1.6 }}>
+                      <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ color: '#10b981' }}>✓</span> Cloud Sync Enabled (Recommended)
+                      </div>
+                      Workspaces, sprints, and team task items are securely persisted in encrypted database storage for cross-device synchronization and team collaboration.
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '13px', color: '#b45309', lineHeight: 1.6 }}>
+                      <div style={{ fontWeight: 700, color: '#92400e', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        Zero-Data Retention Mode Active
+                      </div>
+                      No workspace telemetry or task data is stored on remote servers. All sprint items exist strictly in local browser memory. Closing your browser session permanently purges transient workspace data.
+                    </div>
+                  )}
                 </div>
 
-                {createError && <div style={{ background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', padding: '12px', borderRadius: '8px', fontSize: '13px', marginBottom: '12px' }}>{createError}</div>}
-                
-                <button type="submit" className="wp-submit-btn" disabled={isCreating || !newName.trim()}>
-                  {isCreating ? 'Creating Workspace...' : 'Create Workspace'}
-                </button>
-              </form>
-            ) : (
-              <div style={{ padding: '20px', background: '#f9fafb', borderRadius: '12px', border: '1px solid #eaeaea', textAlign: 'center' }}>
-                <p style={{ fontSize: '13px', color: '#666', marginBottom: '16px', lineHeight: 1.5 }}>
-                  You have reached the maximum number of workspaces ({maxWorkspaces}) for your {userPlan} plan.
-                </p>
-                <button className="wp-submit-btn" onClick={() => window.open('/#pricing', '_blank')} style={{ marginTop: 0 }}>
-                  Upgrade Plan
-                </button>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setModalStep(1)}
+                    disabled={isCreating}
+                    style={{
+                      padding: '12px 20px',
+                      borderRadius: '8px',
+                      background: '#f4f4f5',
+                      color: '#27272a',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      border: '1px solid #e4e4e7',
+                      cursor: isCreating ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCreate}
+                    disabled={isCreating}
+                    style={{
+                      flex: 1,
+                      padding: '12px 20px',
+                      borderRadius: '8px',
+                      background: '#10b981',
+                      color: '#ffffff',
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      border: 'none',
+                      cursor: isCreating ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    {isCreating ? 'Creating Workspace...' : 'Complete & Launch Workspace'}
+                  </button>
+                </div>
               </div>
             )}
           </div>
-        )}
-
-        <div className="wp-footer">
-          <button className="wp-footer-btn" onClick={logout}>Sign out securely</button>
         </div>
-      </div>
+      )}
     </div>
   )
 }
