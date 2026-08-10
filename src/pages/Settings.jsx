@@ -896,7 +896,7 @@ export default function Settings() {
                   
 
                   <div style={{ padding: '16px', background: 'var(--bg-layer-2)', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                       <div>
                         <h4 style={{ margin: '0 0 4px 0' }}>💾 Save Data to Cloud Database</h4>
                         <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
@@ -909,6 +909,20 @@ export default function Settings() {
                         <input type="checkbox" checked={wsSettings.save_data !== false} onChange={e => setWsSettings({...wsSettings, save_data: e.target.checked})} />
                         <span className="toggle-slider"></span>
                       </label>
+                    </div>
+
+                    <div style={{ 
+                      padding: '8px 10px', 
+                      borderRadius: '6px', 
+                      fontSize: '11px', 
+                      lineHeight: 1.4,
+                      background: wsSettings.save_data !== false ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+                      color: wsSettings.save_data !== false ? '#047857' : '#b91c1c',
+                      border: wsSettings.save_data !== false ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)'
+                    }}>
+                      <strong>Disclaimer:</strong> {wsSettings.save_data !== false 
+                        ? 'Workspace data is encrypted and backed up daily in our secure cloud database. While automated snapshots and point-in-time recovery are maintained, administrators remain responsible for maintaining local offline backups via Workspace Settings → Export.'
+                        : 'Data is stored solely in volatile browser session memory. Closing your tab, clearing cache, or logging out will permanently erase workspace data. Neither Paper5™ nor SprintOS™ will be held responsible or liable for any data loss resulting from Zero-Data Retention Mode.'}
                     </div>
                   </div>
 
