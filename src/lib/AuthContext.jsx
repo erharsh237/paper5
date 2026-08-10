@@ -116,36 +116,50 @@ export function AuthProvider({ children }) {
         .subscribe()
     }
 
+    let isHydrated = false
+    let currentUserId = null
+
     // ── Hydrate session from httpOnly cookie on page load ──────────────────
     // Since we no longer use localStorage, we restore the persisted session by
     // reading tokens from the server-side httpOnly cookie and calling setSession.
     const hydrateFromCookie = async () => {
-      const stored = await sessionCookieApi.get()
-      if (stored?.access_token && stored?.refresh_token) {
-        const { data: { session }, error } = await supabase.auth.setSession({
-          access_token:  stored.access_token,
-          refresh_token: stored.refresh_token,
-        })
-        if (error) {
-          // Stored tokens are expired/invalid — clear the stale cookie
-          await sessionCookieApi.clear()
-        } else if (session) {
-          // setSession triggers onAuthStateChange internally; setupUser runs from there
-          return
+      try {
+        const stored = await sessionCookieApi.get()
+        if (stored?.access_token && stored?.refresh_token) {
+          const { data: { session }, error } = await supabase.auth.setSession({
+            access_token:  stored.access_token,
+            refresh_token: stored.refresh_token,
+          })
+          if (error) {
+            // Stored tokens are expired/invalid — clear the stale cookie
+            await sessionCookieApi.clear()
+          } else if (session) {
+            currentUserId = session.user.id
+            await setupUser(session)
+            isHydrated = true
+            return
+          }
         }
-      }
-      // No valid stored session — fall through to getSession() for magic link / URL flows
-      supabase.auth.getSession().then(({ data: { session } }) => {
+        // No valid stored session — fall through to getSession() for magic link / URL flows
+        const { data: { session } } = await supabase.auth.getSession()
         currentUserId = session?.user?.id ?? null
-        setupUser(session)
-      })
+        await setupUser(session)
+      } catch (err) {
+        console.error('Session hydration failed:', err)
+        setLoading(false)
+      } finally {
+        isHydrated = true
+      }
     }
 
     // Listen for auth changes
-    let currentUserId = null
-
     hydrateFromCookie()
     const { data: authSubscription } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Ignore initial empty session event if cookie hydration is still in-flight
+      if (event === 'INITIAL_SESSION' && !isHydrated) {
+        return
+      }
+
       // Supabase's internal `visibilitychange` listener runs session recovery
       // every time the tab regains focus. Depending on internal state this can
       // emit either TOKEN_REFRESHED or SIGNED_IN even when it's the exact same
