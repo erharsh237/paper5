@@ -90,23 +90,21 @@ export default function OtpInput({
         const isFilled = Boolean(digits[i])
         const isFocused = focusedIndex === i
 
-        let borderColor = '#64748b' // Crisp Slate-500 default border
-        let bg = '#f8fafc' // Subtle Slate-50 tint when empty
-        let shadow = '0 1px 2px rgba(0, 0, 0, 0.05)'
+        let borderColor = '#334155' // High-contrast Slate-700 dark border
+        let bg = '#ffffff'
+        let shadow = '0 2px 4px rgba(0, 0, 0, 0.08)'
 
         if (isFocused) {
           borderColor = '#10b981' // Green focus
-          bg = '#ffffff'
-          shadow = '0 0 0 3px rgba(16, 185, 129, 0.25)'
+          shadow = '0 0 0 3px rgba(16, 185, 129, 0.3)'
         } else if (isFilled) {
           borderColor = '#10b981' // Green filled
-          bg = '#ffffff'
-          shadow = '0 0 0 2px rgba(16, 185, 129, 0.12)'
+          shadow = '0 0 0 2px rgba(16, 185, 129, 0.15)'
         }
 
         if (disabled) {
           bg = '#f1f5f9'
-          borderColor = '#cbd5e1'
+          borderColor = '#94a3b8'
           shadow = 'none'
         }
 
