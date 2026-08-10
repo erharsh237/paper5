@@ -141,7 +141,7 @@ export default function Login({ accessDenied, denialReason }) {
       await sendLoginOtp(userEmail)
       
       setVerifiedEmail(userEmail)
-      setMessage('Password verified. A 2FA code has been sent to your email.')
+      setMessage('Password validated successfully. Please check your email for the 8-digit verification code.')
       setStep(2)
       setCooldown(60)
       setFailedAttempts(0)
@@ -154,6 +154,8 @@ export default function Login({ accessDenied, denialReason }) {
       if (result.lockoutSeconds > 0) {
         setLockoutTimer(result.lockoutSeconds)
         setMessage(`Account temporarily locked for ${result.lockoutSeconds} seconds due to repeated failed attempts.`)
+      } else {
+        setMessage('Invalid email/username or password')
       }
     } finally {
       setLoading(false)
@@ -285,8 +287,25 @@ export default function Login({ accessDenied, denialReason }) {
               </div>
             </div>
 
-            {/* Always Visible 8-Digit OTP Input Boxes */}
-            <div className="auth-input-group" style={{ marginTop: '20px' }}>
+            {/* Button right after password: Send OTP */}
+            <div style={{ marginTop: '16px', marginBottom: '20px' }}>
+              <button 
+                type="button" 
+                className="auth-submit-btn" 
+                onClick={handlePasswordLogin} 
+                disabled={loading || !identifier || !password || step === 2}
+                style={step === 2 ? { background: '#10b981', color: '#fff', cursor: 'default', opacity: 0.9 } : {}}
+              >
+                {loading && step === 1 
+                  ? 'Validating Password...' 
+                  : step === 2 
+                    ? '✓ Password Validated (OTP Sent)' 
+                    : 'Send OTP'}
+              </button>
+            </div>
+
+            {/* 8-Digit OTP Input Boxes section */}
+            <div className="auth-input-group" style={{ opacity: step < 2 ? 0.7 : 1 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <label htmlFor="otp" style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>2FA Verification Code (8 Digits)</label>
                 {step === 2 ? (
@@ -320,34 +339,36 @@ export default function Login({ accessDenied, denialReason }) {
                 showOtp={showOtp}
                 autoFocus={step === 2}
               />
-
-              {step === 2 && (
-                <div style={{ fontSize: '12px', color: '#10b981', marginTop: '4px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>🔒</span> 2FA verification code sent to {verifiedEmail}.
-                </div>
-              )}
             </div>
 
-            <div style={{ marginTop: '24px' }}>
-              {step === 1 ? (
-                <button type="button" className="auth-submit-btn" onClick={handlePasswordLogin} disabled={loading || !identifier || !password}>
-                  {loading ? 'Sending OTP Code...' : 'Send 2FA OTP Code & Continue'}
+            {/* Final validation button below OTP boxes */}
+            <div style={{ marginTop: '20px' }}>
+              <button 
+                type="submit" 
+                className="auth-submit-btn" 
+                onClick={handleOtpVerification}
+                disabled={loading || step < 2 || otp.length < 6}
+                style={{
+                  background: step < 2 ? '#9ca3af' : '#09090b',
+                  cursor: step < 2 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {loading && step === 2 ? 'Verifying OTP...' : 'Verify OTP & Sign In'}
+              </button>
+
+              {step === 2 && (
+                <button 
+                  type="button" 
+                  className="auth-submit-btn" 
+                  style={{ background: 'transparent', color: '#666', marginTop: '8px', border: '1px solid #eaeaea' }}
+                  onClick={() => {
+                    setStep(1)
+                    setMessage('')
+                  }}
+                  disabled={loading}
+                >
+                  ← Edit Credentials
                 </button>
-              ) : (
-                <>
-                  <button type="submit" className="auth-submit-btn" disabled={loading || otp.length < 6}>
-                    {loading ? 'Verifying Code...' : 'Complete Sign In'}
-                  </button>
-                  <button 
-                    type="button" 
-                    className="auth-submit-btn" 
-                    style={{ background: 'transparent', color: '#666', marginTop: '8px', border: '1px solid #eaeaea' }}
-                    onClick={() => setStep(1)}
-                    disabled={loading}
-                  >
-                    ← Change Email / Password
-                  </button>
-                </>
               )}
             </div>
 
