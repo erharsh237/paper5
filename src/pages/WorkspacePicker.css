@@ -1,7 +1,7 @@
 .workspace-picker-page {
   min-height: 100vh;
   width: 100vw;
-  background: var(--bg-void);
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -11,60 +11,15 @@
 }
 
 .wp-bg-elements {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
+  display: none !important;
 }
 
 .wp-orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.15;
-  animation: wp-float 15s infinite ease-in-out alternate;
-}
-
-.wp-orb-1 {
-  width: 500px;
-  height: 500px;
-  background: #0070f3;
-  top: -10%;
-  left: -10%;
-}
-
-.wp-orb-2 {
-  width: 400px;
-  height: 400px;
-  background: #7928ca;
-  bottom: -10%;
-  right: -5%;
-  animation-delay: -5s;
-}
-
-.wp-orb-3 {
-  width: 300px;
-  height: 300px;
-  background: #00dfd8;
-  top: 30%;
-  left: 60%;
-  animation-delay: -10s;
-}
-
-@keyframes wp-float {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(-30px, 50px) scale(1.1); }
+  display: none !important;
 }
 
 .wp-grid {
-  position: absolute;
-  inset: -100%;
-  background-image:
-    linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 20%, transparent 100%);
-  z-index: 1;
+  display: none !important;
 }
 
 .wp-container {
