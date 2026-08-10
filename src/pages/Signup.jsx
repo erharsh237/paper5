@@ -160,7 +160,7 @@ export default function Signup() {
       
       await sendSignupOtp(email)
       
-      setMessage('Verification code dispatched to your registered email.')
+      setMessage('An 8-digit verification code has been sent to your email address.')
       setStep(2)
       setCooldown(60)
       setFailedAttempts(0)
@@ -190,7 +190,7 @@ export default function Signup() {
       
       await verifyOtp(email, otp)
       
-      setMessage('Email verified securely. You may now set your password.')
+      setMessage('Email verified successfully! Please set your password to complete registration.')
       setStep(3)
     } catch (err) {
       console.error(err)
