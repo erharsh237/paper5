@@ -17,6 +17,7 @@ export default function WorkspacePicker() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [modalStep, setModalStep] = useState(1) // 1: Details, 2: Data Consent
   const [saveData, setSaveData] = useState(false) // default off
+  const [createError, setCreateError] = useState('')
 
   const userId = user?.id || user?.uid
 
