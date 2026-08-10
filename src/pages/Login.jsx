@@ -4,6 +4,7 @@ import { useAuth } from '../lib/AuthContext'
 import './Auth.css'
 import { InlineError, InlineSuccess } from '../components/states'
 import Turnstile from '../components/Turnstile'
+import OtpInput from '../components/OtpInput'
 
 const maskEmail = (email) => {
   if (!email || !email.includes('@')) return email;
@@ -308,43 +309,45 @@ export default function Login({ accessDenied, denialReason }) {
                     </button>
                   )}
                 </div>
-                <div style={{ position: 'relative' }}>
-                  <input 
-                    id="otp"
-                    type={showOtp ? 'text' : 'password'} 
-                    className="auth-input"
-                    placeholder="Enter verification code"
-                    value={otp}
-                    onChange={e => setOtp(e.target.value.replace(/\D/g, '').substring(0, 8))}
-                    required={step === 2}
-                    disabled={step < 2}
-                    autoComplete="one-time-code"
-                    style={{ width: '100%', paddingRight: '40px', letterSpacing: !showOtp && otp ? '4px' : 'normal' }}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowOtp(!showOtp)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: 'var(--text-secondary, #666)',
+                        fontSize: '11px',
+                        padding: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                      disabled={step < 2}
+                    >
+                      {showOtp ? (
+                        <>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                          Hide Digits
+                        </>
+                      ) : (
+                        <>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                          Show Digits
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <OtpInput 
+                    value={otp} 
+                    onChange={setOtp} 
+                    length={8} 
+                    disabled={step < 2} 
+                    showOtp={showOtp}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowOtp(!showOtp)}
-                    style={{
-                      position: 'absolute',
-                      right: '10px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: '#666',
-                      padding: 0,
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}
-                    disabled={step < 2}
-                  >
-                    {showOtp ? (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                    ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                    )}
-                  </button>
                 </div>
                 {step === 2 && (
                   <div style={{ fontSize: '12px', color: 'var(--text-secondary, #666)', marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
