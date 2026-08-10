@@ -124,7 +124,7 @@ export default function OnboardingWizardModal() {
         if (user?.email) {
           try {
             const { data: invites, error: inviteErr } = await supabase
-              .from('workspace_invites')
+              .from('invites')
               .select('id')
               .eq('email', user.email)
               .eq('status', 'pending')
