@@ -131,7 +131,7 @@ export function checkAccountLockout(identifier) {
  * - 3+ failures => 15 minute lockout
  */
 export function recordFailedAttempt(identifier) {
-  if (!identifier) return 1
+  if (!identifier) return { failedAttempts: 1, lockedUntil: 0, lockoutSeconds: 0 }
 
   const key = identifier.toLowerCase().trim()
   const state = getSecurityState()
@@ -142,8 +142,10 @@ export function recordFailedAttempt(identifier) {
   const attempts = accountData.failedAttempts
   let lockDurationMs = 0
 
-  if (attempts >= 3) {
-    lockDurationMs = 15 * 60 * 1000 // 15 minutes
+  if (attempts >= 10) {
+    lockDurationMs = 15 * 60 * 1000 // 15 minutes for persistent brute force
+  } else if (attempts >= 5) {
+    lockDurationMs = 60 * 1000 // 60 seconds progressive cooldown
   }
 
   if (lockDurationMs > 0) {

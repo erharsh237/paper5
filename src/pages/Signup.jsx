@@ -198,12 +198,11 @@ export default function Signup() {
       setFailedAttempts(0)
       resetSecurityState(email)
     } catch (err) {
-      const result = recordFailedAttempt(email)
-      setFailedAttempts(result.failedAttempts)
-      if (result.lockoutSeconds > 0) {
-        setLockoutTimer(result.lockoutSeconds)
-        setMessage(`Signup temporarily locked for ${result.lockoutSeconds} seconds due to repeated attempts.`)
-      }
+      console.error('OTP Dispatch Error:', err)
+      const friendlyMsg = err?.message?.includes('60 seconds') || err?.message?.includes('rate limit')
+        ? 'For security reasons, email verification codes can only be requested once every 60 seconds. Please check your inbox or wait a moment.'
+        : (err?.message || 'Unable to send verification code right now. Please check your email or try again shortly.')
+      setMessage(friendlyMsg)
     } finally {
       setLoading(false)
     }
