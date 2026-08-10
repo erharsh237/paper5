@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { createWorkspace } from '../lib/workspaces'
 import { supabase } from '../lib/supabase'
 import logo from '../assets/logo.png'
-import { Check, ArrowRight, Database, ShieldAlert, Sparkles, Building2, Users, Layers } from 'lucide-react'
+import { Check, ArrowRight, Database, ShieldAlert, Sparkles, Building2, Users, Layers, ShieldCheck } from 'lucide-react'
 import { TEAM_SIZE_OPTIONS, WORKFLOWS, getRecommendedWorkflow } from '../lib/workflows'
 
 const TIERS = [
@@ -66,13 +66,20 @@ export default function OnboardingWizardModal() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const [step, setStep] = useState(1) // 1: Tier Selection, 2: Workspace Creation & Data Consent
+  // 4-Step Wizard: 1: Pricing/Tier, 2: T&C Consent, 3: Workspace Creation, 4: Data Storing Consent
+  const [step, setStep] = useState(1)
   const [selectedTier, setSelectedTier] = useState('team')
 
-  // Workspace Creation Form State
+  // Step 2: Legal Consent State
+  const [termsAccepted, setTermsAccepted] = useState(true)
+  const [dpaAccepted, setDpaAccepted] = useState(true)
+
+  // Step 3: Workspace Creation Form State
   const [wsName, setWsName] = useState('')
   const [teamSize, setTeamSize] = useState('2-5')
   const [agileWorkflow, setAgileWorkflow] = useState('kanban')
+
+  // Step 4: Data Storing Consent State
   const [saveData, setSaveData] = useState(true)
   
   const [loading, setLoading] = useState(false)
@@ -102,6 +109,7 @@ export default function OnboardingWizardModal() {
     if (e) e.preventDefault()
     if (!wsName.trim()) {
       setError('Please enter a workspace name to continue.')
+      setStep(3)
       return
     }
 
@@ -109,12 +117,14 @@ export default function OnboardingWizardModal() {
     setError('')
 
     try {
-      // 1. Update Supabase users table with selected Account Tier
+      // 1. Update Supabase users table with selected Account Tier & Legal Consent
       const { error: dbError } = await supabase
         .from('users')
         .update({ 
           billing_plan_id: selectedTier,
           billing_status: 'active',
+          legal_accepted_version: '1.0.0',
+          legal_accepted_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id)
@@ -175,43 +185,43 @@ export default function OnboardingWizardModal() {
         {/* Header with Step Indicator */}
         <div style={{ marginBottom: '24px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-            <img src={logo} alt="Paper5 Logo" style={{ height: '32px', width: 'auto' }} />
+            <img src={logo} alt="SprintOS Logo" style={{ height: '32px', width: 'auto' }} />
             <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', color: '#09090b' }}>SprintOS™ Onboarding</span>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '16px' }}>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '6px', 
-              fontSize: '12px', 
-              fontWeight: 700,
-              color: step === 1 ? '#10b981' : '#71717a'
-            }}>
-              <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: step === 1 ? '#10b981' : '#e4e4e7', color: step === 1 ? '#ffffff' : '#71717a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px' }}>1</span>
-              Account Tier
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: step === 1 ? '#10b981' : '#71717a' }}>
+              <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: step === 1 ? '#10b981' : '#e4e4e7', color: step === 1 ? '#ffffff' : '#71717a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>1</span>
+              Pricing & Tier
             </div>
             <div style={{ color: '#d4d4d8' }}>•</div>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '6px', 
-              fontSize: '12px', 
-              fontWeight: 700,
-              color: step === 2 ? '#10b981' : '#71717a'
-            }}>
-              <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: step === 2 ? '#10b981' : '#e4e4e7', color: step === 2 ? '#ffffff' : '#71717a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px' }}>2</span>
-              Workspace & Data Preference
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: step === 2 ? '#10b981' : '#71717a' }}>
+              <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: step === 2 ? '#10b981' : '#e4e4e7', color: step === 2 ? '#ffffff' : '#71717a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>2</span>
+              T&C & Consent
+            </div>
+            <div style={{ color: '#d4d4d8' }}>•</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: step === 3 ? '#10b981' : '#71717a' }}>
+              <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: step === 3 ? '#10b981' : '#e4e4e7', color: step === 3 ? '#ffffff' : '#71717a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>3</span>
+              Workspace
+            </div>
+            <div style={{ color: '#d4d4d8' }}>•</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: step === 4 ? '#10b981' : '#71717a' }}>
+              <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: step === 4 ? '#10b981' : '#e4e4e7', color: step === 4 ? '#ffffff' : '#71717a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>4</span>
+              Data Consent
             </div>
           </div>
 
           <h2 style={{ fontSize: '24px', fontWeight: 800, margin: '0 0 8px 0', letterSpacing: '-0.02em', color: '#09090b' }}>
-            {step === 1 ? 'Select Your Account Tier' : 'Provision Your Workspace'}
+            {step === 1 && 'Select Your Account Tier'}
+            {step === 2 && 'Terms & Compliance Agreements'}
+            {step === 3 && 'Create Your Team Workspace'}
+            {step === 4 && 'Data Storage & Persistence Preference'}
           </h2>
           <p style={{ margin: 0, fontSize: '14px', color: '#71717a', lineHeight: 1.5, maxWidth: '600px', marginLeft: 'auto', marginRight: 'auto' }}>
-            {step === 1 
-              ? 'Choose an account tier to unlock SprintOS. Paid plans are 100% Free during Launch.' 
-              : 'Set up your team workspace and configure cloud data persistence preferences.'}
+            {step === 1 && 'Choose an account tier to unlock SprintOS. Paid plans are 100% Free during Launch.'}
+            {step === 2 && 'Review and accept our legal terms, privacy policy, and data processing agreement to continue.'}
+            {step === 3 && 'Name your workspace and align your agile workflow methodology.'}
+            {step === 4 && 'Choose whether to enable persistent cloud database backup or transient memory mode.'}
           </p>
         </div>
 
@@ -221,7 +231,7 @@ export default function OnboardingWizardModal() {
           </div>
         )}
 
-        {/* STEP 1: Account Tier Cards */}
+        {/* STEP 1: Account Tier Selection */}
         {step === 1 && (
           <div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '28px', textAlign: 'left' }}>
@@ -299,8 +309,7 @@ export default function OnboardingWizardModal() {
               onClick={() => setStep(2)}
               style={{
                 width: '100%',
-                maxWidth: '380px',
-                padding: '14px 28px',
+                padding: '14px',
                 borderRadius: '10px',
                 background: '#09090b',
                 color: '#ffffff',
@@ -308,176 +317,351 @@ export default function OnboardingWizardModal() {
                 fontWeight: 700,
                 border: 'none',
                 cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                display: 'inline-flex',
+                display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px'
+                gap: '8px',
+                transition: 'all 0.2s ease'
               }}
             >
-              <span>Next: Setup Workspace & Data Preferences</span>
-              <ArrowRight size={16} />
+              <span>Continue to Terms & Consent</span>
+              <ArrowRight size={18} />
             </button>
           </div>
         )}
 
-        {/* STEP 2: Workspace Provisioning & Data Storage Consent */}
+        {/* STEP 2: T&C and Legal Consent */}
         {step === 2 && (
-          <form onSubmit={handleCompleteOnboarding} style={{ textAlign: 'left' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '24px' }}>
-              {/* Workspace Name */}
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#18181b', marginBottom: '6px' }}>
-                  Workspace Name
+          <div style={{ textAlign: 'left', maxWidth: '640px', margin: '0 auto' }}>
+            <div style={{ padding: '20px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: '#0f172a', fontWeight: 700, fontSize: '15px' }}>
+                <ShieldCheck size={20} color="#10b981" />
+                <span>SprintOS Legal & Compliance Framework</span>
+              </div>
+              <p style={{ fontSize: '13px', color: '#475569', lineHeight: 1.6, margin: '0 0 16px 0' }}>
+                Before setting up your workspace, please review our legal terms. By continuing, you agree to comply with our terms of service, privacy practices, and security agreements.
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', fontSize: '13px', color: '#1e293b' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={termsAccepted} 
+                    onChange={e => setTermsAccepted(e.target.checked)} 
+                    style={{ marginTop: '3px', accentColor: '#10b981', width: '16px', height: '16px' }}
+                  />
+                  <span>
+                    I accept the <a href="/terms" target="_blank" rel="noreferrer" style={{ color: '#10b981', textDecoration: 'underline' }}>Terms of Service</a> and <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: '#10b981', textDecoration: 'underline' }}>Privacy Policy</a>.
+                  </span>
                 </label>
-                <input 
-                  type="text"
-                  placeholder="e.g. Acme Engineering or Starlight Product"
-                  value={wsName}
-                  onChange={e => setWsName(e.target.value)}
-                  required
-                  autoFocus
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid #d4d4d8',
-                    fontSize: '14px',
-                    color: '#09090b',
-                    background: '#ffffff'
-                  }}
-                />
-              </div>
 
-              {/* Team Size & Workflow */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#18181b', marginBottom: '6px' }}>
-                    Team Size
-                  </label>
-                  <select
-                    value={teamSize}
-                    onChange={e => handleTeamSizeChange(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '8px',
-                      border: '1px solid #d4d4d8',
-                      fontSize: '14px',
-                      color: '#09090b',
-                      background: '#ffffff'
-                    }}
-                  >
-                    {TEAM_SIZE_OPTIONS.map(opt => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#18181b', marginBottom: '6px' }}>
-                    Agile Methodology Workflow
-                  </label>
-                  <select
-                    value={agileWorkflow}
-                    onChange={e => setAgileWorkflow(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '8px',
-                      border: '1px solid #d4d4d8',
-                      fontSize: '14px',
-                      color: '#09090b',
-                      background: '#ffffff'
-                    }}
-                  >
-                    {WORKFLOWS.map(wf => (
-                      <option key={wf.id} value={wf.id}>{wf.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* 💾 Save Data to Cloud Database Toggle & Disclaimers */}
-              <div style={{ padding: '16px', background: '#f4f4f5', borderRadius: '10px', border: '1px solid #e4e4e7' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <div>
-                    <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700, color: '#09090b' }}>
-                      💾 Save Data to Cloud Database
-                    </h4>
-                    <p style={{ margin: 0, fontSize: '12px', color: '#71717a' }}>
-                      {saveData 
-                        ? 'Cloud Persistence Active: Workspace tasks, sprints, and settings are stored in PostgreSQL.' 
-                        : '🔒 Zero-Data Retention Mode: Data is stored in browser memory only and destroyed on session close.'}
-                    </p>
-                  </div>
-                  <label className="toggle-switch">
-                    <input 
-                      type="checkbox" 
-                      checked={saveData} 
-                      onChange={e => setSaveData(e.target.checked)} 
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
-
-                {/* Dynamic Disclaimers */}
-                <div style={{ 
-                  padding: '10px 12px', 
-                  borderRadius: '6px', 
-                  fontSize: '11px', 
-                  lineHeight: 1.45,
-                  background: saveData ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
-                  color: saveData ? '#047857' : '#b91c1c',
-                  border: saveData ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(239, 68, 68, 0.25)'
-                }}>
-                  <strong>Disclaimer:</strong> {saveData 
-                    ? 'Workspace data is encrypted and backed up daily in our secure cloud database. While automated snapshots and point-in-time recovery are maintained, administrators remain responsible for maintaining local offline backups via Workspace Settings → Export.'
-                    : 'Data is stored solely in volatile browser session memory. Closing your tab, clearing cache, or logging out will permanently erase workspace data. Neither Paper5™ nor SprintOS™ will be held responsible or liable for any data loss resulting from Zero-Data Retention Mode.'}
-                </div>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', fontSize: '13px', color: '#1e293b' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={dpaAccepted} 
+                    onChange={e => setDpaAccepted(e.target.checked)} 
+                    style={{ marginTop: '3px', accentColor: '#10b981', width: '16px', height: '16px' }}
+                  />
+                  <span>
+                    I acknowledge the <a href="/dpa" target="_blank" rel="noreferrer" style={{ color: '#10b981', textDecoration: 'underline' }}>Data Processing Agreement (DPA)</a> and vendor subprocessors.
+                  </span>
+                </label>
               </div>
             </div>
 
-            {/* Buttons */}
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', borderTop: '1px solid #f4f4f5', paddingTop: '16px' }}>
+            <div style={{ display: 'flex', gap: '12px' }}>
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                disabled={loading}
                 style={{
-                  padding: '12px 20px',
-                  borderRadius: '8px',
-                  background: 'none',
-                  border: '1px solid #d4d4d8',
-                  color: '#3f3f46',
+                  padding: '14px 20px',
+                  borderRadius: '10px',
+                  background: '#f4f4f5',
+                  color: '#27272a',
                   fontSize: '14px',
                   fontWeight: 600,
+                  border: '1px solid #e4e4e7',
                   cursor: 'pointer'
                 }}
               >
-                Back to Tiers
+                ← Back
               </button>
 
               <button
-                type="submit"
-                disabled={loading || !wsName.trim()}
+                type="button"
+                onClick={() => setStep(3)}
+                disabled={!termsAccepted || !dpaAccepted}
                 style={{
-                  padding: '12px 24px',
-                  borderRadius: '8px',
-                  background: '#09090b',
+                  flex: 1,
+                  padding: '14px',
+                  borderRadius: '10px',
+                  background: (!termsAccepted || !dpaAccepted) ? '#9ca3af' : '#09090b',
                   color: '#ffffff',
-                  fontSize: '14px',
+                  fontSize: '15px',
                   fontWeight: 700,
                   border: 'none',
-                  cursor: loading ? 'wait' : 'pointer',
-                  opacity: (loading || !wsName.trim()) ? 0.6 : 1,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                  cursor: (!termsAccepted || !dpaAccepted) ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
                 }}
               >
-                {loading ? 'Creating Workspace...' : '🚀 Launch SprintOS Workspace'}
+                <span>Accept & Continue to Workspace</span>
+                <ArrowRight size={18} />
               </button>
             </div>
-          </form>
+          </div>
+        )}
+
+        {/* STEP 3: Workspace Creation */}
+        {step === 3 && (
+          <div style={{ textAlign: 'left', maxWidth: '640px', margin: '0 auto' }}>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 700, color: '#27272a', marginBottom: '6px', display: 'block' }}>
+                1. Workspace Name:
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input 
+                  type="text"
+                  placeholder="e.g. Acme Product Engineering"
+                  value={wsName}
+                  onChange={e => setWsName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px 12px 40px',
+                    borderRadius: '8px',
+                    border: '1px solid #d4d4d8',
+                    fontSize: '14px',
+                    background: '#ffffff',
+                    color: '#09090b',
+                    outline: 'none',
+                    fontWeight: 500
+                  }}
+                  autoFocus
+                />
+                <Building2 size={18} color="#71717a" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 700, color: '#27272a', marginBottom: '6px', display: 'block' }}>
+                2. Expected Team Size:
+              </label>
+              <select
+                value={teamSize}
+                onChange={e => handleTeamSizeChange(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  border: '1px solid #d4d4d8',
+                  fontSize: '14px',
+                  background: '#ffffff',
+                  color: '#09090b',
+                  outline: 'none',
+                  fontWeight: 500
+                }}
+              >
+                {TEAM_SIZE_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '28px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 700, color: '#27272a', margin: 0 }}>
+                  3. Aligned Agile Workflow Methodology:
+                </label>
+                <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 700 }}>
+                  Auto-aligned to Team Size
+                </span>
+              </div>
+              
+              <select
+                value={agileWorkflow}
+                onChange={e => setAgileWorkflow(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  border: '1px solid #d4d4d8',
+                  fontSize: '14px',
+                  background: '#ffffff',
+                  color: '#09090b',
+                  outline: 'none',
+                  fontWeight: 500
+                }}
+              >
+                {WORKFLOWS.map(wf => (
+                  <option key={wf.id} value={wf.id}>
+                    {wf.num}. {wf.name} ({wf.teamSizeLabel})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                type="button"
+                onClick={() => setStep(2)}
+                style={{
+                  padding: '14px 20px',
+                  borderRadius: '10px',
+                  background: '#f4f4f5',
+                  color: '#27272a',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  border: '1px solid #e4e4e7',
+                  cursor: 'pointer'
+                }}
+              >
+                ← Back
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!wsName.trim()) {
+                    setError('Please enter a workspace name to continue.')
+                    return
+                  }
+                  setError('')
+                  setStep(4)
+                }}
+                disabled={!wsName.trim()}
+                style={{
+                  flex: 1,
+                  padding: '14px',
+                  borderRadius: '10px',
+                  background: !wsName.trim() ? '#9ca3af' : '#09090b',
+                  color: '#ffffff',
+                  fontSize: '15px',
+                  fontWeight: 700,
+                  border: 'none',
+                  cursor: !wsName.trim() ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+              >
+                <span>Continue to Data Storage Consent</span>
+                <ArrowRight size={18} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 4: Data Storing Consent */}
+        {step === 4 && (
+          <div style={{ textAlign: 'left', maxWidth: '640px', margin: '0 auto' }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
+              padding: '20px',
+              marginBottom: '28px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Database size={20} color="#10b981" />
+                  <span style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>Cloud Data Persistence</span>
+                </div>
+                
+                <label style={{ position: 'relative', display: 'inline-block', width: '48px', height: '26px', cursor: 'pointer' }}>
+                  <input 
+                    type="checkbox"
+                    checked={saveData}
+                    onChange={e => setSaveData(e.target.checked)}
+                    style={{ opacity: 0, width: 0, height: 0 }}
+                  />
+                  <span style={{
+                    position: 'absolute',
+                    inset: 0,
+                    backgroundColor: saveData ? '#10b981' : '#cbd5e1',
+                    borderRadius: '34px',
+                    transition: '0.2s ease'
+                  }}>
+                    <span style={{
+                      position: 'absolute',
+                      content: '""',
+                      height: '20px',
+                      width: '20px',
+                      left: saveData ? '24px' : '3px',
+                      bottom: '3px',
+                      backgroundColor: '#ffffff',
+                      borderRadius: '50%',
+                      transition: '0.2s ease'
+                    }} />
+                  </span>
+                </label>
+              </div>
+
+              {saveData ? (
+                <div style={{ fontSize: '13px', color: '#334155', lineHeight: 1.6 }}>
+                  <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ color: '#10b981' }}>✓</span> Cloud Sync Enabled (Recommended)
+                  </div>
+                  Workspaces, sprints, and team task items are securely persisted in encrypted database storage for cross-device synchronization and team collaboration.
+                </div>
+              ) : (
+                <div style={{ fontSize: '13px', color: '#b45309', lineHeight: 1.6 }}>
+                  <div style={{ fontWeight: 700, color: '#92400e', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <ShieldAlert size={16} color="#d97706" /> Zero-Data Retention Mode Active
+                  </div>
+                  No workspace telemetry or task data is stored on remote servers. All sprint items exist strictly in local browser memory. Closing your browser session permanently purges transient workspace data.
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                type="button"
+                onClick={() => setStep(3)}
+                disabled={loading}
+                style={{
+                  padding: '14px 20px',
+                  borderRadius: '10px',
+                  background: '#f4f4f5',
+                  color: '#27272a',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  border: '1px solid #e4e4e7',
+                  cursor: loading ? 'not-allowed' : 'pointer'
+                }}
+              >
+                ← Back
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCompleteOnboarding}
+                disabled={loading}
+                style={{
+                  flex: 1,
+                  padding: '14px',
+                  borderRadius: '10px',
+                  background: '#10b981',
+                  color: '#ffffff',
+                  fontSize: '15px',
+                  fontWeight: 700,
+                  border: 'none',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)'
+                }}
+              >
+                <span>{loading ? 'Setting up Workspace...' : '🚀 Launch SprintOS Workspace'}</span>
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>
