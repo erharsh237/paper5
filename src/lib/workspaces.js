@@ -166,15 +166,19 @@ export async function createWorkspace(uid, email, name, teamSize = '2-5', agileW
   }
 
   // Update workspace settings with team_size, agile_workflow, and save_data preference
-  await supabase.from('workspaces').update({
-    settings: {
-      team_size: teamSize,
-      agile_workflow: agileWorkflow,
-      save_data: saveData,
-      configured_by: creatorId,
-      configured_at: new Date().toISOString()
-    }
-  }).eq('id', newWorkspaceId).catch(err => console.error('Failed to update workspace workflow settings:', err))
+  try {
+    await supabase.from('workspaces').update({
+      settings: {
+        team_size: teamSize,
+        agile_workflow: agileWorkflow,
+        save_data: saveData,
+        configured_by: creatorId,
+        configured_at: new Date().toISOString()
+      }
+    }).eq('id', newWorkspaceId)
+  } catch (err) {
+    console.error('Failed to update workspace workflow settings:', err)
+  }
 
   return newWorkspaceId
 }
