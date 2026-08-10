@@ -156,7 +156,7 @@ export default function App() {
             <WorkspacePicker />
           } />
           <Route path="/login" element={user && user.emailVerified && (userData?.username || user?.user_metadata?.username) && !isPending2FA ? <Navigate to="/workspace" replace /> : <Login />} />
-          <Route path="/signup" element={user && user.emailVerified && (userData?.username || user?.user_metadata?.username) ? <Navigate to="/workspace" replace /> : <Signup />} />
+          <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify" element={
             (user && user.emailVerified) ? <Navigate to="/workspace" replace /> : 
