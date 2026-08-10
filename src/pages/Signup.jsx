@@ -91,6 +91,7 @@ export default function Signup() {
         setLockoutTimer(t => {
           if (t <= 1) {
             setFailedAttempts(0)
+            setMessage('')
             return 0
           }
           return t - 1
@@ -275,15 +276,19 @@ export default function Signup() {
           <h1>Create your account</h1>
           <p className="auth-subtitle">Enter your email below to create your account</p>
 
-          {displayError && (
+          {lockoutTimer > 0 ? (
+            <div style={{ marginBottom: 16 }}>
+              <InlineError error={`Account is temporarily locked due to multiple failed attempts. Please try again in ${Math.floor(lockoutTimer / 60)}m ${lockoutTimer % 60}s.`} />
+            </div>
+          ) : displayError ? (
             <div style={{ marginBottom: 16 }}>
               <InlineError error={displayError.replace(/^Error:\s*/i, '')} />
             </div>
-          )}
+          ) : null}
 
-          {message && !(message.includes('already') || message.includes('must') || message.includes('required') || message.includes('failed') || message.includes('unable') || message.includes('locked')) ? (
+          {!lockoutTimer && message && !(message.includes('already') || message.includes('must') || message.includes('required') || message.includes('failed') || message.includes('unable') || message.includes('locked')) ? (
             <InlineSuccess message={message} />
-          ) : message && (
+          ) : !lockoutTimer && message && (
             <InlineError error={message.replace(/^Error:\s*/i, '')} />
           )}
 
@@ -299,7 +304,7 @@ export default function Signup() {
                 value={username}
                 onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                 required
-                disabled={step > 1}
+                disabled={step > 1 || lockoutTimer > 0}
                 autoComplete="off"
               />
             </div>
@@ -314,13 +319,23 @@ export default function Signup() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
-                disabled={step > 1}
+                disabled={step > 1 || lockoutTimer > 0}
               />
             </div>
 
             {step === 1 && (
-              <button type="button" className="auth-submit-btn" onClick={handleSendOtp} disabled={loading || !username || !email}>
-                {loading ? 'Sending Code...' : 'Verify Email with OTP'}
+              <button 
+                type="button" 
+                className="auth-submit-btn" 
+                onClick={handleSendOtp} 
+                disabled={loading || !username || !email || lockoutTimer > 0}
+                style={lockoutTimer > 0 ? { opacity: 0.5, cursor: 'not-allowed', background: '#9ca3af', borderColor: '#9ca3af' } : {}}
+              >
+                {loading 
+                  ? 'Sending Code...' 
+                  : lockoutTimer > 0 
+                    ? `Try again in ${Math.floor(lockoutTimer / 60)}m ${lockoutTimer % 60}s` 
+                    : 'Verify Email with OTP'}
               </button>
             )}
 
