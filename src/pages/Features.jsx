@@ -29,7 +29,7 @@ export default function Features() {
           Eliminate administrative friction. SprintOS™ unites 8-tier Agile methodologies, 1-Click API automation, live stack integrations, and PDF data ownership in a single minimalist platform.
         </p>
         <div className="features-hero-actions">
-          <button className="btn-primary" style={{ padding: '12px 28px', fontSize: '15px' }} onClick={() => navigate('/signup')}>
+          <button className="btn-primary" style={{ padding: '12px 28px', fontSize: '15px' }} onClick={() => navigate('/#pricing')}>
             🚀 Start Free Workspace
           </button>
           <button className="btn-ghost" style={{ padding: '12px 28px', fontSize: '15px' }} onClick={() => navigate('/product-integrations')}>
