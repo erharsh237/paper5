@@ -470,36 +470,7 @@ export default function Signup() {
 
                 {step === 3 && (
                   <div style={{ marginTop: '20px', textAlign: 'left' }}>
-                    <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary, #4b5563)', marginBottom: '8px', display: 'block' }}>
-                      1. Select Account Tier (Early Access Unlocked):
-                    </label>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '16px' }}>
-                      {[
-                        { id: 'free', name: 'Starter', price: 'Free', desc: '1 Workspace (3 Seats)' },
-                        { id: 'team', name: 'Team', price: '$29/mo', desc: '5 Workspaces (7 Seats)' },
-                        { id: 'scale', name: 'Scale', price: '$79/mo', desc: '10 Workspaces (Unlimited)' }
-                      ].map(p => (
-                        <div 
-                          key={p.id}
-                          onClick={() => handlePlanChange(p.id)}
-                          style={{
-                            padding: '10px 8px',
-                            borderRadius: '8px',
-                            border: selectedPlan === p.id ? '2px solid #10b981' : '1px solid var(--border-subtle, #e5e7eb)',
-                            background: selectedPlan === p.id ? 'rgba(16, 185, 129, 0.06)' : 'var(--bg-layer-2, #ffffff)',
-                            cursor: 'pointer',
-                            textAlign: 'center',
-                            transition: 'all 0.2s'
-                          }}
-                        >
-                          <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{p.name}</div>
-                          <div style={{ fontSize: '12px', color: '#10b981', fontWeight: 600, margin: '2px 0' }}>{p.price}</div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-tertiary, #6b7280)' }}>{p.desc}</div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* 2. Team Size Selection */}
+                    {/* 1. Team Size Selection */}
                     <div style={{ marginBottom: '16px' }}>
                       <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary, #4b5563)', marginBottom: '6px', display: 'block' }}>
                         2. Expected Team Size (Admin Configuration):
