@@ -225,19 +225,9 @@ export default function Landing() {
                     <ModernTextReveal text="Everything on paper.<br />Nothing on trust." />
                   </ErrorBoundary>
                 </h1>
-                <p style={{ fontSize: '19px', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '780px', margin: '0 auto 36px auto' }}>
+                <p style={{ fontSize: '19px', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '780px', margin: '0 auto' }}>
                   SprintOS™ by Paper5™ is the zero-friction engineering execution platform. Unites 8-tier Agile methodologies, 1-Click API webhooks, GitHub PR sync, and vector PDF data export in one interface.
                 </p>
-                <div className="hero-cta-group" style={{ justifyContent: 'center' }}>
-                  {user ? (
-                    <button className="btn-primary btn-lg" onClick={() => navigate('/workspace')}>🚀 Open Workspace Dashboard</button>
-                  ) : (
-                    <>
-                      <button className="btn-primary btn-lg" onClick={() => navigate('/signup')}>🚀 Start Free Workspace</button>
-                      <button className="btn-ghost btn-lg" onClick={() => navigate('/features')}>⚡ Explore Features Suite</button>
-                    </>
-                  )}
-                </div>
               </div>
             </div>
           </section>
