@@ -89,26 +89,17 @@ export function validateUsername(username) {
 
   const clean = username.trim()
 
-  if (clean.length < 3) {
-    return { valid: false, error: 'Username must be at least 3 characters long.' }
+  if (clean.length < 5) {
+    return { valid: false, error: 'Username must be at least 5 characters long.' }
   }
 
   if (clean.length > 20) {
     return { valid: false, error: 'Username cannot exceed 20 characters.' }
   }
 
-  const validRegex = /^[a-zA-Z0-9_-]+$/
+  const validRegex = /^[a-zA-Z0-9]+$/
   if (!validRegex.test(clean)) {
-    return { valid: false, error: 'Username can only contain letters, numbers, underscores (_), and hyphens (-).' }
-  }
-
-  const startEndRegex = /^[a-zA-Z0-9].*[a-zA-Z0-9]$/
-  if (clean.length > 1 && !startEndRegex.test(clean)) {
-    return { valid: false, error: 'Username must start and end with a letter or number.' }
-  }
-
-  if (/([_-])\1/.test(clean)) {
-    return { valid: false, error: 'Username cannot contain consecutive underscores or hyphens.' }
+    return { valid: false, error: 'Username can only contain letters and numbers (no special characters, underscores, or hyphens).' }
   }
 
   const RESERVED_USERNAMES = new Set([

@@ -300,9 +300,9 @@ export default function Signup() {
                 id="username"
                 type="text" 
                 className="auth-input"
-                placeholder="e.g. acme_admin"
+                placeholder="e.g. acmeadmin"
                 value={username}
-                onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ''))}
                 required
                 disabled={step > 1 || lockoutTimer > 0}
                 autoComplete="off"
