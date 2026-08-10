@@ -569,7 +569,7 @@ export default function Signup() {
           </div>
 
           <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle, #f0f0f0)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-tertiary, #888)', fontFamily: 'var(--mono)' }}>
-            <span style={{ color: '#10b981' }}>🛡️</span> Protected by Cloudflare Turnstile Anti-Bot Challenge Tokens
+            Protected by Cloudflare Turnstile Anti-Bot Challenge Tokens
           </div>
         </div>
       </div>
