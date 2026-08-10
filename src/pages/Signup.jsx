@@ -53,6 +53,7 @@ export default function Signup() {
   const [lockoutTimer, setLockoutTimer] = useState(0)
   const [showOtp, setShowOtp] = useState(false)
   const [showSignupPassword, setShowSignupPassword] = useState(false)
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false)
   const [displayError, setDisplayError] = useState(null)
   const [turnstileToken, setTurnstileToken] = useState(null)
   const turnstileRef = useRef(null)
@@ -389,6 +390,8 @@ export default function Signup() {
                     placeholder="Min 8 chars (A-Z, a-z, 0-9, special)"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
+                    onFocus={() => setIsPasswordFocused(true)}
+                    onBlur={() => setIsPasswordFocused(false)}
                     required={step === 3}
                     maxLength={72}
                     disabled={step < 3}
@@ -418,30 +421,66 @@ export default function Signup() {
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                     )}
                   </button>
-                </div>
 
-                {step === 3 && (
-                  <div style={{ marginTop: '10px', background: 'var(--bg-inset, #f8f9fa)', padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--border-subtle, #e5e7eb)', fontSize: '12px' }}>
-                    <div style={{ fontWeight: 600, marginBottom: '4px', color: 'var(--text-secondary, #4b5563)' }}>Password Requirements:</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
-                      <span style={{ color: validatePassword(password).requirements.minLength ? '#0f9d63' : '#6b7280' }}>
-                        {validatePassword(password).requirements.minLength ? '✓' : '○'} Min 8 chars
-                      </span>
-                      <span style={{ color: validatePassword(password).requirements.hasUpper ? '#0f9d63' : '#6b7280' }}>
-                        {validatePassword(password).requirements.hasUpper ? '✓' : '○'} Uppercase (A-Z)
-                      </span>
-                      <span style={{ color: validatePassword(password).requirements.hasLower ? '#0f9d63' : '#6b7280' }}>
-                        {validatePassword(password).requirements.hasLower ? '✓' : '○'} Lowercase (a-z)
-                      </span>
-                      <span style={{ color: validatePassword(password).requirements.hasNumber ? '#0f9d63' : '#6b7280' }}>
-                        {validatePassword(password).requirements.hasNumber ? '✓' : '○'} Number (0-9)
-                      </span>
-                      <span style={{ color: validatePassword(password).requirements.hasSpecial ? '#0f9d63' : '#6b7280', gridColumn: 'span 2' }}>
-                        {validatePassword(password).requirements.hasSpecial ? '✓' : '○'} Special char (!@#$%^&*)
-                      </span>
+                  {/* Password Requirements Tooltip (Right side, black bg) */}
+                  {step === 3 && (isPasswordFocused || password.length > 0) && (
+                    <div style={{
+                      position: 'absolute',
+                      left: 'calc(100% + 14px)',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: '210px',
+                      background: '#09090b',
+                      color: '#ffffff',
+                      padding: '12px 14px',
+                      borderRadius: '10px',
+                      border: '1px solid #27272a',
+                      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.4)',
+                      fontSize: '11px',
+                      zIndex: 1000,
+                      pointerEvents: 'none'
+                    }}>
+                      {/* Pointer Arrow */}
+                      <div style={{
+                        position: 'absolute',
+                        left: '-6px',
+                        top: '50%',
+                        transform: 'translateY(-50%) rotate(45deg)',
+                        width: '10px',
+                        height: '10px',
+                        background: '#09090b',
+                        borderLeft: '1px solid #27272a',
+                        borderBottom: '1px solid #27272a'
+                      }} />
+
+                      <div style={{ fontWeight: 700, marginBottom: '6px', color: '#f4f4f5', fontSize: '11px', letterSpacing: '0.02em' }}>
+                        Password Requirements:
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: validatePassword(password).requirements.minLength ? '#10b981' : '#a1a1aa' }}>
+                          <span style={{ fontWeight: 700 }}>{validatePassword(password).requirements.minLength ? '✓' : '○'}</span>
+                          <span>Min 8 chars</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: validatePassword(password).requirements.hasUpper ? '#10b981' : '#a1a1aa' }}>
+                          <span style={{ fontWeight: 700 }}>{validatePassword(password).requirements.hasUpper ? '✓' : '○'}</span>
+                          <span>Uppercase (A-Z)</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: validatePassword(password).requirements.hasLower ? '#10b981' : '#a1a1aa' }}>
+                          <span style={{ fontWeight: 700 }}>{validatePassword(password).requirements.hasLower ? '✓' : '○'}</span>
+                          <span>Lowercase (a-z)</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: validatePassword(password).requirements.hasNumber ? '#10b981' : '#a1a1aa' }}>
+                          <span style={{ fontWeight: 700 }}>{validatePassword(password).requirements.hasNumber ? '✓' : '○'}</span>
+                          <span>Number (0-9)</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: validatePassword(password).requirements.hasSpecial ? '#10b981' : '#a1a1aa' }}>
+                          <span style={{ fontWeight: 700 }}>{validatePassword(password).requirements.hasSpecial ? '✓' : '○'}</span>
+                          <span>Special char (!@#$%^&*)</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
 
               </div>
             </div>
