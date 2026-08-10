@@ -249,22 +249,30 @@ export default function Signup() {
             <div style={{ marginBottom: 16 }}>
               <InlineError error={`Account is temporarily locked due to multiple failed attempts. Please try again in ${Math.floor(lockoutTimer / 60)}m ${lockoutTimer % 60}s.`} />
             </div>
-          ) : displayError && displayError !== message ? (
-            <div style={{ marginBottom: 16 }}>
-              <InlineError error={displayError.replace(/^Error:\s*/i, '')} />
-            </div>
-          ) : null}
+          ) : (message || displayError) ? (
+            (() => {
+              const activeMsg = message || displayError
+              const isSuccess = (
+                activeMsg.toLowerCase().includes('success') || 
+                activeMsg.toLowerCase().includes('verified') || 
+                activeMsg.toLowerCase().includes('an 8-digit')
+              ) && 
+              !activeMsg.toLowerCase().includes('invalid') && 
+              !activeMsg.toLowerCase().includes('error') && 
+              !activeMsg.toLowerCase().includes('failed') &&
+              !activeMsg.toLowerCase().includes('taken')
 
-          {!lockoutTimer && message && (
-            (message.toLowerCase().includes('success') || message.toLowerCase().includes('verified') || message.toLowerCase().includes('an 8-digit')) &&
-            !message.toLowerCase().includes('invalid') &&
-            !message.toLowerCase().includes('error') &&
-            !message.toLowerCase().includes('failed')
-          ) ? (
-            <InlineSuccess message={message} />
-          ) : !lockoutTimer && message && (
-            <InlineError error={message.replace(/^Error:\s*/i, '')} />
-          )}
+              return isSuccess ? (
+                <div style={{ marginBottom: 16 }}>
+                  <InlineSuccess message={activeMsg} />
+                </div>
+              ) : (
+                <div style={{ marginBottom: 16 }}>
+                  <InlineError error={activeMsg.replace(/^Error:\s*/i, '')} />
+                </div>
+              )
+            })()
+          ) : null}
 
           <form onSubmit={handleCompleteSignup} style={{ textAlign: 'left' }}>
             {/* Step 1: Info */}

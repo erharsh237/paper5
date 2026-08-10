@@ -205,28 +205,34 @@ export default function Login({ accessDenied, denialReason }) {
           <h1>Welcome back</h1>
           <p className="auth-subtitle">Login to your account</p>
 
-          {accessDenied && (
+          {accessDenied ? (
             <div style={{ marginBottom: 16 }}>
               <InlineError error={denialReason || "You don't have access to this page."} />
             </div>
-          )}
+          ) : (message || displayError) ? (
+            (() => {
+              const activeMsg = message || displayError
+              const isSuccess = (
+                activeMsg.toLowerCase().includes('success') || 
+                activeMsg.toLowerCase().includes('verified') || 
+                activeMsg.toLowerCase().includes('password validated')
+              ) && 
+              !activeMsg.toLowerCase().includes('invalid') && 
+              !activeMsg.toLowerCase().includes('error') && 
+              !activeMsg.toLowerCase().includes('failed') &&
+              !activeMsg.toLowerCase().includes('not found')
 
-          {displayError && displayError !== message && (
-            <div style={{ marginBottom: 16 }}>
-              <InlineError error={displayError.replace(/^Error:\s*/i, '')} />
-            </div>
-          )}
-
-          {message && (
-            (message.toLowerCase().includes('success') || message.toLowerCase().includes('verified') || message.toLowerCase().includes('password validated')) &&
-            !message.toLowerCase().includes('invalid') &&
-            !message.toLowerCase().includes('error') &&
-            !message.toLowerCase().includes('failed')
-          ) ? (
-            <InlineSuccess message={message} />
-          ) : message && (
-            <InlineError error={message.replace(/^Error:\s*/i, '')} />
-          )}
+              return isSuccess ? (
+                <div style={{ marginBottom: 16 }}>
+                  <InlineSuccess message={activeMsg} />
+                </div>
+              ) : (
+                <div style={{ marginBottom: 16 }}>
+                  <InlineError error={activeMsg.replace(/^Error:\s*/i, '')} />
+                </div>
+              )
+            })()
+          ) : null}
 
           <form onSubmit={step === 2 ? handleOtpVerification : (e) => e.preventDefault()} style={{ textAlign: 'left' }}>
             <div className="auth-input-group">
