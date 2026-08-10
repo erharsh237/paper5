@@ -171,7 +171,9 @@ export default function WorkspacePicker() {
           position: 'fixed',
           inset: 0,
           zIndex: 999999,
-          background: '#ffffff',
+          background: 'rgba(255, 255, 255, 0.75)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -179,15 +181,17 @@ export default function WorkspacePicker() {
           overflowY: 'auto'
         }}>
           <div style={{
-            background: '#ffffff',
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
             borderRadius: '16px',
             maxWidth: '560px',
             width: '100%',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
-            border: '1px solid #e4e4e7',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.08)',
+            border: '1px solid rgba(0, 0, 0, 0.08)',
             padding: '32px',
             textAlign: 'left',
-            color: '#18181b',
+            color: '#09090b',
             position: 'relative'
           }}>
             {/* Realtime Header */}
@@ -239,7 +243,7 @@ export default function WorkspacePicker() {
                   <select
                     className="wp-input"
                     value={teamSize}
-                    onChange={(e) => handleTeamSizeChange(e.target.value)}
+                    onChange={(e) => setTeamSize(e.target.value)}
                     style={{ margin: 0, padding: '12px 14px', fontSize: '14px', borderRadius: '8px', border: '1px solid #d4d4d8' }}
                   >
                     {TEAM_SIZE_OPTIONS.map(opt => (
@@ -345,40 +349,38 @@ export default function WorkspacePicker() {
                         height: '26px',
                         borderRadius: '34px',
                         border: 'none',
-                        backgroundColor: saveData ? '#10b981' : '#cbd5e1',
+                        backgroundColor: saveData ? '#09090b' : '#cbd5e1',
                         cursor: 'pointer',
                         transition: 'background-color 0.2s ease',
-                        padding: 0,
-                        outline: 'none'
+                        padding: '2px'
                       }}
                     >
                       <span style={{
-                        position: 'absolute',
-                        height: '20px',
-                        width: '20px',
-                        left: saveData ? '25px' : '3px',
-                        top: '3px',
-                        backgroundColor: '#ffffff',
+                        display: 'block',
+                        width: '22px',
+                        height: '22px',
                         borderRadius: '50%',
-                        transition: 'left 0.2s ease',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                        backgroundColor: '#ffffff',
+                        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
+                        transform: saveData ? 'translateX(22px)' : 'translateX(0px)',
+                        transition: 'transform 0.2s ease'
                       }} />
                     </button>
                   </div>
 
                   {saveData ? (
-                    <div style={{ fontSize: '13px', color: '#334155', lineHeight: 1.6 }}>
-                      <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ color: '#10b981' }}>✓</span> Cloud Sync Enabled (Recommended)
+                    <div style={{ fontSize: '13px', color: '#09090b', lineHeight: '1.5' }}>
+                      <div style={{ fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        ✓ Cloud Sync Enabled (Recommended)
                       </div>
                       Workspaces, sprints, and team task items are securely persisted in encrypted database storage for cross-device synchronization and team collaboration.
                     </div>
                   ) : (
-                    <div style={{ fontSize: '13px', color: '#b45309', lineHeight: 1.6 }}>
-                      <div style={{ fontWeight: 700, color: '#92400e', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        Zero-Data Retention Mode Active
+                    <div style={{ fontSize: '13px', color: '#64748b', lineHeight: '1.5' }}>
+                      <div style={{ fontWeight: 700, marginBottom: '4px', color: '#334155' }}>
+                        Local Session Mode (Default)
                       </div>
-                      No workspace telemetry or task data is stored on remote servers. All sprint items exist strictly in local browser memory. Closing your browser session permanently purges transient workspace data.
+                      Workspace structure is initialized locally. Data remains within your active browser session until explicitly synced.
                     </div>
                   )}
                 </div>
@@ -387,7 +389,6 @@ export default function WorkspacePicker() {
                   <button
                     type="button"
                     onClick={() => setModalStep(1)}
-                    disabled={isCreating}
                     style={{
                       padding: '12px 20px',
                       borderRadius: '8px',
@@ -396,7 +397,7 @@ export default function WorkspacePicker() {
                       fontSize: '14px',
                       fontWeight: 600,
                       border: '1px solid #e4e4e7',
-                      cursor: isCreating ? 'not-allowed' : 'pointer'
+                      cursor: 'pointer'
                     }}
                   >
                     ← Back
@@ -409,7 +410,7 @@ export default function WorkspacePicker() {
                       flex: 1,
                       padding: '12px 20px',
                       borderRadius: '8px',
-                      background: '#10b981',
+                      background: isCreating ? '#71717a' : '#09090b',
                       color: '#ffffff',
                       fontSize: '14px',
                       fontWeight: 700,
@@ -417,7 +418,7 @@ export default function WorkspacePicker() {
                       cursor: isCreating ? 'not-allowed' : 'pointer'
                     }}
                   >
-                    {isCreating ? 'Creating Workspace...' : 'Complete & Launch Workspace'}
+                    {isCreating ? 'Provisioning Workspace...' : 'Complete & Launch Workspace'}
                   </button>
                 </div>
               </div>

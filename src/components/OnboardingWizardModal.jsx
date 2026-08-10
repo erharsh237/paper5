@@ -205,7 +205,9 @@ export default function OnboardingWizardModal() {
       position: 'fixed',
       inset: 0,
       zIndex: 999999,
-      background: '#ffffff',
+      background: 'rgba(255, 255, 255, 0.75)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -213,15 +215,17 @@ export default function OnboardingWizardModal() {
       overflowY: 'auto'
     }}>
       <div style={{
-        background: '#ffffff',
+        background: 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
         borderRadius: '16px',
         maxWidth: '840px',
         width: '100%',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
-        border: '1px solid #e4e4e7',
+        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.08)',
+        border: '1px solid rgba(0, 0, 0, 0.08)',
         padding: '32px',
         textAlign: 'center',
-        color: '#18181b',
+        color: '#09090b',
         position: 'relative'
       }}>
         {/* Header with Step Indicator */}
