@@ -215,8 +215,10 @@ export default function Signup() {
       }
       
       await finalizeSignup(password, username)
-      setMessage('Account created successfully! Redirecting...')
-      setTimeout(() => navigate('/workspace'), 800)
+      setMessage('Account created successfully! Redirecting to onboarding...')
+      setTimeout(() => {
+        window.location.href = '/workspace'
+      }, 500)
     } catch (err) {
       console.error(err)
       setMessage(getFriendlyError(err))

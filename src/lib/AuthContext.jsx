@@ -233,23 +233,36 @@ export function AuthProvider({ children }) {
     throw lastError
   }
 
-  const finalizeSignup = async (password, username, billing_plan_id = 'free') => {
+  const finalizeSignup = async (password, username) => {
     setAuthError(null)
-    const { data, error } = await supabase.auth.updateUser({ password })
+    const { error, data } = await supabase.auth.updateUser({
+      password,
+      data: { username }
+    })
     if (error) {
       setAuthError(getFriendlyError(error))
       throw error
     }
     
-    // Update public.users with username and selected plan
+    // Update public.users with username
     if (data?.user) {
       await supabase.from('users').upsert({ 
         id: data.user.id, 
         email: data.user.email,
         username,
-        billing_plan_id,
         updated_at: new Date().toISOString() 
       })
+
+      // Refetch updated user profile into AuthContext state so route guards see username immediately
+      const { data: updatedProfile } = await supabase.from('users').select('*').eq('id', data.user.id).maybeSingle()
+      if (updatedProfile) {
+        updatedProfile.legalAcceptedVersion = updatedProfile.legal_accepted_version
+        updatedProfile.legalAcceptedAt = updatedProfile.legal_accepted_at
+        updatedProfile.billingStatus = updatedProfile.billing_status
+        updatedProfile.billingPlanId = updatedProfile.billing_plan_id
+        updatedProfile.requiresPasswordReset = updatedProfile.requires_password_reset
+        setUserData(updatedProfile)
+      }
     }
     return data
   }
