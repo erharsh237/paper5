@@ -112,13 +112,6 @@ export default function Signup() {
     clearAuthError()
   }, [])
 
-  // If they somehow have a user but no username, force them to step 3
-  useEffect(() => {
-    if (user && !userData?.username && step < 3) {
-      setStep(3)
-    }
-  }, [user, userData, step])
-
   const handleSendOtp = async () => {
     try {
       // 1. Header Validation
