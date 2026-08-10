@@ -1,14 +1,18 @@
 import { useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useAuth, CURRENT_LEGAL_VERSION } from '../lib/AuthContext'
 import './Modal.css'
 
 export default function LegalConsentModal() {
   const { userData, acceptLegalTerms } = useAuth()
+  const location = useLocation()
   const [loading, setLoading] = useState(false)
 
-  // Only show if we have user data, and the version is strictly less than CURRENT_LEGAL_VERSION
-  // or doesn't exist yet.
-  if (!userData) return null
+  const publicAuthPaths = ['/login', '/signup', '/forgot-password', '/verify', '/auth/action']
+  const isAuthPage = publicAuthPaths.some(p => location.pathname.startsWith(p))
+
+  // Do not show on auth pages or if user is still in the onboarding flow (OnboardingWizardModal handles T&C for new users)
+  if (isAuthPage || !userData || !userData.billing_plan_id || userData.billing_plan_id === 'unselected') return null
   
   const acceptedVer = userData.legalAcceptedVersion
   if (acceptedVer && acceptedVer >= CURRENT_LEGAL_VERSION) {
