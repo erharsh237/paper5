@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 
 export default function OtpInput({ 
   value = '', 
@@ -9,6 +9,7 @@ export default function OtpInput({
   autoFocus = true 
 }) {
   const inputsRef = useRef([])
+  const [focusedIndex, setFocusedIndex] = useState(null)
 
   // Ensure value is padded or array of chars
   const digits = Array.from({ length }, (_, i) => value[i] || '')
@@ -85,37 +86,65 @@ export default function OtpInput({
 
   return (
     <div style={{ display: 'flex', gap: '6px', justifyContent: 'space-between', width: '100%', margin: '8px 0 16px 0' }}>
-      {Array.from({ length }).map((_, i) => (
-        <input
-          key={i}
-          ref={el => (inputsRef.current[i] = el)}
-          type={showOtp ? 'text' : 'password'}
-          inputMode="numeric"
-          pattern="[0-9]*"
-          maxLength={1}
-          value={digits[i] || ''}
-          onChange={e => handleDigitChange(i, e.target.value)}
-          onKeyDown={e => handleKeyDown(i, e)}
-          onPaste={handlePaste}
-          disabled={disabled}
-          autoComplete="one-time-code"
-          style={{
-            width: '100%',
-            height: '46px',
-            textAlign: 'center',
-            fontSize: '18px',
-            fontWeight: '700',
-            fontFamily: 'monospace',
-            borderRadius: '8px',
-            border: digits[i] ? '2px solid #10b981' : '1px solid var(--border-bright, #d1d5db)',
-            background: disabled ? 'var(--bg-layer-2, #f3f4f6)' : 'var(--bg-layer-1, #ffffff)',
-            color: 'var(--text-primary, #111827)',
-            outline: 'none',
-            transition: 'all 0.15s ease',
-            boxShadow: digits[i] ? '0 0 0 3px rgba(16, 185, 129, 0.12)' : 'none'
-          }}
-        />
-      ))}
+      {Array.from({ length }).map((_, i) => {
+        const isFilled = Boolean(digits[i])
+        const isFocused = focusedIndex === i
+
+        let borderColor = '#64748b' // Crisp Slate-500 default border
+        let bg = '#f8fafc' // Subtle Slate-50 tint when empty
+        let shadow = '0 1px 2px rgba(0, 0, 0, 0.05)'
+
+        if (isFocused) {
+          borderColor = '#10b981' // Green focus
+          bg = '#ffffff'
+          shadow = '0 0 0 3px rgba(16, 185, 129, 0.25)'
+        } else if (isFilled) {
+          borderColor = '#10b981' // Green filled
+          bg = '#ffffff'
+          shadow = '0 0 0 2px rgba(16, 185, 129, 0.12)'
+        }
+
+        if (disabled) {
+          bg = '#f1f5f9'
+          borderColor = '#cbd5e1'
+          shadow = 'none'
+        }
+
+        return (
+          <input
+            key={i}
+            ref={el => (inputsRef.current[i] = el)}
+            type={showOtp ? 'text' : 'password'}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={1}
+            value={digits[i] || ''}
+            onChange={e => handleDigitChange(i, e.target.value)}
+            onKeyDown={e => handleKeyDown(i, e)}
+            onPaste={handlePaste}
+            onFocus={() => setFocusedIndex(i)}
+            onBlur={() => setFocusedIndex(null)}
+            disabled={disabled}
+            autoComplete="one-time-code"
+            style={{
+              width: '100%',
+              height: '48px',
+              textAlign: 'center',
+              fontSize: '20px',
+              fontWeight: '800',
+              fontFamily: 'monospace',
+              borderRadius: '8px',
+              border: `2px solid ${borderColor}`,
+              background: bg,
+              color: '#0f172a',
+              outline: 'none',
+              transition: 'all 0.15s ease',
+              boxShadow: shadow,
+              boxSizing: 'border-box'
+            }}
+          />
+        )
+      })}
     </div>
   )
 }
