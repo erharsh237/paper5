@@ -46,7 +46,7 @@ const ForgotPassword = safeLazy(() => import('./pages/ForgotPassword'))
 import NotFound from './pages/NotFound'
 import ErrorPage from './pages/ErrorPage'
 import LegalConsentModal from './components/LegalConsentModal'
-import AccountTierModal from './components/AccountTierModal'
+import OnboardingWizardModal from './components/OnboardingWizardModal'
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react'
 
 // Marketing Pages
@@ -209,7 +209,7 @@ export default function App() {
       {user && user.emailVerified && (
         <>
           <LegalConsentModal />
-          <AccountTierModal />
+          <OnboardingWizardModal />
         </>
       )}
       <VercelAnalytics />
