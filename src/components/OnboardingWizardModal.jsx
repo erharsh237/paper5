@@ -120,29 +120,6 @@ export default function OnboardingWizardModal() {
           }
         }
 
-        // 2. Check if user has pending invites to join an existing workspace
-        if (user?.email) {
-          try {
-            const { data: invites, error: inviteErr } = await supabase
-              .from('invites')
-              .select('id')
-              .eq('email', user.email)
-              .eq('status', 'pending')
-
-            if (!inviteErr && invites && invites.length > 0) {
-              // User was invited — NOT primary creator!
-              if (isMounted) setIsPrimaryAdmin(false)
-              if (userData?.billing_plan_id === 'unselected') {
-                await supabase.from('users').update({ billing_plan_id: 'member' }).eq('id', user.id)
-                if (updateUserData) updateUserData({ billing_plan_id: 'member' })
-              }
-              return
-            }
-          } catch (invErr) {
-            console.error('Pending invites query error ignored:', invErr)
-          }
-        }
-
         // User is the FIRST ADMIN creator of a new workflow
         if (isMounted) setIsPrimaryAdmin(true)
       } catch (err) {
