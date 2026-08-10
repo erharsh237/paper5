@@ -183,6 +183,9 @@ export function AuthProvider({ children }) {
     if (raw.includes('Invalid login credentials')) return 'Invalid email or password.'
     if (raw.includes('already registered')) return 'This email address is already registered.'
     if (raw.includes('User not found')) return 'No account found with this email.'
+    if (raw.includes('Token has expired') || raw.includes('is invalid') || raw.includes('Invalid token') || raw.includes('otp') || raw.includes('Token')) {
+      return 'Invalid verification code. Please check the 8-digit code sent to your email or request a new one.'
+    }
     if (raw.includes('Header Validation Failed')) return 'Security check failed. Please refresh the page.'
     if (raw.includes('rate limit') || raw.includes('Too many requests')) return 'Too many attempts. Please wait a moment and try again.'
     if (raw.includes('SMTP') || raw.includes('onboarding@resend.dev') || raw.includes('resend') || raw.includes('500') || raw === '{}') {

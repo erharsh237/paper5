@@ -211,7 +211,7 @@ export default function Login({ accessDenied, denialReason }) {
             </div>
           )}
 
-          {displayError && (
+          {displayError && displayError !== message && (
             <div style={{ marginBottom: 16 }}>
               <InlineError error={displayError.replace(/^Error:\s*/i, '')} />
             </div>

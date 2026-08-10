@@ -249,13 +249,13 @@ export default function Signup() {
             <div style={{ marginBottom: 16 }}>
               <InlineError error={`Account is temporarily locked due to multiple failed attempts. Please try again in ${Math.floor(lockoutTimer / 60)}m ${lockoutTimer % 60}s.`} />
             </div>
-          ) : displayError ? (
+          ) : displayError && displayError !== message ? (
             <div style={{ marginBottom: 16 }}>
               <InlineError error={displayError.replace(/^Error:\s*/i, '')} />
             </div>
           ) : null}
 
-          {!lockoutTimer && message && (message.includes('dispatched') || message.includes('verified') || message.includes('success')) ? (
+          {!lockoutTimer && message && (message.includes('dispatched') || message.includes('verified') || message.includes('success') || message.includes('sent')) ? (
             <InlineSuccess message={message} />
           ) : !lockoutTimer && message && (
             <InlineError error={message.replace(/^Error:\s*/i, '')} />
