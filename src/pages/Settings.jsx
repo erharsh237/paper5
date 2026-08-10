@@ -122,6 +122,7 @@ export default function Settings() {
   const [nameSuccess, setNameSuccess] = useState(false)
   
   const [wsSettings, setWsSettings] = useState({
+    save_data: true,
     session_timeout: 60,
     timezone: 'UTC',
     date_format: 'MM/DD/YYYY',
@@ -893,6 +894,23 @@ export default function Settings() {
                 <h2>Security & Auditing</h2>
                 <form onSubmit={handleSaveAdvancedSettings} className="settings-form" style={{ marginTop: '20px' }}>
                   
+
+                  <div style={{ padding: '16px', background: 'var(--bg-layer-2)', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <h4 style={{ margin: '0 0 4px 0' }}>💾 Save Data to Cloud Database</h4>
+                        <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
+                          {wsSettings.save_data !== false 
+                            ? 'Cloud Persistence Active: Workspace items, sprints, and settings are securely stored in the PostgreSQL database.' 
+                            : '🔒 Zero-Data Retention Mode Active: Workspace data is kept in browser memory only and will not be stored in the database.'}
+                        </p>
+                      </div>
+                      <label className="toggle-switch">
+                        <input type="checkbox" checked={wsSettings.save_data !== false} onChange={e => setWsSettings({...wsSettings, save_data: e.target.checked})} />
+                        <span className="toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
 
                   <div style={{ padding: '16px', background: 'var(--bg-layer-2)', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
