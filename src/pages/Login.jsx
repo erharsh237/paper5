@@ -222,148 +222,122 @@ export default function Login({ accessDenied, denialReason }) {
           )}
 
           <form onSubmit={step === 2 ? handleOtpVerification : (e) => e.preventDefault()} style={{ textAlign: 'left' }}>
-            {/* Step 1: Identifier & Password */}
-            {step === 1 && (
-              <>
-                <div className="auth-input-group">
-                  <label htmlFor="identifier">Work email or username</label>
-                  <input 
-                    id="identifier"
-                    type="text" 
-                    className="auth-input"
-                    placeholder="Email address or username"
-                    value={identifier}
-                    onChange={e => setIdentifier(e.target.value.toLowerCase())}
-                    required
-                    autoComplete="username"
-                  />
-                </div>
-                
-                <div className="auth-input-group">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <label htmlFor="password" style={{ marginBottom: 0 }}>Password</label>
-                    <Link to="/forgot-password" style={{ fontSize: '13px', color: '#111', textDecoration: 'none', fontWeight: 500 }}>
-                      Forgot your password?
-                    </Link>
-                  </div>
-                  <div style={{ position: 'relative' }}>
-                    <input 
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      className="auth-input"
-                      placeholder=""
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      required
-                      maxLength={72}
-                      autoComplete="current-password"
-                      style={{ width: '100%', paddingRight: '40px' }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      style={{
-                        position: 'absolute',
-                        right: '10px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: '#666',
-                        padding: 0,
-                        display: 'flex',
-                        alignItems: 'center'
-                      }}
-                    >
-                      {showPassword ? (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                      ) : (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                      )}
-                    </button>
-                  </div>
-                </div>
+            <div className="auth-input-group">
+              <label htmlFor="identifier">Work email or username</label>
+              <input 
+                id="identifier"
+                type="text" 
+                className="auth-input"
+                placeholder="Email address or username"
+                value={identifier}
+                onChange={e => setIdentifier(e.target.value.toLowerCase())}
+                required
+                disabled={step > 1}
+                autoComplete="username"
+              />
+            </div>
+            
+            <div className="auth-input-group">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <label htmlFor="password" style={{ marginBottom: 0 }}>Password</label>
+                <Link to="/forgot-password" style={{ fontSize: '13px', color: '#111', textDecoration: 'none', fontWeight: 500 }}>
+                  Forgot your password?
+                </Link>
+              </div>
+              <div style={{ position: 'relative' }}>
+                <input 
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  className="auth-input"
+                  placeholder=""
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  maxLength={72}
+                  disabled={step > 1}
+                  autoComplete="current-password"
+                  style={{ width: '100%', paddingRight: '40px' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#666',
+                    padding: 0,
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                  disabled={step > 1}
+                >
+                  {showPassword ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                  )}
+                </button>
+              </div>
+            </div>
 
-                <div style={{ marginTop: '24px' }}>
-                  <button type="button" className="auth-submit-btn" onClick={handlePasswordLogin} disabled={loading || !identifier || !password}>
-                    {loading ? 'Sending OTP...' : 'Send OTP & Sign In'}
+            {/* Always Visible 8-Digit OTP Input Boxes */}
+            <div className="auth-input-group" style={{ marginTop: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label htmlFor="otp" style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>2FA Verification Code (8 Digits)</label>
+                {step === 2 ? (
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      setCooldown(60)
+                      sendLoginOtp(verifiedEmail)
+                    }} 
+                    disabled={loading || cooldown > 0}
+                    style={{ background: 'none', border: 'none', color: cooldown > 0 ? '#999' : 'var(--accent-primary, #10b981)', fontSize: '12px', cursor: cooldown > 0 ? 'not-allowed' : 'pointer', padding: 0, fontWeight: 600 }}
+                  >
+                    {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend Code'}
                   </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowOtp(!showOtp)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', fontSize: '11px', padding: 0, display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    {showOtp ? 'Hide Digits' : 'Show Digits'}
+                  </button>
+                )}
+              </div>
+
+              <OtpInput 
+                value={otp} 
+                onChange={setOtp} 
+                length={8} 
+                disabled={step < 2} 
+                showOtp={showOtp}
+                autoFocus={step === 2}
+              />
+
+              {step === 2 && (
+                <div style={{ fontSize: '12px', color: '#10b981', marginTop: '4px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>🔒</span> 2FA verification code sent to {verifiedEmail}.
                 </div>
-              </>
-            )}
+              )}
+            </div>
 
-            {/* Step 2: 2FA Verification Code */}
-            {step === 2 && (
-              <>
-                <div className="auth-input-group" style={{ marginBottom: '16px', padding: '12px', background: 'var(--bg-layer-2, #f9fafb)', borderRadius: '8px', border: '1px solid var(--border-subtle, #e5e7eb)' }}>
-                  <div style={{ fontSize: '12px', color: 'var(--text-tertiary, #6b7280)', marginBottom: '2px' }}>Account Authentication</div>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{verifiedEmail || identifier}</div>
-                </div>
-
-                <div className="auth-input-group">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <label htmlFor="otp">2FA Verification Code</label>
-                    <button 
-                      type="button" 
-                      onClick={() => {
-                        setCooldown(60)
-                        sendLoginOtp(verifiedEmail)
-                      }} 
-                      disabled={loading || cooldown > 0}
-                      style={{ background: 'none', border: 'none', color: cooldown > 0 ? '#999' : 'var(--accent-primary, #10b981)', fontSize: '12px', cursor: cooldown > 0 ? 'not-allowed' : 'pointer', padding: 0, fontWeight: 600 }}
-                    >
-                      {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend Code'}
-                    </button>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
-                      <button
-                        type="button"
-                        onClick={() => setShowOtp(!showOtp)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          color: 'var(--text-secondary, #666)',
-                          fontSize: '11px',
-                          padding: 0,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}
-                      >
-                        {showOtp ? (
-                          <>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                            Hide Digits
-                          </>
-                        ) : (
-                          <>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                            Show Digits
-                          </>
-                        )}
-                      </button>
-                    </div>
-
-                    <OtpInput 
-                      value={otp} 
-                      onChange={setOtp} 
-                      length={8} 
-                      showOtp={showOtp}
-                    />
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary, #666)', marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ color: '#10b981', fontSize: '13px' }}>🔒</span> 2FA verification code sent to your registered email address.
-                  </div>
-                </div>
-
-                <div style={{ marginTop: '24px' }}>
+            <div style={{ marginTop: '24px' }}>
+              {step === 1 ? (
+                <button type="button" className="auth-submit-btn" onClick={handlePasswordLogin} disabled={loading || !identifier || !password}>
+                  {loading ? 'Sending OTP Code...' : 'Send 2FA OTP Code & Continue'}
+                </button>
+              ) : (
+                <>
                   <button type="submit" className="auth-submit-btn" disabled={loading || otp.length < 6}>
-                    {loading ? 'Verifying...' : 'Sign In'}
+                    {loading ? 'Verifying Code...' : 'Complete Sign In'}
                   </button>
-
                   <button 
                     type="button" 
                     className="auth-submit-btn" 
@@ -371,11 +345,11 @@ export default function Login({ accessDenied, denialReason }) {
                     onClick={() => setStep(1)}
                     disabled={loading}
                   >
-                    Go Back
+                    ← Change Email / Password
                   </button>
-                </div>
-              </>
-            )}
+                </>
+              )}
+            </div>
 
             <Turnstile ref={turnstileRef} action="login" onSuccess={setTurnstileToken} />
           </form>
