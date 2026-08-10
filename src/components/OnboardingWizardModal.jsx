@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { createWorkspace } from '../lib/workspaces'
 import { supabase } from '../lib/supabase'
@@ -64,6 +64,7 @@ const TIERS = [
 export default function OnboardingWizardModal() {
   const { user, userData, updateUserData } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [step, setStep] = useState(1) // 1: Tier Selection, 2: Workspace Creation & Data Consent
   const [selectedTier, setSelectedTier] = useState('team')
@@ -77,11 +78,16 @@ export default function OnboardingWizardModal() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Hard gating: modal renders ONLY if user is logged in & verified, BUT missing tier selection OR missing workspace
+  const publicAuthPaths = ['/login', '/signup', '/forgot-password', '/verify', '/auth/action']
+  const isAuthPage = publicAuthPaths.some(p => location.pathname.startsWith(p))
+
+  // Hard gating: modal renders ONLY if user is logged in & verified, userData is loaded, AND missing tier selection on non-auth pages
   const needsOnboarding = Boolean(
+    !isAuthPage &&
     user && 
     user.emailVerified && 
-    (!userData?.billing_plan_id || userData?.billing_plan_id === 'none' || userData?.billing_plan_id === 'unselected')
+    userData &&
+    (!userData.billing_plan_id || userData.billing_plan_id === 'none' || userData.billing_plan_id === 'unselected')
   )
 
   if (!needsOnboarding) return null
