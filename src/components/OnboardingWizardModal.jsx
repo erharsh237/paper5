@@ -82,17 +82,79 @@ export default function OnboardingWizardModal() {
   // Step 4: Data Storing Consent State (Default Turned Off)
   const [saveData, setSaveData] = useState(false)
   
+  const [isPrimaryAdmin, setIsPrimaryAdmin] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const publicAuthPaths = ['/login', '/signup', '/forgot-password', '/verify', '/auth/action']
   const isAuthPage = publicAuthPaths.some(p => location.pathname.startsWith(p))
 
-  // Hard gating: modal renders ONLY if user is logged in, userData is loaded, AND missing tier/legal selection on non-auth pages
+  // Determine if the user is the FIRST ADMIN creator vs an invited member/co-admin
+  useEffect(() => {
+    if (!user || isAuthPage) return
+
+    let isMounted = true
+    const checkRole = async () => {
+      try {
+        // 1. Check workspace memberships: if user is already a member of an existing workspace created by someone else
+        const { data: memberships } = await supabase
+          .from('workspace_members')
+          .select('role, workspace_id')
+          .eq('user_id', user.id)
+
+        if (memberships && memberships.length > 0) {
+          // Check if any workspace is owned by someone else
+          const { data: ownedWs } = await supabase
+            .from('workspaces')
+            .select('id')
+            .eq('owner_id', user.id)
+
+          if (!ownedWs || ownedWs.length === 0) {
+            // User is a member/co-admin in someone else's workspace — NOT primary creator!
+            if (isMounted) setIsPrimaryAdmin(false)
+            if (userData?.billing_plan_id === 'unselected') {
+              await supabase.from('users').update({ billing_plan_id: 'member' }).eq('id', user.id)
+              if (updateUserData) updateUserData({ billing_plan_id: 'member' })
+            }
+            return
+          }
+        }
+
+        // 2. Check if user has pending invites to join an existing workspace
+        const { data: invites } = await supabase
+          .from('workspace_invites')
+          .select('id')
+          .eq('email', user.email)
+          .eq('status', 'pending')
+
+        if (invites && invites.length > 0) {
+          // User was invited — NOT primary creator!
+          if (isMounted) setIsPrimaryAdmin(false)
+          if (userData?.billing_plan_id === 'unselected') {
+            await supabase.from('users').update({ billing_plan_id: 'member' }).eq('id', user.id)
+            if (updateUserData) updateUserData({ billing_plan_id: 'member' })
+          }
+          return
+        }
+
+        // User is the FIRST ADMIN creator of a new workflow
+        if (isMounted) setIsPrimaryAdmin(true)
+      } catch (err) {
+        console.error('Failed to check primary admin role:', err)
+        if (isMounted) setIsPrimaryAdmin(true)
+      }
+    }
+
+    checkRole()
+    return () => { isMounted = false }
+  }, [user, userData, isAuthPage, updateUserData])
+
+  // Hard gating: modal renders ONLY for the FIRST PRIMARY ADMIN of a workflow on non-auth pages
   const needsOnboarding = Boolean(
     !isAuthPage &&
     user && 
     userData &&
+    isPrimaryAdmin === true &&
     (!userData.billing_plan_id || userData.billing_plan_id === 'none' || userData.billing_plan_id === 'unselected' || !userData.legal_accepted_at)
   )
 
