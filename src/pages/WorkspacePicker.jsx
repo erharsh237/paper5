@@ -18,6 +18,22 @@ export default function WorkspacePicker() {
   const [modalStep, setModalStep] = useState(1) // 1: Details, 2: Data Consent
   const [saveData, setSaveData] = useState(false) // default off
 
+  const userId = user?.id || user?.uid
+
+  useEffect(() => {
+    if (!userId) {
+      setLoading(false)
+      return
+    }
+    const unsub = subscribeUserWorkspaces(userId, (list) => {
+      setWorkspaces(list || [])
+      setLoading(false)
+    })
+    return () => {
+      if (typeof unsub === 'function') unsub()
+    }
+  }, [userId])
+
   useEffect(() => {
     if (!loading && workspaces.length === 0) {
       setShowCreateModal(true)
