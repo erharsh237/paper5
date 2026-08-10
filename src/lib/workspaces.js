@@ -140,7 +140,7 @@ export function subscribeInvites(workspaceId, callback) {
   return () => supabase.removeChannel(channel)
 }
 
-export async function createWorkspace(uid, email, name, teamSize = '2-5', agileWorkflow = 'scrum') {
+export async function createWorkspace(uid, email, name, teamSize = '2-5', agileWorkflow = 'scrum', saveData = true) {
   const { data: authData } = await supabase.auth.getUser()
   const creatorId = uid || authData?.user?.id
   if (!creatorId) {
@@ -160,11 +160,12 @@ export async function createWorkspace(uid, email, name, teamSize = '2-5', agileW
     throw error
   }
 
-  // Update workspace settings with team_size and agile_workflow
+  // Update workspace settings with team_size, agile_workflow, and save_data preference
   await supabase.from('workspaces').update({
     settings: {
       team_size: teamSize,
       agile_workflow: agileWorkflow,
+      save_data: saveData,
       configured_by: creatorId,
       configured_at: new Date().toISOString()
     }

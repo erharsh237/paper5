@@ -14,6 +14,7 @@ export default function WorkspacePicker() {
   const [newName, setNewName] = useState('')
   const [teamSize, setTeamSize] = useState('2-5')
   const [selectedWorkflow, setSelectedWorkflow] = useState('kanban')
+  const [saveData, setSaveData] = useState(true)
   const [createError, setCreateError] = useState('')
 
   useEffect(() => {
@@ -41,7 +42,7 @@ export default function WorkspacePicker() {
     setCreateError('')
     setIsCreating(true)
     try {
-      const newId = await createWorkspace(user.uid, user.email, newName.trim(), teamSize, selectedWorkflow)
+      const newId = await createWorkspace(user.uid, user.email, newName.trim(), teamSize, selectedWorkflow, saveData)
       navigate(`/${newId}`)
     } catch (err) {
       console.error('Failed to create workspace:', err)
@@ -204,6 +205,23 @@ export default function WorkspacePicker() {
                       )
                     })}
                   </select>
+                </div>
+
+                <div style={{ marginBottom: '16px', padding: '12px 14px', background: 'var(--bg-layer-2, #f9fafb)', borderRadius: '8px', border: '1px solid var(--border-subtle, #e5e7eb)', textAlign: 'left' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary, #111)' }}>
+                        💾 Save Data to Cloud Database
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary, #666)', marginTop: '2px', lineHeight: 1.3 }}>
+                        {saveData ? 'Cloud Storage: Sprint & task items saved to database.' : '🔒 Zero-Data Retention: Data kept in browser memory only.'}
+                      </div>
+                    </div>
+                    <label className="toggle-switch" style={{ flexShrink: 0 }}>
+                      <input type="checkbox" checked={saveData} onChange={e => setSaveData(e.target.checked)} />
+                      <span className="toggle-slider"></span>
+                    </label>
+                  </div>
                 </div>
 
                 {createError && <div style={{ background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', padding: '12px', borderRadius: '8px', fontSize: '13px', marginBottom: '12px' }}>{createError}</div>}
