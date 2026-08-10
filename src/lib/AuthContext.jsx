@@ -249,6 +249,12 @@ export function AuthProvider({ children }) {
     
     // Update public.users with username
     if (data?.user) {
+      setUser({
+        ...data.user,
+        uid: data.user.id,
+        emailVerified: true
+      })
+
       await supabase.from('users').upsert({ 
         id: data.user.id, 
         email: data.user.email,
@@ -266,6 +272,14 @@ export function AuthProvider({ children }) {
         updatedProfile.billingPlanId = updatedProfile.billing_plan_id
         updatedProfile.requiresPasswordReset = updatedProfile.requires_password_reset
         setUserData(updatedProfile)
+      } else {
+        setUserData({
+          id: data.user.id,
+          email: data.user.email,
+          username,
+          billing_plan_id: 'unselected',
+          billingPlanId: 'unselected'
+        })
       }
     }
     return data

@@ -152,11 +152,11 @@ export default function App() {
           <Route path="/workspace" element={
             !user ? <Navigate to="/login" replace /> :
             !user.emailVerified ? <Navigate to="/verify" replace /> :
-            !userData?.username ? <Navigate to="/signup" replace /> :
+            !(userData?.username || user?.user_metadata?.username) ? <Navigate to="/signup" replace /> :
             <WorkspacePicker />
           } />
-          <Route path="/login" element={user && user.emailVerified && userData?.username && !isPending2FA ? <Navigate to="/workspace" replace /> : <Login />} />
-          <Route path="/signup" element={user && user.emailVerified && userData?.username ? <Navigate to="/workspace" replace /> : <Signup />} />
+          <Route path="/login" element={user && user.emailVerified && (userData?.username || user?.user_metadata?.username) && !isPending2FA ? <Navigate to="/workspace" replace /> : <Login />} />
+          <Route path="/signup" element={user && user.emailVerified && (userData?.username || user?.user_metadata?.username) ? <Navigate to="/workspace" replace /> : <Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify" element={
             (user && user.emailVerified) ? <Navigate to="/workspace" replace /> : 
@@ -166,7 +166,7 @@ export default function App() {
           <Route path="/join" element={
             !user ? <Navigate to={`/signup${window.location.search}`} replace /> :
             !user.emailVerified ? <Navigate to={`/verify${window.location.search}`} replace /> :
-            !userData?.username ? <Navigate to={`/signup${window.location.search}`} replace /> :
+            !(userData?.username || user?.user_metadata?.username) ? <Navigate to={`/signup${window.location.search}`} replace /> :
             <JoinWorkspace />
           } />
           
