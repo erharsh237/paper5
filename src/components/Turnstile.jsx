@@ -37,7 +37,7 @@ const Turnstile = forwardRef(({ onSuccess, onError, onExpire, action = 'submit' 
           sitekey: siteKey,
           action,
           theme: 'auto',
-          size: 'invisible',
+          size: 'normal',
           callback: (token) => {
             if (isMounted && onSuccess) onSuccess(token)
           },

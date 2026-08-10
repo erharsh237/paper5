@@ -54,28 +54,33 @@ export function subscribeWorkspace(workspaceId, callback) {
 export function subscribeUserWorkspaces(uid, callback) {
   if (!uid) return () => {}
   const fetchList = async () => {
-    const { data, error } = await supabase
-      .from('workspace_members')
-      .select(`
-        role,
-        workspace_id,
-        workspaces ( name )
-      `)
-      .eq('user_id', uid)
-    
-    if (error) {
-      console.error(error)
+    try {
+      const { data, error } = await supabase
+        .from('workspace_members')
+        .select(`
+          role,
+          workspace_id,
+          workspaces ( name )
+        `)
+        .eq('user_id', uid)
+      
+      if (error || !data) {
+        if (error) console.error('subscribeUserWorkspaces Error:', error)
+        callback([])
+        return
+      }
+      
+      const mapped = (data || []).map(row => ({
+        workspaceId: row.workspace_id,
+        id: row.workspace_id,
+        role: row.role,
+        name: row.workspaces?.name
+      }))
+      callback(mapped)
+    } catch (err) {
+      console.error('subscribeUserWorkspaces Exception:', err)
       callback([])
-      return
     }
-    
-    const mapped = data.map(row => ({
-      workspaceId: row.workspace_id,
-      id: row.workspace_id,
-      role: row.role,
-      name: row.workspaces?.name
-    }))
-    callback(mapped)
   }
   
   const channel = supabase.channel(`public:workspace_members:user_id=eq.${uid}:workspaces:${Math.random().toString(36).substring(7)}`)
