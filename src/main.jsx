@@ -7,6 +7,7 @@ import ErrorBoundary from './components/ErrorBoundary.jsx'
 import ConnectionStatus from './components/ConnectionStatus.jsx'
 import * as Sentry from '@sentry/react'
 import './index.css'
+import './pages/Auth.css'
 
 if (import.meta.env.VITE_SENTRY_DSN) {
   Sentry.init({
