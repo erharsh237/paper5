@@ -11,7 +11,8 @@ export async function logAudit(workspaceId, action, resource, metadata = {}) {
           actor_id: authData.user.id,
           action,
           resource,
-          metadata
+          metadata,
+          created_at: new Date().toISOString()
         });
       }
     }
