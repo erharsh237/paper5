@@ -14,6 +14,8 @@ import React from 'react'
  *   // For typed confirmation (like workspace delete)
  *   requiresTyping — string | null  (user must type this exact string)
  */
+import { Trash2, AlertTriangle, Info } from 'lucide-react'
+
 export default function ConfirmModal({
   isOpen,
   title,
@@ -39,7 +41,7 @@ export default function ConfirmModal({
     ? 'var(--accent-signal, #f59e0b)'
     : 'var(--accent-primary, #6366f1)'
 
-  const icon = variant === 'danger' ? '🗑️' : variant === 'warning' ? '⚠️' : 'ℹ️'
+  const IconComp = variant === 'danger' ? Trash2 : variant === 'warning' ? AlertTriangle : Info
   const canConfirm = !requiresTyping || typedValue === requiresTyping
 
   const handleKeyDown = (e) => {
@@ -80,7 +82,7 @@ export default function ConfirmModal({
           gap: '8px',
           color: 'var(--text-primary)',
         }}>
-          <span>{icon}</span> {title}
+          <IconComp size={20} color={accentColor} /> {title}
         </h3>
 
         <p style={{
