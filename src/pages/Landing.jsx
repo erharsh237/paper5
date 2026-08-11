@@ -311,7 +311,7 @@ export default function Landing() {
                 <li>Up to 5 Workspaces</li>
                 <li>Up to 7 Team Members</li>
                 <li>⚡ 6 Agile Workflows (Kanban, Scrum, XP, Lean, Scrumban)</li>
-                <li>GitHub & Discord Integration</li>
+                <li>GitHub & Google Calendar Integrations</li>
                 <li>Locked Sprint Scope Control</li>
                 <li>Proof of Work Peer Verification</li>
                 <li>Sunday Sync Meeting Broadcasts</li>
@@ -337,10 +337,10 @@ export default function Landing() {
                 <li>Up to 10 Workspaces</li>
                 <li>Unlimited Team Members</li>
                 <li>⚡ All 8 Agile Workflows (Spotify Model & SAFe Enterprise)</li>
-                <li>GitHub, Discord, Google Calendar & Webhooks</li>
+                <li>All Stack Integrations (Slack, Discord, Vercel, GitHub, Google Calendar)</li>
                 <li>Advanced Velocity & Risk Analytics</li>
                 <li>Strict Auditing Mode & CSV Export</li>
-                <li>⚡ 1-Click API Webhook & REST Sync</li>
+                <li>⚡ 1-Click API Webhook & REST Sync Studio</li>
               </ul>
             </div>
           </div>
