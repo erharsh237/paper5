@@ -7,6 +7,8 @@ import logo from '../assets/logo.png'
 import { Check, ArrowRight, Database, ShieldAlert, Sparkles, Building2, Users, Layers, ShieldCheck } from 'lucide-react'
 import { TEAM_SIZE_OPTIONS, WORKFLOWS, getRecommendedWorkflow } from '../lib/workflows'
 
+import { decryptPlanParam } from '../lib/urlSecurity'
+
 const TIERS = [
   {
     id: 'free',
@@ -93,16 +95,14 @@ export default function OnboardingWizardModal() {
   // Auto-detect tier pre-selected from marketing site / signup
   useEffect(() => {
     const params = new URLSearchParams(location.search)
-    const urlPlan = params.get('plan')
-    const savedPlan = urlPlan || localStorage.getItem('sprintos_selected_plan')
+    const rawToken = params.get('p') || params.get('plan') || localStorage.getItem('sprintos_selected_plan')
+    const decrypted = decryptPlanParam(rawToken)
 
-    if (savedPlan) {
-      const normalized = savedPlan === 'starter' ? 'free' : savedPlan
-      if (['free', 'team', 'scale'].includes(normalized)) {
-        setSelectedTier(normalized)
-        // User already selected their account tier on the marketing site — jump past Step 1 directly to Step 2
-        setStep(2)
-      }
+    if (decrypted) {
+      const normalized = decrypted === 'starter' ? 'free' : decrypted
+      setSelectedTier(normalized)
+      // User already selected their account tier on the marketing site — jump past Step 1 directly to Step 2
+      setStep(2)
     }
   }, [location.search])
 

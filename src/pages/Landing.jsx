@@ -196,6 +196,8 @@ const CapabilitiesCarousel = () => {
   )
 }
 
+import { encryptPlanParam } from '../lib/urlSecurity'
+
 export default function Landing() {
   const [alertMessage, setAlertMessage] = useState(null)
   const { user } = useAuth()
@@ -204,11 +206,12 @@ export default function Landing() {
   const navigate = useNavigate()
 
   const handlePlanClick = (planId) => {
+    const encryptedToken = encryptPlanParam(planId)
     localStorage.setItem('sprintos_selected_plan', planId)
     if (user) {
       navigate('/')
     } else {
-      navigate(`/signup?plan=${planId}`)
+      navigate(`/signup?p=${encryptedToken}`)
     }
   }
 

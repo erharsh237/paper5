@@ -24,8 +24,7 @@ import { validateEmail, validatePassword, validateUsername } from '../lib/valida
 
 import { getMainUrl } from '../lib/domain'
 import NotFound from './NotFound'
-
-const VALID_PLANS = ['starter', 'free', 'team', 'scale']
+import { decryptPlanParam } from '../lib/urlSecurity'
 
 export default function Signup() {
   const { 
@@ -42,10 +41,11 @@ export default function Signup() {
   
   const navigate = useNavigate()
 
-  // Validate plan URL query parameter
+  // Validate and decrypt encrypted plan URL query parameter (?p=enc_...)
   const searchParams = new URLSearchParams(window.location.search)
-  const rawPlanParam = searchParams.get('plan')
-  const isInvalidPlan = rawPlanParam && !VALID_PLANS.includes(rawPlanParam.toLowerCase().trim())
+  const rawToken = searchParams.get('p') || searchParams.get('plan')
+  const decryptedPlan = rawToken ? decryptPlanParam(rawToken) : null
+  const isInvalidPlan = Boolean(rawToken && !decryptedPlan)
 
   const [step, setStep] = useState(1) // 1: Info, 2: OTP Sent, 3: Verified
   
@@ -67,12 +67,10 @@ export default function Signup() {
   const turnstileRef = useRef(null)
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const plan = params.get('plan')
-    if (plan && VALID_PLANS.includes(plan.toLowerCase().trim())) {
-      localStorage.setItem('sprintos_selected_plan', plan.toLowerCase().trim())
+    if (decryptedPlan) {
+      localStorage.setItem('sprintos_selected_plan', decryptedPlan)
     }
-  }, [])
+  }, [decryptedPlan])
 
   useEffect(() => {
     let timer
