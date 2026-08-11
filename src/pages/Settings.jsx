@@ -327,6 +327,28 @@ export default function Settings() {
   
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false)
   const [isInvoicesModalOpen, setIsInvoicesModalOpen] = useState(false)
+  const [isCancelMembershipModalOpen, setIsCancelMembershipModalOpen] = useState(false)
+  const [cancellingMembership, setCancellingMembership] = useState(false)
+
+  const handleConfirmCancelMembership = async () => {
+    setCancellingMembership(true)
+    try {
+      await updateWorkspaceSettings(workspaceId, {
+        billing_plan_id: 'free',
+        billing_status: 'cancelled'
+      })
+      if (updateUserData) {
+        await updateUserData({ billing_plan_id: 'free', billing_status: 'cancelled' })
+      }
+      setIsCancelMembershipModalOpen(false)
+      setAlertMessage('Workspace membership has been cancelled. Your workspace has reverted to the free Starter Tier.')
+    } catch (err) {
+      console.error('Membership cancellation error:', err)
+      setAlertMessage('Failed to cancel membership: ' + (err?.message || 'Please try again.'))
+    } finally {
+      setCancellingMembership(false)
+    }
+  }
 
   const AVAILABLE_PERMISSIONS = [
     { id: 'sprints.manage', label: 'Manage Sprints' },
@@ -1076,6 +1098,21 @@ export default function Settings() {
                       <button className="btn-ghost btn-sm" onClick={() => setIsInvoicesModalOpen(true)}>View Invoices</button>
                     </div>
                   </div>
+                  <div style={{ padding: '16px', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.03)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', color: 'var(--accent-critical, #ef4444)' }}>Cancel Membership</h4>
+                        <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>Downgrade workspace tier and cancel subscription membership.</p>
+                      </div>
+                      <button 
+                        className="btn-ghost btn-sm" 
+                        style={{ color: 'var(--accent-critical, #ef4444)', borderColor: 'rgba(239, 68, 68, 0.4)' }}
+                        onClick={() => setIsCancelMembershipModalOpen(true)}
+                      >
+                        Cancel Membership
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -1359,6 +1396,128 @@ export default function Settings() {
         currentWorkspaceId={workspaceId}
         currentUser={user}
       />
+      <CancelMembershipModal
+        isOpen={isCancelMembershipModalOpen}
+        onClose={() => setIsCancelMembershipModalOpen(false)}
+        onConfirmCancel={handleConfirmCancelMembership}
+        loading={cancellingMembership}
+      />
+    </div>
+  )
+}
+
+function CancelMembershipModal({ isOpen, onClose, onConfirmCancel, loading }) {
+  const [disclaimerChecked, setDisclaimerChecked] = useState(false)
+
+  useEffect(() => {
+    if (!isOpen) setDisclaimerChecked(false)
+  }, [isOpen])
+
+  if (!isOpen) return null
+
+  return (
+    <div 
+      className="modal-overlay" 
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.65)',
+        backdropFilter: 'blur(8px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 99999,
+        padding: '20px'
+      }}
+    >
+      <div 
+        className="modal-card" 
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: '#ffffff',
+          borderRadius: '16px',
+          padding: '28px',
+          maxWidth: '480px',
+          width: '100%',
+          boxShadow: '0 20px 45px -10px rgba(0, 0, 0, 0.2)',
+          border: '1px solid #fee2e2'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#991b1b' }}>
+            Cancel Workspace Membership
+          </h3>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: '18px' }}>✕</button>
+        </div>
+
+        {/* Disclaimer Box */}
+        <div style={{
+          background: '#fef2f2',
+          border: '1px solid #fecaca',
+          borderRadius: '10px',
+          padding: '14px 16px',
+          marginBottom: '20px',
+          fontSize: '13px',
+          color: '#7f1d1d',
+          lineHeight: '1.5'
+        }}>
+          <strong>Disclaimer & Service Terms:</strong>
+          <p style={{ margin: '6px 0 0 0' }}>
+            By cancelling your workspace membership/subscription, your workspace will revert to the limited Starter Tier at the end of your billing cycle. You will lose access to team seat extensions, advanced velocity risk analytics, locked sprint scope control, and premium API integrations.
+          </p>
+        </div>
+
+        {/* Mandatory Checkbox (Default Unchecked) */}
+        <label style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '10px',
+          fontSize: '13px',
+          color: '#374151',
+          cursor: 'pointer',
+          marginBottom: '24px',
+          fontWeight: 500,
+          userSelect: 'none'
+        }}>
+          <input 
+            type="checkbox" 
+            checked={disclaimerChecked} 
+            onChange={(e) => setDisclaimerChecked(e.target.checked)}
+            style={{ marginTop: '2px', cursor: 'pointer', width: '16px', height: '16px', accentColor: '#dc2626' }}
+          />
+          <span>I understand that cancelling will downgrade my workspace and restrict premium features.</span>
+        </label>
+
+        {/* Action Buttons */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+          <button 
+            type="button" 
+            className="btn-ghost" 
+            onClick={onClose}
+            style={{ padding: '10px 18px', borderRadius: '8px', border: '1px solid #e5e7eb', background: '#ffffff', color: '#374151', fontWeight: 600, cursor: 'pointer' }}
+          >
+            Keep Membership
+          </button>
+          <button 
+            type="button" 
+            onClick={() => onConfirmCancel()} 
+            disabled={!disclaimerChecked || loading}
+            style={{
+              padding: '10px 20px',
+              borderRadius: '8px',
+              border: 'none',
+              background: disclaimerChecked ? '#dc2626' : '#e5e7eb',
+              color: disclaimerChecked ? '#ffffff' : '#9ca3af',
+              fontWeight: 700,
+              cursor: disclaimerChecked ? 'pointer' : 'not-allowed',
+              transition: 'background 0.2s, color 0.2s'
+            }}
+          >
+            {loading ? 'Cancelling...' : 'Confirm & Cancel Membership'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
