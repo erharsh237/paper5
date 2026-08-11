@@ -59,6 +59,14 @@ export default function Signup() {
   const turnstileRef = useRef(null)
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const plan = params.get('plan')
+    if (plan) {
+      localStorage.setItem('sprintos_selected_plan', plan)
+    }
+  }, [])
+
+  useEffect(() => {
     let timer
     if (lockoutTimer > 0) {
       timer = setInterval(() => {

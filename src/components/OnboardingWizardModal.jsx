@@ -90,6 +90,22 @@ export default function OnboardingWizardModal() {
   const publicAuthPaths = ['/login', '/signup', '/forgot-password', '/verify', '/auth/action']
   const isAuthPage = publicAuthPaths.some(p => location.pathname.startsWith(p))
 
+  // Auto-detect tier pre-selected from marketing site / signup
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const urlPlan = params.get('plan')
+    const savedPlan = urlPlan || localStorage.getItem('sprintos_selected_plan')
+
+    if (savedPlan) {
+      const normalized = savedPlan === 'starter' ? 'free' : savedPlan
+      if (['free', 'team', 'scale'].includes(normalized)) {
+        setSelectedTier(normalized)
+        // User already selected their account tier on the marketing site — jump past Step 1 directly to Step 2
+        setStep(2)
+      }
+    }
+  }, [location.search])
+
   // Determine if the user is the FIRST ADMIN creator vs an invited member/co-admin
   useEffect(() => {
     if (!user || isAuthPage) return

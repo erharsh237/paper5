@@ -204,6 +204,7 @@ export default function Landing() {
   const navigate = useNavigate()
 
   const handlePlanClick = (planId) => {
+    localStorage.setItem('sprintos_selected_plan', planId)
     if (user) {
       navigate('/')
     } else {
