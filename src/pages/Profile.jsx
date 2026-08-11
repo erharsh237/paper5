@@ -28,6 +28,7 @@ function getUserColor(identifier) {
 export default function Profile() {
   const { user, logout, userData } = useAuth()
   const workspaceContext = useWorkspace()
+  const workspace = workspaceContext?.workspace
   const workspaceId = workspaceContext?.workspaceId || 'global'
   const workspaceRole = workspaceContext?.workspaceRole
   const isOwner = workspaceContext?.isOwner
@@ -185,7 +186,7 @@ export default function Profile() {
         <div className="dash-header-inner">
           <div className="dash-brand">
             <span className="dash-brand-dot" />
-            <span className="mono">Paper5 <span className="dash-brand-sub" style={{ whiteSpace: "nowrap" }}>{workspace?.name ? `| ${workspace.name}` : ''}</span></span>
+            <span className="mono">SprintOS <span className="dash-brand-sub" style={{ whiteSpace: "nowrap" }}>{workspace?.name ? `| ${workspace.name}` : ''}</span></span>
           </div>
           <div className="dash-header-actions">
             <NavTabs />
