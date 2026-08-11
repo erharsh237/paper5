@@ -17,8 +17,9 @@
   color: var(--text-primary);
 }
 
-.settings-form .field {
-  margin-bottom: 16px;
+.settings-form .field,
+.settings-form .form-group {
+  margin-bottom: 20px;
 }
 
 .settings-form label {

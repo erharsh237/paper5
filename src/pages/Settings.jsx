@@ -708,7 +708,7 @@ export default function Settings() {
               <div className="settings-section">
                 <h2>Workspace General</h2>
                 <form onSubmit={handleSaveName} className="settings-form" style={{ marginTop: '20px' }}>
-                  <div className="form-group">
+                  <div className="form-group" style={{ marginBottom: '20px' }}>
                     <label>Workspace Name</label>
                     <input
                       type="text"
