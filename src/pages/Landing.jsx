@@ -201,6 +201,16 @@ export default function Landing() {
   const { user } = useAuth()
   const location = useLocation()
 
+  const navigate = useNavigate()
+
+  const handlePlanClick = (planId) => {
+    if (user) {
+      navigate('/')
+    } else {
+      navigate(`/signup?plan=${planId}`)
+    }
+  }
+
   useEffect(() => {
     document.title = "Paper5 | Engineering Execution & Sprint Tracking Platform"
 
@@ -277,7 +287,7 @@ export default function Landing() {
               <p className="tier-desc">Perfect for solo founders and tiny indie teams testing the waters.</p>
               <button 
                 className="btn-ghost w-full"
-                onClick={() => navigate('/signup')}
+                onClick={() => handlePlanClick('starter')}
               >
                 Get Started for Free
               </button>
@@ -303,7 +313,7 @@ export default function Landing() {
               <p className="tier-desc">For growing startups that need to collaborate and integrate their stack.</p>
               <button 
                 className="btn-primary w-full"
-                onClick={() => navigate('/signup')}
+                onClick={() => handlePlanClick('team')}
               >
                 Get Started for Free
               </button>
@@ -329,7 +339,7 @@ export default function Landing() {
               <p className="tier-desc">For mature teams requiring advanced reporting, automation, and support.</p>
               <button 
                 className="btn-ghost w-full"
-                onClick={() => navigate('/signup')}
+                onClick={() => handlePlanClick('scale')}
               >
                 Get Started for Free
               </button>
