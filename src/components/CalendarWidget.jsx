@@ -4,11 +4,21 @@ import { subscribeIntegrationConfig, subscribeIntegrationCredentials } from '../
 import { loadGis } from '../lib/integrations/googleCalendar'
 import { useWorkspace } from '../lib/WorkspaceContext'
 
+import { getPlanLimits } from '../lib/plans'
+
 // Calendar Widget
 const googleCalendar = INTEGRATIONS.find(i => i.id === 'google_calendar')
 
 export default function CalendarWidget({ user, onSelectEvent, selectedEventId }) {
-  const { workspaceId } = useWorkspace();
+  const workspaceContext = useWorkspace()
+  const workspaceId = workspaceContext?.workspaceId
+  const workspace = workspaceContext?.workspace
+  const currentPlan = getPlanLimits(workspace?.plan || workspace?.subscription_tier || 'starter')
+  const isAllowedByPlan = currentPlan.allowedIntegrations ? currentPlan.allowedIntegrations.includes('google_calendar') : true
+
+  if (!isAllowedByPlan) {
+    return null
+  }
   const [config, setConfig] = useState({})
   const [credentials, setCredentials] = useState({})
   const [calendarEvents, setCalendarEvents] = useState([])

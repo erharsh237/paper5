@@ -7,7 +7,7 @@ export const PLANS = {
     price: 0,
     maxWorkspaces: 1,
     maxMembers: 3,
-    allowedIntegrations: ['github', 'google_calendar'],
+    allowedIntegrations: ['github'],
     hasAdvancedAnalytics: false,
     hasPrioritySupport: false,
   },
