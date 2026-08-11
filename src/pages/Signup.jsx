@@ -23,6 +23,9 @@ import {
 import { validateEmail, validatePassword, validateUsername } from '../lib/validation'
 
 import { getMainUrl } from '../lib/domain'
+import NotFound from './NotFound'
+
+const VALID_PLANS = ['starter', 'free', 'team', 'scale']
 
 export default function Signup() {
   const { 
@@ -38,7 +41,12 @@ export default function Signup() {
   } = useAuth()
   
   const navigate = useNavigate()
-  
+
+  // Validate plan URL query parameter
+  const searchParams = new URLSearchParams(window.location.search)
+  const rawPlanParam = searchParams.get('plan')
+  const isInvalidPlan = rawPlanParam && !VALID_PLANS.includes(rawPlanParam.toLowerCase().trim())
+
   const [step, setStep] = useState(1) // 1: Info, 2: OTP Sent, 3: Verified
   
   const [username, setUsername] = useState('')
@@ -61,8 +69,8 @@ export default function Signup() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const plan = params.get('plan')
-    if (plan) {
-      localStorage.setItem('sprintos_selected_plan', plan)
+    if (plan && VALID_PLANS.includes(plan.toLowerCase().trim())) {
+      localStorage.setItem('sprintos_selected_plan', plan.toLowerCase().trim())
     }
   }, [])
 
@@ -233,6 +241,10 @@ export default function Signup() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (isInvalidPlan) {
+    return <NotFound />
   }
 
   return (
