@@ -51,9 +51,9 @@ export default function CalendarWidget({ user, onSelectEvent, selectedEventId })
   }
 
   return (
-    <section className="sprint-overview meeting-panel" style={{ padding: '20px', marginBottom: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <h2 className="mono" style={{ margin: 0, fontSize: '13px' }}>MY CALENDAR</h2>
+    <section className="sprint-overview meeting-panel" style={{ padding: '14px 16px', marginBottom: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+        <h2 className="mono" style={{ margin: 0, fontSize: '12px', color: 'var(--text-tertiary)', letterSpacing: '0.05em' }}>MY CALENDAR</h2>
         {googleCalendar.actions.hasValidToken() && (
           <div style={{ display: 'flex', gap: '16px' }}>
             <button 
@@ -81,22 +81,23 @@ export default function CalendarWidget({ user, onSelectEvent, selectedEventId })
       </div>
       
       {!googleCalendar.actions.hasValidToken() && !fetchingEvents && calendarEvents.length === 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', background: 'var(--bg-inset)', borderRadius: '8px', border: '1px dashed var(--border-hair)', textAlign: 'center' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--bg-panel)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-sm)' }}>
-             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '14px 12px', background: 'var(--bg-inset)', borderRadius: '8px', border: '1px dashed var(--border-hair)', textAlign: 'center' }}>
+          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--bg-panel)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-sm)' }}>
+             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
           </div>
-          <h3 style={{ margin: '0 0 6px 0', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>No calendar connected</h3>
-          <p style={{ margin: '0 0 20px 0', fontSize: '12px', color: 'var(--text-secondary)', maxWidth: '240px', lineHeight: 1.5 }}>
+          <h3 style={{ margin: '0 0 4px 0', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>No calendar connected</h3>
+          <p style={{ margin: '0 0 10px 0', fontSize: '12px', color: 'var(--text-secondary)', maxWidth: '240px', lineHeight: 1.4 }}>
             Sync your Google Calendar to view upcoming meetings directly on your dashboard.
           </p>
           <button 
             className="btn-primary btn-sm" 
             onClick={handleConnectCalendar} 
             disabled={fetchingEvents}
+            style={{ padding: '6px 14px', fontSize: '12px', borderRadius: '6px' }}
           >
             {fetchingEvents ? 'Connecting...' : 'Connect Google Calendar'}
           </button>
-          {calendarError && <div className="form-error" style={{ marginTop: '12px', textAlign: 'center', fontSize: '12px' }}>{calendarError}</div>}
+          {calendarError && <div className="form-error" style={{ marginTop: '8px', textAlign: 'center', fontSize: '11px' }}>{calendarError}</div>}
         </div>
       ) : (
         <div>

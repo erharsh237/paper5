@@ -196,7 +196,7 @@ export default function MyDashboard() {
           )
         })()}
 
-        <section className="mydash-top-row" style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+        <section className="mydash-top-row" style={{ display: 'flex', gap: '1.25rem', marginBottom: '1.25rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
           <div className="mydash-hello" style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <h1 style={{ margin: '0 0 8px 0' }}>Welcome back, {user?.displayName?.split(' ')[0] || 'there'}</h1>
             {activeSprint && (
@@ -210,7 +210,7 @@ export default function MyDashboard() {
              <CalendarWidget user={user} />
            </div>
            
-           <div style={{ flex: '1 1 250px', background: 'var(--bg-panel)', padding: '1.25rem', borderRadius: '8px', border: '1px solid var(--border-hair)' }}>
+           <div style={{ flex: '1 1 250px', background: 'var(--bg-panel)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-hair)' }}>
               <h3 className="mono" style={{ margin: '0 0 1rem 0', fontSize: '12px', color: 'var(--text-tertiary)', letterSpacing: '0.05em' }}>REPOSITORIES</h3>
               {githubRepos.length > 0 ? (
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
