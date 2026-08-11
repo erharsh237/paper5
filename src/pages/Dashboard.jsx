@@ -71,15 +71,45 @@ export default function Dashboard() {
 
   const [viewMode, setViewMode] = useState('board')
 
+  const activeWorkflow = useMemo(() => {
+    const wfId = workspace?.settings?.agile_workflow || 'scrum'
+    return getWorkflowById(wfId) || getWorkflowById('scrum')
+  }, [workspace?.settings?.agile_workflow])
+
   const kanbanColumns = useMemo(() => {
-    return [
-      { id: 'not_started', title: 'To Do', color: '#64748b', items: filtered.filter(d => d.status === 'not_started' || d.status === 'todo') },
-      { id: 'in_progress', title: 'In Progress', color: '#3b82f6', items: filtered.filter(d => d.status === 'in_progress') },
-      { id: 'review', title: 'Review / QA', color: '#f59e0b', items: filtered.filter(d => d.status === 'review') },
-      { id: 'blocked', title: 'Blocked', color: '#ef4444', items: filtered.filter(d => d.status === 'blocked') },
-      { id: 'done', title: 'Done', color: '#10b981', items: filtered.filter(d => d.status === 'done') },
-    ]
-  }, [filtered])
+    if (!activeWorkflow || !activeWorkflow.columns || activeWorkflow.columns.length === 0) {
+      return [
+        { id: 'not_started', title: 'To Do', color: '#64748b', items: filtered.filter(d => d.status === 'not_started' || d.status === 'todo') },
+        { id: 'in_progress', title: 'In Progress', color: '#3b82f6', items: filtered.filter(d => d.status === 'in_progress') },
+        { id: 'review', title: 'Review / QA', color: '#f59e0b', items: filtered.filter(d => d.status === 'review') },
+        { id: 'blocked', title: 'Blocked', color: '#ef4444', items: filtered.filter(d => d.status === 'blocked') },
+        { id: 'done', title: 'Done', color: '#10b981', items: filtered.filter(d => d.status === 'done') },
+      ]
+    }
+
+    const totalCols = activeWorkflow.columns.length
+    const colors = ['#64748b', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#10b981']
+
+    return activeWorkflow.columns.map((col, idx) => {
+      let colItems = []
+      if (idx === 0) {
+        colItems = filtered.filter(d => d.status === 'not_started' || d.status === 'todo' || d.status === col.id)
+      } else if (idx === totalCols - 1) {
+        colItems = filtered.filter(d => d.status === 'done' || d.status === 'completed' || d.status === 'shipped' || d.status === col.id)
+      } else if (col.id.includes('review') || col.id.includes('qa') || col.id.includes('testing') || col.id.includes('accept') || col.id.includes('chapter')) {
+        colItems = filtered.filter(d => d.status === 'review' || d.status === col.id)
+      } else {
+        colItems = filtered.filter(d => d.status === 'in_progress' || d.status === col.id)
+      }
+
+      return {
+        id: col.id,
+        title: col.title,
+        color: colors[idx % colors.length],
+        items: colItems
+      }
+    })
+  }, [activeWorkflow, filtered])
 
   return (
     <div className="dash">
