@@ -25,6 +25,7 @@ export default function MyDashboard() {
   const { deadlines, hasMore, loadMore, loadingMore } = useDeadlines(workspaceId)
   const [sprints, setSprints] = useState([])
   const [showTour, setShowTour] = useState(false)
+  const [viewMode, setViewMode] = useState('board')
 
   const [integrationConfig, setIntegrationConfig] = useState({})
 
@@ -273,23 +274,143 @@ export default function MyDashboard() {
           </section>
         )}
 
-        <section className="deadline-list">
-          {sortedMyTasks.length === 0 ? (
-            <div className="empty-state">
-              <p>No tasks assigned to you yet.</p>
-            </div>
-          ) : (
-            sortedMyTasks.map(d => (
-              <DeadlineCard
-                key={d.id}
-                deadline={d}
-                currentUser={user}
-                teamId={TEAM_ID}
-                sprintLocked={!!(d.sprintId && sprints.find(s => s.id === d.sprintId)?.locked)}
-              />
-            ))
-          )}
-        </section>
+        {/* My Tasks Section Header with Kanban View Switcher */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>My Assigned Tasks</h2>
+          
+          <div style={{ display: 'inline-flex', background: 'var(--bg-layer-2)', padding: '2px', borderRadius: '8px', border: '1px solid var(--border-hair)' }}>
+            <button
+              type="button"
+              onClick={() => setViewMode('board')}
+              style={{
+                padding: '5px 11px',
+                fontSize: '12px',
+                fontWeight: 700,
+                borderRadius: '6px',
+                border: 'none',
+                background: viewMode === 'board' ? 'var(--bg-panel)' : 'transparent',
+                color: viewMode === 'board' ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                cursor: 'pointer',
+                boxShadow: viewMode === 'board' ? 'var(--shadow-sm)' : 'none'
+              }}
+            >
+              📊 Kanban Board
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              style={{
+                padding: '5px 11px',
+                fontSize: '12px',
+                fontWeight: 700,
+                borderRadius: '6px',
+                border: 'none',
+                background: viewMode === 'list' ? 'var(--bg-panel)' : 'transparent',
+                color: viewMode === 'list' ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                cursor: 'pointer',
+                boxShadow: viewMode === 'list' ? 'var(--shadow-sm)' : 'none'
+              }}
+            >
+              📋 List View
+            </button>
+          </div>
+        </div>
+
+        {viewMode === 'board' ? (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: '16px',
+            alignItems: 'flex-start',
+            marginBottom: '32px',
+            overflowX: 'auto'
+          }}>
+            {[
+              { id: 'not_started', title: 'To Do', color: '#64748b', items: sortedMyTasks.filter(d => d.status === 'not_started' || d.status === 'todo') },
+              { id: 'in_progress', title: 'In Progress', color: '#3b82f6', items: sortedMyTasks.filter(d => d.status === 'in_progress') },
+              { id: 'review', title: 'Review / QA', color: '#f59e0b', items: sortedMyTasks.filter(d => d.status === 'review') },
+              { id: 'blocked', title: 'Blocked', color: '#ef4444', items: sortedMyTasks.filter(d => d.status === 'blocked') },
+              { id: 'done', title: 'Done', color: '#10b981', items: sortedMyTasks.filter(d => d.status === 'done') },
+            ].map(col => (
+              <div key={col.id} style={{
+                background: 'var(--bg-layer-1)',
+                borderRadius: '12px',
+                border: '1px solid var(--border-hair)',
+                padding: '14px',
+                minWidth: '240px'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '12px',
+                  paddingBottom: '8px',
+                  borderBottom: '1px solid var(--border-subtle)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: col.color }} />
+                    {col.title}
+                  </div>
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    background: 'var(--bg-panel)',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    color: 'var(--text-secondary)',
+                    border: '1px solid var(--border-hair)'
+                  }}>
+                    {col.items.length}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: '100px' }}>
+                  {col.items.length === 0 ? (
+                    <div style={{
+                      padding: '16px 10px',
+                      textAlign: 'center',
+                      fontSize: '12px',
+                      color: 'var(--text-tertiary)',
+                      border: '1px dashed var(--border-subtle)',
+                      borderRadius: '8px',
+                      background: 'var(--bg-inset)'
+                    }}>
+                      No tasks
+                    </div>
+                  ) : (
+                    col.items.map(d => (
+                      <DeadlineCard
+                        key={d.id}
+                        deadline={d}
+                        currentUser={user}
+                        teamId={d.workspaceId || 'default-team'}
+                        sprintLocked={!!(d.sprintId && activeSprint?.id === d.sprintId && activeSprint?.locked)}
+                      />
+                    ))
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <section className="deadline-list">
+            {sortedMyTasks.length === 0 ? (
+              <div className="empty-state">
+                <p>No tasks assigned to you yet.</p>
+              </div>
+            ) : (
+              sortedMyTasks.map(d => (
+                <DeadlineCard
+                  key={d.id}
+                  deadline={d}
+                  currentUser={user}
+                  teamId={d.workspaceId || 'default-team'}
+                  sprintLocked={!!(d.sprintId && activeSprint?.id === d.sprintId && activeSprint?.locked)}
+                />
+              ))
+            )}
+          </section>
+        )}
 
         {hasMore && (
           <div className="load-more-row">
