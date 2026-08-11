@@ -129,28 +129,52 @@ export function subscribeWorkspaceMembers(workspaceId, callback) {
 }
 
 export function subscribeInvites(workspaceId, callback) {
+  if (!workspaceId) {
+    if (typeof callback === 'function') callback([])
+    return () => {}
+  }
+
+  let isSubscribed = true
+
   const fetchList = async () => {
     try {
       const { data, error } = await supabase
         .from('invites')
         .select('*')
         .eq('workspace_id', workspaceId)
+
+      if (!isSubscribed) return
+
       if (error) {
+        // Table not created or 404 / 400 error from PostgREST
         callback([])
         return
       }
       callback(data || [])
     } catch (err) {
-      callback([])
+      if (isSubscribed) callback([])
     }
   }
-  const channel = supabase.channel(`public:invites:workspace_id=eq.${workspaceId}:${Math.random().toString(36).substring(7)}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'invites', filter: `workspace_id=eq.${workspaceId}` }, payload => {
-       fetchList()
-    })
-    .subscribe()
+
   fetchList()
-  return () => supabase.removeChannel(channel)
+
+  let channel = null
+  try {
+    channel = supabase.channel(`public:invites:${workspaceId}:${Math.random().toString(36).substring(7)}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invites', filter: `workspace_id=eq.${workspaceId}` }, () => {
+         fetchList()
+      })
+      .subscribe()
+  } catch (e) {
+    // Ignore realtime channel creation errors for missing tables
+  }
+
+  return () => {
+    isSubscribed = false
+    if (channel) {
+      try { supabase.removeChannel(channel) } catch (e) {}
+    }
+  }
 }
 
 export async function createWorkspace(uid, email, name, teamSize = '2-5', agileWorkflow = 'scrum', saveData = true) {
