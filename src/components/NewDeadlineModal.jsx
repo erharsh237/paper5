@@ -4,9 +4,9 @@ import { sendDeadlineEmail } from '../lib/email'
 import { PRIORITIES, EVIDENCE_TYPES } from '../lib/utils'
 import { useWorkspace } from '../lib/WorkspaceContext'
 
-export default function NewDeadlineModal({ members, currentUser, activeSprint, onClose }) {
+export default function NewDeadlineModal({ members, currentUser, activeSprint, onClose, title = 'New deadline', submitText = 'Create deadline' }) {
   const { workspaceId } = useWorkspace();
-  const [title, setTitle] = useState('')
+  const [titleInput, setTitleInput] = useState('')
   const [description, setDescription] = useState('')
   const [priority, setPriority] = useState('medium')
   const [assigneeId, setAssigneeId] = useState(members[0]?.id || '')
@@ -25,22 +25,22 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, o
     e.preventDefault()
     setError('')
 
-    if (!title.trim()) return setError('A title is required to create a new deadline.')
-    if (!dueDate) return setError('A valid due date is required for this deadline.')
+    if (!titleInput.trim()) return setError('A title is required.')
+    if (!dueDate) return setError('A valid due date is required.')
 
     const parsedDate = new Date(dueDate)
     if (isNaN(parsedDate.getTime())) {
-      return setError('The provided due date format is invalid. Please use the calendar picker to select a valid date.')
+      return setError('The provided due date format is invalid. Please select a valid date.')
     }
 
-    if (!assignee) return setError('Please assign a team member to this deadline.')
+    if (!assignee) return setError('Please assign a team member.')
     if (!currentUser?.email) return setError('Ownership assignment failed: No email address is associated with your account.')
-    if (sprintLocked) return setError('The current sprint is locked. Unlock the sprint to add new deadlines.')
+    if (sprintLocked) return setError('The current sprint is locked. Unlock the sprint to add new items.')
 
     setSubmitting(true)
     try {
       await createDeadline(workspaceId, undefined, {
-        title: title.trim(),
+        title: titleInput.trim(),
         description: description.trim(),
         priority,
         dueDate: parsedDate.toISOString(),
@@ -60,7 +60,7 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, o
           await sendDeadlineEmail({
             toName: assignee.name,
             toEmail: assignee.email,
-            title: title.trim(),
+            title: titleInput.trim(),
             description: description.trim(),
             dueDate: parsedDate.toLocaleString(undefined, {
               dateStyle: 'medium', timeStyle: 'short',
@@ -70,27 +70,29 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, o
           })
           setEmailStatus('sent')
         } catch (err) {
-          console.error(err)
+          console.error('Email send error:', err)
           setEmailStatus('failed')
         }
+      } else {
+        setEmailStatus('skipped')
       }
 
-      if (!notifyEmail || emailStatus !== 'failed') {
-        setTimeout(onClose, notifyEmail ? 700 : 0)
-      }
+      setTimeout(() => {
+        onClose()
+      }, 1000)
     } catch (err) {
       console.error(err)
-      setError('Failed to save the deadline. Please ensure your inputs are correct and try again.')
+      setError('Failed to save. Please ensure your inputs are correct and try again.')
     } finally {
       setSubmitting(false)
     }
   }
 
   return (
-    <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal-panel" role="dialog" aria-modal="true" aria-label="Create deadline">
+    <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()} style={{ zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div className="modal-panel" role="dialog" aria-modal="true" aria-label={title} style={{ maxHeight: '90vh', overflowY: 'auto', margin: 'auto' }}>
         <div className="modal-header">
-          <h2>New deadline</h2>
+          <h2>{title}</h2>
           <button className="modal-close" onClick={onClose} aria-label="Close">✕</button>
         </div>
 
@@ -98,8 +100,8 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, o
           <div className="field">
             <label htmlFor="title">Title</label>
             <input
-              id="title" type="text" value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              id="title" type="text" value={titleInput}
+              onChange={(e) => setTitleInput(e.target.value)}
               placeholder="e.g. Pen-test report — client Acme"
               autoFocus
             />
@@ -199,7 +201,7 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, o
           <div className="modal-actions">
             <button type="button" className="btn-ghost" onClick={onClose}>Cancel</button>
             <button type="submit" className="btn-primary" disabled={submitting || members.length === 0 || sprintLocked}>
-              {submitting ? 'Saving…' : 'Create deadline'}
+              {submitting ? 'Saving…' : submitText}
             </button>
           </div>
         </form>

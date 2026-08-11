@@ -367,6 +367,8 @@ export default function WorkflowPage() {
           members={members}
           currentUser={user}
           activeSprint={activeSprint}
+          title="New workflow item"
+          submitText="Create item"
           onClose={() => setShowNewModal(false)}
         />
       )}
