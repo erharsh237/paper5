@@ -37,8 +37,9 @@ const TIERS = [
     features: [
       '5 Workspaces included',
       'Up to 7 Team Members',
-      'All 8 Agile Methodology Tiers',
-      'API Webhooks & Integrations',
+      '⚡ 6 Agile Workflows (Kanban, Scrum, XP, Lean, Scrumban)',
+      'GitHub & Google Calendar Integrations',
+      'Locked Sprint Scope Control',
       'Audit Logs & Strict Security'
     ]
   },
