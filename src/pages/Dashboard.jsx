@@ -66,9 +66,20 @@ export default function Dashboard() {
       if (statusFilter !== 'all' && d.status !== statusFilter) return false
       if (assigneeFilter !== 'all' && d.assigneeId !== assigneeFilter) return false
       if (search.trim() && !d.title.toLowerCase().includes(search.toLowerCase())) return false
-      return true
     })
   }, [deadlines, statusFilter, assigneeFilter, search])
+
+  const [viewMode, setViewMode] = useState('board')
+
+  const kanbanColumns = useMemo(() => {
+    return [
+      { id: 'not_started', title: 'To Do', color: '#64748b', items: filtered.filter(d => d.status === 'not_started' || d.status === 'todo') },
+      { id: 'in_progress', title: 'In Progress', color: '#3b82f6', items: filtered.filter(d => d.status === 'in_progress') },
+      { id: 'review', title: 'Review / QA', color: '#f59e0b', items: filtered.filter(d => d.status === 'review') },
+      { id: 'blocked', title: 'Blocked', color: '#ef4444', items: filtered.filter(d => d.status === 'blocked') },
+      { id: 'done', title: 'Done', color: '#10b981', items: filtered.filter(d => d.status === 'done') },
+    ]
+  }, [filtered])
 
   return (
     <div className="dash">
@@ -177,8 +188,46 @@ export default function Dashboard() {
 
         <div className="dash-columns">
           <div className="dash-main">
-            <section className="controls-bar">
+            <section className="controls-bar" style={{ flexWrap: 'wrap', gap: '12px' }}>
               <div className="controls-left">
+                {/* View Switcher Toggle */}
+                <div style={{ display: 'inline-flex', background: 'var(--bg-layer-2)', padding: '2px', borderRadius: '8px', border: '1px solid var(--border-hair)', marginRight: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('board')}
+                    style={{
+                      padding: '5px 11px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: viewMode === 'board' ? 'var(--bg-panel)' : 'transparent',
+                      color: viewMode === 'board' ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                      cursor: 'pointer',
+                      boxShadow: viewMode === 'board' ? 'var(--shadow-sm)' : 'none'
+                    }}
+                  >
+                    📊 Kanban Board
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('list')}
+                    style={{
+                      padding: '5px 11px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: viewMode === 'list' ? 'var(--bg-panel)' : 'transparent',
+                      color: viewMode === 'list' ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                      cursor: 'pointer',
+                      boxShadow: viewMode === 'list' ? 'var(--shadow-sm)' : 'none'
+                    }}
+                  >
+                    📋 List View
+                  </button>
+                </div>
+
                 <input
                   className="search-input"
                   placeholder="Search deadlines…"
@@ -189,6 +238,7 @@ export default function Dashboard() {
                   <option value="all">All statuses</option>
                   <option value="not_started">Not started</option>
                   <option value="in_progress">In progress</option>
+                  <option value="review">Review / QA</option>
                   <option value="blocked">Blocked</option>
                   <option value="done">Done</option>
                 </select>
@@ -212,23 +262,97 @@ export default function Dashboard() {
               </div>
             </section>
 
-            <section className="deadline-list">
-              {filtered.length === 0 ? (
-                <div className="empty-state">
-                  <p>{deadlines.length === 0 ? 'No deadlines yet. Create the first one.' : 'Nothing matches these filters.'}</p>
-                </div>
-              ) : (
-                filtered.map(d => (
-                  <DeadlineCard
-                    key={d.id}
-                    deadline={d}
-                    currentUser={user}
-                    teamId={TEAM_ID}
-                    sprintLocked={!!(d.sprintId && sprints.find(s => s.id === d.sprintId)?.locked)}
-                  />
-                ))
-              )}
-            </section>
+            {/* KANBAN BOARD VIEW */}
+            {viewMode === 'board' ? (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                gap: '16px',
+                alignItems: 'flex-start',
+                marginTop: '16px',
+                overflowX: 'auto'
+              }}>
+                {kanbanColumns.map(col => (
+                  <div key={col.id} style={{
+                    background: 'var(--bg-layer-1)',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-hair)',
+                    padding: '14px',
+                    minWidth: '250px'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: '12px',
+                      paddingBottom: '8px',
+                      borderBottom: '1px solid var(--border-subtle)'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: col.color }} />
+                        {col.title}
+                      </div>
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        background: 'var(--bg-panel)',
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        color: 'var(--text-secondary)',
+                        border: '1px solid var(--border-hair)'
+                      }}>
+                        {col.items.length}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: '120px' }}>
+                      {col.items.length === 0 ? (
+                        <div style={{
+                          padding: '20px 12px',
+                          textAlign: 'center',
+                          fontSize: '12px',
+                          color: 'var(--text-tertiary)',
+                          border: '1px dashed var(--border-subtle)',
+                          borderRadius: '8px',
+                          background: 'var(--bg-inset)'
+                        }}>
+                          No tasks in {col.title}
+                        </div>
+                      ) : (
+                        col.items.map(d => (
+                          <DeadlineCard
+                            key={d.id}
+                            deadline={d}
+                            currentUser={user}
+                            teamId={TEAM_ID}
+                            sprintLocked={!!(d.sprintId && sprints.find(s => s.id === d.sprintId)?.locked)}
+                          />
+                        ))
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              /* LIST VIEW */
+              <section className="deadline-list">
+                {filtered.length === 0 ? (
+                  <div className="empty-state">
+                    <p>{deadlines.length === 0 ? 'No deadlines yet. Create the first one.' : 'Nothing matches these filters.'}</p>
+                  </div>
+                ) : (
+                  filtered.map(d => (
+                    <DeadlineCard
+                      key={d.id}
+                      deadline={d}
+                      currentUser={user}
+                      teamId={TEAM_ID}
+                      sprintLocked={!!(d.sprintId && sprints.find(s => s.id === d.sprintId)?.locked)}
+                    />
+                  ))
+                )}
+              </section>
+            )}
 
             {hasMore && (
               <div className="load-more-row">
