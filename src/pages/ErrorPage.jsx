@@ -35,7 +35,7 @@ export default function ErrorPage({ error, errorInfo, resetError }) {
     <div className="nf-wrap" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
       <div className="nf-card glass-panel" style={{ maxWidth: '640px', width: '100%', textAlign: 'center', padding: '40px 32px' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '20px', fontWeight: 700, fontFamily: 'var(--mono)', color: 'var(--text-primary)', marginBottom: '20px' }}>
-          Paper5 <span style={{ opacity: 0.5, fontWeight: 400 }}>| SprintOS</span>
+          SprintOS
         </div>
 
         <div className="nf-badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-critical, #ef4444)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>

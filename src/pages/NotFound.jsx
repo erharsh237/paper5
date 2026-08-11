@@ -13,7 +13,7 @@ export default function NotFound() {
     <div className="nf-wrap">
       <div className="nf-card glass-panel">
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '20px', fontWeight: 700, fontFamily: 'var(--mono)', color: 'var(--text-primary)', marginBottom: '20px' }}>
-          Paper5 <span style={{ opacity: 0.5, fontWeight: 400 }}>| SprintOS</span>
+          SprintOS
         </div>
 
         <div className="nf-badge">
