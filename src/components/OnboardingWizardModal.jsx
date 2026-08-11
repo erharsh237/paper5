@@ -184,13 +184,19 @@ export default function OnboardingWizardModal() {
         saveData
       )
 
+      const targetWsId = typeof newWs === 'object' ? (newWs?.id || newWs?.workspaceId) : newWs
+
       // 3. Update AuthContext state locally so app unblocks instantly
       if (updateUserData) {
         await updateUserData({ billing_plan_id: selectedTier, billing_status: 'active' })
       }
 
       // 4. Navigate directly into the newly created workspace
-      navigate(`/${newWs.id}`, { replace: true })
+      if (targetWsId) {
+        window.location.href = `/${targetWsId}`
+      } else {
+        window.location.href = '/workspace'
+      }
     } catch (err) {
       console.error('Failed to complete onboarding:', err)
       setError(err?.message || 'Failed to complete setup. Please try again.')
