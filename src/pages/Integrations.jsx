@@ -682,6 +682,7 @@ print(response.json())`}
 
           {/* Bento Tiles: Spans 4 Columns Each for GitHub, Discord, Slack, Vercel */}
           {INTEGRATIONS.map(integration => {
+            const isAllowedByPlan = currentPlan.allowedIntegrations ? currentPlan.allowedIntegrations.includes(integration.id) : true
             const configured = integration.isConfigured(formConfig, formCredentials)
             const result = testResults[integration.id]
             const brandIcon = integration.id === 'github' ? '🐙' : integration.id === 'discord' ? '💬' : integration.id === 'slack' ? '📣' : integration.id === 'vercel' ? '🚀' : '🔌'
@@ -699,8 +700,8 @@ print(response.json())`}
                     <h3>{integration.name}</h3>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className={`integration-status${configured ? ' integration-status--ready' : ''}`}>
-                      {configured ? 'Active ✓' : 'Setup'}
+                    <span className={`integration-status${configured && isAllowedByPlan ? ' integration-status--ready' : ''}`}>
+                      {!isAllowedByPlan ? 'Locked 🔒' : (configured ? 'Active ✓' : 'Setup')}
                     </span>
                     <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', transform: expandedCards[integration.id] ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
                   </div>
@@ -710,55 +711,71 @@ print(response.json())`}
 
                 {expandedCards[integration.id] && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
-                    <div className="integration-fields">
-                      {integration.configFields.map(f => {
-                        const isPassword = f.type === 'password'
-                        const isShown = showSecrets[f.key]
-                        const inputType = isPassword ? (isShown ? 'text' : 'password') : 'text'
+                    {!isAllowedByPlan ? (
+                      <div style={{ padding: '16px', background: 'rgba(245, 158, 11, 0.05)', border: '1px dashed rgba(245, 158, 11, 0.3)', borderRadius: '8px', fontSize: '13px', textAlign: 'center' }}>
+                        <div style={{ fontWeight: 700, marginBottom: '6px', color: 'var(--text-primary)' }}>
+                          {integration.name} is exclusive to Team & Scale Plans.
+                        </div>
+                        <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                          Upgrade your workspace tier to connect {integration.name} for team notifications & workflow triggers.
+                        </p>
+                        <button className="btn-primary btn-sm" onClick={() => setIsPricingModalOpen(true)}>
+                          ⚡ Upgrade Plan
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="integration-fields">
+                          {integration.configFields.map(f => {
+                            const isPassword = f.type === 'password'
+                            const isShown = showSecrets[f.key]
+                            const inputType = isPassword ? (isShown ? 'text' : 'password') : 'text'
 
-                        return (
-                          <div className="field" key={f.key}>
-                            <label>{f.label}</label>
-                            <input
-                              type={inputType}
-                              value={formConfig[f.key] || ''}
-                              onChange={(e) => setFormConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
-                              disabled={!isAdmin}
-                            />
-                          </div>
-                        )
-                      })}
-                      {integration.credentialFields.map(f => {
-                        const isShown = showSecrets[f.key]
-                        const inputType = isShown ? 'text' : 'password'
+                            return (
+                              <div className="field" key={f.key}>
+                                <label>{f.label}</label>
+                                <input
+                                  type={inputType}
+                                  value={formConfig[f.key] || ''}
+                                  onChange={(e) => setFormConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
+                                  disabled={!isAdmin}
+                                />
+                              </div>
+                            )
+                          })}
+                          {integration.credentialFields.map(f => {
+                            const isShown = showSecrets[f.key]
+                            const inputType = isShown ? 'text' : 'password'
 
-                        return (
-                          <div className="field" key={f.key}>
-                            <label>{f.label} <span className="integration-private-tag">(private)</span></label>
-                            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                              <input
-                                type={inputType}
-                                value={formCredentials[f.key] || ''}
-                                onChange={(e) => setFormCredentials(prev => ({ ...prev, [f.key]: e.target.value }))}
-                                style={{ width: '100%', paddingRight: '36px' }}
-                              />
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
+                            return (
+                              <div className="field" key={f.key}>
+                                <label>{f.label} <span className="integration-private-tag">(private)</span></label>
+                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                  <input
+                                    type={inputType}
+                                    value={formCredentials[f.key] || ''}
+                                    onChange={(e) => setFormCredentials(prev => ({ ...prev, [f.key]: e.target.value }))}
+                                    style={{ width: '100%', paddingRight: '36px' }}
+                                  />
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
 
-                    <div className="integration-actions-row" style={{ marginTop: '4px' }}>
-                      <button className="btn-primary btn-sm" disabled={savingId === integration.id} onClick={() => handleSave(integration)} style={{ minWidth: '80px' }}>
-                        {savingId === integration.id ? 'Saving…' : 'Save'}
-                      </button>
-                      <button className="btn-ghost btn-sm" disabled={!configured || result?.loading} onClick={() => handleTest(integration)}>
-                        {result?.loading ? 'Testing…' : 'Test'}
-                      </button>
-                    </div>
+                        <div className="integration-actions-row" style={{ marginTop: '4px' }}>
+                          <button className="btn-primary btn-sm" disabled={savingId === integration.id} onClick={() => handleSave(integration)} style={{ minWidth: '80px' }}>
+                            {savingId === integration.id ? 'Saving…' : 'Save'}
+                          </button>
+                          <button className="btn-ghost btn-sm" disabled={!configured || result?.loading} onClick={() => handleTest(integration)}>
+                            {result?.loading ? 'Testing…' : 'Test'}
+                          </button>
+                        </div>
 
-                    {result?.error && <div className="form-error">{result.error}</div>}
-                    {result?.ok && <div className="form-status form-status--ok">{result.ok}</div>}
+                        {result?.error && <div className="form-error">{result.error}</div>}
+                        {result?.ok && <div className="form-status form-status--ok">{result.ok}</div>}
+                      </>
+                    )}
                   </div>
                 )}
               </div>
