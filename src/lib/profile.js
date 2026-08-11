@@ -1,7 +1,12 @@
 import { supabase } from './supabase'
 
-export function subscribeProfile(workspaceId, uid, callback) {
-  if (!uid || !workspaceId) return () => {}
+export function subscribeProfile(arg1, arg2, arg3) {
+  let workspaceId = typeof arg2 === 'function' ? 'global' : arg1
+  let uid = typeof arg2 === 'function' ? arg1 : arg2
+  let callback = typeof arg2 === 'function' ? arg2 : arg3
+
+  if (!uid || typeof callback !== 'function') return () => {}
+
   const fetchList = async () => {
     const { data } = await supabase
       .from('profiles')
@@ -9,31 +14,33 @@ export function subscribeProfile(workspaceId, uid, callback) {
       .eq('workspace_id', workspaceId)
       .eq('id', uid)
       .maybeSingle()
-    callback(data || null)
+    if (typeof callback === 'function') callback(data || null)
   }
   fetchList()
-  const channel = supabase.channel(`public:profiles:workspace_id=eq.${workspaceId}:id=eq.${uid}:${Math.random().toString(36).substring(7)}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `workspace_id=eq.${workspaceId}` }, (payload) => {
-      // payload might not contain id if not explicitly in filter, but we are fetching on any change to this table with this workspace
-      // Actually we can just fetch
+  const channel = supabase.channel(`public:profiles:${workspaceId}:${uid}:${Math.random().toString(36).substring(7)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `workspace_id=eq.${workspaceId}` }, () => {
       fetchList()
     })
     .subscribe()
   return () => supabase.removeChannel(channel)
 }
 
-export async function saveProfile(workspaceId, uid, { email, name, phone, roleId, roleName, bio }) {
+export async function saveProfile(arg1, arg2, arg3) {
+  const workspaceId = typeof arg2 === 'object' ? 'global' : arg1
+  const uid = typeof arg2 === 'object' ? arg1 : arg2
+  const payload = typeof arg2 === 'object' ? arg2 : (arg3 || {})
+
   await supabase
     .from('profiles')
     .upsert({
       workspace_id: workspaceId,
       id: uid,
-      email: (email || '').toLowerCase(),
-      name: name || '',
-      phone: phone || '',
-      roleId: roleId || null,
-      roleName: roleName || '',
-      bio: bio || '',
+      email: (payload.email || '').toLowerCase(),
+      name: payload.name || '',
+      phone: payload.phone || '',
+      roleId: payload.roleId || null,
+      roleName: payload.roleName || '',
+      bio: payload.bio || '',
       updatedAt: new Date().toISOString()
     })
 }
@@ -47,7 +54,11 @@ export function getAimLockStatus(profile) {
   return { locked: unlockDate > new Date(), unlockDate }
 }
 
-export async function saveAim(workspaceId, uid, aim) {
+export async function saveAim(arg1, arg2, arg3) {
+  const workspaceId = typeof arg3 === 'undefined' ? 'global' : arg1
+  const uid = typeof arg3 === 'undefined' ? arg1 : arg2
+  const aim = typeof arg3 === 'undefined' ? arg2 : arg3
+
   await supabase
     .from('profiles')
     .upsert({
@@ -68,7 +79,11 @@ export async function getProfileOnce(workspaceId, uid) {
   return data || null
 }
 
-export async function uploadPhoto(workspaceId, uid, dataUrl) {
+export async function uploadPhoto(arg1, arg2, arg3) {
+  const workspaceId = typeof arg3 === 'undefined' ? 'global' : arg1
+  const uid = typeof arg3 === 'undefined' ? arg1 : arg2
+  const dataUrl = typeof arg3 === 'undefined' ? arg2 : arg3
+
   await supabase
     .from('profiles')
     .upsert({
@@ -79,7 +94,12 @@ export async function uploadPhoto(workspaceId, uid, dataUrl) {
     })
 }
 
-export async function uploadResume(workspaceId, uid, resumeUrl, resumeName) {
+export async function uploadResume(arg1, arg2, arg3, arg4) {
+  const workspaceId = typeof arg4 === 'undefined' ? 'global' : arg1
+  const uid = typeof arg4 === 'undefined' ? arg1 : arg2
+  const resumeUrl = typeof arg4 === 'undefined' ? arg2 : arg3
+  const resumeName = typeof arg4 === 'undefined' ? arg3 : arg4
+
   await supabase
     .from('profiles')
     .upsert({
@@ -91,7 +111,10 @@ export async function uploadResume(workspaceId, uid, resumeUrl, resumeName) {
     })
 }
 
-export async function deleteResume(workspaceId, uid) {
+export async function deleteResume(arg1, arg2) {
+  const workspaceId = typeof arg2 === 'undefined' ? 'global' : arg1
+  const uid = typeof arg2 === 'undefined' ? arg1 : arg2
+
   await supabase
     .from('profiles')
     .upsert({

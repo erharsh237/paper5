@@ -28,6 +28,7 @@ function getUserColor(identifier) {
 export default function Profile() {
   const { user, logout, userData } = useAuth()
   const workspaceContext = useWorkspace()
+  const workspaceId = workspaceContext?.workspaceId || 'global'
   const workspaceRole = workspaceContext?.workspaceRole
   const isOwner = workspaceContext?.isOwner
   const isAdmin = workspaceContext?.isAdmin
