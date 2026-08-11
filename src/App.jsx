@@ -34,6 +34,7 @@ function safeLazy(componentImport) {
 }
 
 // Route-based code splitting: each page ships as its own chunk, loaded only when visited.
+const WorkflowPage = safeLazy(() => import('./pages/WorkflowPage'))
 const MyDashboard = safeLazy(() => import('./pages/MyDashboard'))
 const Dashboard = safeLazy(() => import('./pages/Dashboard'))
 const Meeting = safeLazy(() => import('./pages/Meeting'))
@@ -190,6 +191,7 @@ export default function App() {
                 <WorkspaceGuard>
                   <Routes>
                     <Route path="" element={<MyDashboard />} />
+                    <Route path="workflow" element={<WorkflowPage />} />
                     <Route path="team" element={<Dashboard />} />
                     <Route path="meeting" element={<Meeting />} />
                     <Route path="analytics" element={<Analytics />} />
