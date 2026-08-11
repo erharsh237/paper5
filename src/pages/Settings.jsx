@@ -427,7 +427,7 @@ export default function Settings() {
       setInvitePassword('')
       setInviteSendEmail(true)
     } catch (err) {
-      setInviteError('Unable to dispatch the invitation email. Please try again.')
+      setInviteError(err?.message || 'Unable to dispatch the invitation email. Please try again.')
     } finally {
       setInviting(false)
     }

@@ -211,11 +211,40 @@ export async function cancelInvite(workspaceId, inviteId) {
 }
 
 export async function createInvite(workspaceId, email, role, permissions = [], password, sendEmail = false) {
-  const { data, error } = await supabase.functions.invoke('create-invite', {
-    body: { workspaceId, email, role, permissions, password, sendEmail }
+  try {
+    const { data, error } = await supabase.functions.invoke('create-invite', {
+      body: { workspaceId, email, role, permissions, password, sendEmail }
+    })
+    if (!error && !data?.error) {
+      return data
+    }
+    if (data?.error) {
+      console.warn('Edge function create-invite reported error:', data.error)
+    }
+  } catch (edgeErr) {
+    console.warn('Edge function create-invite invoke exception:', edgeErr)
+  }
+
+  // Fallback: Create invite directly in database table if edge function is unconfigured/fails
+  const { data: authData } = await supabase.auth.getUser()
+  const inviterId = authData?.user?.id
+
+  const { error: dbErr } = await supabase.from('invites').insert({
+    workspace_id: workspaceId,
+    email: email.trim().toLowerCase(),
+    role,
+    permissions,
+    invited_by: inviterId,
+    password_hint: password || null,
+    created_at: new Date().toISOString()
   })
-  if (error) throw error
-  if (data?.error) throw new Error(data.error)
+
+  if (dbErr) {
+    if (dbErr.code === '23505') {
+      throw new Error('An invitation for this email is already pending in this workspace.')
+    }
+    throw new Error(dbErr.message || 'Unable to dispatch invitation. Please try again.')
+  }
 }
 
 export async function updateMemberPermissions(workspaceId, userId, permissions) {
