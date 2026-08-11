@@ -87,19 +87,45 @@ export function validateUsername(username) {
     return { valid: false, error: 'Username is required.' }
   }
 
-  const clean = username.trim()
+  // Disallow any spaces, tabs, or blank characters anywhere in the input
+  if (/\s/.test(username) || username.includes(' ')) {
+    return { valid: false, error: 'Usernames cannot contain spaces, tabs, or blank characters.' }
+  }
 
-  if (clean.length < 5) {
+  // Strip non-printable ASCII, zero-width unicode, and invisible characters
+  const sanitized = username
+    .replace(/[\u200B-\u200D\uFEFF\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]/g, '')
+    .trim()
+
+  if (sanitized.length < 5) {
     return { valid: false, error: 'Username must be at least 5 characters long.' }
   }
 
-  if (clean.length > 20) {
+  if (sanitized.length > 20) {
     return { valid: false, error: 'Username cannot exceed 20 characters.' }
   }
 
   const validRegex = /^[a-zA-Z0-9]+$/
-  if (!validRegex.test(clean)) {
-    return { valid: false, error: 'Username can only contain letters and numbers (no special characters, underscores, or hyphens).' }
+  if (!validRegex.test(sanitized)) {
+    return { valid: false, error: 'Username can only contain letters and numbers (no spaces, special characters, or emojis).' }
+  }
+
+  const lower = sanitized.toLowerCase()
+
+  // 1. Block repetitive single characters (e.g., hhhhhhhhh, aaaaa, 11111)
+  const uniqueChars = new Set(lower).size
+  if (uniqueChars < 3) {
+    return { valid: false, error: 'Usernames cannot consist of repeated characters (e.g., "hhhhh"). Please choose a unique username.' }
+  }
+
+  // 2. Block 3 or more consecutive identical characters (e.g., hhh in hhhhhhh or adminaaa)
+  if (/(.)\1{2,}/.test(lower)) {
+    return { valid: false, error: 'Usernames cannot contain 3 or more consecutive repeated characters (e.g., "hhh").' }
+  }
+
+  // 3. Block repetitive sequence patterns (e.g., hahaha, abcabc, asdfasdf)
+  if (/^(.{1,4})\1{2,}$/i.test(sanitized)) {
+    return { valid: false, error: 'Usernames cannot consist of repetitive pattern loops (e.g., "hahaha"). Please choose a valid username.' }
   }
 
   const RESERVED_USERNAMES = new Set([
@@ -121,13 +147,12 @@ export function validateUsername(username) {
     'paper5', 'sprintos', 'sprint-os', 'paper5app', 'paper5team', 'paper5support'
   ])
 
-  const lower = clean.toLowerCase()
   if (RESERVED_USERNAMES.has(lower)) {
     return { valid: false, error: 'This username is reserved or too generic and cannot be used.' }
   }
 
   // Check if username is purely a generic word + digits (e.g., user123, test99, admin007, demo1)
-  if (/^(user|admin|asdmin|admn|test|demo|guest|temp|account|sample|qwerty|asdf)[0-9_]*$/i.test(clean)) {
+  if (/^(user|admin|asdmin|admn|test|demo|guest|temp|account|sample|qwerty|asdf)[0-9_]*$/i.test(sanitized)) {
     return { valid: false, error: 'Generic usernames (like user, admin, test, demo) are not permitted.' }
   }
 
