@@ -110,16 +110,7 @@ export default function AlertModal({ message, onClose }) {
           )}
         </div>
 
-        {/* Title */}
-        <h3 style={{
-          margin: '0 0 8px 0',
-          fontSize: '19px',
-          fontWeight: 800,
-          color: '#09090b',
-          letterSpacing: '-0.01em'
-        }}>
-          {isSuccess ? 'Notification' : 'Notice'}
-        </h3>
+
 
         {/* Animated Message Text */}
         <p style={{
