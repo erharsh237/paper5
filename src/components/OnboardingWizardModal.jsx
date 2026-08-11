@@ -168,8 +168,7 @@ export default function OnboardingWizardModal() {
           billing_plan_id: selectedTier,
           billing_status: 'active',
           legal_accepted_version: '1.0.0',
-          legal_accepted_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          legal_accepted_at: new Date().toISOString()
         })
         .eq('id', user.id)
 
@@ -697,7 +696,7 @@ export default function OnboardingWizardModal() {
                   flex: 1,
                   padding: '14px',
                   borderRadius: '10px',
-                  background: '#10b981',
+                  background: loading ? '#71717a' : '#09090b',
                   color: '#ffffff',
                   fontSize: '15px',
                   fontWeight: 700,
@@ -706,11 +705,10 @@ export default function OnboardingWizardModal() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '8px',
-                  boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)'
+                  gap: '8px'
                 }}
               >
-                <span>{loading ? 'Setting up Workspace...' : '🚀 Launch SprintOS Workspace'}</span>
+                <span>{loading ? 'Setting up Workspace...' : 'Launch SprintOS Workspace'}</span>
               </button>
             </div>
           </div>
