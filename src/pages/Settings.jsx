@@ -1102,19 +1102,36 @@ export default function Settings() {
                       <button className="btn-ghost btn-sm" onClick={() => setIsInvoicesModalOpen(true)}>View Invoices</button>
                     </div>
                   </div>
-                  <div style={{ padding: '16px', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.03)' }}>
+                  <div style={{ 
+                    padding: '16px', 
+                    border: (planId === 'team' || planId === 'scale') ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid var(--border-subtle)', 
+                    borderRadius: '8px', 
+                    background: (planId === 'team' || planId === 'scale') ? 'rgba(239, 68, 68, 0.03)' : 'var(--bg-layer-2)' 
+                  }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', color: 'var(--accent-critical, #ef4444)' }}>Cancel Membership</h4>
-                        <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>Downgrade workspace tier and cancel subscription membership.</p>
+                        <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', color: (planId === 'team' || planId === 'scale') ? 'var(--accent-critical, #ef4444)' : 'var(--text-primary)' }}>
+                          Cancel Membership
+                        </h4>
+                        <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
+                          {(planId === 'team' || planId === 'scale')
+                            ? 'Downgrade workspace tier and cancel subscription membership.' 
+                            : 'You are currently on the Free Starter Tier. No active paid subscription to cancel.'}
+                        </p>
                       </div>
-                      <button 
-                        className="btn-ghost btn-sm" 
-                        style={{ color: 'var(--accent-critical, #ef4444)', borderColor: 'rgba(239, 68, 68, 0.4)' }}
-                        onClick={() => setIsCancelMembershipModalOpen(true)}
-                      >
-                        Cancel Membership
-                      </button>
+                      {(planId === 'team' || planId === 'scale') ? (
+                        <button 
+                          className="btn-ghost btn-sm" 
+                          style={{ color: 'var(--accent-critical, #ef4444)', borderColor: 'rgba(239, 68, 68, 0.4)' }}
+                          onClick={() => setIsCancelMembershipModalOpen(true)}
+                        >
+                          Cancel Membership
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: '12px', background: 'var(--bg-panel)', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '6px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                          Free Starter Active
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
