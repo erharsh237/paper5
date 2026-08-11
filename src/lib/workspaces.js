@@ -130,11 +130,19 @@ export function subscribeWorkspaceMembers(workspaceId, callback) {
 
 export function subscribeInvites(workspaceId, callback) {
   const fetchList = async () => {
-    const { data, error } = await supabase
-      .from('invites')
-      .select('*')
-      .eq('workspace_id', workspaceId)
-    if (!error) callback(data || [])
+    try {
+      const { data, error } = await supabase
+        .from('invites')
+        .select('*')
+        .eq('workspace_id', workspaceId)
+      if (error) {
+        callback([])
+        return
+      }
+      callback(data || [])
+    } catch (err) {
+      callback([])
+    }
   }
   const channel = supabase.channel(`public:invites:workspace_id=eq.${workspaceId}:${Math.random().toString(36).substring(7)}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'invites', filter: `workspace_id=eq.${workspaceId}` }, payload => {

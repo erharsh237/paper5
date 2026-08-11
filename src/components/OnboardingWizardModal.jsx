@@ -124,7 +124,7 @@ export default function OnboardingWizardModal() {
           const { data: ownedWs } = await supabase
             .from('workspaces')
             .select('id')
-            .eq('owner_id', user.id)
+            .eq('created_by', user.id)
 
           if (!ownedWs || ownedWs.length === 0) {
             // User is a member/co-admin in someone else's workspace — NOT primary creator!
