@@ -21,7 +21,7 @@ import './Dashboard.css'
 const TEAM_ID = 'default-team'
 
 export default function Dashboard() {
-  const { workspaceId, workspace } = useWorkspace();
+  const { workspaceId, workspace, workspaceRole } = useWorkspace();
   const { user } = useAuth()
   const { deadlines, hasMore, loadMore, loadingMore } = useDeadlines(workspaceId, undefined)
   const [members, setMembers] = useState([])
