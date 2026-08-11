@@ -120,8 +120,10 @@ export default function MyDashboard() {
       </header>
 
       <main className="dash-body">
-        {/* Active Agile Workflow Banner */}
+        {/* Active Agile Workflow Banner (Visible strictly to Admins) */}
         {(() => {
+          if (!isAdmin) return null
+
           const currentWorkflowId = workspace?.settings?.agile_workflow || 'scrum'
           const activeWf = getWorkflowById(currentWorkflowId)
           return (

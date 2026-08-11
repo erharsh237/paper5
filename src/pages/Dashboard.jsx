@@ -87,11 +87,13 @@ export default function Dashboard() {
       </header>
 
       <main className="dash-body">
-        {/* Active Agile Workflow Banner */}
+        {/* Active Agile Workflow Banner (Visible strictly to Admins) */}
         {(() => {
+          const isAdmin = workspaceRole === 'owner' || workspaceRole === 'admin'
+          if (!isAdmin) return null
+
           const currentWorkflowId = workspace?.settings?.agile_workflow || 'scrum'
           const activeWf = getWorkflowById(currentWorkflowId)
-          const isAdmin = workspaceRole === 'owner' || workspaceRole === 'admin'
           return (
             <div style={{
               marginBottom: '1.5rem',
