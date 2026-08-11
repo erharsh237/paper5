@@ -48,13 +48,13 @@ export default function AlertModal({ message, onClose }) {
         className="alert-card"
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: 'var(--bg-layer-1, #09090b)',
-          border: isSuccess ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid var(--border-hair, #27272a)',
+          background: '#ffffff',
+          border: isSuccess ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid #e4e4e7',
           borderRadius: '16px',
           padding: '28px 24px 24px 24px',
           maxWidth: '420px',
           width: '100%',
-          boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 30px 0 rgba(16, 185, 129, 0.08)',
+          boxShadow: '0 20px 45px -10px rgba(0, 0, 0, 0.18), 0 0 30px 0 rgba(16, 185, 129, 0.1)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -73,7 +73,7 @@ export default function AlertModal({ message, onClose }) {
             right: '14px',
             background: 'transparent',
             border: 'none',
-            color: 'var(--text-tertiary, #a1a1aa)',
+            color: '#71717a',
             cursor: 'pointer',
             padding: '4px',
             borderRadius: '50%',
@@ -113,9 +113,9 @@ export default function AlertModal({ message, onClose }) {
         {/* Title */}
         <h3 style={{
           margin: '0 0 8px 0',
-          fontSize: '18px',
+          fontSize: '19px',
           fontWeight: 800,
-          color: 'var(--text-primary, #ffffff)',
+          color: '#09090b',
           letterSpacing: '-0.01em'
         }}>
           {isSuccess ? 'Notification' : 'Notice'}
@@ -123,11 +123,11 @@ export default function AlertModal({ message, onClose }) {
 
         {/* Animated Message Text */}
         <p style={{
-          color: 'var(--text-secondary, #a1a1aa)',
+          color: '#52525b',
           margin: '0 0 24px 0',
           fontSize: '14px',
           lineHeight: '1.55',
-          fontWeight: 400
+          fontWeight: 500
         }}>
           {cleanMessage}
         </p>
@@ -142,11 +142,11 @@ export default function AlertModal({ message, onClose }) {
             fontSize: '14px',
             fontWeight: 700,
             borderRadius: '10px',
-            background: isSuccess ? '#10b981' : 'var(--text-primary, #ffffff)',
-            color: isSuccess ? '#ffffff' : 'var(--bg-layer-1, #09090b)',
+            background: isSuccess ? '#10b981' : '#09090b',
+            color: '#ffffff',
             border: 'none',
             cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)',
             transition: 'transform 0.15s ease, filter 0.2s'
           }}
         >
