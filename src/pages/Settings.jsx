@@ -11,7 +11,8 @@ import {
   removeMember,
   cancelInvite,
   createInvite,
-  updateMemberPermissions
+  updateMemberPermissions,
+  deleteWorkspace
 } from '../lib/workspaces'
 
 import Breadcrumbs from '../components/Breadcrumbs'
@@ -609,11 +610,11 @@ export default function Settings() {
     setIsDeleteWorkspaceModalOpen(false)
     setDeleting(true)
     try {
-      const { error } = await supabase.from('workspaces').delete().eq('id', workspaceId)
-      if (error) throw error
-      window.location.href = '/'
+      await deleteWorkspace(workspaceId)
+      window.location.href = '/workspace'
     } catch (err) {
-      setAlertMessage('System error: Unable to complete workspace deletion.')
+      console.error('Workspace deletion error:', err)
+      setAlertMessage(`Unable to delete workspace: ${err?.message || 'Database foreign key constraint or permission error'}`)
       setDeleting(false)
     }
   }

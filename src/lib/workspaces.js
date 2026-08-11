@@ -251,3 +251,25 @@ export async function updateMemberPermissions(workspaceId, userId, permissions) 
   const { error } = await supabase.from('workspace_members').update({ permissions }).eq('workspace_id', workspaceId).eq('user_id', userId)
   if (error) throw error
 }
+
+export async function deleteWorkspace(workspaceId) {
+  if (!workspaceId) throw new Error('Workspace ID is required.')
+
+  // Clean up all child table records to prevent foreign key constraint violations
+  await Promise.allSettled([
+    supabase.from('workspace_members').delete().eq('workspace_id', workspaceId),
+    supabase.from('deadlines').delete().eq('workspace_id', workspaceId),
+    supabase.from('sprints').delete().eq('workspace_id', workspaceId),
+    supabase.from('invites').delete().eq('workspace_id', workspaceId),
+    supabase.from('meetings').delete().eq('workspace_id', workspaceId),
+    supabase.from('audit_logs').delete().eq('workspace_id', workspaceId),
+    supabase.from('integrations').delete().eq('workspace_id', workspaceId),
+  ])
+
+  // Delete the primary workspace record
+  const { error } = await supabase.from('workspaces').delete().eq('id', workspaceId)
+  if (error) {
+    const { error: rpcErr } = await supabase.rpc('delete_workspace', { workspace_id: workspaceId })
+    if (rpcErr) throw error
+  }
+}
