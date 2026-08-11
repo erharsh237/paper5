@@ -108,7 +108,7 @@ function WarningIcon() {
 
 export default function Settings() {
   const { workspaceId, workspace, isAdmin, isOwner } = useWorkspace()
-  const { user, userData } = useAuth()
+  const { user, userData, updateUserData } = useAuth()
   
   const [activeTab, setActiveTab] = useState('general')
   const [alertMessage, setAlertMessage] = useState(null)
@@ -337,8 +337,12 @@ export default function Settings() {
         billing_plan_id: 'free',
         billing_status: 'cancelled'
       })
-      if (updateUserData) {
-        await updateUserData({ billing_plan_id: 'free', billing_status: 'cancelled' })
+      if (typeof updateUserData === 'function') {
+        try {
+          await updateUserData({ billing_plan_id: 'free', billing_status: 'cancelled' })
+        } catch (e) {
+          console.warn('Optional updateUserData call skipped:', e)
+        }
       }
       setIsCancelMembershipModalOpen(false)
       setAlertMessage('Workspace membership has been cancelled. Your workspace has reverted to the free Starter Tier.')
