@@ -100,7 +100,7 @@ export function subscribeWorkspaceMembers(workspaceId, callback) {
         user_id,
         role,
         joined_at,
-        users ( email, full_name, avatar_url )
+        users ( id, email, full_name, avatar_url )
       `)
       .eq('workspace_id', workspaceId)
       
@@ -110,9 +110,20 @@ export function subscribeWorkspaceMembers(workspaceId, callback) {
       return
     }
 
+    const userIds = data.map(r => r.user_id).filter(Boolean)
+    let fallbackUsersMap = new Map()
+    if (userIds.length > 0) {
+      try {
+        const { data: uData } = await supabase.from('users').select('id, email').in('id', userIds)
+        for (const u of (uData || [])) {
+          if (u.id && u.email) fallbackUsersMap.set(u.id, u.email)
+        }
+      } catch (e) {}
+    }
+
     const mapped = data.map(row => ({
       id: row.user_id,
-      email: row.users?.email || ('Member (' + (row.user_id || '').slice(0, 6) + ')'),
+      email: row.users?.email || fallbackUsersMap.get(row.user_id) || ('Member (' + (row.user_id || '').slice(0, 6) + ')'),
       fullName: row.users?.full_name,
       avatarUrl: row.users?.avatar_url,
       role: row.role || 'member',
