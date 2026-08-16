@@ -324,6 +324,7 @@ export default function Settings() {
 
   const [invitePermissions, setInvitePermissions] = useState([])
   const [selectedMembers, setSelectedMembers] = useState([])
+  const [lastCreatedInvite, setLastCreatedInvite] = useState(null)
   
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false)
   const [isInvoicesModalOpen, setIsInvoicesModalOpen] = useState(false)
@@ -448,8 +449,16 @@ export default function Settings() {
 
     setInviting(true)
     try {
+      const inviteData = {
+        email: inviteEmail,
+        role: inviteRole,
+        password: invitePassword,
+        workspaceName: workspace?.name || 'Workspace',
+        loginUrl: window.location.origin + '/login'
+      }
       await createInvite(workspaceId, inviteEmail, inviteRole, inviteRole === 'member' ? invitePermissions : [], invitePassword, inviteSendEmail)
-      setAlertMessage('Invitation successfully dispatched.')
+      setLastCreatedInvite(inviteData)
+      setAlertMessage('Invitation successfully created.')
       setInviteEmail('')
       setInvitePassword('')
       setInviteSendEmail(true)
@@ -1288,9 +1297,43 @@ export default function Settings() {
                     
                     {inviteError && <div className="form-error" style={{ marginTop: '12px' }}>{inviteError}</div>}
                     
-                    {generatedLink && (
-                      <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '6px' }}>
-                        <p style={{ margin: '0 0 8px 0', fontSize: '13px', color: 'var(--text-secondary)' }}>Invite sent successfully!</p>
+                    {lastCreatedInvite && (
+                      <div style={{
+                        marginTop: '16px',
+                        padding: '16px',
+                        background: 'rgba(16, 185, 129, 0.08)',
+                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                        borderRadius: '8px'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <h4 style={{ margin: 0, fontSize: '14px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            ✅ Invitation Created for {lastCreatedInvite.email}
+                          </h4>
+                          <button 
+                            type="button"
+                            className="btn-ghost btn-sm" 
+                            onClick={() => setLastCreatedInvite(null)} 
+                            style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}
+                          >
+                            Dismiss
+                          </button>
+                        </div>
+                        <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '6px 12px', background: 'var(--bg-panel)', padding: '12px', borderRadius: '6px', margin: '8px 0 12px 0', border: '1px solid var(--border-subtle)' }}>
+                          <span>Login Email:</span><strong>{lastCreatedInvite.email}</strong>
+                          <span>Temporary Password:</span><code style={{ fontSize: '13px', background: 'rgba(0,0,0,0.1)', padding: '2px 6px', borderRadius: '4px', color: 'var(--text-primary)', fontWeight: 600 }}>{lastCreatedInvite.password}</code>
+                          <span>Login URL:</span><a href={lastCreatedInvite.loginUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--accent-signal)' }}>{lastCreatedInvite.loginUrl}</a>
+                        </div>
+                        <button 
+                          type="button"
+                          className="btn-primary btn-sm" 
+                          onClick={() => {
+                            const text = `Workspace Invitation for ${lastCreatedInvite.workspaceName}\n\nEmail: ${lastCreatedInvite.email}\nTemporary Password: ${lastCreatedInvite.password}\nLogin URL: ${lastCreatedInvite.loginUrl}\n\nPlease log in and update your password upon your first sign in.`
+                            navigator.clipboard.writeText(text)
+                            setAlertMessage('Invitation credentials and login link copied to clipboard!')
+                          }}
+                        >
+                          📋 Copy Credentials & Login Link
+                        </button>
                       </div>
                     )}
 

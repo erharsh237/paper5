@@ -264,6 +264,26 @@ export async function createInvite(workspaceId, email, role, permissions = [], p
     }
   }
 
+  // Dispatch email with credentials via Vercel serverless API route if requested
+  if (sendEmail) {
+    try {
+      const { data: ws } = await supabase.from('workspaces').select('name').eq('id', workspaceId).maybeSingle()
+      await fetch('/api/send-invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workspaceName: ws?.name || 'SprintOS Workspace',
+          email: cleanEmail,
+          role,
+          password: password || null,
+          loginUrl: window.location.origin + '/login'
+        })
+      })
+    } catch (emailErr) {
+      console.warn('API send-invite dispatch warning:', emailErr)
+    }
+  }
+
   return insertedData || { success: true }
 }
 
