@@ -312,25 +312,45 @@ export function AuthProvider({ children }) {
       const email = await resolveEmailFromUsername(identifier)
       const cleanE = email.trim().toLowerCase()
       
-      // 1. Attempt standard sign in
-      let { error, data } = await supabase.auth.signInWithPassword({ email: cleanE, password })
+      // 1. Check if user is logging in with an invitation temporary password
+      const { data: inviteMatch } = await supabase
+        .from('invites')
+        .select('*')
+        .ilike('email', cleanE)
+        .maybeSingle()
 
-      // 2. If sign in fails, check if user has a matching invitation
-      if (error) {
-        const { data: inviteMatch } = await supabase
-          .from('invites')
-          .select('*')
-          .ilike('email', cleanE)
-          .maybeSingle()
-
-        if (inviteMatch && (!inviteMatch.password_hint || inviteMatch.password_hint === password)) {
-          return { user: { email: cleanE }, isInviteFallback: true }
+      if (inviteMatch && (!inviteMatch.password_hint || inviteMatch.password_hint === password)) {
+        try {
+          // Pre-register account in Auth with temporary password & password reset flag
+          await supabase.auth.signUp({
+            email: cleanE,
+            password: password,
+            options: {
+              data: {
+                must_change_password: true,
+                invited_workspace_id: inviteMatch.workspace_id,
+                invited_role: inviteMatch.role
+              }
+            }
+          })
+        } catch (signUpErr) {
+          console.warn('Pre-signup notice:', signUpErr)
         }
 
+        // Direct sign in with temporary password
+        const loginRes = await supabase.auth.signInWithPassword({ email: cleanE, password })
+        if (!loginRes.error && loginRes.data) {
+          setUserData(prev => ({ ...(prev || {}), requiresPasswordReset: true }))
+          return { ...loginRes.data, requiresPasswordReset: true, isInviteDirectLogin: true }
+        }
+      }
+
+      // 2. Standard sign in
+      const { error, data } = await supabase.auth.signInWithPassword({ email: cleanE, password })
+      if (error) {
         setAuthError(getFriendlyError(error))
         throw error
       }
-
       return data
     } catch (error) {
       setAuthError(getFriendlyError(error))

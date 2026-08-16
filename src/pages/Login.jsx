@@ -135,6 +135,14 @@ export default function Login({ accessDenied, denialReason }) {
 
       // 1. Verify password (Factor 1)
       const data = await loginWithUsernameOrEmail(identifier, password)
+      
+      // If user is an invited member logging in with temporary password, navigate directly to ForcePasswordReset
+      if (data?.isInviteDirectLogin || data?.requiresPasswordReset) {
+        setIsPending2FA(false)
+        navigate('/workspace')
+        return
+      }
+
       const userEmail = data?.user?.email || data?.email || identifier.trim().toLowerCase()
 
       // 2. Trigger OTP (Factor 2)
