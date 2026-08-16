@@ -234,16 +234,19 @@ export function AuthProvider({ children }) {
     setAuthError(null)
     
     // Depending on whether the user is new or existing, Supabase sends different token types
-    // We try them in order of likelihood for our flow.
-    const typesToTry = ['signup', 'magiclink', 'email']
+    const typesToTry = ['email', 'recovery', 'signup', 'invite', 'magiclink']
     let lastError = null;
 
     for (const type of typesToTry) {
-      const { data, error } = await supabase.auth.verifyOtp({ email, token, type })
-      if (!error && data?.session) {
-        return data
+      try {
+        const { data, error } = await supabase.auth.verifyOtp({ email, token, type })
+        if (!error && data?.session) {
+          return data
+        }
+        if (error) lastError = error
+      } catch (e) {
+        lastError = e
       }
-      lastError = error
     }
 
     setAuthError(getFriendlyError(lastError))
