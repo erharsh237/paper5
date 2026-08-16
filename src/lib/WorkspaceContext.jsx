@@ -59,10 +59,56 @@ export function WorkspaceProvider({ children }) {
     setWorkspaceError(null);
 
     const fetchAll = async () => {
-      const [wsResult, memberResult] = await Promise.all([
+      let [wsResult, memberResult] = await Promise.all([
         supabase.from('workspaces').select('*').eq('id', workspaceId).maybeSingle(),
         supabase.from('workspace_members').select('role').eq('workspace_id', workspaceId).eq('user_id', user.id).maybeSingle()
       ])
+
+      // If user is not in workspace_members yet, check if their email has an invite for this workspace
+      if (!memberResult?.data && user?.email) {
+        const cleanEmail = user.email.trim().toLowerCase()
+        const { data: inviteMatch } = await supabase
+          .from('invites')
+          .select('*')
+          .eq('workspace_id', workspaceId)
+          .ilike('email', cleanEmail)
+          .maybeSingle()
+
+        const { data: legacyInviteMatch } = await supabase
+          .from('workspace_invites')
+          .select('*')
+          .eq('workspace_id', workspaceId)
+          .ilike('email', cleanEmail)
+          .maybeSingle()
+
+        const foundInvite = inviteMatch || legacyInviteMatch
+
+        if (foundInvite) {
+          const roleToAdd = foundInvite.role || 'member'
+          await supabase.from('workspace_members').upsert({
+            workspace_id: workspaceId,
+            user_id: user.id,
+            role: roleToAdd,
+            created_at: new Date().toISOString()
+          })
+
+          try {
+            await supabase.from('invites').delete().eq('workspace_id', workspaceId).ilike('email', cleanEmail)
+            await supabase.from('workspace_invites').delete().eq('workspace_id', workspaceId).ilike('email', cleanEmail)
+          } catch (delErr) {}
+
+          const refetched = await supabase
+            .from('workspace_members')
+            .select('role')
+            .eq('workspace_id', workspaceId)
+            .eq('user_id', user.id)
+            .maybeSingle()
+
+          if (refetched?.data) {
+            memberResult = refetched
+          }
+        }
+      }
 
       if (wsResult.error) {
         setWorkspaceError(wsResult.error.message)
@@ -73,14 +119,15 @@ export function WorkspaceProvider({ children }) {
         setWorkspaceError('Workspace not found')
       }
 
-      if (memberResult.error) {
+      if (memberResult?.error) {
         setWorkspaceRole(null)
         setWorkspaceError(memberResult.error.message)
-      } else if (memberResult.data) {
+      } else if (memberResult?.data) {
         setWorkspaceRole(memberResult.data.role)
+        setWorkspaceError(null)
       } else {
         setWorkspaceRole(null)
-        setWorkspaceError((prev) => prev || 'Access denied')
+        setWorkspaceError('Access denied')
       }
 
       setLoadingWorkspace(false)
