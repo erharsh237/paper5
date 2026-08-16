@@ -1,3 +1,5 @@
+import { createClient } from '@supabase/supabase-js'
+
 // Vercel Serverless API function to dispatch invitation email with login credentials
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -12,7 +14,8 @@ export default async function handler(req, res) {
 
   const finalPassword = password || 'aA1!tempPwd' + Math.floor(1000 + Math.random() * 9000)
   const resendApiKey = process.env.RESEND_API_KEY || process.env.VITE_RESEND_API_KEY
-  const senderEmail = process.env.SENDER_EMAIL || 'SprintOS <onboarding@resend.dev>'
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://sdbglndhjkqhkphzqmum.supabase.co'
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY
 
   const subject = `You've been invited to join ${workspaceName || 'a workspace'} on SprintOS`
   const targetLoginUrl = loginUrl || 'https://app.paper5.co/login'
@@ -58,44 +61,60 @@ export default async function handler(req, res) {
     </html>
   `
 
-  if (!resendApiKey) {
-    console.warn('[API send-invite] RESEND_API_KEY is missing in Vercel environment variables.')
-    return res.status(200).json({ 
-      success: true, 
-      simulated: true, 
-      warning: 'RESEND_API_KEY not configured in Vercel. Copy credentials manually below.' 
-    })
-  }
+  let emailSent = false
+  let resendDetails = null
 
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${resendApiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from: senderEmail,
-        to: [email],
-        subject: subject,
-        html: htmlBody
+  // 1. Try Resend API if key is available
+  if (resendApiKey) {
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: process.env.SENDER_EMAIL || 'SprintOS <onboarding@resend.dev>',
+          to: [email],
+          subject: subject,
+          html: htmlBody
+        })
       })
-    })
 
-    const data = await response.json()
-    if (!response.ok) {
-      console.warn('[API send-invite] Resend API response warning:', data)
-      // Return 200 with simulated indicator and Resend error details so client never logs 400 Bad Request
-      return res.status(200).json({ 
-        success: true, 
-        simulated: true, 
-        warning: data.message || 'Resend domain verification required for recipient.' 
-      })
+      const data = await response.json()
+      if (response.ok && data.id) {
+        emailSent = true
+        resendDetails = data
+      } else {
+        console.warn('[API send-invite] Resend API Warning:', data)
+        resendDetails = data
+      }
+    } catch (e) {
+      console.error('[API send-invite] Resend fetch exception:', e)
     }
-
-    return res.status(200).json({ success: true, simulated: false, data })
-  } catch (err) {
-    console.error('[API send-invite] Exception:', err)
-    return res.status(200).json({ success: true, simulated: true, warning: err.message })
   }
+
+  // 2. Try Supabase Auth Admin invite fallback if Resend didn't deliver directly
+  if (!emailSent && supabaseUrl && supabaseServiceKey) {
+    try {
+      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+      if (supabaseAdmin?.auth?.admin?.inviteUserByEmail) {
+        const { data: supaData, error: supaErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+          redirectTo: targetLoginUrl,
+          data: { role, workspaceName }
+        })
+        if (!supaErr) {
+          emailSent = true
+        }
+      }
+    } catch (supaEx) {
+      console.warn('[API send-invite] Supabase auth invite exception:', supaEx)
+    }
+  }
+
+  return res.status(200).json({
+    success: true,
+    emailSent,
+    resendDetails
+  })
 }
