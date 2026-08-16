@@ -202,7 +202,7 @@ export default function Settings() {
       if (error) throw error
       setApiKeys([data, ...apiKeys])
       setNewApiKey(rawToken)
-      setShowNewApiKey(false)
+      setShowNewApiKey(true)
     } catch (err) {
       setAlertMessage('Failed to generate API Key')
     }
@@ -1016,11 +1016,22 @@ export default function Settings() {
                     <h4 style={{ margin: '0 0 8px 0', color: 'var(--accent-signal)' }}>API Key Generated</h4>
                     <p style={{ margin: '0 0 12px 0', fontSize: '12px' }}>Please copy this key now. For security reasons, you will not be able to see it again.</p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <code style={{ flex: 1, padding: '12px', background: 'var(--bg-layer-1)', borderRadius: '4px', border: '1px dashed var(--accent-signal)' }}>
+                      <code style={{ flex: 1, padding: '12px', background: 'var(--bg-panel)', borderRadius: '4px', border: '1px dashed var(--accent-signal)', color: 'var(--text-primary)', fontFamily: 'monospace', fontWeight: 600, fontSize: '13px', wordBreak: 'break-all' }}>
                         {showNewApiKey ? newApiKey : 'sk_live_' + '•'.repeat(Math.max(20, newApiKey.length - 8))}
                       </code>
-                      <button type="button" className="btn-ghost" onClick={() => setShowNewApiKey(!showNewApiKey)} style={{ padding: '8px', color: 'var(--text-secondary)' }}>
+                      <button type="button" className="btn-ghost" onClick={() => setShowNewApiKey(!showNewApiKey)} style={{ padding: '8px', color: 'var(--text-secondary)' }} title={showNewApiKey ? 'Hide Key' : 'Reveal Key'}>
                         {showNewApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                      <button 
+                        type="button" 
+                        className="btn-primary btn-sm" 
+                        onClick={() => {
+                          navigator.clipboard.writeText(newApiKey)
+                          setAlertMessage('API Key copied to clipboard!')
+                        }}
+                        style={{ padding: '8px 14px', whiteSpace: 'nowrap' }}
+                      >
+                        📋 Copy Key
                       </button>
                     </div>
                   </div>
