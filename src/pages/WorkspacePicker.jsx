@@ -29,10 +29,11 @@ export default function WorkspacePicker() {
 
     let isMounted = true
 
-    const syncInvitesAndWorkspaces = async () => {
+    const syncAndRedirect = async () => {
       const cleanEmail = user?.email ? user.email.trim().toLowerCase() : ''
+      let targetWsId = null
 
-      // 1. Automatically accept any pending invites for this user's email address
+      // 1. Accept any pending invites for this user's email address
       if (cleanEmail) {
         try {
           const { data: pInvites } = await supabase.from('invites').select('*').ilike('email', cleanEmail)
@@ -41,6 +42,7 @@ export default function WorkspacePicker() {
           const combined = [...(pInvites || []), ...(lInvites || [])]
           for (const inv of combined) {
             if (inv.workspace_id) {
+              targetWsId = inv.workspace_id
               await supabase.from('workspace_members').upsert({
                 workspace_id: inv.workspace_id,
                 user_id: userId,
@@ -59,24 +61,35 @@ export default function WorkspacePicker() {
         }
       }
 
-      // 2. Fetch user's workspace memberships
-      const unsub = subscribeUserWorkspaces(userId, (list) => {
-        if (!isMounted) return
-        setWorkspaces(list || [])
-        setLoading(false)
-      })
+      // 2. Query workspace_members directly
+      const { data: memberList } = await supabase
+        .from('workspace_members')
+        .select('workspace_id, role')
+        .eq('user_id', userId)
 
-      return unsub
+      if (isMounted) {
+        const mapped = (memberList || []).map(r => ({
+          workspaceId: r.workspace_id,
+          id: r.workspace_id,
+          role: r.role
+        }))
+        setWorkspaces(mapped)
+        setLoading(false)
+
+        // Navigate directly to their workspace immediately!
+        const finalWsId = targetWsId || (mapped.length > 0 ? mapped[0].workspaceId : null)
+        if (finalWsId && !window.location.search.includes('picker=true')) {
+          navigate(`/${finalWsId}`, { replace: true })
+        }
+      }
     }
 
-    let unsubFn
-    syncInvitesAndWorkspaces().then(u => { unsubFn = u })
+    syncAndRedirect()
 
     return () => {
       isMounted = false
-      if (typeof unsubFn === 'function') unsubFn()
     }
-  }, [userId, user?.email])
+  }, [userId, user?.email, navigate])
 
   const userPlan = userData?.billing_plan_id || 'free'
   const isInvitedMember = userPlan === 'member' || Boolean(user?.user_metadata?.invited_workspace_id)
