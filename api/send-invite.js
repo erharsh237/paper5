@@ -67,7 +67,36 @@ export default async function handler(req, res) {
   let emailSent = false
   let resendDetails = null
 
-  // 1. Try Resend API if key is available
+  // 1. Pre-provision user account in Supabase Auth with temporary password
+  if (supabaseUrl && supabaseServiceKey) {
+    try {
+      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+      const { data: userData } = await supabaseAdmin.auth.signUp({
+        email,
+        password: finalPassword,
+        options: {
+          data: {
+            must_change_password: true,
+            invited_workspace: workspaceName
+          }
+        }
+      })
+      
+      const newUserId = userData?.user?.id
+      if (newUserId) {
+        await supabaseAdmin.from('users').upsert({
+          id: newUserId,
+          email: email.trim().toLowerCase(),
+          requires_password_reset: true,
+          updated_at: new Date().toISOString()
+        }).catch(e => console.warn('[API send-invite] Users upsert notice:', e))
+      }
+    } catch (createEx) {
+      console.warn('[API send-invite] Auth provisioning notice:', createEx)
+    }
+  }
+
+  // 2. Try Resend API if key is available
   if (resendApiKey) {
     try {
       const response = await fetch('https://api.resend.com/emails', {
@@ -101,7 +130,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // 2. Try Supabase Auth Admin invite fallback if Resend didn't deliver directly
+  // 3. Try Supabase Auth Admin invite fallback if Resend didn't deliver directly
   if (!emailSent && supabaseUrl && supabaseServiceKey) {
     try {
       const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
