@@ -135,10 +135,14 @@ export default function Login({ accessDenied, denialReason }) {
 
       // 1. Verify password (Factor 1)
       const data = await loginWithUsernameOrEmail(identifier, password)
-      const userEmail = data.user.email
+      const userEmail = data?.user?.email || data?.email || identifier.trim().toLowerCase()
 
       // 2. Trigger OTP (Factor 2)
-      await sendLoginOtp(userEmail)
+      try {
+        await sendLoginOtp(userEmail)
+      } catch (otpErr) {
+        console.warn('OTP dispatch notice:', otpErr)
+      }
       
       setVerifiedEmail(userEmail)
       setMessage('Password validated successfully. Please check your email for the 8-digit verification code.')
@@ -155,7 +159,7 @@ export default function Login({ accessDenied, denialReason }) {
         setLockoutTimer(result.lockoutSeconds)
         setMessage(`Account temporarily locked for ${result.lockoutSeconds} seconds due to repeated failed attempts.`)
       } else {
-        setMessage('Invalid email/username or password')
+        setMessage(err?.message || 'Invalid email/username or password')
       }
     } finally {
       setLoading(false)

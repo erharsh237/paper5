@@ -323,7 +323,9 @@ export function AuthProvider({ children }) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: cleanE, password })
           })
-          const provData = await provResp.json()
+          const provText = await provResp.text()
+          let provData = {}
+          try { provData = JSON.parse(provText) } catch (e) {}
           if (provData?.success) {
             // Retry sign in after serverless provisioning
             const retry = await supabase.auth.signInWithPassword({ email: cleanE, password })
