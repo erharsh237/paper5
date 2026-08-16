@@ -312,38 +312,30 @@ export function AuthProvider({ children }) {
       const email = await resolveEmailFromUsername(identifier)
       const cleanE = email.trim().toLowerCase()
       
-      // 1. Check if user is logging in with an invitation temporary password
-      const { data: inviteMatch } = await supabase
-        .from('invites')
-        .select('*')
-        .ilike('email', cleanE)
-        .maybeSingle()
+      // 1. Attempt standard sign in
+      let { error, data } = await supabase.auth.signInWithPassword({ email: cleanE, password })
 
-      if (inviteMatch && (!inviteMatch.password_hint || inviteMatch.password_hint === password)) {
+      // 2. If sign in fails, try serverless provision for invited user (bypasses client rate limits)
+      if (error) {
         try {
-          // Pre-register account in Auth with temporary password & password reset flag
-          const { data: signUpData } = await supabase.auth.signUp({
-            email: cleanE,
-            password: password,
-            options: {
-              data: {
-                must_change_password: true,
-                invited_workspace_id: inviteMatch.workspace_id,
-                invited_role: inviteMatch.role
-              }
-            }
+          const provResp = await fetch('/api/auth/provision-invite-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: cleanE, password })
           })
-
-          if (signUpData?.session) {
-            return signUpData
+          const provData = await provResp.json()
+          if (provData?.success) {
+            // Retry sign in after serverless provisioning
+            const retry = await supabase.auth.signInWithPassword({ email: cleanE, password })
+            if (!retry.error && retry.data) {
+              return retry.data
+            }
+            if (retry.error) error = retry.error
           }
-        } catch (signUpErr) {
-          console.warn('Pre-signup notice:', signUpErr)
+        } catch (provErr) {
+          console.warn('Serverless provision fallback notice:', provErr)
         }
       }
-
-      // 2. Now attempt sign in with password
-      const { error, data } = await supabase.auth.signInWithPassword({ email: cleanE, password })
 
       if (error) {
         setAuthError(getFriendlyError(error))
