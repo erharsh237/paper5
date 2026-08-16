@@ -1398,7 +1398,6 @@ export default function Settings() {
                                       setInvites(prev => prev.filter(i => i.id !== inv.id && (i.email || '').toLowerCase().trim() !== targetEmail))
                                       try {
                                         await cancelInvite(workspaceId, inv.id, inv.email)
-                                        setAlertMessage(`Pending invite for ${inv.email} successfully cancelled.`)
                                       } catch (err) {
                                         console.error('Cancel invite error:', err)
                                         setAlertMessage('Failed to cancel invite. Please try again.')
