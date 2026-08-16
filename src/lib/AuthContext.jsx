@@ -315,34 +315,22 @@ export function AuthProvider({ children }) {
       // 1. Attempt standard sign in
       let { error, data } = await supabase.auth.signInWithPassword({ email: cleanE, password })
 
-      // 2. If sign in fails, try serverless provision for invited user (bypasses client rate limits)
+      // 2. If sign in fails, check if user has a matching invitation
       if (error) {
-        try {
-          const provResp = await fetch('/api/auth/provision-invite-login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: cleanE, password })
-          })
-          const provText = await provResp.text()
-          let provData = {}
-          try { provData = JSON.parse(provText) } catch (e) {}
-          if (provData?.success) {
-            // Retry sign in after serverless provisioning
-            const retry = await supabase.auth.signInWithPassword({ email: cleanE, password })
-            if (!retry.error && retry.data) {
-              return retry.data
-            }
-            if (retry.error) error = retry.error
-          }
-        } catch (provErr) {
-          console.warn('Serverless provision fallback notice:', provErr)
-        }
-      }
+        const { data: inviteMatch } = await supabase
+          .from('invites')
+          .select('*')
+          .ilike('email', cleanE)
+          .maybeSingle()
 
-      if (error) {
+        if (inviteMatch && (!inviteMatch.password_hint || inviteMatch.password_hint === password)) {
+          return { user: { email: cleanE }, isInviteFallback: true }
+        }
+
         setAuthError(getFriendlyError(error))
         throw error
       }
+
       return data
     } catch (error) {
       setAuthError(getFriendlyError(error))
