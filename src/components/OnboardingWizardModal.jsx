@@ -85,7 +85,7 @@ export default function OnboardingWizardModal() {
   // Step 4: Data Storing Consent State (Default Turned Off)
   const [saveData, setSaveData] = useState(false)
   
-  const [isPrimaryAdmin, setIsPrimaryAdmin] = useState(null)
+  const [isPrimaryAdmin, setIsPrimaryAdmin] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -113,35 +113,57 @@ export default function OnboardingWizardModal() {
     let isMounted = true
     const checkRole = async () => {
       try {
-        // 1. Check workspace memberships: if user is already a member of an existing workspace created by someone else
+        const cleanEmail = user.email ? user.email.trim().toLowerCase() : ''
+
+        // 1. Check workspace memberships
         const { data: memberships } = await supabase
           .from('workspace_members')
           .select('role, workspace_id')
           .eq('user_id', user.id)
 
-        if (memberships && memberships.length > 0) {
-          // Check if any workspace is owned by someone else
+        // 2. Check pending invitations
+        const { data: invites } = await supabase
+          .from('invites')
+          .select('id')
+          .ilike('email', cleanEmail)
+
+        const { data: legacyInvites } = await supabase
+          .from('workspace_invites')
+          .select('id')
+          .ilike('email', cleanEmail)
+
+        const isInvitedOrMember = 
+          (memberships && memberships.length > 0) || 
+          (invites && invites.length > 0) || 
+          (legacyInvites && legacyInvites.length > 0) ||
+          Boolean(user.user_metadata?.invited_workspace_id)
+
+        if (isInvitedOrMember) {
+          // Check if the user is explicitly the creator of any workspace
           const { data: ownedWs } = await supabase
             .from('workspaces')
             .select('id')
             .eq('created_by', user.id)
 
           if (!ownedWs || ownedWs.length === 0) {
-            // User is a member/co-admin in someone else's workspace — NOT primary creator!
+            // User is an invited team member — NOT primary workspace creator!
             if (isMounted) setIsPrimaryAdmin(false)
-            if (userData?.billing_plan_id === 'unselected') {
-              await supabase.from('users').update({ billing_plan_id: 'member' }).eq('id', user.id)
+            if (!userData?.billing_plan_id || userData.billing_plan_id === 'unselected' || userData.billing_plan_id === 'none') {
+              await supabase.from('users').update({ 
+                billing_plan_id: 'member', 
+                legal_accepted_at: new Date().toISOString() 
+              }).eq('id', user.id)
               if (updateUserData) updateUserData({ billing_plan_id: 'member' })
             }
             return
           }
         }
 
-        // User is the FIRST ADMIN creator of a new workflow
+        // User is the FIRST ADMIN creator of a workspace if no member/invite status matches
         if (isMounted) setIsPrimaryAdmin(true)
       } catch (err) {
         console.error('Failed to check primary admin role:', err)
-        if (isMounted) setIsPrimaryAdmin(true)
+        if (isMounted) setIsPrimaryAdmin(false)
       }
     }
 
