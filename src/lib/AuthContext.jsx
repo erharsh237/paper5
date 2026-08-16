@@ -312,19 +312,16 @@ export function AuthProvider({ children }) {
       const email = await resolveEmailFromUsername(identifier)
       const cleanE = email.trim().toLowerCase()
       
-      let { error, data } = await supabase.auth.signInWithPassword({ email: cleanE, password })
+      // Check if this user is logging in with an invitation temporary password
+      const { data: inviteMatch } = await supabase
+        .from('invites')
+        .select('*')
+        .ilike('email', cleanE)
+        .maybeSingle()
 
-      // If standard login failed, check if there is an active invite for this email
-      if (error) {
-        const { data: inviteMatch } = await supabase
-          .from('invites')
-          .select('*')
-          .ilike('email', cleanE)
-          .maybeSingle()
-
-        // If invite exists and password matches password_hint (or temporary password is valid)
-        if (inviteMatch && (!inviteMatch.password_hint || inviteMatch.password_hint === password)) {
-          // Register account in Auth with temporary password & password reset flag
+      if (inviteMatch && (!inviteMatch.password_hint || inviteMatch.password_hint === password)) {
+        try {
+          // Pre-register account in Auth with temporary password & password reset flag
           await supabase.auth.signUp({
             email: cleanE,
             password: password,
@@ -336,21 +333,19 @@ export function AuthProvider({ children }) {
               }
             }
           })
-
-          // Retry login with temporary password
-          const loginRetry = await supabase.auth.signInWithPassword({ email: cleanE, password })
-          if (!loginRetry.error && loginRetry.data?.user) {
-            await supabase.from('users').upsert({
-              id: loginRetry.data.user.id,
-              email: cleanE,
-              requires_password_reset: true,
-              updated_at: new Date().toISOString()
-            })
-            return loginRetry.data
-          }
-          error = loginRetry.error || error
+          await supabase.from('users').upsert({
+            id: inviteMatch.invited_by || 'inv_' + Date.now(),
+            email: cleanE,
+            requires_password_reset: true,
+            updated_at: new Date().toISOString()
+          })
+        } catch (signUpErr) {
+          console.warn('Pre-signup notice:', signUpErr)
         }
       }
+
+      // Now attempt sign in with password
+      const { error, data } = await supabase.auth.signInWithPassword({ email: cleanE, password })
 
       if (error) {
         setAuthError(getFriendlyError(error))
