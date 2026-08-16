@@ -99,23 +99,39 @@ export function subscribeWorkspaceMembers(workspaceId, callback) {
       .select(`
         user_id,
         role,
+        permissions,
+        created_at,
         joined_at,
-        users ( email, full_name, avatar_url )
+        users ( id, email, full_name, avatar_url )
       `)
       .eq('workspace_id', workspaceId)
       
-    if (error) {
+    if (error || !data) {
+      console.warn('subscribeWorkspaceMembers error:', error)
       callback([])
       return
+    }
+
+    // Fetch all user records as fallback if relational join is empty
+    const userIds = data.map(r => r.user_id).filter(Boolean)
+    let fallbackUsersMap = new Map()
+    if (userIds.length > 0) {
+      try {
+        const { data: uData } = await supabase.from('users').select('id, email, username').in('id', userIds)
+        for (const u of (uData || [])) {
+          if (u.id) fallbackUsersMap.set(u.id, u.email || u.username)
+        }
+      } catch (uEx) {}
     }
     
     const mapped = data.map(row => ({
       id: row.user_id,
-      email: row.users?.email,
+      email: row.users?.email || fallbackUsersMap.get(row.user_id) || ('Member (' + (row.user_id || '').slice(0, 6) + ')'),
       fullName: row.users?.full_name,
       avatarUrl: row.users?.avatar_url,
-      role: row.role,
-      joinedAt: row.joined_at
+      role: row.role || 'member',
+      permissions: row.permissions || [],
+      joinedAt: row.joined_at || row.created_at
     }))
     callback(mapped)
   }

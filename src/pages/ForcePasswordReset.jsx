@@ -93,20 +93,29 @@ export default function ForcePasswordReset() {
           updated_at: new Date().toISOString()
         })
         
-        // 3. Accept pending invites for this user directly into workspace_members
+        // 3. Accept pending invites for this user directly into workspace_members across both invite tables
         if (cleanEmail) {
           const { data: pendingInvites } = await supabase.from('invites').select('*').ilike('email', cleanEmail)
+          const { data: legacyInvites } = await supabase.from('workspace_invites').select('*').ilike('email', cleanEmail)
           
-          for (const inv of (pendingInvites || [])) {
-            await supabase.from('workspace_members').upsert({
-              workspace_id: inv.workspace_id,
-              user_id: data.user.id,
-              role: inv.role || 'member',
-              permissions: inv.permissions || [],
-              created_at: new Date().toISOString()
-            })
-            await supabase.from('invites').delete().eq('id', inv.id)
+          const combined = [...(pendingInvites || []), ...(legacyInvites || [])]
+          for (const inv of combined) {
+            if (inv.workspace_id) {
+              await supabase.from('workspace_members').upsert({
+                workspace_id: inv.workspace_id,
+                user_id: data.user.id,
+                role: inv.role || 'member',
+                permissions: inv.permissions || [],
+                created_at: new Date().toISOString()
+              })
+            }
           }
+
+          // Clean up pending invites
+          try {
+            await supabase.from('invites').delete().ilike('email', cleanEmail)
+            await supabase.from('workspace_invites').delete().ilike('email', cleanEmail)
+          } catch (delErr) {}
         }
         
         // Also call RPC fallback if present
