@@ -20,13 +20,16 @@ export default async function handler(req, res) {
   const subject = `You've been invited to join ${workspaceName || 'a workspace'} on SprintOS`
   const targetLoginUrl = loginUrl || 'https://app.paper5.co/login'
 
+  const textBody = `Workspace Invitation\n\nYou have been invited to join ${workspaceName || 'Workspace'} as a ${role || 'Member'} on SprintOS.\n\nLogin Email: ${email}\nTemporary Password: ${finalPassword}\n\nLog in to your workspace here: ${targetLoginUrl}\n\nPlease update your password upon your first sign in.`
+
   const htmlBody = `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f9fafb; color: #111827; margin: 0; padding: 24px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f9fafb; color: #111827; margin: 0; padding: 24px; }
         .container { max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 32px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
         .title { font-size: 20px; font-weight: 700; color: #111827; margin: 0 0 16px 0; }
         .card { background: #f3f4f6; border-radius: 8px; padding: 16px; margin: 20px 0; border: 1px solid #e5e7eb; }
@@ -77,7 +80,11 @@ export default async function handler(req, res) {
           from: process.env.SENDER_EMAIL || 'SprintOS <onboarding@resend.dev>',
           to: [email],
           subject: subject,
-          html: htmlBody
+          html: htmlBody,
+          text: textBody,
+          headers: {
+            'X-Entity-Ref-ID': `inv-${Date.now()}`
+          }
         })
       })
 
