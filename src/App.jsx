@@ -139,8 +139,8 @@ export default function App() {
     return <PageLoading />
   }
 
-  // If the user just accepted an invite and has no password, force them to set it
-  if (userData?.requiresPasswordReset) {
+  // If the user just accepted an invite or logged in with temporary password, force them to set it
+  if (userData?.requiresPasswordReset || user?.user_metadata?.must_change_password) {
     return <ForcePasswordReset />
   }
 

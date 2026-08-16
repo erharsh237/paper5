@@ -66,20 +66,40 @@ export default function ForcePasswordReset() {
 
     setLoading(true)
     try {
-      const { error: updateError, data } = await supabase.auth.updateUser({ password })
+      const { error: updateError, data } = await supabase.auth.updateUser({
+        password,
+        data: { must_change_password: false }
+      })
       if (updateError) throw updateError
       
       if (data?.user) {
-        const { error: dbError } = await supabase.from('users').update({ requires_password_reset: false }).eq('id', data.user.id)
-        if (dbError) throw dbError
+        await supabase.from('users').update({ requires_password_reset: false }).eq('id', data.user.id)
         
-        // Accept pending invites for this user
-        const { error: rpcError } = await supabase.rpc('accept_pending_invites')
-        if (rpcError) console.error("Error accepting invites:", rpcError)
+        // Accept pending invites for this user directly
+        if (data.user.email) {
+          const cleanEmail = data.user.email.trim().toLowerCase()
+          const { data: pendingInvites } = await supabase.from('invites').select('*').ilike('email', cleanEmail)
+          
+          for (const inv of (pendingInvites || [])) {
+            await supabase.from('workspace_members').upsert({
+              workspace_id: inv.workspace_id,
+              user_id: data.user.id,
+              role: inv.role || 'member',
+              permissions: inv.permissions || [],
+              created_at: new Date().toISOString()
+            })
+            await supabase.from('invites').delete().eq('id', inv.id)
+          }
+        }
+        
+        // Also call RPC fallback if present
+        try {
+          await supabase.rpc('accept_pending_invites')
+        } catch (rpcErr) {}
       }
       
-      // Reload the page to clear the flag
-      window.location.href = '/'
+      // Navigate cleanly to workspace picker
+      window.location.href = '/workspace'
     } catch (err) {
       setError(err.message || 'Unable to update security credentials. Please try again.')
     } finally {
