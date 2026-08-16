@@ -290,10 +290,11 @@ export async function createInvite(workspaceId, email, role, permissions = [], p
   }
 
   // Dispatch email with credentials via Vercel serverless API route if requested
+  let emailStatus = { success: true, simulated: false }
   if (sendEmail) {
     try {
       const { data: ws } = await supabase.from('workspaces').select('name').eq('id', workspaceId).maybeSingle()
-      await fetch('/api/send-invite', {
+      const resp = await fetch('/api/send-invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -304,12 +305,14 @@ export async function createInvite(workspaceId, email, role, permissions = [], p
           loginUrl: window.location.origin + '/login'
         })
       })
+      const resData = await resp.json()
+      if (resData) emailStatus = resData
     } catch (emailErr) {
       console.warn('API send-invite dispatch warning:', emailErr)
     }
   }
 
-  return insertedData || { success: true }
+  return { ...(insertedData || {}), success: true, emailStatus }
 }
 
 export async function updateMemberPermissions(workspaceId, userId, permissions) {

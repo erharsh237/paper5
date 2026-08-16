@@ -449,16 +449,22 @@ export default function Settings() {
 
     setInviting(true)
     try {
+      const res = await createInvite(workspaceId, inviteEmail, inviteRole, inviteRole === 'member' ? invitePermissions : [], invitePassword, inviteSendEmail)
       const inviteData = {
         email: inviteEmail,
         role: inviteRole,
         password: invitePassword,
         workspaceName: workspace?.name || 'Workspace',
-        loginUrl: window.location.origin + '/login'
+        loginUrl: window.location.origin + '/login',
+        simulated: res?.emailStatus?.simulated ?? false,
+        warning: res?.emailStatus?.warning || null
       }
-      await createInvite(workspaceId, inviteEmail, inviteRole, inviteRole === 'member' ? invitePermissions : [], invitePassword, inviteSendEmail)
       setLastCreatedInvite(inviteData)
-      setAlertMessage('Invitation successfully created.')
+      if (res?.emailStatus?.simulated) {
+        setAlertMessage(`Invitation created! To enable direct email inbox delivery, add your RESEND_API_KEY to Vercel environment variables. You can copy the credentials below.`)
+      } else {
+        setAlertMessage(`Invitation email sent to ${inviteEmail}!`)
+      }
       setInviteEmail('')
       setInvitePassword('')
       setInviteSendEmail(true)
@@ -1301,13 +1307,13 @@ export default function Settings() {
                       <div style={{
                         marginTop: '16px',
                         padding: '16px',
-                        background: 'rgba(16, 185, 129, 0.08)',
-                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                        background: lastCreatedInvite.simulated ? 'rgba(234, 179, 8, 0.08)' : 'rgba(16, 185, 129, 0.08)',
+                        border: lastCreatedInvite.simulated ? '1px solid rgba(234, 179, 8, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)',
                         borderRadius: '8px'
                       }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                          <h4 style={{ margin: 0, fontSize: '14px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            ✅ Invitation Created for {lastCreatedInvite.email}
+                          <h4 style={{ margin: 0, fontSize: '14px', color: lastCreatedInvite.simulated ? '#d97706' : '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {lastCreatedInvite.simulated ? '⚠️ Invitation Created (Manual Credentials Copy)' : '📧 Invitation Email Dispatched'}
                           </h4>
                           <button 
                             type="button"
@@ -1318,6 +1324,11 @@ export default function Settings() {
                             Dismiss
                           </button>
                         </div>
+                        {lastCreatedInvite.simulated && (
+                          <p style={{ margin: '0 0 10px 0', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                            To send automatic emails directly to Gmail inboxes, add your free Resend API Key (<code>RESEND_API_KEY</code>) to Vercel Environment Variables. In the meantime, click below to copy credentials and share with your team member:
+                          </p>
+                        )}
                         <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '6px 12px', background: 'var(--bg-panel)', padding: '12px', borderRadius: '6px', margin: '8px 0 12px 0', border: '1px solid var(--border-subtle)' }}>
                           <span>Login Email:</span><strong>{lastCreatedInvite.email}</strong>
                           <span>Temporary Password:</span><code style={{ fontSize: '13px', background: 'rgba(0,0,0,0.1)', padding: '2px 6px', borderRadius: '4px', color: 'var(--text-primary)', fontWeight: 600 }}>{lastCreatedInvite.password}</code>

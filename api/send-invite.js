@@ -10,8 +10,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required parameters: email and password' })
   }
 
-  const resendApiKey = process.env.RESEND_API_KEY
-  const senderEmail = process.env.SENDER_EMAIL || 'SprintOS <no-reply@paper5.co>'
+  const resendApiKey = process.env.RESEND_API_KEY || process.env.VITE_RESEND_API_KEY
+  const senderEmail = process.env.SENDER_EMAIL || 'SprintOS <onboarding@resend.dev>'
 
   const subject = `You've been invited to join ${workspaceName || 'a workspace'} on SprintOS`
   const targetLoginUrl = loginUrl || 'https://app.paper5.co/login'
@@ -24,8 +24,7 @@ export default async function handler(req, res) {
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f9fafb; color: #111827; margin: 0; padding: 24px; }
         .container { max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 32px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
-        .header { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
-        .title { font-size: 20px; font-weight: 700; color: #111827; margin: 0; }
+        .title { font-size: 20px; font-weight: 700; color: #111827; margin: 0 0 16px 0; }
         .card { background: #f3f4f6; border-radius: 8px; padding: 16px; margin: 20px 0; border: 1px solid #e5e7eb; }
         .field { font-size: 13px; color: #4b5563; margin-bottom: 6px; }
         .value { font-size: 15px; font-weight: 600; color: #111827; font-family: monospace; }
@@ -59,8 +58,12 @@ export default async function handler(req, res) {
   `
 
   if (!resendApiKey) {
-    console.log('[API send-invite] RESEND_API_KEY not configured. Simulated dispatch for:', email)
-    return res.status(200).json({ success: true, simulated: true })
+    console.warn('[API send-invite] RESEND_API_KEY is missing in Vercel environment variables.')
+    return res.status(200).json({ 
+      success: true, 
+      simulated: true, 
+      warning: 'RESEND_API_KEY not configured in Vercel. Copy credentials manually below.' 
+    })
   }
 
   try {
@@ -84,7 +87,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: data.message || 'Failed to send email' })
     }
 
-    return res.status(200).json({ success: true, data })
+    return res.status(200).json({ success: true, simulated: false, data })
   } catch (err) {
     console.error('[API send-invite] Exception:', err)
     return res.status(500).json({ error: err.message || 'Internal Server Error' })
