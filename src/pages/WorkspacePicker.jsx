@@ -26,20 +26,66 @@ export default function WorkspacePicker() {
       setLoading(false)
       return
     }
-    const unsub = subscribeUserWorkspaces(userId, (list) => {
-      setWorkspaces(list || [])
-      setLoading(false)
-    })
-    return () => {
-      if (typeof unsub === 'function') unsub()
+
+    let isMounted = true
+
+    const syncInvitesAndWorkspaces = async () => {
+      const cleanEmail = user?.email ? user.email.trim().toLowerCase() : ''
+
+      // 1. Automatically accept any pending invites for this user's email address
+      if (cleanEmail) {
+        try {
+          const { data: pInvites } = await supabase.from('invites').select('*').ilike('email', cleanEmail)
+          const { data: lInvites } = await supabase.from('workspace_invites').select('*').ilike('email', cleanEmail)
+          
+          const combined = [...(pInvites || []), ...(lInvites || [])]
+          for (const inv of combined) {
+            if (inv.workspace_id) {
+              await supabase.from('workspace_members').upsert({
+                workspace_id: inv.workspace_id,
+                user_id: userId,
+                role: inv.role || 'member',
+                permissions: inv.permissions || [],
+                created_at: new Date().toISOString()
+              })
+            }
+          }
+          if (combined.length > 0) {
+            await supabase.from('invites').delete().ilike('email', cleanEmail)
+            await supabase.from('workspace_invites').delete().ilike('email', cleanEmail)
+          }
+        } catch (e) {
+          console.warn('Invite auto-acceptance notice in WorkspacePicker:', e)
+        }
+      }
+
+      // 2. Fetch user's workspace memberships
+      const unsub = subscribeUserWorkspaces(userId, (list) => {
+        if (!isMounted) return
+        setWorkspaces(list || [])
+        setLoading(false)
+      })
+
+      return unsub
     }
-  }, [userId])
+
+    let unsubFn
+    syncInvitesAndWorkspaces().then(u => { unsubFn = u })
+
+    return () => {
+      isMounted = false
+      if (typeof unsubFn === 'function') unsubFn()
+    }
+  }, [userId, user?.email])
+
+  const userPlan = userData?.billing_plan_id || 'free'
+  const isInvitedMember = userPlan === 'member' || Boolean(user?.user_metadata?.invited_workspace_id)
 
   useEffect(() => {
-    if (!loading && workspaces.length === 0) {
+    if (!loading && workspaces.length === 0 && !isInvitedMember) {
       setShowCreateModal(true)
     }
-  }, [loading, workspaces])
+  }, [loading, workspaces, isInvitedMember])
 
   const handleNextStep = (e) => {
     if (e) e.preventDefault()
@@ -80,7 +126,6 @@ export default function WorkspacePicker() {
     )
   }
 
-  const userPlan = userData?.billing_plan_id || 'free'
   const isAdmin = workspaces.some(w => w.role === 'owner' || w.role === 'admin')
   const ownedCount = workspaces.filter(w => w.role === 'owner' || w.role === 'admin').length
   
