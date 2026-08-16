@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { subscribeUserWorkspaces, createWorkspace } from '../lib/workspaces'
 import { TEAM_SIZE_OPTIONS, WORKFLOWS, getRecommendedWorkflow, isWorkflowUnlocked } from '../lib/workflows'
+import { supabase } from '../lib/supabase'
 import './WorkspacePicker.css'
 
 export default function WorkspacePicker() {
