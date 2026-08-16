@@ -73,11 +73,28 @@ export default function ForcePasswordReset() {
       if (updateError) throw updateError
       
       if (data?.user) {
-        await supabase.from('users').update({ requires_password_reset: false }).eq('id', data.user.id)
+        const cleanEmail = data.user.email ? data.user.email.trim().toLowerCase() : ''
+        const defaultUsername = cleanEmail ? cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '') : 'user_' + Math.floor(1000 + Math.random() * 9000)
+
+        // 1. Update user metadata with username and clear must_change_password
+        await supabase.auth.updateUser({
+          data: {
+            username: defaultUsername,
+            must_change_password: false
+          }
+        })
+
+        // 2. Update users table record with username and clear requires_password_reset
+        await supabase.from('users').upsert({
+          id: data.user.id,
+          email: cleanEmail,
+          username: defaultUsername,
+          requires_password_reset: false,
+          updated_at: new Date().toISOString()
+        })
         
-        // Accept pending invites for this user directly
-        if (data.user.email) {
-          const cleanEmail = data.user.email.trim().toLowerCase()
+        // 3. Accept pending invites for this user directly into workspace_members
+        if (cleanEmail) {
           const { data: pendingInvites } = await supabase.from('invites').select('*').ilike('email', cleanEmail)
           
           for (const inv of (pendingInvites || [])) {
