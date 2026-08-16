@@ -441,7 +441,7 @@ export default function Settings() {
     setInviteError('')
     setGeneratedLink('')
 
-    const capacity = checkMemberCapacity(planId, members.length)
+    const capacity = checkMemberCapacity(planId, members.length + invites.length)
     if (capacity.overCapacity) {
       setInviteError(`Seat limit reached (${capacity.limit} members max for the ${planId} plan). Please upgrade to Scale to invite more members.`)
       return
@@ -450,16 +450,20 @@ export default function Settings() {
     setInviting(true)
     try {
       const res = await createInvite(workspaceId, inviteEmail, inviteRole, inviteRole === 'member' ? invitePermissions : [], invitePassword, inviteSendEmail)
-      const inviteData = {
-        email: inviteEmail,
-        role: inviteRole,
-        password: invitePassword,
-        workspaceName: workspace?.name || 'Workspace',
-        loginUrl: window.location.origin + '/login',
-        simulated: res?.emailStatus?.simulated ?? false,
-        warning: res?.emailStatus?.warning || null
-      }
-      setLastCreatedInvite(inviteData)
+      
+      const cleanE = inviteEmail.trim().toLowerCase()
+      setInvites(prev => {
+        const filtered = (prev || []).filter(i => (i.email || '').toLowerCase().trim() !== cleanE)
+        return [...filtered, {
+          id: res?.id || 'inv_' + Date.now(),
+          workspace_id: workspaceId,
+          email: cleanE,
+          role: inviteRole,
+          permissions: inviteRole === 'member' ? invitePermissions : [],
+          created_at: new Date().toISOString()
+        }]
+      })
+
       setInviteEmail('')
       setInvitePassword('')
       setInviteSendEmail(true)
@@ -1164,8 +1168,8 @@ export default function Settings() {
                 <CapacityBanner 
                   planName={planId.toUpperCase()} 
                   type="members" 
-                  count={members.length} 
-                  limit={checkMemberCapacity(planId, members.length).limit} 
+                  count={members.length + invites.length} 
+                  limit={checkMemberCapacity(planId, members.length + invites.length).limit} 
                   onUpgrade={() => setIsPricingModalOpen(true)} 
                 />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -1246,7 +1250,7 @@ export default function Settings() {
                   <div className="invite-box">
                     <h3>Invite Member</h3>
                     <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                      You have used {members.length} of {maxMembers} seats available on your current plan.
+                      You have used {members.length + invites.length} of {maxMembers} seats available on your current plan ({members.length} active member{members.length !== 1 ? 's' : ''}{invites.length > 0 ? `, ${invites.length} pending invite${invites.length !== 1 ? 's' : ''}` : ''}).
                     </p>
                     <form onSubmit={handleCreateInvite} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
                       <div style={{ display: 'flex', gap: '12px' }}>
