@@ -247,7 +247,7 @@ export async function createInvite(workspaceId, email, role, permissions = [], p
   const inviterId = authData?.user?.id
   const cleanEmail = email.trim().toLowerCase()
 
-  // 1. Direct DB table insert first (100% reliable, zero CORS preflight errors)
+  // Direct DB table insert (100% reliable, zero CORS preflight errors)
   const { error: dbErr, data: insertedData } = await supabase.from('invites').insert({
     workspace_id: workspaceId,
     email: cleanEmail,
@@ -261,17 +261,6 @@ export async function createInvite(workspaceId, email, role, permissions = [], p
   if (dbErr) {
     if (dbErr.code === '23505') {
       throw new Error('An invitation for this email is already pending in this workspace.')
-    }
-  }
-
-  // 2. Optionally invoke edge function for email notification if requested
-  if (sendEmail) {
-    try {
-      await supabase.functions.invoke('create-invite', {
-        body: { workspaceId, email: cleanEmail, role, permissions, password, sendEmail }
-      })
-    } catch (edgeErr) {
-      // Safe catch for unconfigured Edge Functions
     }
   }
 
