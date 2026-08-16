@@ -312,61 +312,38 @@ export function AuthProvider({ children }) {
       const email = await resolveEmailFromUsername(identifier)
       const cleanE = email.trim().toLowerCase()
       
-      // 1. Attempt standard sign in
-      let { error, data } = await supabase.auth.signInWithPassword({ email: cleanE, password })
+      // 1. Check if user is logging in with an invitation temporary password
+      const { data: inviteMatch } = await supabase
+        .from('invites')
+        .select('*')
+        .ilike('email', cleanE)
+        .maybeSingle()
 
-      // 2. If login fails, check if user is logging in with an invitation temporary password
-      if (error) {
-        const { data: inviteMatch } = await supabase
-          .from('invites')
-          .select('*')
-          .ilike('email', cleanE)
-          .maybeSingle()
-
-        if (inviteMatch && (!inviteMatch.password_hint || inviteMatch.password_hint === password)) {
-          try {
-            // Register account in Auth with temporary password & password reset flag
-            const { data: signUpData } = await supabase.auth.signUp({
-              email: cleanE,
-              password: password,
-              options: {
-                data: {
-                  must_change_password: true,
-                  invited_workspace_id: inviteMatch.workspace_id,
-                  invited_role: inviteMatch.role
-                }
-              }
-            })
-
-            const validUserId = signUpData?.user?.id
-            if (validUserId) {
-              try {
-                await supabase.from('users').upsert({
-                  id: validUserId,
-                  email: cleanE,
-                  requires_password_reset: true,
-                  updated_at: new Date().toISOString()
-                })
-              } catch (uErr) {
-                console.warn('Users upsert notice:', uErr)
+      if (inviteMatch && (!inviteMatch.password_hint || inviteMatch.password_hint === password)) {
+        try {
+          // Pre-register account in Auth with temporary password & password reset flag
+          const { data: signUpData } = await supabase.auth.signUp({
+            email: cleanE,
+            password: password,
+            options: {
+              data: {
+                must_change_password: true,
+                invited_workspace_id: inviteMatch.workspace_id,
+                invited_role: inviteMatch.role
               }
             }
+          })
 
-            if (signUpData?.session) {
-              return signUpData
-            }
-
-            // Retry sign in after signup
-            const retry = await supabase.auth.signInWithPassword({ email: cleanE, password })
-            if (!retry.error && retry.data) {
-              return retry.data
-            }
-            if (retry.error) error = retry.error
-          } catch (signUpErr) {
-            console.warn('Pre-signup notice:', signUpErr)
+          if (signUpData?.session) {
+            return signUpData
           }
+        } catch (signUpErr) {
+          console.warn('Pre-signup notice:', signUpErr)
         }
       }
+
+      // 2. Now attempt sign in with password
+      const { error, data } = await supabase.auth.signInWithPassword({ email: cleanE, password })
 
       if (error) {
         setAuthError(getFriendlyError(error))
