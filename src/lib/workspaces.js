@@ -247,17 +247,21 @@ export async function changeMemberRole(workspaceId, memberUid, newRole) {
 }
 
 export async function cancelInvite(workspaceId, inviteId, email = null) {
-  if (email) {
-    // Delete all pending invite rows matching this email to clean up duplicates
-    const { error } = await supabase.from('invites').delete().eq('workspace_id', workspaceId).eq('email', email.trim().toLowerCase())
-    if (error) {
-      const { error: errId } = await supabase.from('invites').delete().eq('workspace_id', workspaceId).eq('id', inviteId)
-      if (errId) throw errId
-    }
-  } else {
-    const { error } = await supabase.from('invites').delete().eq('workspace_id', workspaceId).eq('id', inviteId)
-    if (error) throw error
+  const cleanEmail = email ? email.trim().toLowerCase() : null
+
+  // Delete from main invites table by ID and email
+  if (inviteId) {
+    await supabase.from('invites').delete().eq('id', inviteId)
   }
+  if (cleanEmail && workspaceId) {
+    await supabase.from('invites').delete().eq('workspace_id', workspaceId).eq('email', cleanEmail)
+  }
+
+  // Also clean up legacy workspace_invites table if present
+  try {
+    if (inviteId) await supabase.from('workspace_invites').delete().eq('id', inviteId)
+    if (cleanEmail && workspaceId) await supabase.from('workspace_invites').delete().eq('workspace_id', workspaceId).eq('email', cleanEmail)
+  } catch (e) {}
 }
 
 export async function createInvite(workspaceId, email, role, permissions = [], password, sendEmail = false) {

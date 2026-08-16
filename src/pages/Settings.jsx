@@ -1372,6 +1372,8 @@ export default function Settings() {
                                     variant: 'danger',
                                     onConfirm: async () => {
                                       closeConfirm()
+                                      const targetEmail = (inv.email || '').toLowerCase().trim()
+                                      setInvites(prev => prev.filter(i => i.id !== inv.id && (i.email || '').toLowerCase().trim() !== targetEmail))
                                       try {
                                         await cancelInvite(workspaceId, inv.id, inv.email)
                                         setAlertMessage(`Pending invite for ${inv.email} successfully cancelled.`)
