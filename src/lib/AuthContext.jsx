@@ -322,7 +322,7 @@ export function AuthProvider({ children }) {
       if (inviteMatch && (!inviteMatch.password_hint || inviteMatch.password_hint === password)) {
         try {
           // Pre-register account in Auth with temporary password & password reset flag
-          await supabase.auth.signUp({
+          const { data: signUpData } = await supabase.auth.signUp({
             email: cleanE,
             password: password,
             options: {
@@ -333,12 +333,20 @@ export function AuthProvider({ children }) {
               }
             }
           })
-          await supabase.from('users').upsert({
-            id: inviteMatch.invited_by || 'inv_' + Date.now(),
-            email: cleanE,
-            requires_password_reset: true,
-            updated_at: new Date().toISOString()
-          })
+
+          const validUserId = signUpData?.user?.id
+          if (validUserId) {
+            await supabase.from('users').upsert({
+              id: validUserId,
+              email: cleanE,
+              requires_password_reset: true,
+              updated_at: new Date().toISOString()
+            }).catch(e => console.warn('Users upsert notice:', e))
+          }
+
+          if (signUpData?.session) {
+            return signUpData
+          }
         } catch (signUpErr) {
           console.warn('Pre-signup notice:', signUpErr)
         }
