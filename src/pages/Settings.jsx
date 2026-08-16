@@ -1373,8 +1373,10 @@ export default function Settings() {
                                     onConfirm: async () => {
                                       closeConfirm()
                                       try {
-                                        await cancelInvite(workspaceId, inv.id)
+                                        await cancelInvite(workspaceId, inv.id, inv.email)
+                                        setAlertMessage(`Pending invite for ${inv.email} successfully cancelled.`)
                                       } catch (err) {
+                                        console.error('Cancel invite error:', err)
                                         setAlertMessage('Failed to cancel invite. Please try again.')
                                       }
                                     }

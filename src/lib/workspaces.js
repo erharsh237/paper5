@@ -150,7 +150,16 @@ export function subscribeInvites(workspaceId, callback) {
         callback([])
         return
       }
-      callback(data || [])
+
+      // Deduplicate rows by email address so duplicate DB rows render as 1 pending invite
+      const uniqueMap = new Map()
+      for (const row of (data || [])) {
+        const cleanE = (row.email || '').toLowerCase().trim()
+        if (cleanE && !uniqueMap.has(cleanE)) {
+          uniqueMap.set(cleanE, row)
+        }
+      }
+      callback(Array.from(uniqueMap.values()))
     } catch (err) {
       if (isSubscribed) callback([])
     }
@@ -237,15 +246,29 @@ export async function changeMemberRole(workspaceId, memberUid, newRole) {
   if (error) throw error
 }
 
-export async function cancelInvite(workspaceId, inviteId) {
-  const { error } = await supabase.from('invites').delete().eq('workspace_id', workspaceId).eq('id', inviteId)
-  if (error) throw error
+export async function cancelInvite(workspaceId, inviteId, email = null) {
+  if (email) {
+    // Delete all pending invite rows matching this email to clean up duplicates
+    const { error } = await supabase.from('invites').delete().eq('workspace_id', workspaceId).eq('email', email.trim().toLowerCase())
+    if (error) {
+      const { error: errId } = await supabase.from('invites').delete().eq('workspace_id', workspaceId).eq('id', inviteId)
+      if (errId) throw errId
+    }
+  } else {
+    const { error } = await supabase.from('invites').delete().eq('workspace_id', workspaceId).eq('id', inviteId)
+    if (error) throw error
+  }
 }
 
 export async function createInvite(workspaceId, email, role, permissions = [], password, sendEmail = false) {
   const { data: authData } = await supabase.auth.getUser()
   const inviterId = authData?.user?.id
   const cleanEmail = email.trim().toLowerCase()
+
+  // Clean up any existing duplicate pending invites for this email first
+  try {
+    await supabase.from('invites').delete().eq('workspace_id', workspaceId).eq('email', cleanEmail)
+  } catch (e) {}
 
   // Direct DB table insert (100% reliable, zero CORS preflight errors)
   const { error: dbErr, data: insertedData } = await supabase.from('invites').insert({
@@ -259,9 +282,7 @@ export async function createInvite(workspaceId, email, role, permissions = [], p
   }).select().single()
 
   if (dbErr) {
-    if (dbErr.code === '23505') {
-      throw new Error('An invitation for this email is already pending in this workspace.')
-    }
+    throw new Error(dbErr.message || 'Unable to dispatch invitation. Please try again.')
   }
 
   // Dispatch email with credentials via Vercel serverless API route if requested
