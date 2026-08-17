@@ -12,7 +12,6 @@ import UserMenu from '../components/UserMenu'
 import { useWorkspace } from '../lib/WorkspaceContext'
 import { Link } from 'react-router-dom'
 import { subscribeIntegrationConfig } from '../lib/integrations/config'
-import { getWorkflowById } from '../lib/workflows'
 import NewDeadlineModal from '../components/NewDeadlineModal'
 import './Dashboard.css'
 import './MyDashboard.css'
@@ -25,7 +24,7 @@ export default function MyDashboard() {
   const [sprints, setSprints] = useState([])
   const [showTour, setShowTour] = useState(false)
   const [viewMode, setViewMode] = useState('board')
-  const [timeRange, setTimeRange] = useState('30D')
+  const [timeRange, setTimeRange] = useState('7D')
   const [search, setSearch] = useState('')
   const [showNewModal, setShowNewModal] = useState(false)
   const [integrationConfig, setIntegrationConfig] = useState({})
@@ -88,34 +87,18 @@ export default function MyDashboard() {
     return { total: myTasks.length, active: active.length, overdue: overdue.length, dueSoon: dueSoon.length, done: done.length, blocked: blocked.length }
   }, [myTasks])
 
-  const mySprintTasks = useMemo(() => {
-    if (!activeSprint) return []
-    return myTasks.filter(d => d.sprintId === activeSprint.id)
-  }, [activeSprint, myTasks])
-
-  const mySprintProgress = useMemo(() => {
-    if (mySprintTasks.length === 0) return 0
-    const done = mySprintTasks.filter(d => d.status === 'done').length
-    return Math.round((done / mySprintTasks.length) * 100)
-  }, [mySprintTasks])
-
-  const needsMyReview = useMemo(
-    () => deadlines.filter(d => d.status === 'review' && d.assigneeEmail?.toLowerCase() !== myEmail),
-    [deadlines, myEmail]
-  )
-
   const sortedMyTasks = useMemo(() => {
     return [...filteredMyTasks].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
   }, [filteredMyTasks])
 
-  // 5 Canonical Kanban Columns for My Tasks
+  // 5 Canonical Kanban Columns matching the user's screenshot
   const kanbanColumns = useMemo(() => {
     const standardCols = [
-      { id: 'not_started', title: 'To Do', colorKey: 'todo', color: '#A3A5C2' },
-      { id: 'in_progress', title: 'In Progress', colorKey: 'progress', color: '#3D6FD6' },
-      { id: 'review', title: 'Review / QA', colorKey: 'review', color: '#7C5CE0' },
-      { id: 'blocked', title: 'Blocked', colorKey: 'blocked', color: '#D14343' },
-      { id: 'done', title: 'Done', colorKey: 'done', color: '#1A9959' },
+      { id: 'not_started', title: 'To Do', dotColor: '#1C1D2B', emptyText: 'Nothing queued', showAdd: true },
+      { id: 'in_progress', title: 'In Progress', dotColor: '#3D6FD6', emptyText: 'Nothing in flight', showAdd: false },
+      { id: 'review', title: 'Review / QA', dotColor: '#C4791A', emptyText: 'Nothing to review', showAdd: false },
+      { id: 'blocked', title: 'Blocked', dotColor: '#D14343', emptyText: 'No blockers 🎉', showAdd: false },
+      { id: 'done', title: 'Done', dotColor: '#4F46E5', emptyText: 'Ship your first task', showAdd: false },
     ]
 
     return standardCols.map(col => {
@@ -135,13 +118,17 @@ export default function MyDashboard() {
     })
   }, [sortedMyTasks])
 
-  const activeWf = getWorkflowById(workspace?.settings?.agile_workflow || 'scrum')
-
-  const userName = useMemo(() => {
+  // User First Name
+  const userFirstName = useMemo(() => {
     if (user?.displayName) return user.displayName.split(' ')[0]
-    if (user?.email) return user.email.split('@')[0]
+    if (user?.email) {
+      const prefix = user.email.split('@')[0]
+      return prefix.charAt(0).toUpperCase() + prefix.slice(1)
+    }
     return 'there'
   }, [user])
+
+  const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
   return (
     <div className="dash-root">
@@ -150,6 +137,7 @@ export default function MyDashboard() {
       ───────────────────────────────────────────────────────────── */}
       <nav className="dash-sticky-nav">
         <div className="dash-container dash-nav-inner">
+          {/* Logo Mark + Glow + Env Tag */}
           <Link to={`/${workspaceId}`} className="dash-nav-brand">
             <div className="dash-logo-dot">
               <svg viewBox="0 0 14 14" fill="none">
@@ -157,11 +145,13 @@ export default function MyDashboard() {
               </svg>
             </div>
             <span className="dash-logo-name">SprintOS</span>
-            <span className="dash-env-tag">{workspace?.name || 'Beta'}</span>
+            <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
           </Link>
 
+          {/* NavTabs Pills */}
           <NavTabs />
 
+          {/* Right Actions */}
           <div className="dash-nav-actions">
             <NotificationBell currentUser={user} />
             <UserMenu />
@@ -172,7 +162,7 @@ export default function MyDashboard() {
       {/* ─────────────────────────────────────────────────────────────
            MAIN DASHBOARD BODY
       ───────────────────────────────────────────────────────────── */}
-      <main className="dash-container">
+      <main className="dash-container" style={{ paddingBottom: '48px' }}>
 
         {/* ── HEADER ROW ── */}
         <header className="dash-page-header">
@@ -180,14 +170,9 @@ export default function MyDashboard() {
             <div className="dash-header-left">
               <div className="dash-eyebrow">
                 <span className="dash-eyebrow-dot"></span>
-                All systems normal
+                ALL SYSTEMS NORMAL
               </div>
-              <h1 className="dash-greeting">Good morning, <span>{userName}</span> 👋</h1>
-              <p className="dash-subtext">
-                {activeSprint
-                  ? `Sprint ${activeSprint.number || ''}${activeSprint.locked ? ' (locked)' : ''} · ${mySprintTasks.length} task${mySprintTasks.length === 1 ? '' : 's'} assigned to you (${mySprintProgress}% completed)`
-                  : "Here's what's on your agenda today."}
-              </p>
+              <h1 className="dash-greeting">Welcome back, <span>{userFirstName}</span></h1>
             </div>
 
             {/* Search Bar with ⌘K */}
@@ -199,7 +184,7 @@ export default function MyDashboard() {
               <input
                 className="dash-search-input"
                 type="text"
-                placeholder="Search assigned tasks…"
+                placeholder="Search tasks, repos, people..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -208,105 +193,67 @@ export default function MyDashboard() {
           </div>
         </header>
 
-        {/* ── AGILE WORKFLOW BANNER (Admin Only) ── */}
-        {isAdmin && activeWf && (
-          <div className="dash-workflow-banner">
-            <div className="dash-wf-left">
-              <div className="dash-wf-icon">#{activeWf.num}</div>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span className="dash-wf-name">{activeWf.name}</span>
-                  <span className="dash-wf-badge">{activeWf.badge}</span>
-                </div>
-                <div className="dash-wf-team">
-                  Team size: {workspace?.settings?.team_size || activeWf.teamSizeLabel}
-                  &ensp;·&ensp;
-                  <span className="dash-wf-cols">
-                    {activeWf.columns.map(c => c.title).join(' → ')}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <Link to={`/${workspaceId}/settings`} className="dash-wf-link">
-              ⚙️ Change Workflow
-            </Link>
-          </div>
-        )}
-
-        {/* ── 3. STAT STRIP (Single 14px Card with Hairlines) ── */}
+        {/* ── 3. STAT STRIP (Exact 4 Columns with Hairlines) ── */}
         <section className="dash-stat-strip">
-          {/* Active Tasks */}
+          {/* ACTIVE */}
           <div className="dash-stat-col">
-            <div className="dash-stat-label-row">
-              <span className="dash-stat-dot" style={{ background: 'var(--blue)' }}></span>
-              Active Tasks
+            <div className="dash-stat-label-row" style={{ justifyContent: 'space-between' }}>
+              <span>ACTIVE</span>
+              <span className="dash-stat-dot" style={{ background: '#3D6FD6' }}></span>
             </div>
-            <div className="dash-stat-value">{String(stats.active).padStart(2, '0')}</div>
+            <div className="dash-stat-value">{stats.active}</div>
             <div className="dash-stat-delta">
-              <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                <path d="M5.5 2L9 7H2L5.5 2Z" fill="var(--green)"/>
-              </svg>
-              <span className="dash-delta-green">+{stats.active} assigned to you</span>
+              <span>— no change this week</span>
             </div>
           </div>
 
-          {/* Overdue */}
+          {/* OVERDUE */}
           <div className="dash-stat-col">
-            <div className="dash-stat-label-row">
-              <span className="dash-stat-dot" style={{ background: 'var(--red)' }}></span>
-              Overdue
+            <div className="dash-stat-label-row" style={{ justifyContent: 'space-between' }}>
+              <span>OVERDUE</span>
+              <span className="dash-stat-dot" style={{ background: '#D14343' }}></span>
             </div>
-            <div className="dash-stat-value">{String(stats.overdue).padStart(2, '0')}</div>
+            <div className="dash-stat-value">{stats.overdue}</div>
             <div className="dash-stat-delta">
-              {stats.overdue > 0 ? (
-                <>
-                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                    <path d="M5.5 9L9 4H2L5.5 9Z" fill="var(--red)"/>
-                  </svg>
-                  <span className="dash-delta-red">Needs attention</span>
-                </>
-              ) : (
-                <span className="dash-delta-green">No overdue tasks 🎉</span>
-              )}
+              <span style={{ color: stats.overdue === 0 ? '#3D6FD6' : '#D14343' }}>
+                {stats.overdue === 0 ? '✓ clear' : 'Needs attention'}
+              </span>
             </div>
           </div>
 
-          {/* Due Soon */}
+          {/* DUE SOON */}
           <div className="dash-stat-col">
-            <div className="dash-stat-label-row">
-              <span className="dash-stat-dot" style={{ background: 'var(--amber)' }}></span>
-              Due Soon
+            <div className="dash-stat-label-row" style={{ justifyContent: 'space-between' }}>
+              <span>DUE SOON</span>
+              <span className="dash-stat-dot" style={{ background: '#C4791A' }}></span>
             </div>
-            <div className="dash-stat-value">{String(stats.dueSoon).padStart(2, '0')}</div>
+            <div className="dash-stat-value">{stats.dueSoon}</div>
             <div className="dash-stat-delta">
-              <span className="dash-delta-amber">— within 48 hours</span>
+              <span>next 48h</span>
             </div>
           </div>
 
-          {/* Completed */}
+          {/* COMPLETED */}
           <div className="dash-stat-col">
-            <div className="dash-stat-label-row">
-              <span className="dash-stat-dot" style={{ background: 'var(--green)' }}></span>
-              Completed
+            <div className="dash-stat-label-row" style={{ justifyContent: 'space-between' }}>
+              <span>COMPLETED</span>
+              <span className="dash-stat-dot" style={{ background: '#4F46E5' }}></span>
             </div>
-            <div className="dash-stat-value">{String(stats.done).padStart(2, '0')}</div>
+            <div className="dash-stat-value">{stats.done}</div>
             <div className="dash-stat-delta">
-              <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                <path d="M5.5 2L9 7H2L5.5 2Z" fill="var(--green)"/>
-              </svg>
-              <span className="dash-delta-green">{stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0}% completion rate</span>
+              <span>this sprint</span>
             </div>
           </div>
         </section>
 
-        {/* ── 4. TWO-COLUMN ROW: VELOCITY & REPOSITORIES/MILESTONES ── */}
+        {/* ── 4. TWO-COLUMN ROW: VELOCITY & REPOSITORIES ── */}
         <section className="dash-two-col">
-          {/* Left: Sprint Velocity Bar Chart */}
+          {/* Left: Task Velocity Card */}
           <div className="dash-surface-card dash-chart-panel">
             <div className="dash-panel-header">
               <div>
-                <div className="dash-panel-title">Sprint Velocity</div>
-                <div className="dash-panel-desc">Tasks completed per sprint cycle</div>
+                <div className="dash-panel-title">Task velocity</div>
+                <div className="dash-panel-desc">completed / assigned per day</div>
               </div>
               <div className="dash-range-pills">
                 <button
@@ -333,241 +280,190 @@ export default function MyDashboard() {
               </div>
             </div>
 
-            <div className="dash-chart-bars">
-              <div className="dash-bar-col">
-                <div className="dash-bar-tube" style={{ height: '85%' }}>
-                  <div className="dash-bar-slice done" style={{ height: '55%' }}></div>
-                  <div style={{ height: '3px' }}></div>
-                  <div className="dash-bar-slice prog" style={{ height: '30%' }}></div>
-                </div>
-                <div className="dash-bar-tag">W1</div>
+            {/* Velocity Canvas matching screenshot */}
+            <div style={{ height: '140px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingTop: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '8px', borderBottom: '2px solid #4F46E5', paddingBottom: '8px' }}>
+                {daysOfWeek.map((day, idx) => (
+                  <div key={day} style={{ flex: 1, textAlign: 'center' }}>
+                    <div style={{
+                      height: idx === 6 ? '12px' : '0px',
+                      background: 'var(--accent, #4F46E5)',
+                      borderRadius: '3px 3px 0 0',
+                      marginBottom: '4px',
+                      opacity: idx === 6 ? 0.7 : 0
+                    }} />
+                  </div>
+                ))}
               </div>
-
-              <div className="dash-bar-col">
-                <div className="dash-bar-tube" style={{ height: '65%' }}>
-                  <div className="dash-bar-slice done" style={{ height: '45%' }}></div>
-                  <div style={{ height: '3px' }}></div>
-                  <div className="dash-bar-slice prog" style={{ height: '35%' }}></div>
-                </div>
-                <div className="dash-bar-tag">W2</div>
-              </div>
-
-              <div className="dash-bar-col">
-                <div className="dash-bar-tube" style={{ height: '90%' }}>
-                  <div className="dash-bar-slice done" style={{ height: '65%' }}></div>
-                  <div style={{ height: '3px' }}></div>
-                  <div className="dash-bar-slice prog" style={{ height: '25%' }}></div>
-                </div>
-                <div className="dash-bar-tag">W3</div>
-              </div>
-
-              <div className="dash-bar-col">
-                <div className="dash-bar-tube" style={{ height: '72%' }}>
-                  <div className="dash-bar-slice done" style={{ height: '50%' }}></div>
-                  <div style={{ height: '3px' }}></div>
-                  <div className="dash-bar-slice prog" style={{ height: '28%' }}></div>
-                </div>
-                <div className="dash-bar-tag">W4</div>
-              </div>
-
-              <div className="dash-bar-col">
-                <div className="dash-bar-tube" style={{ height: '100%' }}>
-                  <div className="dash-bar-slice done" style={{ height: '70%' }}></div>
-                  <div style={{ height: '3px' }}></div>
-                  <div className="dash-bar-slice prog" style={{ height: '20%' }}></div>
-                </div>
-                <div className="dash-bar-tag">W5</div>
-              </div>
-
-              <div className="dash-bar-col">
-                <div className="dash-bar-tube" style={{ height: '58%' }}>
-                  <div className="dash-bar-slice done" style={{ height: '38%' }}></div>
-                  <div style={{ height: '3px' }}></div>
-                  <div className="dash-bar-slice prog" style={{ height: '40%' }}></div>
-                </div>
-                <div className="dash-bar-tag">W6</div>
-              </div>
-
-              <div className="dash-bar-col">
-                <div className="dash-bar-tube" style={{ height: `${Math.max(35, Math.min(100, (stats.done + stats.active) * 12))}%` }}>
-                  <div className="dash-bar-slice done" style={{ height: `${stats.total > 0 ? (stats.done / stats.total) * 100 : 50}%` }}></div>
-                  <div style={{ height: '3px' }}></div>
-                  <div className="dash-bar-slice prog" style={{ height: `${stats.total > 0 ? (stats.active / stats.total) * 100 : 50}%`, opacity: 0.7 }}></div>
-                </div>
-                <div className="dash-bar-tag" style={{ color: 'var(--accent)', fontWeight: 700 }}>Now</div>
-              </div>
-            </div>
-
-            <div className="dash-chart-foot">
-              <div className="dash-legend-item">
-                <span className="dash-legend-dot" style={{ background: 'var(--accent)' }}></span>
-                Completed ({stats.done})
-              </div>
-              <div className="dash-legend-item">
-                <span className="dash-legend-dot" style={{ background: 'var(--blue)' }}></span>
-                In Progress ({stats.active})
-              </div>
-              <div className="dash-legend-item">
-                <span className="dash-legend-dot" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}></span>
-                Total Scope ({stats.total})
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', padding: '0 4px' }}>
+                {daysOfWeek.map(day => (
+                  <span key={day} style={{ fontSize: '11px', color: 'var(--muted-2, #A3A5C2)', fontFamily: 'var(--font-mono)' }}>
+                    {day}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* Right: Connected Repositories / Milestone Card */}
+          {/* Right: Repositories Card */}
           <div className="dash-surface-card dash-milestone-panel">
-            <div className="dash-milestone-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="4" width="18" height="16" rx="3" stroke="var(--accent)" strokeWidth="1.7"/>
-                <path d="M8 9h8M8 13h5" stroke="var(--accent)" strokeWidth="1.7" strokeLinecap="round"/>
-                <circle cx="19" cy="19" r="4" fill="var(--accent)"/>
-                <path d="M19 17v2l1 1" stroke="white" strokeWidth="1.3" strokeLinecap="round"/>
+            <div style={{ alignSelf: 'flex-start', textAlign: 'left', width: '100%', marginBottom: '14px' }}>
+              <div className="dash-panel-title">Repositories</div>
+              <div className="dash-panel-desc">github sync</div>
+            </div>
+
+            <div style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '12px',
+              background: 'var(--surface-2, #EEF0F9)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '6px auto 14px',
+              border: '1px solid var(--border-soft)'
+            }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--muted)' }}>
+                <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.1-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z"/>
               </svg>
             </div>
-            <div className="dash-milestone-title">
-              {githubRepos.length > 0 ? `${githubRepos.length} Connected Repositories` : 'No GitHub repo connected'}
+
+            <div className="dash-milestone-desc" style={{ fontSize: '12.5px', marginBottom: '18px', maxWidth: '280px' }}>
+              {githubRepos.length > 0
+                ? `${githubRepos.length} repo(s) connected: ${githubRepos.join(', ')}`
+                : 'No repositories connected yet. Link GitHub to see commits and PRs against your tasks.'}
             </div>
-            <div className="dash-milestone-desc">
-              {githubRepos.length > 0 ? (
-                <span>Linked: {githubRepos.slice(0, 2).map(r => r.replace(/^https?:\/\/github\.com\//, '')).join(', ')}</span>
-              ) : (
-                'Connect your GitHub repository in Integrations to track pull requests, branches, and code deployments directly inside SprintOS.'
-              )}
-            </div>
+
             {isAdmin ? (
-              <Link to={`/${workspaceId}/integrations`} className="dash-btn-accent" style={{ textDecoration: 'none' }}>
-                {githubRepos.length > 0 ? 'Manage Integrations' : '+ Connect GitHub'}
+              <Link to={`/${workspaceId}/integrations`} className="dash-btn-accent" style={{ textDecoration: 'none', padding: '9px 24px', borderRadius: '10px' }}>
+                {githubRepos.length > 0 ? 'Manage GitHub' : 'Connect GitHub'}
               </Link>
             ) : (
-              <button type="button" className="dash-btn-accent" onClick={() => setShowNewModal(true)}>
+              <button type="button" className="dash-btn-accent" style={{ padding: '9px 24px', borderRadius: '10px' }} onClick={() => setShowNewModal(true)}>
                 + Create Task
               </button>
             )}
           </div>
         </section>
 
-        {/* ── 5. ATTENTION CALLOUTS (Blocked / Review) ── */}
-        {(stats.blocked > 0 || needsMyReview.length > 0) && (
-          <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px', marginBottom: '24px' }}>
-            {stats.blocked > 0 && (
-              <div style={{ background: 'var(--surface)', border: '1px solid var(--border-soft)', borderLeft: '4px solid var(--red)', borderRadius: '12px', padding: '16px 20px', boxShadow: 'var(--card-shadow)' }}>
-                <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text)', marginBottom: '4px' }}>
-                  ⚠️ You have {stats.blocked} blocked task{stats.blocked === 1 ? '' : 's'}
-                </div>
-                <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--muted)' }}>
-                  Clear the blocker once resolved to maintain your team's velocity.
-                </p>
-              </div>
-            )}
-            {needsMyReview.length > 0 && (
-              <div style={{ background: 'var(--surface)', border: '1px solid var(--border-soft)', borderLeft: '4px solid var(--violet)', borderRadius: '12px', padding: '16px 20px', boxShadow: 'var(--card-shadow)' }}>
-                <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text)', marginBottom: '4px' }}>
-                  📋 {needsMyReview.length} task{needsMyReview.length === 1 ? '' : 's'} waiting on your review
-                </div>
-                <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--muted)' }}>
-                  {needsMyReview.map(d => d.title).slice(0, 3).join(' · ')}{needsMyReview.length > 3 ? '…' : ''}
-                </p>
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* ── 6. MY ASSIGNED TASKS SECTION WITH CONTROLS ── */}
-        <section className="dash-controls-bar">
-          <div className="dash-controls-left">
-            <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text)' }}>My Assigned Tasks</h2>
-            <div className="dash-view-toggle" style={{ marginLeft: '12px' }}>
-              <button
-                type="button"
-                className={`dash-view-btn${viewMode === 'board' ? ' active' : ''}`}
-                onClick={() => setViewMode('board')}
-              >
-                Kanban Board
-              </button>
-              <button
-                type="button"
-                className={`dash-view-btn${viewMode === 'list' ? ' active' : ''}`}
-                onClick={() => setViewMode('list')}
-              >
-                List View
-              </button>
-            </div>
+        {/* ── 5. MY ASSIGNED TASKS HEADER & VIEW SWITCHER ── */}
+        <section style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
+            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: 'var(--text)' }}>My Assigned Tasks</h2>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12.5px', color: 'var(--muted-2, #A3A5C2)' }}>
+              {myTasks.length} total
+            </span>
           </div>
 
-          <div className="dash-controls-right">
+          {/* View toggle pill */}
+          <div className="dash-view-toggle">
             <button
               type="button"
-              className="dash-btn-accent"
-              style={{ padding: '8px 16px', fontSize: '12.5px' }}
-              onClick={() => setShowNewModal(true)}
+              className={`dash-view-btn${viewMode === 'board' ? ' active' : ''}`}
+              onClick={() => setViewMode('board')}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              + Add task
+              <span>☷</span> Kanban
+            </button>
+            <button
+              type="button"
+              className={`dash-view-btn${viewMode === 'list' ? ' active' : ''}`}
+              onClick={() => setViewMode('list')}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            >
+              <span>☰</span> List
             </button>
           </div>
         </section>
 
-        {/* ── 7. KANBAN BOARD / LIST VIEW ── */}
+        {/* ── 6. 5 KANBAN COLUMNS MATCHING SCREENSHOT ── */}
         {viewMode === 'board' ? (
-          <div className="dash-kanban-grid" style={{ marginBottom: '36px' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(5, 1fr)',
+            gap: '14px',
+            alignItems: 'start'
+          }}>
             {kanbanColumns.map(col => (
-              <div key={col.id} className="dash-kanban-col">
-                <div className={`dash-col-top-bar ${col.colorKey}`} style={{ background: col.color }} />
-
-                <div className="dash-col-header">
-                  <div className="dash-col-title-row">
-                    <div className="dash-col-title-left">
-                      <span className={`dash-col-dot ${col.colorKey}`} style={{ background: col.color }} />
-                      <span className="dash-col-name">{col.title}</span>
-                    </div>
-                    <span className="dash-col-count">{col.items.length}</span>
+              <div key={col.id} className="dash-surface-card" style={{ overflow: 'hidden' }}>
+                {/* Header */}
+                <div style={{
+                  padding: '16px 18px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderBottom: '1px solid var(--border-soft)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: col.dotColor, flexShrink: 0 }} />
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>{col.title}</span>
                   </div>
-
-                  <div className="dash-col-prog-track">
-                    <div
-                      className={`dash-col-prog-fill ${col.colorKey}`}
-                      style={{
-                        background: col.color,
-                        width: `${stats.total > 0 ? Math.min(100, Math.round((col.items.length / stats.total) * 100)) : 0}%`
-                      }}
-                    />
-                  </div>
+                  <span style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    background: 'var(--surface-2)',
+                    color: 'var(--muted)',
+                    padding: '2px 8px',
+                    borderRadius: '100px',
+                    border: '1px solid var(--border-soft)'
+                  }}>
+                    {col.items.length}
+                  </span>
                 </div>
 
-                <div className="dash-col-body">
+                {/* Body with clean empty state */}
+                <div style={{
+                  padding: '28px 14px',
+                  minHeight: '160px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  textAlign: 'center'
+                }}>
                   {col.items.length === 0 ? (
-                    <div className="dash-col-empty">
-                      <div className="dash-col-empty-icon">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                          <rect x="2" y="2" width="12" height="12" rx="3" stroke="var(--muted-2)" strokeWidth="1.4"/>
-                          <path d="M5.5 8h5M8 5.5v5" stroke="var(--muted-2)" strokeWidth="1.4" strokeLinecap="round"/>
-                        </svg>
+                    <div>
+                      <div style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 500, marginBottom: col.showAdd ? '10px' : '0' }}>
+                        {col.emptyText}
                       </div>
-                      <div className="dash-col-empty-text">No tasks in {col.title}</div>
-                      <button
-                        type="button"
-                        className="dash-col-add-btn"
-                        onClick={() => setShowNewModal(true)}
-                      >
-                        + Add task
-                      </button>
+                      {col.showAdd && (
+                        <button
+                          type="button"
+                          onClick={() => setShowNewModal(true)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--accent, #4F46E5)',
+                            fontSize: '12.5px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            padding: '4px 8px'
+                          }}
+                        >
+                          + Add task
+                        </button>
+                      )}
                     </div>
                   ) : (
-                    col.items.map(d => (
-                      <DeadlineCard
-                        key={d.id}
-                        deadline={d}
-                        currentUser={user}
-                        teamId={d.workspaceId || 'default-team'}
-                        sprintLocked={!!(d.sprintId && activeSprint?.id === d.sprintId && activeSprint?.locked)}
-                      />
-                    ))
+                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {col.items.map(d => (
+                        <DeadlineCard
+                          key={d.id}
+                          deadline={d}
+                          currentUser={user}
+                          teamId={d.workspaceId || 'default-team'}
+                          sprintLocked={!!(d.sprintId && activeSprint?.id === d.sprintId && activeSprint?.locked)}
+                        />
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <section className="dash-list-view" style={{ marginBottom: '36px' }}>
+          <section className="dash-list-view">
             {sortedMyTasks.length === 0 ? (
               <div className="dash-empty-list">No tasks assigned to you yet.</div>
             ) : (
@@ -585,7 +481,7 @@ export default function MyDashboard() {
         )}
 
         {hasMore && (
-          <div className="dash-load-more" style={{ marginBottom: '36px' }}>
+          <div className="dash-load-more" style={{ marginTop: '24px' }}>
             <button
               className="btn-ghost btn-sm"
               onClick={loadMore}
@@ -595,26 +491,6 @@ export default function MyDashboard() {
               {loadingMore ? 'Loading…' : 'Load more'}
             </button>
           </div>
-        )}
-
-        {/* Waiting on Review section */}
-        {needsMyReview.length > 0 && (
-          <section style={{ marginTop: '24px', marginBottom: '40px' }}>
-            <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text)', marginBottom: '14px' }}>
-              Waiting On Your Review ({needsMyReview.length})
-            </h2>
-            <div className="dash-list-view">
-              {needsMyReview.map(d => (
-                <DeadlineCard
-                  key={d.id}
-                  deadline={d}
-                  currentUser={user}
-                  teamId={d.workspaceId || 'default-team'}
-                  sprintLocked={!!(d.sprintId && sprints.find(s => s.id === d.sprintId)?.locked)}
-                />
-              ))}
-            </div>
-          </section>
         )}
       </main>
 
