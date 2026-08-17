@@ -357,12 +357,12 @@ export default function Settings() {
   }
 
   const AVAILABLE_PERMISSIONS = [
-    { id: 'deadlines.manage', label: 'Create & Manage Kanban Tasks' },
-    { id: 'sprints.manage', label: 'Manage Sprints & Agile Flow' },
-    { id: 'meetings.manage', label: 'Create & Manage Meeting Notes' },
-    { id: 'roles.manage', label: 'Manage Roles & Access' },
-    { id: 'teamSettings.manage', label: 'Manage Workspace Settings' },
-    { id: 'onboarding.manage', label: 'Manage Onboarding & Tour' }
+    { id: 'sprints.manage', label: 'Manage Sprints' },
+    { id: 'deadlines.manage', label: 'Manage Deadlines' },
+    { id: 'meetings.manage', label: 'Manage Meetings' },
+    { id: 'roles.manage', label: 'Manage Roles' },
+    { id: 'teamSettings.manage', label: 'Manage Team Settings' },
+    { id: 'onboarding.manage', label: 'Manage Onboarding' }
   ]
 
   useEffect(() => {
@@ -1250,7 +1250,7 @@ export default function Settings() {
                                 }}
                                 title="Click to view & edit permissions"
                               >
-                                <span>{(m.permissions || []).length > 0 ? `${m.permissions.length} Custom Perms` : 'View & create tasks'}</span>
+                                <span>{(m.permissions || []).length > 0 ? `${m.permissions.length} Custom Perms` : 'View tasks'}</span>
                                 {isAdminOrOwner && <span style={{ fontSize: '9px', opacity: 0.7 }}>▼</span>}
                               </button>
 
