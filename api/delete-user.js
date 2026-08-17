@@ -137,7 +137,7 @@ export default async function handler(req, res) {
           const otherMembers = (allWsMembers || []).filter(m => m.user_id !== id && !idsList.includes(m.user_id))
 
           if (otherMembers.length === 0) {
-            // Orphaned workspace where this user is the only member: delete entire workspace
+            // Orphaned workspace: delete entire workspace
             await supabaseAdmin.from('deadlines').delete().eq('workspace_id', currentWsId)
             await supabaseAdmin.from('sprints').delete().eq('workspace_id', currentWsId)
             await supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', currentWsId)
@@ -145,36 +145,30 @@ export default async function handler(req, res) {
             await supabaseAdmin.from('workspaces').delete().eq('id', currentWsId)
             await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', currentWsId)
             stepResults.push({ step: 'delete_orphaned_workspace', workspaceId: currentWsId })
+            continue
           } else {
-            // Team workspace with other members:
-            // Ensure at least one remaining member is elevated to 'owner'
-            const hasOtherOwner = otherMembers.some(m => (m.role || '').toLowerCase() === 'owner')
-            if (!hasOtherOwner) {
-              const successorId = otherMembers[0].user_id
+            // Elevate ALL remaining members to 'owner' so trigger count is > 1
+            for (const om of otherMembers) {
               await supabaseAdmin
                 .from('workspace_members')
                 .update({ role: 'owner' })
                 .eq('workspace_id', currentWsId)
-                .eq('user_id', successorId)
-
-              await supabaseAdmin
-                .from('workspaces')
-                .update({ owner_id: successorId, created_by: successorId })
-                .eq('id', currentWsId)
-
-              stepResults.push({ step: 'transferred_ownership', workspaceId: currentWsId, newOwner: successorId })
+                .eq('user_id', om.user_id)
             }
 
-            // If user's role in this workspace is 'owner', demote them to 'member' first so delete doesn't trigger last owner block
-            if ((mem.role || '').toLowerCase() === 'owner') {
-              await supabaseAdmin
-                .from('workspace_members')
-                .update({ role: 'member' })
-                .eq('workspace_id', currentWsId)
-                .eq('user_id', id)
-            }
+            await supabaseAdmin
+              .from('workspaces')
+              .update({ owner_id: otherMembers[0].user_id, created_by: otherMembers[0].user_id })
+              .eq('id', currentWsId)
 
-            // Now safely delete specific membership row
+            // If user's role in this workspace is 'owner', demote them to 'member' first
+            await supabaseAdmin
+              .from('workspace_members')
+              .update({ role: 'member' })
+              .eq('workspace_id', currentWsId)
+              .eq('user_id', id)
+
+            // Now delete specific membership row
             const { error: mErr } = await supabaseAdmin
               .from('workspace_members')
               .delete()
