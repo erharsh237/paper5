@@ -1,3 +1,5 @@
+import { createClient } from '@supabase/supabase-js'
+
 async function parseBody(req) {
   if (req.body && typeof req.body === 'object') return req.body
   if (req.body && typeof req.body === 'string') {
