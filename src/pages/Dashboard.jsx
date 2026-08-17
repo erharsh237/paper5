@@ -29,7 +29,7 @@ export default function Dashboard() {
   const [assigneeFilter, setAssigneeFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState('board')
-  const [timeRange, setTimeRange] = useState('30D')
+  const [timeRange, setTimeRange] = useState('7D')
   const [generatingReport, setGeneratingReport] = useState(false)
   
   const now = new Date()
@@ -66,25 +66,20 @@ export default function Dashboard() {
   const filtered = useMemo(() => {
     return deadlines.filter(d => {
       if (statusFilter !== 'all' && d.status !== statusFilter) return false
-      if (assigneeFilter !== 'all' && d.assigneeId !== assigneeFilter) return false
+      if (assigneeFilter !== 'all' && d.assigneeId !== assigneeFilter && d.assigneeEmail !== assigneeFilter) return false
       if (search.trim() && !d.title?.toLowerCase().includes(search.toLowerCase())) return false
       return true
     })
   }, [deadlines, statusFilter, assigneeFilter, search])
 
-  const activeWorkflow = useMemo(() => {
-    const wfId = workspace?.settings?.agile_workflow || 'scrum'
-    return getWorkflowById(wfId) || getWorkflowById('scrum')
-  }, [workspace?.settings?.agile_workflow])
-
-  // 5 Canonical Kanban Columns with design tokens
+  // 5 Canonical Kanban Columns
   const kanbanColumns = useMemo(() => {
     const standardCols = [
-      { id: 'not_started', title: 'To Do', colorKey: 'todo', color: '#A3A5C2', fillPct: stats.total ? Math.round((stats.active / stats.total) * 100) : 0 },
-      { id: 'in_progress', title: 'In Progress', colorKey: 'progress', color: '#3D6FD6', fillPct: stats.total ? Math.round((stats.active / stats.total) * 100) : 0 },
-      { id: 'review', title: 'Review / QA', colorKey: 'review', color: '#7C5CE0', fillPct: stats.total ? Math.round((stats.dueSoon / stats.total) * 100) : 0 },
-      { id: 'blocked', title: 'Blocked', colorKey: 'blocked', color: '#D14343', fillPct: stats.total ? Math.round((stats.overdue / stats.total) * 100) : 0 },
-      { id: 'done', title: 'Done', colorKey: 'done', color: '#1A9959', fillPct: stats.total ? Math.round((stats.done / stats.total) * 100) : 0 },
+      { id: 'not_started', title: 'To Do', colorKey: 'todo', color: '#1C1D2B' },
+      { id: 'in_progress', title: 'In Progress', colorKey: 'progress', color: '#3D6FD6' },
+      { id: 'review', title: 'Review / QA', colorKey: 'review', color: '#C4791A' },
+      { id: 'blocked', title: 'Blocked', colorKey: 'blocked', color: '#D14343' },
+      { id: 'done', title: 'Done', colorKey: 'done', color: '#4F46E5' },
     ]
 
     return standardCols.map(col => {
@@ -102,26 +97,170 @@ export default function Dashboard() {
       }
       return { ...col, items }
     })
-  }, [filtered, stats])
+  }, [filtered])
+
+  // ── REAL DATA VELOCITY CALCULATION (7D / 30D / 90D) ──
+  const velocityData = useMemo(() => {
+    const nowDate = new Date()
+
+    if (timeRange === '7D') {
+      const currentDayIdx = nowDate.getDay()
+      const monday = new Date(nowDate)
+      const diffToMonday = (currentDayIdx === 0 ? -6 : 1 - currentDayIdx)
+      monday.setDate(nowDate.getDate() + diffToMonday)
+      monday.setHours(0, 0, 0, 0)
+
+      const days = []
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(monday)
+        d.setDate(monday.getDate() + i)
+        const dateStr = d.toISOString().slice(0, 10)
+        const dayLabel = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i]
+
+        const doneTasks = deadlines.filter(t => {
+          if (t.status !== 'done') return false
+          const compDate = (t.completedAt || t.completed_at || t.dueDate || t.due_date || t.createdAt || '').slice(0, 10)
+          return compDate === dateStr
+        })
+
+        const inProgTasks = deadlines.filter(t => {
+          if (t.status !== 'in_progress') return false
+          const taskDate = (t.dueDate || t.due_date || t.createdAt || '').slice(0, 10)
+          return taskDate === dateStr
+        })
+
+        days.push({
+          label: dayLabel,
+          done: doneTasks.length,
+          inProgress: inProgTasks.length,
+          total: doneTasks.length + inProgTasks.length,
+          isCurrent: d.toDateString() === nowDate.toDateString()
+        })
+      }
+
+      const maxCount = Math.max(1, ...days.map(d => d.total))
+      return {
+        subtitle: 'completed / assigned per day',
+        bars: days.map(d => ({
+          ...d,
+          heightPct: d.total > 0 ? Math.round((d.total / maxCount) * 100) : 0,
+          donePct: d.total > 0 ? Math.round((d.done / d.total) * 100) : 0,
+          progPct: d.total > 0 ? Math.round((d.inProgress / d.total) * 100) : 0,
+        })),
+        totalDone: days.reduce((sum, d) => sum + d.done, 0),
+        totalProg: days.reduce((sum, d) => sum + d.inProgress, 0),
+        totalScope: deadlines.length
+      }
+    }
+
+    if (timeRange === '30D') {
+      const weeks = []
+      for (let i = 4; i >= 0; i--) {
+        const start = new Date(nowDate)
+        start.setDate(nowDate.getDate() - (i * 7 + 6))
+        start.setHours(0, 0, 0, 0)
+        
+        const end = new Date(nowDate)
+        end.setDate(nowDate.getDate() - (i * 7))
+        end.setHours(23, 59, 59, 999)
+
+        const doneTasks = deadlines.filter(t => {
+          if (t.status !== 'done') return false
+          const d = new Date(t.completedAt || t.completed_at || t.dueDate || t.due_date || t.createdAt)
+          return d >= start && d <= end
+        })
+
+        const inProgTasks = deadlines.filter(t => {
+          if (t.status !== 'in_progress') return false
+          const d = new Date(t.dueDate || t.due_date || t.createdAt)
+          return d >= start && d <= end
+        })
+
+        weeks.push({
+          label: i === 0 ? 'Now' : `W${5 - i}`,
+          done: doneTasks.length,
+          inProgress: inProgTasks.length,
+          total: doneTasks.length + inProgTasks.length,
+          isCurrent: i === 0
+        })
+      }
+
+      const maxCount = Math.max(1, ...weeks.map(w => w.total))
+      return {
+        subtitle: 'completed / assigned per week',
+        bars: weeks.map(w => ({
+          ...w,
+          heightPct: w.total > 0 ? Math.round((w.total / maxCount) * 100) : 0,
+          donePct: w.total > 0 ? Math.round((w.done / w.total) * 100) : 0,
+          progPct: w.total > 0 ? Math.round((w.inProgress / w.total) * 100) : 0,
+        })),
+        totalDone: weeks.reduce((sum, w) => sum + w.done, 0),
+        totalProg: weeks.reduce((sum, w) => sum + w.inProgress, 0),
+        totalScope: deadlines.length
+      }
+    }
+
+    // 90D: 3-month breakdown
+    const months = []
+    for (let i = 2; i >= 0; i--) {
+      const d = new Date(nowDate.getFullYear(), nowDate.getMonth() - i, 1)
+      const monthName = d.toLocaleString('default', { month: 'short' })
+      const start = new Date(nowDate.getFullYear(), nowDate.getMonth() - i, 1)
+      const end = new Date(nowDate.getFullYear(), nowDate.getMonth() - i + 1, 0, 23, 59, 59)
+
+      const doneTasks = deadlines.filter(t => {
+        if (t.status !== 'done') return false
+        const dt = new Date(t.completedAt || t.completed_at || t.dueDate || t.due_date || t.createdAt)
+        return dt >= start && dt <= end
+      })
+
+      const inProgTasks = deadlines.filter(t => {
+        if (t.status !== 'in_progress') return false
+        const dt = new Date(t.dueDate || t.due_date || t.createdAt)
+        return dt >= start && dt <= end
+      })
+
+      months.push({
+        label: i === 0 ? 'This Mo' : monthName,
+        done: doneTasks.length,
+        inProgress: inProgTasks.length,
+        total: doneTasks.length + inProgTasks.length,
+        isCurrent: i === 0
+      })
+    }
+
+    const maxCount = Math.max(1, ...months.map(m => m.total))
+    return {
+      subtitle: 'completed / assigned per month',
+      bars: months.map(m => ({
+        ...m,
+        heightPct: m.total > 0 ? Math.round((m.total / maxCount) * 100) : 0,
+        donePct: m.total > 0 ? Math.round((m.done / m.total) * 100) : 0,
+        progPct: m.total > 0 ? Math.round((m.inProgress / m.total) * 100) : 0,
+      })),
+      totalDone: months.reduce((sum, m) => sum + m.done, 0),
+      totalProg: months.reduce((sum, m) => sum + m.inProgress, 0),
+      totalScope: deadlines.length
+    }
+  }, [deadlines, timeRange])
 
   const isAdmin = workspaceRole === 'owner' || workspaceRole === 'admin'
   const activeWf = getWorkflowById(workspace?.settings?.agile_workflow || 'scrum')
 
-  // User Greeting
-  const userName = useMemo(() => {
+  const userFirstName = useMemo(() => {
     if (user?.displayName) return user.displayName.split(' ')[0]
-    if (user?.email) return user.email.split('@')[0]
+    if (user?.email) {
+      const prefix = user.email.split('@')[0]
+      return prefix.charAt(0).toUpperCase() + prefix.slice(1)
+    }
     return 'there'
   }, [user])
 
   return (
     <div className="dash-root">
-      {/* ─────────────────────────────────────────────────────────────
-           1. STICKY TOP NAV
-      ───────────────────────────────────────────────────────────── */}
+      {/* ── 1. STICKY TOP NAV ── */}
       <nav className="dash-sticky-nav">
         <div className="dash-container dash-nav-inner">
-          {/* Logo Mark + Glow + Env Tag */}
           <Link to={`/${workspaceId}`} className="dash-nav-brand">
             <div className="dash-logo-dot">
               <svg viewBox="0 0 14 14" fill="none">
@@ -129,13 +268,11 @@ export default function Dashboard() {
               </svg>
             </div>
             <span className="dash-logo-name">SprintOS</span>
-            <span className="dash-env-tag">{workspace?.name || 'Beta'}</span>
+            <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
           </Link>
 
-          {/* Primary Nav Links */}
           <NavTabs />
 
-          {/* Right-side Actions */}
           <div className="dash-nav-actions">
             <NotificationBell currentUser={user} />
             <UserMenu />
@@ -143,10 +280,8 @@ export default function Dashboard() {
         </div>
       </nav>
 
-      {/* ─────────────────────────────────────────────────────────────
-           MAIN DASHBOARD CONTENT
-      ───────────────────────────────────────────────────────────── */}
-      <main className="dash-container">
+      {/* ── MAIN BODY ── */}
+      <main className="dash-container" style={{ paddingBottom: '48px' }}>
         
         {/* ── HEADER ROW ── */}
         <header className="dash-page-header">
@@ -154,10 +289,9 @@ export default function Dashboard() {
             <div className="dash-header-left">
               <div className="dash-eyebrow">
                 <span className="dash-eyebrow-dot"></span>
-                All systems normal
+                ALL SYSTEMS NORMAL
               </div>
-              <h1 className="dash-greeting">Good morning, <span>{userName}</span> 👋</h1>
-              <p className="dash-subtext">Here's what's happening across your workspace today.</p>
+              <h1 className="dash-greeting">Welcome back, <span>{userFirstName}</span></h1>
             </div>
 
             {/* Search Bar with ⌘K */}
@@ -169,7 +303,7 @@ export default function Dashboard() {
               <input
                 className="dash-search-input"
                 type="text"
-                placeholder="Search anything…"
+                placeholder="Search tasks, repos, people..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -203,82 +337,63 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ── 3. STAT STRIP (Single 14px Card with Hairlines) ── */}
+        {/* ── 3. STAT STRIP ── */}
         <section className="dash-stat-strip">
-          {/* Active */}
           <div className="dash-stat-col">
-            <div className="dash-stat-label-row">
-              <span className="dash-stat-dot" style={{ background: 'var(--blue)' }}></span>
-              Active Tasks
+            <div className="dash-stat-label-row" style={{ justifyContent: 'space-between' }}>
+              <span>ACTIVE</span>
+              <span className="dash-stat-dot" style={{ background: '#3D6FD6' }}></span>
             </div>
-            <div className="dash-stat-value">{String(stats.active).padStart(2, '0')}</div>
+            <div className="dash-stat-value">{stats.active}</div>
             <div className="dash-stat-delta">
-              <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                <path d="M5.5 2L9 7H2L5.5 2Z" fill="var(--green)"/>
-              </svg>
-              <span className="dash-delta-green">+{stats.active} in sprint</span>
+              <span>— no change this week</span>
             </div>
           </div>
 
-          {/* Overdue */}
           <div className="dash-stat-col">
-            <div className="dash-stat-label-row">
-              <span className="dash-stat-dot" style={{ background: 'var(--red)' }}></span>
-              Overdue
+            <div className="dash-stat-label-row" style={{ justifyContent: 'space-between' }}>
+              <span>OVERDUE</span>
+              <span className="dash-stat-dot" style={{ background: '#D14343' }}></span>
             </div>
-            <div className="dash-stat-value">{String(stats.overdue).padStart(2, '0')}</div>
+            <div className="dash-stat-value">{stats.overdue}</div>
             <div className="dash-stat-delta">
-              {stats.overdue > 0 ? (
-                <>
-                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                    <path d="M5.5 9L9 4H2L5.5 9Z" fill="var(--red)"/>
-                  </svg>
-                  <span className="dash-delta-red">Needs immediate review</span>
-                </>
-              ) : (
-                <span className="dash-delta-green">No overdue items 🎉</span>
-              )}
+              <span style={{ color: stats.overdue === 0 ? '#3D6FD6' : '#D14343' }}>
+                {stats.overdue === 0 ? '✓ clear' : 'Needs attention'}
+              </span>
             </div>
           </div>
 
-          {/* Due Soon */}
           <div className="dash-stat-col">
-            <div className="dash-stat-label-row">
-              <span className="dash-stat-dot" style={{ background: 'var(--amber)' }}></span>
-              Due Soon
+            <div className="dash-stat-label-row" style={{ justifyContent: 'space-between' }}>
+              <span>DUE SOON</span>
+              <span className="dash-stat-dot" style={{ background: '#C4791A' }}></span>
             </div>
-            <div className="dash-stat-value">{String(stats.dueSoon).padStart(2, '0')}</div>
+            <div className="dash-stat-value">{stats.dueSoon}</div>
             <div className="dash-stat-delta">
-              <span className="dash-delta-amber">— within 48 hours</span>
+              <span>next 48h</span>
             </div>
           </div>
 
-          {/* Completed */}
           <div className="dash-stat-col">
-            <div className="dash-stat-label-row">
-              <span className="dash-stat-dot" style={{ background: 'var(--green)' }}></span>
-              Completed
+            <div className="dash-stat-label-row" style={{ justifyContent: 'space-between' }}>
+              <span>COMPLETED</span>
+              <span className="dash-stat-dot" style={{ background: '#4F46E5' }}></span>
             </div>
-            <div className="dash-stat-value">{String(stats.done).padStart(2, '0')}</div>
+            <div className="dash-stat-value">{stats.done}</div>
             <div className="dash-stat-delta">
-              <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                <path d="M5.5 2L9 7H2L5.5 2Z" fill="var(--green)"/>
-              </svg>
-              <span className="dash-delta-green">{stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0}% completion rate</span>
+              <span>this sprint</span>
             </div>
           </div>
         </section>
 
-        {/* ── 4. TWO-COLUMN ROW: VELOCITY & MILESTONE ── */}
+        {/* ── 4. TWO-COLUMN ROW: VELOCITY & MILESTONES ── */}
         <section className="dash-two-col">
-          {/* Left: Sprint Velocity Bar Chart Panel */}
+          {/* Left: Task Velocity Card */}
           <div className="dash-surface-card dash-chart-panel">
             <div className="dash-panel-header">
               <div>
-                <div className="dash-panel-title">Sprint Velocity</div>
-                <div className="dash-panel-desc">
-                  {activeSprint ? `Active: ${activeSprint.name || 'Sprint'}` : 'Tasks completed per sprint cycle'}
-                </div>
+                <div className="dash-panel-title">Task velocity</div>
+                <div className="dash-panel-desc">{velocityData.subtitle}</div>
               </div>
               <div className="dash-range-pills">
                 <button
@@ -305,90 +420,103 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="dash-chart-bars">
-              {/* Velocity Bars */}
-              <div className="dash-bar-col">
-                <div className="dash-bar-tube" style={{ height: '85%' }}>
-                  <div className="dash-bar-slice done" style={{ height: '55%' }}></div>
-                  <div style={{ height: '3px' }}></div>
-                  <div className="dash-bar-slice prog" style={{ height: '30%' }}></div>
-                </div>
-                <div className="dash-bar-tag">W1</div>
+            {/* Dynamic Velocity Bars Canvas */}
+            <div style={{ height: '140px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingTop: '10px' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'flex-end',
+                justifyContent: 'space-between',
+                gap: '8px',
+                borderBottom: '2px solid #4F46E5',
+                paddingBottom: '8px',
+                height: '100%'
+              }}>
+                {velocityData.bars.map((bar, idx) => {
+                  const hasTasks = bar.total > 0
+                  return (
+                    <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
+                      {hasTasks ? (
+                        <div style={{
+                          width: '100%',
+                          maxWidth: '36px',
+                          height: `${Math.max(12, bar.heightPct)}%`,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '2px',
+                          alignItems: 'center',
+                          justifyContent: 'flex-end',
+                          transition: 'height 0.3s ease'
+                        }} title={`${bar.label}: ${bar.done} done, ${bar.inProgress} in progress`}>
+                          {bar.done > 0 && (
+                            <div style={{
+                              width: '100%',
+                              height: `${bar.donePct}%`,
+                              background: '#4F46E5',
+                              borderRadius: '3px 3px 0 0'
+                            }} />
+                          )}
+                          {bar.inProgress > 0 && (
+                            <div style={{
+                              width: '100%',
+                              height: `${bar.progPct}%`,
+                              background: '#3D6FD6',
+                              borderRadius: bar.done === 0 ? '3px 3px 0 0' : '0'
+                            }} />
+                          )}
+                        </div>
+                      ) : (
+                        <div style={{
+                          width: '100%',
+                          maxWidth: '36px',
+                          height: bar.isCurrent ? '4px' : '0px',
+                          background: bar.isCurrent ? '#4F46E5' : 'transparent',
+                          borderRadius: '2px 2px 0 0',
+                          opacity: 0.5
+                        }} />
+                      )}
+                    </div>
+                  )
+                })}
               </div>
 
-              <div className="dash-bar-col">
-                <div className="dash-bar-tube" style={{ height: '65%' }}>
-                  <div className="dash-bar-slice done" style={{ height: '45%' }}></div>
-                  <div style={{ height: '3px' }}></div>
-                  <div className="dash-bar-slice prog" style={{ height: '35%' }}></div>
-                </div>
-                <div className="dash-bar-tag">W2</div>
-              </div>
-
-              <div className="dash-bar-col">
-                <div className="dash-bar-tube" style={{ height: '90%' }}>
-                  <div className="dash-bar-slice done" style={{ height: '65%' }}></div>
-                  <div style={{ height: '3px' }}></div>
-                  <div className="dash-bar-slice prog" style={{ height: '25%' }}></div>
-                </div>
-                <div className="dash-bar-tag">W3</div>
-              </div>
-
-              <div className="dash-bar-col">
-                <div className="dash-bar-tube" style={{ height: '72%' }}>
-                  <div className="dash-bar-slice done" style={{ height: '50%' }}></div>
-                  <div style={{ height: '3px' }}></div>
-                  <div className="dash-bar-slice prog" style={{ height: '28%' }}></div>
-                </div>
-                <div className="dash-bar-tag">W4</div>
-              </div>
-
-              <div className="dash-bar-col">
-                <div className="dash-bar-tube" style={{ height: '100%' }}>
-                  <div className="dash-bar-slice done" style={{ height: '70%' }}></div>
-                  <div style={{ height: '3px' }}></div>
-                  <div className="dash-bar-slice prog" style={{ height: '20%' }}></div>
-                </div>
-                <div className="dash-bar-tag">W5</div>
-              </div>
-
-              <div className="dash-bar-col">
-                <div className="dash-bar-tube" style={{ height: '58%' }}>
-                  <div className="dash-bar-slice done" style={{ height: '38%' }}></div>
-                  <div style={{ height: '3px' }}></div>
-                  <div className="dash-bar-slice prog" style={{ height: '40%' }}></div>
-                </div>
-                <div className="dash-bar-tag">W6</div>
-              </div>
-
-              {/* Current Cycle */}
-              <div className="dash-bar-col">
-                <div className="dash-bar-tube" style={{ height: `${Math.max(30, Math.min(100, (stats.done + stats.active) * 8))}%` }}>
-                  <div className="dash-bar-slice done" style={{ height: `${stats.total > 0 ? (stats.done / stats.total) * 100 : 50}%` }}></div>
-                  <div style={{ height: '3px' }}></div>
-                  <div className="dash-bar-slice prog" style={{ height: `${stats.total > 0 ? (stats.active / stats.total) * 100 : 50}%`, opacity: 0.7 }}></div>
-                </div>
-                <div className="dash-bar-tag" style={{ color: 'var(--accent)', fontWeight: 700 }}>Now</div>
+              {/* Day / Period Labels */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', padding: '0 4px' }}>
+                {velocityData.bars.map((bar, idx) => (
+                  <span
+                    key={idx}
+                    style={{
+                      flex: 1,
+                      textAlign: 'center',
+                      fontSize: '11px',
+                      color: bar.isCurrent ? '#4F46E5' : '#A3A5C2',
+                      fontFamily: 'var(--font-mono)',
+                      fontWeight: bar.isCurrent ? 700 : 500
+                    }}
+                  >
+                    {bar.label}
+                  </span>
+                ))}
               </div>
             </div>
 
-            <div className="dash-chart-foot">
-              <div className="dash-legend-item">
-                <span className="dash-legend-dot" style={{ background: 'var(--accent)' }}></span>
-                Completed ({stats.done})
+            {/* Legend with Real Dynamic Scope */}
+            <div style={{ display: 'flex', gap: '18px', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-soft)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: 'var(--muted)', fontWeight: 600 }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4F46E5' }}></span>
+                Completed ({velocityData.totalDone})
               </div>
-              <div className="dash-legend-item">
-                <span className="dash-legend-dot" style={{ background: 'var(--blue)' }}></span>
-                In Progress ({stats.active})
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: 'var(--muted)', fontWeight: 600 }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3D6FD6' }}></span>
+                In Progress ({velocityData.totalProg})
               </div>
-              <div className="dash-legend-item">
-                <span className="dash-legend-dot" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}></span>
-                Total Scope ({stats.total})
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: 'var(--muted)', fontWeight: 600 }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: 'var(--surface-2)', border: '1px solid var(--border)' }}></span>
+                Total Scope ({velocityData.totalScope})
               </div>
             </div>
           </div>
 
-          {/* Right: Milestone / Upcoming Deadlines Empty State Card */}
+          {/* Right: Milestone / Deadlines Card */}
           <div className="dash-surface-card dash-milestone-panel">
             <div className="dash-milestone-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -399,16 +527,17 @@ export default function Dashboard() {
               </svg>
             </div>
             <div className="dash-milestone-title">
-              {stats.dueSoon > 0 ? `${stats.dueSoon} deadlines due soon` : 'No urgent blockers'}
+              {stats.dueSoon > 0 ? `${stats.dueSoon} deadlines due soon` : 'No upcoming deadlines'}
             </div>
             <div className="dash-milestone-desc">
               {stats.dueSoon > 0
-                ? 'Keep your sprint on track by prioritizing work items approaching their deadline.'
-                : "You're all caught up! Create a new deadline to start tracking important dates and keep your team aligned."}
+                ? 'Prioritize upcoming work items to keep team execution on schedule.'
+                : "You're all caught up! Create a milestone to start tracking important dates and keep your sprint on schedule."}
             </div>
             <button
               type="button"
               className="dash-btn-accent"
+              style={{ borderRadius: '10px', padding: '9px 22px' }}
               onClick={() => setShowNewModal(true)}
             >
               + Create Milestone
@@ -419,30 +548,24 @@ export default function Dashboard() {
         {/* ── 5. CONTROLS BAR ── */}
         <section className="dash-controls-bar">
           <div className="dash-controls-left">
-            {/* View Mode Toggle */}
             <div className="dash-view-toggle">
               <button
                 type="button"
                 className={`dash-view-btn${viewMode === 'board' ? ' active' : ''}`}
                 onClick={() => setViewMode('board')}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
-                Kanban Board
+                <span>☷</span> Kanban
               </button>
               <button
                 type="button"
                 className={`dash-view-btn${viewMode === 'list' ? ' active' : ''}`}
                 onClick={() => setViewMode('list')}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
-                List View
+                <span>☰</span> List
               </button>
             </div>
-
-            <input
-              className="dash-filter-input"
-              placeholder="Search deadlines…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
 
             <select
               value={statusFilter}
@@ -480,13 +603,12 @@ export default function Dashboard() {
               onClick={handleDownloadReport}
               disabled={generatingReport}
               style={{ borderRadius: '8px', border: '1px solid var(--border-soft)', padding: '7px 12px', fontSize: '12.5px' }}
-              title="Download monthly sprint execution report"
             >
               {generatingReport ? 'Generating…' : '↓ Report'}
             </button>
             <button
               className="dash-btn-accent"
-              style={{ padding: '8px 16px', fontSize: '12.5px' }}
+              style={{ padding: '8px 16px', fontSize: '12.5px', borderRadius: '10px' }}
               onClick={() => setShowNewModal(true)}
             >
               + New deadline
@@ -498,82 +620,94 @@ export default function Dashboard() {
         <div className="dash-main-columns">
           <div className="dash-board-area">
             {viewMode === 'board' ? (
-              /* KANBAN BOARD (5 Equal Columns) */
-              <div className="dash-kanban-grid">
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gap: '14px',
+                alignItems: 'start'
+              }}>
                 {kanbanColumns.map(col => (
-                  <div key={col.id} className="dash-kanban-col">
-                    {/* Top colored accent stripe */}
-                    <div className={`dash-col-top-bar ${col.colorKey}`} style={{ background: col.color }} />
-
-                    <div className="dash-col-header">
-                      <div className="dash-col-title-row">
-                        <div className="dash-col-title-left">
-                          <span className={`dash-col-dot ${col.colorKey}`} style={{ background: col.color }} />
-                          <span className="dash-col-name">{col.title}</span>
-                        </div>
-                        <span className="dash-col-count">{col.items.length}</span>
+                  <div key={col.id} className="dash-surface-card" style={{ overflow: 'hidden' }}>
+                    <div style={{
+                      padding: '16px 18px 14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      borderBottom: '1px solid var(--border-soft)'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: col.color, flexShrink: 0 }} />
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>{col.title}</span>
                       </div>
-
-                      {/* Thin progress track under header */}
-                      <div className="dash-col-prog-track">
-                        <div
-                          className={`dash-col-prog-fill ${col.colorKey}`}
-                          style={{
-                            background: col.color,
-                            width: `${stats.total > 0 ? Math.min(100, Math.round((col.items.length / stats.total) * 100)) : 0}%`
-                          }}
-                        />
-                      </div>
+                      <span style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        background: 'var(--surface-2)',
+                        color: 'var(--muted)',
+                        padding: '2px 8px',
+                        borderRadius: '100px',
+                        border: '1px solid var(--border-soft)'
+                      }}>
+                        {col.items.length}
+                      </span>
                     </div>
 
-                    <div className="dash-col-body">
+                    <div style={{
+                      padding: '20px 14px',
+                      minHeight: '160px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: col.items.length === 0 ? 'center' : 'flex-start',
+                      textAlign: 'center'
+                    }}>
                       {col.items.length === 0 ? (
-                        <div className="dash-col-empty">
-                          <div className="dash-col-empty-icon">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                              <rect x="2" y="2" width="12" height="12" rx="3" stroke="var(--muted-2)" strokeWidth="1.4"/>
-                              <path d="M5.5 8h5M8 5.5v5" stroke="var(--muted-2)" strokeWidth="1.4" strokeLinecap="round"/>
-                            </svg>
-                          </div>
-                          <div className="dash-col-empty-text">
-                            {col.id === 'not_started' && "Tasks you're ready to tackle will appear here."}
-                            {col.id === 'in_progress' && "Move tasks here when work is actively underway."}
-                            {col.id === 'review' && "Completed work waiting for review or QA sign-off."}
-                            {col.id === 'blocked' && "Great — no blockers right now. Keep moving."}
-                            {col.id === 'done' && "Finished tasks land here. Ship something great."}
+                        <div>
+                          <div style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 500, marginBottom: '10px' }}>
+                            {col.id === 'not_started' && 'Nothing queued'}
+                            {col.id === 'in_progress' && 'Nothing in flight'}
+                            {col.id === 'review' && 'Nothing to review'}
+                            {col.id === 'blocked' && 'No blockers 🎉'}
+                            {col.id === 'done' && 'Ship your first task'}
                           </div>
                           <button
                             type="button"
-                            className="dash-col-add-btn"
                             onClick={() => setShowNewModal(true)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: 'var(--accent, #4F46E5)',
+                              fontSize: '12.5px',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              padding: '4px 8px'
+                            }}
                           >
                             + Add task
                           </button>
                         </div>
                       ) : (
-                        col.items.map(d => (
-                          <DeadlineCard
-                            key={d.id}
-                            deadline={d}
-                            currentUser={user}
-                            teamId={TEAM_ID}
-                            sprintLocked={!!(d.sprintId && sprints.find(s => s.id === d.sprintId)?.locked)}
-                          />
-                        ))
+                        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          {col.items.map(d => (
+                            <DeadlineCard
+                              key={d.id}
+                              deadline={d}
+                              currentUser={user}
+                              teamId={TEAM_ID}
+                              sprintLocked={!!(d.sprintId && sprints.find(s => s.id === d.sprintId)?.locked)}
+                            />
+                          ))}
+                        </div>
                       )}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              /* LIST VIEW */
               <section className="dash-list-view">
                 {filtered.length === 0 ? (
-                  <div className="dash-empty-list">
-                    {deadlines.length === 0
-                      ? 'No deadlines yet. Click "+ New deadline" to create one.'
-                      : 'Nothing matches the selected filters.'}
-                  </div>
+                  <div className="dash-empty-list">No deadlines match these filters.</div>
                 ) : (
                   filtered.map(d => (
                     <DeadlineCard
@@ -588,9 +722,8 @@ export default function Dashboard() {
               </section>
             )}
 
-            {/* Load More Pagination */}
             {hasMore && (
-              <div className="dash-load-more">
+              <div className="dash-load-more" style={{ marginTop: '20px' }}>
                 <button
                   className="btn-ghost btn-sm"
                   onClick={loadMore}
@@ -603,14 +736,14 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* ── SIDEBAR: WORKLOAD PANEL ── */}
+          {/* Sidebar */}
           <aside className="dash-sidebar-area">
             <WorkloadPanel members={members} deadlines={deadlines} />
           </aside>
         </div>
       </main>
 
-      {/* ── NEW DEADLINE MODAL ── */}
+      {/* New Deadline Modal */}
       {showNewModal && (
         <NewDeadlineModal
           teamId={TEAM_ID}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../lib/AuthContext'
-import { useDeadlines } from '../lib/useDeadlines'
+import { useDeadlines, } from '../lib/useDeadlines'
 import { subscribeSprints } from '../lib/sprints'
 import { getUrgency } from '../lib/utils'
 import { hasSeenTour } from '../lib/onboarding'
@@ -91,7 +91,7 @@ export default function MyDashboard() {
     return [...filteredMyTasks].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
   }, [filteredMyTasks])
 
-  // 5 Canonical Kanban Columns matching the user's screenshot
+  // 5 Canonical Kanban Columns for My Tasks
   const kanbanColumns = useMemo(() => {
     const standardCols = [
       { id: 'not_started', title: 'To Do', dotColor: '#1C1D2B', emptyText: 'Nothing queued', showAdd: true },
@@ -118,6 +118,157 @@ export default function MyDashboard() {
     })
   }, [sortedMyTasks])
 
+  // ── REAL DATA VELOCITY CALCULATION (7D / 30D / 90D) ──
+  const velocityData = useMemo(() => {
+    const now = new Date()
+
+    if (timeRange === '7D') {
+      // Last 7 days (Monday through Sunday of current week)
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+      const currentDayIdx = now.getDay() // 0 = Sun
+      
+      // Calculate Monday of current week
+      const monday = new Date(now)
+      const diffToMonday = (currentDayIdx === 0 ? -6 : 1 - currentDayIdx)
+      monday.setDate(now.getDate() + diffToMonday)
+      monday.setHours(0, 0, 0, 0)
+
+      const days = []
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(monday)
+        d.setDate(monday.getDate() + i)
+        const dateStr = d.toISOString().slice(0, 10)
+        const dayLabel = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i]
+
+        // Real count of tasks done or active for this date
+        const doneTasks = myTasks.filter(t => {
+          if (t.status !== 'done') return false
+          const compDate = (t.completedAt || t.completed_at || t.dueDate || t.due_date || t.createdAt || '').slice(0, 10)
+          return compDate === dateStr
+        })
+
+        const inProgTasks = myTasks.filter(t => {
+          if (t.status !== 'in_progress') return false
+          const taskDate = (t.dueDate || t.due_date || t.createdAt || '').slice(0, 10)
+          return taskDate === dateStr
+        })
+
+        days.push({
+          label: dayLabel,
+          done: doneTasks.length,
+          inProgress: inProgTasks.length,
+          total: doneTasks.length + inProgTasks.length,
+          isCurrent: d.toDateString() === now.toDateString()
+        })
+      }
+
+      const maxCount = Math.max(1, ...days.map(d => d.total))
+      return {
+        subtitle: 'completed / assigned per day',
+        bars: days.map(d => ({
+          ...d,
+          heightPct: d.total > 0 ? Math.round((d.total / maxCount) * 100) : 0,
+          donePct: d.total > 0 ? Math.round((d.done / d.total) * 100) : 0,
+          progPct: d.total > 0 ? Math.round((d.inProgress / d.total) * 100) : 0,
+        })),
+        totalDone: days.reduce((sum, d) => sum + d.done, 0),
+        totalProg: days.reduce((sum, d) => sum + d.inProgress, 0),
+        totalScope: myTasks.length
+      }
+    }
+
+    if (timeRange === '30D') {
+      // Past 4 weeks (W1, W2, W3, W4, Now)
+      const weeks = []
+      for (let i = 4; i >= 0; i--) {
+        const start = new Date(now)
+        start.setDate(now.getDate() - (i * 7 + 6))
+        start.setHours(0, 0, 0, 0)
+        
+        const end = new Date(now)
+        end.setDate(now.getDate() - (i * 7))
+        end.setHours(23, 59, 59, 999)
+
+        const doneTasks = myTasks.filter(t => {
+          if (t.status !== 'done') return false
+          const d = new Date(t.completedAt || t.completed_at || t.dueDate || t.due_date || t.createdAt)
+          return d >= start && d <= end
+        })
+
+        const inProgTasks = myTasks.filter(t => {
+          if (t.status !== 'in_progress') return false
+          const d = new Date(t.dueDate || t.due_date || t.createdAt)
+          return d >= start && d <= end
+        })
+
+        weeks.push({
+          label: i === 0 ? 'Now' : `W${5 - i}`,
+          done: doneTasks.length,
+          inProgress: inProgTasks.length,
+          total: doneTasks.length + inProgTasks.length,
+          isCurrent: i === 0
+        })
+      }
+
+      const maxCount = Math.max(1, ...weeks.map(w => w.total))
+      return {
+        subtitle: 'completed / assigned per week',
+        bars: weeks.map(w => ({
+          ...w,
+          heightPct: w.total > 0 ? Math.round((w.total / maxCount) * 100) : 0,
+          donePct: w.total > 0 ? Math.round((w.done / w.total) * 100) : 0,
+          progPct: w.total > 0 ? Math.round((w.inProgress / w.total) * 100) : 0,
+        })),
+        totalDone: weeks.reduce((sum, w) => sum + w.done, 0),
+        totalProg: weeks.reduce((sum, w) => sum + w.inProgress, 0),
+        totalScope: myTasks.length
+      }
+    }
+
+    // 90D: 3-month breakdown
+    const months = []
+    for (let i = 2; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const monthName = d.toLocaleString('default', { month: 'short' })
+      const start = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59)
+
+      const doneTasks = myTasks.filter(t => {
+        if (t.status !== 'done') return false
+        const dt = new Date(t.completedAt || t.completed_at || t.dueDate || t.due_date || t.createdAt)
+        return dt >= start && dt <= end
+      })
+
+      const inProgTasks = myTasks.filter(t => {
+        if (t.status !== 'in_progress') return false
+        const dt = new Date(t.dueDate || t.due_date || t.createdAt)
+        return dt >= start && dt <= end
+      })
+
+      months.push({
+        label: i === 0 ? 'This Mo' : monthName,
+        done: doneTasks.length,
+        inProgress: inProgTasks.length,
+        total: doneTasks.length + inProgTasks.length,
+        isCurrent: i === 0
+      })
+    }
+
+    const maxCount = Math.max(1, ...months.map(m => m.total))
+    return {
+      subtitle: 'completed / assigned per month',
+      bars: months.map(m => ({
+        ...m,
+        heightPct: m.total > 0 ? Math.round((m.total / maxCount) * 100) : 0,
+        donePct: m.total > 0 ? Math.round((m.done / m.total) * 100) : 0,
+        progPct: m.total > 0 ? Math.round((m.inProgress / m.total) * 100) : 0,
+      })),
+      totalDone: months.reduce((sum, m) => sum + m.done, 0),
+      totalProg: months.reduce((sum, m) => sum + m.inProgress, 0),
+      totalScope: myTasks.length
+    }
+  }, [myTasks, timeRange])
+
   // User First Name
   const userFirstName = useMemo(() => {
     if (user?.displayName) return user.displayName.split(' ')[0]
@@ -128,8 +279,6 @@ export default function MyDashboard() {
     return 'there'
   }, [user])
 
-  const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-
   return (
     <div className="dash-root">
       {/* ─────────────────────────────────────────────────────────────
@@ -137,7 +286,6 @@ export default function MyDashboard() {
       ───────────────────────────────────────────────────────────── */}
       <nav className="dash-sticky-nav">
         <div className="dash-container dash-nav-inner">
-          {/* Logo Mark + Glow + Env Tag */}
           <Link to={`/${workspaceId}`} className="dash-nav-brand">
             <div className="dash-logo-dot">
               <svg viewBox="0 0 14 14" fill="none">
@@ -148,10 +296,8 @@ export default function MyDashboard() {
             <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
           </Link>
 
-          {/* NavTabs Pills */}
           <NavTabs />
 
-          {/* Right Actions */}
           <div className="dash-nav-actions">
             <NotificationBell currentUser={user} />
             <UserMenu />
@@ -246,14 +392,14 @@ export default function MyDashboard() {
           </div>
         </section>
 
-        {/* ── 4. TWO-COLUMN ROW: VELOCITY & REPOSITORIES ── */}
+        {/* ── 4. TWO-COLUMN ROW: VELOCITY & REPOSITORIES (REAL DATA) ── */}
         <section className="dash-two-col">
           {/* Left: Task Velocity Card */}
           <div className="dash-surface-card dash-chart-panel">
             <div className="dash-panel-header">
               <div>
                 <div className="dash-panel-title">Task velocity</div>
-                <div className="dash-panel-desc">completed / assigned per day</div>
+                <div className="dash-panel-desc">{velocityData.subtitle}</div>
               </div>
               <div className="dash-range-pills">
                 <button
@@ -280,27 +426,98 @@ export default function MyDashboard() {
               </div>
             </div>
 
-            {/* Velocity Canvas matching screenshot */}
+            {/* Dynamic Real-Data Velocity Canvas */}
             <div style={{ height: '140px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingTop: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '8px', borderBottom: '2px solid #4F46E5', paddingBottom: '8px' }}>
-                {daysOfWeek.map((day, idx) => (
-                  <div key={day} style={{ flex: 1, textAlign: 'center' }}>
-                    <div style={{
-                      height: idx === 6 ? '12px' : '0px',
-                      background: 'var(--accent, #4F46E5)',
-                      borderRadius: '3px 3px 0 0',
-                      marginBottom: '4px',
-                      opacity: idx === 6 ? 0.7 : 0
-                    }} />
-                  </div>
-                ))}
+              <div style={{
+                display: 'flex',
+                alignItems: 'flex-end',
+                justifyContent: 'space-between',
+                gap: '8px',
+                borderBottom: '2px solid #4F46E5',
+                paddingBottom: '8px',
+                height: '100%'
+              }}>
+                {velocityData.bars.map((bar, idx) => {
+                  const hasTasks = bar.total > 0
+                  return (
+                    <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
+                      {hasTasks ? (
+                        <div style={{
+                          width: '100%',
+                          maxWidth: '36px',
+                          height: `${Math.max(12, bar.heightPct)}%`,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '2px',
+                          alignItems: 'center',
+                          justifyContent: 'flex-end',
+                          transition: 'height 0.3s ease'
+                        }} title={`${bar.label}: ${bar.done} done, ${bar.inProgress} in progress`}>
+                          {bar.done > 0 && (
+                            <div style={{
+                              width: '100%',
+                              height: `${bar.donePct}%`,
+                              background: '#4F46E5',
+                              borderRadius: '3px 3px 0 0'
+                            }} />
+                          )}
+                          {bar.inProgress > 0 && (
+                            <div style={{
+                              width: '100%',
+                              height: `${bar.progPct}%`,
+                              background: '#3D6FD6',
+                              borderRadius: bar.done === 0 ? '3px 3px 0 0' : '0'
+                            }} />
+                          )}
+                        </div>
+                      ) : (
+                        <div style={{
+                          width: '100%',
+                          maxWidth: '36px',
+                          height: bar.isCurrent ? '4px' : '0px',
+                          background: bar.isCurrent ? '#4F46E5' : 'transparent',
+                          borderRadius: '2px 2px 0 0',
+                          opacity: 0.5
+                        }} />
+                      )}
+                    </div>
+                  )
+                })}
               </div>
+
+              {/* Day / Period Labels */}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', padding: '0 4px' }}>
-                {daysOfWeek.map(day => (
-                  <span key={day} style={{ fontSize: '11px', color: 'var(--muted-2, #A3A5C2)', fontFamily: 'var(--font-mono)' }}>
-                    {day}
+                {velocityData.bars.map((bar, idx) => (
+                  <span
+                    key={idx}
+                    style={{
+                      flex: 1,
+                      textAlign: 'center',
+                      fontSize: '11px',
+                      color: bar.isCurrent ? '#4F46E5' : '#A3A5C2',
+                      fontFamily: 'var(--font-mono)',
+                      fontWeight: bar.isCurrent ? 700 : 500
+                    }}
+                  >
+                    {bar.label}
                   </span>
                 ))}
+              </div>
+            </div>
+
+            {/* Legend with Real Counts */}
+            <div style={{ display: 'flex', gap: '18px', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-soft)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: 'var(--muted)', fontWeight: 600 }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4F46E5' }}></span>
+                Completed ({velocityData.totalDone})
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: 'var(--muted)', fontWeight: 600 }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3D6FD6' }}></span>
+                In Progress ({velocityData.totalProg})
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: 'var(--muted)', fontWeight: 600 }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: 'var(--surface-2)', border: '1px solid var(--border)' }}></span>
+                Total Scope ({velocityData.totalScope})
               </div>
             </div>
           </div>
@@ -376,7 +593,7 @@ export default function MyDashboard() {
           </div>
         </section>
 
-        {/* ── 6. 5 KANBAN COLUMNS MATCHING SCREENSHOT ── */}
+        {/* ── 6. 5 KANBAN COLUMNS WITH REAL DATA ── */}
         {viewMode === 'board' ? (
           <div style={{
             display: 'grid',
@@ -412,14 +629,14 @@ export default function MyDashboard() {
                   </span>
                 </div>
 
-                {/* Body with clean empty state */}
+                {/* Body with real tasks or empty state */}
                 <div style={{
-                  padding: '28px 14px',
+                  padding: '20px 14px',
                   minHeight: '160px',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  justifyContent: 'center',
+                  justifyContent: col.items.length === 0 ? 'center' : 'flex-start',
                   textAlign: 'center'
                 }}>
                   {col.items.length === 0 ? (

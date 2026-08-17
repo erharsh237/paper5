@@ -20,8 +20,19 @@ export function subscribeDeadlines(workspaceId, teamId, callback, pageSize = DEA
       .order('due_date', { ascending: true })
       .limit(pageSize)
     if (!error) {
-      // mapping to camelCase if needed, but let's assume direct mapping or match firebase structure
-      callback(data || [])
+      const normalized = (data || []).map(row => ({
+        ...row,
+        dueDate: row.due_date || row.dueDate,
+        dueDateIso: row.due_date || row.dueDate,
+        assigneeId: row.assignee_id || row.assigneeId,
+        assigneeName: row.assignee_name || row.assigneeName,
+        assigneeEmail: (row.assignee_email || row.assigneeEmail || '').toLowerCase(),
+        sprintId: row.sprint_id || row.sprintId,
+        createdAt: row.created_at || row.createdAt,
+        completedAt: row.completed_at || row.completedAt,
+        percentComplete: row.percent_complete ?? row.percentComplete ?? 0,
+      }))
+      callback(normalized)
     }
   }
 
