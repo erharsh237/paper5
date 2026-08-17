@@ -59,19 +59,17 @@ export function WorkspaceProvider({ children }) {
     setWorkspaceError(null);
 
     const fetchAll = async () => {
-      // Step 1: Accept any pending invites using ALL available methods in parallel.
-      // The RPC is SECURITY DEFINER so it bypasses RLS even with the anon key.
+      // Step 1: Accept any pending invites via serverless API (uses service role key to bypass RLS)
       if (user?.email) {
-        await Promise.allSettled([
-          // Method A: RPC function (SECURITY DEFINER — works without service key)
-          supabase.rpc('accept_pending_invites'),
-          // Method B: Serverless API (uses service role key if configured in Vercel)
-          fetch('/api/accept-invite', {
+        try {
+          await fetch('/api/accept-invite', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: user.email, userId: user.id, workspaceId })
           })
-        ])
+        } catch (apiErr) {
+          console.warn('WorkspaceContext accept-invite notice:', apiErr)
+        }
       }
 
       // Step 2: Query workspace + membership. Use service bypass API for workspace data
