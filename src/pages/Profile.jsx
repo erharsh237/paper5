@@ -8,6 +8,7 @@ import NavTabs from '../components/NavTabs'
 import Breadcrumbs from '../components/Breadcrumbs'
 import UserMenu from '../components/UserMenu'
 import CalendarWidget from '../components/CalendarWidget'
+import ConfirmModal from '../components/ui/ConfirmModal'
 import { useWorkspace } from '../lib/WorkspaceContext'
 import './Dashboard.css'
 import './Profile.css'
@@ -46,6 +47,31 @@ export default function Profile() {
   const [picUploading, setPicUploading] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   const [deletingAccount, setDeletingAccount] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+
+  const handleExecuteDeleteAccount = async () => {
+    setDeletingAccount(true)
+    setError('')
+    try {
+      const uid = user?.id || user?.uid
+      const resp = await fetch('/api/delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: uid, email: user?.email })
+      })
+      const json = await resp.json()
+      if (!resp.ok) throw new Error(json.error || 'Failed to delete user')
+      
+      setIsDeleteModalOpen(false)
+      await logout()
+      navigate('/login')
+    } catch (err) {
+      console.error('Failed to delete account:', err)
+      setError('Could not delete account: ' + err.message)
+      setDeletingAccount(false)
+      setIsDeleteModalOpen(false)
+    }
+  }
 
   const prevStep = () => setCurrentStep(s => Math.max(0, s - 1))
   const nextStep = () => setCurrentStep(s => Math.min(TOTAL_STEPS - 1, s + 1))
@@ -371,35 +397,24 @@ export default function Profile() {
                 opacity: deletingAccount ? 0.7 : 1,
                 transition: 'all 0.15s ease'
               }}
-              onClick={async () => {
-                if (window.confirm('Are you absolutely sure you want to delete your account? You will lose access immediately.')) {
-                  setDeletingAccount(true)
-                  setError('')
-                  try {
-                    const uid = user?.id || user?.uid
-                    const resp = await fetch('/api/delete-user', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ userId: uid, email: user?.email })
-                    })
-                    const json = await resp.json()
-                    if (!resp.ok) throw new Error(json.error || 'Failed to delete user')
-                    
-                    await logout()
-                    navigate('/login')
-                  } catch (err) {
-                    console.error('Failed to delete account:', err)
-                    setError('Could not delete account: ' + err.message)
-                    setDeletingAccount(false)
-                  }
-                }
-              }}
+              onClick={() => setIsDeleteModalOpen(true)}
             >
               {deletingAccount ? 'Deleting Account…' : 'Delete Account & Data'}
             </button>
           </div>
         </div>
       </main>
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Delete Account & Data"
+        message="Are you absolutely sure you want to delete your account? Your personal profile data and memberships will be erased. You will lose access immediately."
+        confirmText={deletingAccount ? 'Deleting Account…' : 'Delete My Account'}
+        cancelText="Cancel"
+        variant="danger"
+        onConfirm={handleExecuteDeleteAccount}
+        onCancel={() => !deletingAccount && setIsDeleteModalOpen(false)}
+      />
     </div>
   )
 }

@@ -9,6 +9,7 @@ import NavTabs from '../components/NavTabs'
 import ReflectionPanel from '../components/ReflectionPanel'
 import UserMenu from '../components/UserMenu'
 import CalendarWidget from '../components/CalendarWidget'
+import ConfirmModal from '../components/ui/ConfirmModal'
 import { useWorkspace } from '../lib/WorkspaceContext'
 import { Plus, Edit2, Trash2, Calendar, FileText, X } from 'lucide-react'
 import './Dashboard.css'
@@ -99,22 +100,30 @@ export default function Meeting() {
     }
   }
 
-  const handleDeleteNote = async (id, title) => {
-    if (window.confirm(`Are you sure you want to delete notes for "${title || 'this meeting'}"?`)) {
-      // 1. Optimistic local update (instant UI reaction)
-      setEventNotes(prev => {
-        const copy = { ...prev }
-        delete copy[id]
-        return copy
-      })
-      if (selectedEventId === id) setSelectedEventId('')
+  const [deleteNoteConfirm, setDeleteNoteConfirm] = useState({ isOpen: false, id: null, title: '' })
 
-      try {
-        await deleteEventNote(workspaceId, undefined, id)
-      } catch (err) {
-        console.error('Failed to delete meeting note:', err)
-        alert('Failed to delete note from server. Please try again.')
-      }
+  const handleDeleteNote = (id, title) => {
+    setDeleteNoteConfirm({ isOpen: true, id, title })
+  }
+
+  const handleConfirmDeleteNote = async () => {
+    const id = deleteNoteConfirm.id
+    if (!id) return
+    setDeleteNoteConfirm({ isOpen: false, id: null, title: '' })
+
+    // 1. Optimistic local update (instant UI reaction)
+    setEventNotes(prev => {
+      const copy = { ...prev }
+      delete copy[id]
+      return copy
+    })
+    if (selectedEventId === id) setSelectedEventId('')
+
+    try {
+      await deleteEventNote(workspaceId, undefined, id)
+    } catch (err) {
+      console.error('Failed to delete meeting note:', err)
+      alert('Failed to delete note from server. Please try again.')
     }
   }
 
@@ -452,7 +461,7 @@ export default function Meeting() {
                 </button>
                 <button 
                   type="submit" 
-                  className="dash-btn-accent"
+                  className="dash-btn-accent" 
                   disabled={savingNote}
                   style={{ padding: '9px 20px', fontSize: '13px' }}
                 >
@@ -463,6 +472,17 @@ export default function Meeting() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={deleteNoteConfirm.isOpen}
+        title="Delete Meeting Note"
+        message={`Are you sure you want to delete notes for "${deleteNoteConfirm.title || 'this meeting'}"? This action cannot be undone.`}
+        confirmText="Delete Note"
+        cancelText="Cancel"
+        variant="danger"
+        onConfirm={handleConfirmDeleteNote}
+        onCancel={() => setDeleteNoteConfirm({ isOpen: false, id: null, title: '' })}
+      />
     </div>
   )
 }

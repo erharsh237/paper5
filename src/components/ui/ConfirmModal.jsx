@@ -65,30 +65,31 @@ export default function ConfirmModal({
       onKeyDown={handleKeyDown}
     >
       <div style={{
-        background: 'var(--bg-layer-2)',
-        border: '1px solid var(--border)',
-        borderRadius: '12px',
+        background: 'var(--surface, #FFFFFF)',
+        border: '1px solid var(--border-soft, #EAECF6)',
+        borderRadius: '16px',
         padding: '28px',
         maxWidth: '440px',
         width: '90%',
-        boxShadow: 'var(--shadow-panel)',
+        boxShadow: '0 20px 50px rgba(30, 32, 80, 0.18)',
         animation: 'modalSlideUp 0.25s ease-out forwards',
       }}>
         <h3 style={{
           margin: '0 0 12px 0',
           fontSize: '17px',
+          fontWeight: 800,
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          color: 'var(--text-primary)',
+          color: 'var(--text, #1C1D2B)',
         }}>
           <IconComp size={20} color={accentColor} /> {title}
         </h3>
 
         <p style={{
-          color: 'var(--text-secondary)',
+          color: 'var(--muted, #6E7091)',
           margin: '0 0 20px 0',
-          fontSize: '14px',
+          fontSize: '13.5px',
           lineHeight: '1.6',
         }}>
           {message}
@@ -96,8 +97,8 @@ export default function ConfirmModal({
 
         {requiresTyping && (
           <div style={{ marginBottom: '20px' }}>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-              Type <strong style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>{requiresTyping}</strong> to confirm:
+            <p style={{ fontSize: '12px', color: 'var(--muted, #6E7091)', marginBottom: '8px' }}>
+              Type <strong style={{ color: 'var(--text, #1C1D2B)', fontFamily: 'monospace' }}>{requiresTyping}</strong> to confirm:
             </p>
             <input
               autoFocus
@@ -109,10 +110,10 @@ export default function ConfirmModal({
               style={{
                 width: '100%',
                 padding: '8px 12px',
-                border: '1px solid var(--border)',
-                borderRadius: '6px',
-                background: 'var(--bg-layer-1)',
-                color: 'var(--text-primary)',
+                border: '1px solid var(--border-soft, #EAECF6)',
+                borderRadius: '8px',
+                background: 'var(--surface-2, #EEF0F9)',
+                color: 'var(--text, #1C1D2B)',
                 fontSize: '13px',
                 fontFamily: 'monospace',
                 boxSizing: 'border-box',
@@ -122,12 +123,12 @@ export default function ConfirmModal({
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '8px' }}>
           <button
             type="button"
             className="btn-ghost"
             onClick={onCancel}
-            style={{ padding: '8px 20px' }}
+            style={{ padding: '8px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600 }}
           >
             {cancelText}
           </button>
@@ -137,14 +138,14 @@ export default function ConfirmModal({
             disabled={!canConfirm}
             style={{
               padding: '8px 20px',
-              background: canConfirm ? accentColor : 'var(--bg-layer-3, #e5e7eb)',
-              color: canConfirm ? '#fff' : 'var(--text-tertiary)',
+              background: canConfirm ? accentColor : '#E5E7EB',
+              color: canConfirm ? '#FFFFFF' : '#9CA3AF',
               border: 'none',
-              borderRadius: '6px',
+              borderRadius: '8px',
               cursor: canConfirm ? 'pointer' : 'not-allowed',
-              fontWeight: 600,
-              fontSize: '14px',
-              transition: 'opacity 0.15s',
+              fontWeight: 700,
+              fontSize: '13px',
+              transition: 'opacity 0.15s, background 0.15s',
             }}
           >
             {confirmText}
