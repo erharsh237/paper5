@@ -1195,7 +1195,15 @@ export default function Settings() {
                     {members.map(m => (
                       <tr key={m.id}>
                         {/* Checkbox removed from Members row */}
-                        <td>{m.email} {m.id === user?.uid && '(You)'}</td>
+                        <td>
+                          <div style={{ fontWeight: 500, fontSize: '13px', color: 'var(--text-primary)' }}>
+                            {m.displayLabel || m.email || ('Member (' + (m.id || '').slice(0, 6) + ')')}
+                          </div>
+                          {m.fullName && m.email && (
+                            <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '2px' }}>{m.email}</div>
+                          )}
+                          {m.id === user?.uid && <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginLeft: '6px' }}>(You)</span>}
+                        </td>
                         <td>
                           <select
                             value={m.role}
@@ -1210,25 +1218,13 @@ export default function Settings() {
                         </td>
                         <td>
                           {['owner', 'admin'].includes(m.role) ? (
-                            <span style={{ fontSize: '11px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', background: 'var(--bg-layer-2)', color: 'var(--text-tertiary)' }}>Superuser (All Permissions)</span>
+                            <span style={{ fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '100px', background: 'rgba(16,185,129,0.1)', color: '#059669', border: '1px solid rgba(16,185,129,0.2)' }}>
+                              Full access
+                            </span>
                           ) : (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', alignItems: 'center' }}>
-                              {AVAILABLE_PERMISSIONS.map(ap => {
-                                const hasPerm = (m.permissions || []).includes(ap.id)
-                                return (
-                                  <label key={ap.id} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', background: hasPerm ? 'rgba(59, 130, 246, 0.1)' : 'transparent', color: hasPerm ? 'var(--accent-signal)' : 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer', border: hasPerm ? 'none' : '1px solid var(--border-subtle)' }}>
-                                    <input 
-                                      type="checkbox" 
-                                      style={{ display: 'none' }}
-                                      checked={hasPerm}
-                                      onChange={() => toggleMemberPermission(m.id, m.permissions, ap.id)}
-                                      disabled={!isAdminOrOwner}
-                                    />
-                                    {ap.label}
-                                  </label>
-                                )
-                              })}
-                            </div>
+                            <span style={{ fontSize: '11px', fontWeight: 500, padding: '3px 8px', borderRadius: '100px', background: 'var(--bg-layer-2)', color: 'var(--text-tertiary)', border: '1px solid var(--border)' }}>
+                              View &amp; create tasks
+                            </span>
                           )}
                         </td>
                         <td>

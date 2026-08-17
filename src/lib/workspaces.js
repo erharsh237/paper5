@@ -103,38 +103,62 @@ export function subscribeWorkspaceMembers(workspaceId, callback) {
         users ( id, email, full_name, avatar_url )
       `)
       .eq('workspace_id', workspaceId)
-      
+
     if (error || !data) {
       console.warn('subscribeWorkspaceMembers error:', error)
       callback([])
       return
     }
 
+    // Build fallback email maps from users table and invites table
     const userIds = data.map(r => r.user_id).filter(Boolean)
-    let fallbackUsersMap = new Map()
+    let fallbackUsersMap = new Map()   // user_id → email from users table
+    let inviteEmailMap = new Map()     // user_id → email from accepted invites
+
+    // Attempt 1: users table (may be blocked by RLS for non-admins)
     if (userIds.length > 0) {
       try {
-        const { data: uData } = await supabase.from('users').select('id, email').in('id', userIds)
+        const { data: uData } = await supabase.from('users').select('id, email, full_name').in('id', userIds)
         for (const u of (uData || [])) {
-          if (u.id && u.email) fallbackUsersMap.set(u.id, u.email)
+          if (u.id && u.email) fallbackUsersMap.set(u.id, { email: u.email, fullName: u.full_name })
         }
       } catch (e) {}
     }
 
-    const mapped = data.map(row => ({
-      id: row.user_id,
-      email: row.users?.email || fallbackUsersMap.get(row.user_id) || ('Member (' + (row.user_id || '').slice(0, 6) + ')'),
-      fullName: row.users?.full_name,
-      avatarUrl: row.users?.avatar_url,
-      role: row.role || 'member',
-      joinedAt: row.joined_at
-    }))
+    // Attempt 2: invites table — stores the original email used to invite the member
+    try {
+      const { data: inviteData } = await supabase
+        .from('invites')
+        .select('email, accepted_by')
+        .eq('workspace_id', workspaceId)
+        .not('accepted_by', 'is', null)
+      for (const inv of (inviteData || [])) {
+        if (inv.accepted_by && inv.email) inviteEmailMap.set(inv.accepted_by, inv.email)
+      }
+    } catch (e) {}
+
+    const mapped = data.map(row => {
+      const usersJoin = row.users
+      const fallback = fallbackUsersMap.get(row.user_id)
+      const email = usersJoin?.email
+        || fallback?.email
+        || inviteEmailMap.get(row.user_id)
+        || null
+      const fullName = usersJoin?.full_name || fallback?.fullName || null
+      return {
+        id: row.user_id,
+        email,
+        displayLabel: email || fullName || ('Member (' + (row.user_id || '').slice(0, 6) + ')'),
+        fullName,
+        avatarUrl: usersJoin?.avatar_url || null,
+        role: row.role || 'member',
+        joinedAt: row.joined_at
+      }
+    })
     callback(mapped)
   }
-  const channel = supabase.channel(`public:workspace_members:workspace_id=eq.${workspaceId}:workspaces:${Math.random().toString(36).substring(7)}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_members', filter: `workspace_id=eq.${workspaceId}` }, payload => {
-       fetchList()
-    })
+  const channel = supabase.channel(`public:workspace_members:workspace_id=eq.${workspaceId}:wm:${Math.random().toString(36).substring(7)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_members', filter: `workspace_id=eq.${workspaceId}` }, () => fetchList())
     .subscribe()
   fetchList()
   return () => supabase.removeChannel(channel)
@@ -328,8 +352,10 @@ export async function createInvite(workspaceId, email, role, permissions = [], p
 }
 
 export async function updateMemberPermissions(workspaceId, userId, permissions) {
-  const { error } = await supabase.from('workspace_members').update({ permissions }).eq('workspace_id', workspaceId).eq('user_id', userId)
-  if (error) throw error
+  // The workspace_members table does not have a permissions column.
+  // Permissions are role-based: owner/admin = all, member = restricted.
+  // This function is intentionally a no-op to prevent 400 errors.
+  console.info('updateMemberPermissions: permissions are role-based, no DB update needed.')
 }
 
 export async function deleteWorkspace(workspaceId) {
