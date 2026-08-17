@@ -36,26 +36,17 @@ export default function WorkspacePicker() {
       const cleanEmail = user?.email ? user.email.trim().toLowerCase() : ''
       let targetWsId = null
 
-      // 1. Accept any pending invites for this user's email address
+      // 1. Accept any pending invites via serverless API (bypasses RLS 403 errors)
       if (cleanEmail) {
         try {
-          const { data: pInvites } = await supabase.from('invites').select('*').ilike('email', cleanEmail)
-          const { data: lInvites } = await supabase.from('workspace_invites').select('*').ilike('email', cleanEmail)
-          
-          const combined = [...(pInvites || []), ...(lInvites || [])]
-          for (const inv of combined) {
-            if (inv.workspace_id) {
-              targetWsId = inv.workspace_id
-              await supabase.from('workspace_members').upsert({
-                workspace_id: inv.workspace_id,
-                user_id: userId,
-                role: inv.role || 'member'
-              }, { onConflict: 'workspace_id,user_id' })
-            }
-          }
-          if (combined.length > 0) {
-            await supabase.from('invites').delete().ilike('email', cleanEmail)
-            await supabase.from('workspace_invites').delete().ilike('email', cleanEmail)
+          const resp = await fetch('/api/accept-invite', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: cleanEmail, userId })
+          })
+          const apiData = await resp.json()
+          if (apiData?.workspaceId) {
+            targetWsId = apiData.workspaceId
           }
         } catch (e) {
           console.warn('Invite auto-acceptance notice in WorkspacePicker:', e)

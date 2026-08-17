@@ -64,37 +64,14 @@ export function WorkspaceProvider({ children }) {
         supabase.from('workspace_members').select('role').eq('workspace_id', workspaceId).eq('user_id', user.id).maybeSingle()
       ])
 
-      // If user is not in workspace_members yet, check if their email has an invite for this workspace
+      // If user is not in workspace_members yet, delegate to serverless accept-invite API (bypasses RLS 403 errors)
       if (!memberResult?.data && user?.email) {
-        const cleanEmail = user.email.trim().toLowerCase()
-        const { data: inviteMatch } = await supabase
-          .from('invites')
-          .select('*')
-          .eq('workspace_id', workspaceId)
-          .ilike('email', cleanEmail)
-          .maybeSingle()
-
-        const { data: legacyInviteMatch } = await supabase
-          .from('workspace_invites')
-          .select('*')
-          .eq('workspace_id', workspaceId)
-          .ilike('email', cleanEmail)
-          .maybeSingle()
-
-        const foundInvite = inviteMatch || legacyInviteMatch
-
-        if (foundInvite) {
-          const roleToAdd = foundInvite.role || 'member'
-          await supabase.from('workspace_members').upsert({
-            workspace_id: workspaceId,
-            user_id: user.id,
-            role: roleToAdd
-          }, { onConflict: 'workspace_id,user_id' })
-
-          try {
-            await supabase.from('invites').delete().eq('workspace_id', workspaceId).ilike('email', cleanEmail)
-            await supabase.from('workspace_invites').delete().eq('workspace_id', workspaceId).ilike('email', cleanEmail)
-          } catch (delErr) {}
+        try {
+          await fetch('/api/accept-invite', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: user.email, userId: user.id, workspaceId })
+          })
 
           const refetched = await supabase
             .from('workspace_members')
@@ -106,6 +83,8 @@ export function WorkspaceProvider({ children }) {
           if (refetched?.data) {
             memberResult = refetched
           }
+        } catch (apiErr) {
+          console.warn('WorkspaceContext accept-invite notice:', apiErr)
         }
       }
 

@@ -93,33 +93,18 @@ export default function ForcePasswordReset() {
           updated_at: new Date().toISOString()
         })
         
-        // 3. Accept pending invites for this user directly into workspace_members across both invite tables
+        // 3. Accept pending invites via serverless API (bypasses RLS 403 errors)
         if (cleanEmail) {
-          const { data: pendingInvites } = await supabase.from('invites').select('*').ilike('email', cleanEmail)
-          const { data: legacyInvites } = await supabase.from('workspace_invites').select('*').ilike('email', cleanEmail)
-          
-          const combined = [...(pendingInvites || []), ...(legacyInvites || [])]
-          for (const inv of combined) {
-            if (inv.workspace_id) {
-              await supabase.from('workspace_members').upsert({
-                workspace_id: inv.workspace_id,
-                user_id: data.user.id,
-                role: inv.role || 'member'
-              }, { onConflict: 'workspace_id,user_id' })
-            }
-          }
-
-          // Clean up pending invites
           try {
-            await supabase.from('invites').delete().ilike('email', cleanEmail)
-            await supabase.from('workspace_invites').delete().ilike('email', cleanEmail)
-          } catch (delErr) {}
+            await fetch('/api/accept-invite', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: cleanEmail, userId: data.user.id })
+            })
+          } catch (apiErr) {
+            console.warn('ForcePasswordReset accept-invite notice:', apiErr)
+          }
         }
-        
-        // Also call RPC fallback if present
-        try {
-          await supabase.rpc('accept_pending_invites')
-        } catch (rpcErr) {}
       }
       
       // Navigate cleanly to workspace picker
