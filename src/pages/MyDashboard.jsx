@@ -610,19 +610,26 @@ export default function MyDashboard() {
             </div>
 
             <div className="dash-milestone-desc" style={{ fontSize: '12.5px', marginBottom: '18px', maxWidth: '280px' }}>
-              {githubRepos.length > 0
-                ? `${githubRepos.length} repo(s) connected: ${githubRepos.join(', ')}`
-                : 'No repositories connected yet. Link GitHub to see commits and PRs against your tasks.'}
+              {githubRepos.length > 0 ? (
+                <div>
+                  <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: '4px' }}>
+                    {githubRepos.length} Connected {githubRepos.length === 1 ? 'Repository' : 'Repositories'}
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: 'var(--muted)' }}>
+                    {githubRepos.map(r => r.replace(/^https?:\/\/github\.com\//, '')).join(', ')}
+                  </div>
+                </div>
+              ) : (
+                isAdmin
+                  ? 'No repositories connected yet. Link GitHub to see commits and PRs against your tasks.'
+                  : 'No repositories connected yet. Ask your workspace admin to connect GitHub repos in Integrations.'
+              )}
             </div>
 
-            {isAdmin ? (
+            {isAdmin && (
               <Link to={`/${workspaceId}/integrations`} className="dash-btn-accent" style={{ textDecoration: 'none', padding: '9px 24px', borderRadius: '10px' }}>
                 {githubRepos.length > 0 ? 'Manage GitHub' : 'Connect GitHub'}
               </Link>
-            ) : (
-              <button type="button" className="dash-btn-accent" style={{ padding: '9px 24px', borderRadius: '10px' }} onClick={() => setShowNewModal(true)}>
-                + Create Task
-              </button>
             )}
           </div>
         </section>
