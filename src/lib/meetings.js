@@ -118,18 +118,25 @@ export async function deleteEventNote(workspaceId, teamId, eventId) {
     .eq('id', 'main')
     .maybeSingle()
     
-  if (existing && existing.eventNotes) {
-    const updatedNotes = { ...existing.eventNotes }
-    delete updatedNotes[eventId]
-    await supabase
-      .from('teamSettings')
-      .update({ 
-        eventNotes: updatedNotes, 
-        updatedAt: new Date().toISOString() 
-      })
-      .eq('workspace_id', workspaceId)
-      .eq('id', 'main')
+  const currentNotes = existing?.eventNotes || {}
+  const updatedNotes = { ...currentNotes }
+  delete updatedNotes[eventId]
+
+  const { error } = await supabase
+    .from('teamSettings')
+    .upsert({ 
+      workspace_id: workspaceId, 
+      id: 'main', 
+      eventNotes: updatedNotes, 
+      updatedAt: new Date().toISOString() 
+    })
+
+  if (error) {
+    console.error('Failed to delete event note in DB:', error)
+    throw error
   }
+
+  return updatedNotes
 }
 
 export async function createMeeting(workspaceId, teamId, { sprintId, date, createdBy }) {

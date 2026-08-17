@@ -74,13 +74,18 @@ export default function Meeting() {
 
     try {
       const noteId = editingNoteId || `note_${Date.now()}_${Math.random().toString(36).substring(7)}`
-      await saveEventNote(workspaceId, undefined, noteId, {
+      const newNoteObj = {
         title: noteTitle.trim(),
         date: noteDate || new Date().toISOString().split('T')[0],
         notes: noteContent.trim(),
         updatedAt: new Date().toISOString(),
         createdBy: user?.email || 'Admin'
-      }, user?.email)
+      }
+
+      // Optimistic local state update
+      setEventNotes(prev => ({ ...prev, [noteId]: newNoteObj }))
+
+      await saveEventNote(workspaceId, undefined, noteId, newNoteObj, user?.email)
 
       setIsNoteModalOpen(false)
       setEditingNoteId(null)
@@ -96,12 +101,19 @@ export default function Meeting() {
 
   const handleDeleteNote = async (id, title) => {
     if (window.confirm(`Are you sure you want to delete notes for "${title || 'this meeting'}"?`)) {
+      // 1. Optimistic local update (instant UI reaction)
+      setEventNotes(prev => {
+        const copy = { ...prev }
+        delete copy[id]
+        return copy
+      })
+      if (selectedEventId === id) setSelectedEventId('')
+
       try {
         await deleteEventNote(workspaceId, undefined, id)
-        if (selectedEventId === id) setSelectedEventId('')
       } catch (err) {
         console.error('Failed to delete meeting note:', err)
-        alert('Failed to delete note.')
+        alert('Failed to delete note from server. Please try again.')
       }
     }
   }
