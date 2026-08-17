@@ -117,6 +117,7 @@ export default function Settings() {
   
   const [members, setMembers] = useState([])
   const [invites, setInvites] = useState([])
+  const [editingPermissionsMemberId, setEditingPermissionsMemberId] = useState(null)
   
   const [workspaceName, setWorkspaceName] = useState('')
   const [savingName, setSavingName] = useState(false)
@@ -1220,13 +1221,103 @@ export default function Settings() {
                         </td>
                         <td>
                           {['owner', 'admin'].includes(m.role) ? (
-                            <span style={{ fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '100px', background: 'rgba(16,185,129,0.1)', color: '#059669', border: '1px solid rgba(16,185,129,0.2)' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '100px', background: 'rgba(16,185,129,0.1)', color: '#059669', border: '1px solid rgba(16,185,129,0.2)' }}>
                               Full access
                             </span>
                           ) : (
-                            <span style={{ fontSize: '11px', fontWeight: 500, padding: '3px 8px', borderRadius: '100px', background: 'var(--bg-layer-2)', color: 'var(--text-tertiary)', border: '1px solid var(--border)' }}>
-                              View &amp; create tasks
-                            </span>
+                            <div style={{ position: 'relative', display: 'inline-block' }}>
+                              <button
+                                type="button"
+                                disabled={!isAdminOrOwner}
+                                onClick={() => setEditingPermissionsMemberId(editingPermissionsMemberId === m.id ? null : m.id)}
+                                style={{
+                                  fontSize: '11.5px',
+                                  fontWeight: 600,
+                                  padding: '4px 10px',
+                                  borderRadius: '100px',
+                                  background: (m.permissions || []).length > 0 ? 'var(--accent-dim, #E8E6FB)' : 'var(--surface-2, #EEF0F9)',
+                                  color: (m.permissions || []).length > 0 ? 'var(--accent, #4F46E5)' : 'var(--text-secondary, #6E7091)',
+                                  border: '1px solid var(--border-soft, #EAECF6)',
+                                  cursor: isAdminOrOwner ? 'pointer' : 'default',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px'
+                                }}
+                                title="Click to view & edit permissions"
+                              >
+                                <span>{(m.permissions || []).length > 0 ? `${m.permissions.length} Custom Perms` : 'View & create tasks'}</span>
+                                {isAdminOrOwner && <span style={{ fontSize: '9px', opacity: 0.7 }}>▼</span>}
+                              </button>
+
+                              {/* Permissions Dropdown Popover */}
+                              {editingPermissionsMemberId === m.id && isAdminOrOwner && (
+                                <div style={{
+                                  position: 'absolute',
+                                  top: 'calc(100% + 6px)',
+                                  left: 0,
+                                  zIndex: 100,
+                                  background: 'var(--surface, #FFFFFF)',
+                                  border: '1px solid var(--border-soft, #EAECF6)',
+                                  borderRadius: '12px',
+                                  padding: '14px',
+                                  boxShadow: '0 8px 24px rgba(30,32,80,0.15)',
+                                  minWidth: '240px',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '10px'
+                                }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-soft, #EAECF6)', paddingBottom: '6px' }}>
+                                    <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text, #1C1D2B)' }}>Edit Permissions</span>
+                                    <span style={{ fontSize: '11px', color: 'var(--muted, #6E7091)' }}>{m.displayLabel || m.email}</span>
+                                  </div>
+
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {AVAILABLE_PERMISSIONS.map(ap => {
+                                      const currentPerms = m.permissions || []
+                                      const hasPerm = currentPerms.includes(ap.id)
+                                      return (
+                                        <label key={ap.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text, #1C1D2B)', cursor: 'pointer' }}>
+                                          <input
+                                            type="checkbox"
+                                            checked={hasPerm}
+                                            onChange={async (e) => {
+                                              const nextPerms = e.target.checked
+                                                ? [...currentPerms, ap.id]
+                                                : currentPerms.filter(p => p !== ap.id)
+                                              
+                                              // Optimistic local update
+                                              setMembers(prev => prev.map(member => member.id === m.id ? { ...member, permissions: nextPerms } : member))
+                                              
+                                              // Save to serverless API
+                                              await updateMemberPermissions(workspaceId, m.id, nextPerms)
+                                            }}
+                                          />
+                                          <span>{ap.label}</span>
+                                        </label>
+                                      )
+                                    })}
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingPermissionsMemberId(null)}
+                                    style={{
+                                      marginTop: '4px',
+                                      padding: '6px 12px',
+                                      borderRadius: '6px',
+                                      background: 'var(--accent, #4F46E5)',
+                                      color: '#FFFFFF',
+                                      border: 'none',
+                                      fontSize: '11.5px',
+                                      fontWeight: 700,
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    Done
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           )}
                         </td>
                         <td>

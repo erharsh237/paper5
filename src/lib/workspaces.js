@@ -94,6 +94,21 @@ export function subscribeUserWorkspaces(uid, callback) {
 
 export function subscribeWorkspaceMembers(workspaceId, callback) {
   const fetchList = async () => {
+    // 1. Try serverless API first (uses service role key to get real emails, full names, and permissions)
+    try {
+      const res = await fetch(`/api/workspace-members?workspaceId=${encodeURIComponent(workspaceId)}`)
+      if (res.ok) {
+        const json = await res.json()
+        if (json?.members && Array.isArray(json.members)) {
+          callback(json.members)
+          return
+        }
+      }
+    } catch (apiErr) {
+      console.warn('workspace-members API error, falling back to direct query:', apiErr)
+    }
+
+    // 2. Direct client query fallback
     const { data, error } = await supabase
       .from('workspace_members')
       .select(`
@@ -110,53 +125,25 @@ export function subscribeWorkspaceMembers(workspaceId, callback) {
       return
     }
 
-    // Build fallback email maps from users table and invites table
-    const userIds = data.map(r => r.user_id).filter(Boolean)
-    let fallbackUsersMap = new Map()   // user_id → email from users table
-    let inviteEmailMap = new Map()     // user_id → email from accepted invites
-
-    // Attempt 1: users table (may be blocked by RLS for non-admins)
-    if (userIds.length > 0) {
-      try {
-        const { data: uData } = await supabase.from('users').select('id, email, full_name').in('id', userIds)
-        for (const u of (uData || [])) {
-          if (u.id && u.email) fallbackUsersMap.set(u.id, { email: u.email, fullName: u.full_name })
-        }
-      } catch (e) {}
-    }
-
-    // Attempt 2: invites table — stores the original email used to invite the member
-    try {
-      const { data: inviteData } = await supabase
-        .from('invites')
-        .select('email, accepted_by')
-        .eq('workspace_id', workspaceId)
-        .not('accepted_by', 'is', null)
-      for (const inv of (inviteData || [])) {
-        if (inv.accepted_by && inv.email) inviteEmailMap.set(inv.accepted_by, inv.email)
-      }
-    } catch (e) {}
-
     const mapped = data.map(row => {
       const usersJoin = row.users
-      const fallback = fallbackUsersMap.get(row.user_id)
-      const email = usersJoin?.email
-        || fallback?.email
-        || inviteEmailMap.get(row.user_id)
-        || null
-      const fullName = usersJoin?.full_name || fallback?.fullName || null
+      const email = usersJoin?.email || null
+      const fullName = usersJoin?.full_name || null
       return {
         id: row.user_id,
+        userId: row.user_id,
         email,
         displayLabel: email || fullName || ('Member (' + (row.user_id || '').slice(0, 6) + ')'),
         fullName,
         avatarUrl: usersJoin?.avatar_url || null,
         role: row.role || 'member',
+        permissions: [],
         joinedAt: row.joined_at
       }
     })
     callback(mapped)
   }
+
   const channel = supabase.channel(`public:workspace_members:workspace_id=eq.${workspaceId}:wm:${Math.random().toString(36).substring(7)}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_members', filter: `workspace_id=eq.${workspaceId}` }, () => fetchList())
     .subscribe()
@@ -178,62 +165,38 @@ export function subscribeInvites(workspaceId, callback) {
         .from('invites')
         .select('*')
         .eq('workspace_id', workspaceId)
+        .order('created_at', { ascending: false })
 
-      if (!isSubscribed) return
-
-      if (error) {
-        // Table not created or 404 / 400 error from PostgREST
-        callback([])
-        return
+      if (error) throw error
+      if (isSubscribed && Array.isArray(data)) {
+        callback(data)
       }
-
-      // Deduplicate rows by email address so duplicate DB rows render as 1 pending invite
-      const uniqueMap = new Map()
-      for (const row of (data || [])) {
-        const cleanE = (row.email || '').toLowerCase().trim()
-        if (cleanE && !uniqueMap.has(cleanE)) {
-          uniqueMap.set(cleanE, row)
-        }
-      }
-      callback(Array.from(uniqueMap.values()))
     } catch (err) {
+      console.warn('Failed to fetch pending invites from DB:', err.message)
       if (isSubscribed) callback([])
     }
   }
 
-  fetchList()
+  const channel = supabase.channel(`public:invites:workspace_id=eq.${workspaceId}:${Math.random().toString(36).substring(7)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'invites', filter: `workspace_id=eq.${workspaceId}` }, () => {
+      if (isSubscribed) fetchList()
+    })
+    .subscribe()
 
-  let channel = null
-  try {
-    channel = supabase.channel(`public:invites:${workspaceId}:${Math.random().toString(36).substring(7)}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'invites', filter: `workspace_id=eq.${workspaceId}` }, () => {
-         fetchList()
-      })
-      .subscribe()
-  } catch (e) {
-    // Ignore realtime channel creation errors for missing tables
-  }
+  fetchList()
 
   return () => {
     isSubscribed = false
-    if (channel) {
-      try { supabase.removeChannel(channel) } catch (e) {}
-    }
+    supabase.removeChannel(channel)
   }
 }
 
-export async function createWorkspace(uid, email, name, teamSize = '2-5', agileWorkflow = 'scrum', saveData = true) {
-  const { data: authData } = await supabase.auth.getUser()
-  const creatorId = uid || authData?.user?.id
-  if (!creatorId) {
-    throw new Error('User authentication session expired. Please log in again.')
-  }
-
+export async function createWorkspace(uid, email, name) {
   const newWorkspaceId = crypto.randomUUID()
 
   const { error } = await supabase.rpc('create_new_workspace', {
     workspace_name: name,
-    creator_id: creatorId,
+    creator_id: uid,
     new_workspace_id: newWorkspaceId
   })
   
@@ -242,30 +205,21 @@ export async function createWorkspace(uid, email, name, teamSize = '2-5', agileW
     throw error
   }
 
-  // Update workspace settings with team_size, agile_workflow, and save_data preference
-  try {
-    await supabase.from('workspaces').update({
-      settings: {
-        team_size: teamSize,
-        agile_workflow: agileWorkflow,
-        save_data: saveData,
-        configured_by: creatorId,
-        configured_at: new Date().toISOString()
-      }
-    }).eq('id', newWorkspaceId)
-  } catch (err) {
-    console.error('Failed to update workspace workflow settings:', err)
-  }
-
   return newWorkspaceId
 }
 
 export async function updateWorkspaceSettings(workspaceId, patch) {
-  let mappedPatch = { ...patch }
-  if (mappedPatch.billing) {
-    mappedPatch.billing_plan_id = mappedPatch.billing.planId
-    mappedPatch.billing_status = mappedPatch.billing.status
-    delete mappedPatch.billing
+  const mappedPatch = {}
+  
+  if (patch.name !== undefined) mappedPatch.name = patch.name
+  if (patch.settings !== undefined) mappedPatch.settings = patch.settings
+  if (patch.subscription_tier !== undefined) mappedPatch.subscription_tier = patch.subscription_tier
+  if (patch.billing_plan_id !== undefined) mappedPatch.billing_plan_id = patch.billing_plan_id
+  if (patch.billing_status !== undefined) mappedPatch.billing_status = patch.billing_status
+  
+  if (patch.billing !== undefined) {
+    if (patch.billing.planId !== undefined) mappedPatch.billing_plan_id = patch.billing.planId
+    if (patch.billing.status !== undefined) mappedPatch.billing_status = patch.billing.status
   }
   
   const { error } = await supabase.from('workspaces').update(mappedPatch).eq('id', workspaceId)
@@ -278,6 +232,15 @@ export async function removeMember(workspaceId, memberUid) {
 }
 
 export async function changeMemberRole(workspaceId, memberUid, newRole) {
+  try {
+    const res = await fetch('/api/workspace-members', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_role', workspaceId, memberId: memberUid, role: newRole })
+    })
+    if (res.ok) return
+  } catch (_) {}
+
   const { error } = await supabase.from('workspace_members').update({ role: newRole }).eq('workspace_id', workspaceId).eq('user_id', memberUid)
   if (error) throw error
 }
@@ -285,7 +248,6 @@ export async function changeMemberRole(workspaceId, memberUid, newRole) {
 export async function cancelInvite(workspaceId, inviteId, email = null) {
   const cleanEmail = email ? email.trim().toLowerCase() : null
 
-  // Delete from main invites table by ID and email
   if (inviteId) {
     await supabase.from('invites').delete().eq('id', inviteId)
   }
@@ -293,7 +255,6 @@ export async function cancelInvite(workspaceId, inviteId, email = null) {
     await supabase.from('invites').delete().eq('workspace_id', workspaceId).eq('email', cleanEmail)
   }
 
-  // Also clean up legacy workspace_invites table if present
   try {
     if (inviteId) await supabase.from('workspace_invites').delete().eq('id', inviteId)
     if (cleanEmail && workspaceId) await supabase.from('workspace_invites').delete().eq('workspace_id', workspaceId).eq('email', cleanEmail)
@@ -305,12 +266,10 @@ export async function createInvite(workspaceId, email, role, permissions = [], p
   const inviterId = authData?.user?.id
   const cleanEmail = email.trim().toLowerCase()
 
-  // Clean up any existing duplicate pending invites for this email first
   try {
     await supabase.from('invites').delete().eq('workspace_id', workspaceId).eq('email', cleanEmail)
   } catch (e) {}
 
-  // Direct DB table insert (100% reliable, zero CORS preflight errors)
   const { error: dbErr, data: insertedData } = await supabase.from('invites').insert({
     workspace_id: workspaceId,
     email: cleanEmail,
@@ -318,33 +277,34 @@ export async function createInvite(workspaceId, email, role, permissions = [], p
     permissions,
     invited_by: inviterId,
     password_hint: password || null,
+    sent_count: sendEmail ? 1 : 0,
     created_at: new Date().toISOString()
   }).select().single()
 
   if (dbErr) {
-    throw new Error(dbErr.message || 'Unable to dispatch invitation. Please try again.')
+    console.error('Database invite insert error:', dbErr)
+    throw new Error(dbErr.message || 'Failed to record invite in database')
   }
 
-  // Dispatch email with credentials via Vercel serverless API route if requested
-  let emailStatus = { success: true, simulated: false }
+  let emailStatus = null
   if (sendEmail) {
     try {
-      const { data: ws } = await supabase.from('workspaces').select('name').eq('id', workspaceId).maybeSingle()
-      const resp = await fetch('/api/send-invite', {
+      const emailResp = await fetch('/api/send-invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          workspaceName: ws?.name || 'SprintOS Workspace',
           email: cleanEmail,
+          workspaceId,
           role,
-          password: password || null,
-          loginUrl: window.location.origin + '/login'
+          permissions,
+          password
         })
       })
-      const resData = await resp.json()
-      if (resData) emailStatus = resData
-    } catch (emailErr) {
-      console.warn('API send-invite dispatch warning:', emailErr)
+      const emailJson = await emailResp.json()
+      emailStatus = emailJson.emailStatus || (emailResp.ok ? 'sent' : 'failed')
+    } catch (sendErr) {
+      console.warn('Email dispatch warning (invite record still saved):', sendErr)
+      emailStatus = 'failed'
     }
   }
 
@@ -352,16 +312,28 @@ export async function createInvite(workspaceId, email, role, permissions = [], p
 }
 
 export async function updateMemberPermissions(workspaceId, userId, permissions) {
-  // The workspace_members table does not have a permissions column.
-  // Permissions are role-based: owner/admin = all, member = restricted.
-  // This function is intentionally a no-op to prevent 400 errors.
-  console.info('updateMemberPermissions: permissions are role-based, no DB update needed.')
+  try {
+    const res = await fetch('/api/workspace-members', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update_permissions',
+        workspaceId,
+        memberId: userId,
+        permissions: Array.isArray(permissions) ? permissions : []
+      })
+    })
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error || 'Failed to update permissions')
+    return json
+  } catch (err) {
+    console.warn('updateMemberPermissions API error:', err.message)
+  }
 }
 
 export async function deleteWorkspace(workspaceId) {
   if (!workspaceId) throw new Error('Workspace ID is required.')
 
-  // Clean up all child table records to prevent foreign key constraint violations
   await Promise.allSettled([
     supabase.from('workspace_members').delete().eq('workspace_id', workspaceId),
     supabase.from('deadlines').delete().eq('workspace_id', workspaceId),
@@ -372,7 +344,6 @@ export async function deleteWorkspace(workspaceId) {
     supabase.from('integrations').delete().eq('workspace_id', workspaceId),
   ])
 
-  // Delete the primary workspace record
   const { error } = await supabase.from('workspaces').delete().eq('id', workspaceId)
   if (error) {
     const { error: rpcErr } = await supabase.rpc('delete_workspace', { workspace_id: workspaceId })
