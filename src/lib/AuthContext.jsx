@@ -119,6 +119,8 @@ export function AuthProvider({ children }) {
             setUser(null)
             setUserData(null)
             sessionCookieApi.clear()
+            try { localStorage.clear() } catch (_) {}
+            try { sessionStorage.clear() } catch (_) {}
             supabase.auth.signOut().catch(() => {})
             return
           }
@@ -194,6 +196,8 @@ export function AuthProvider({ children }) {
         await sessionCookieApi.set(session)
       } else if (event === 'SIGNED_OUT') {
         await sessionCookieApi.clear()
+        try { localStorage.clear() } catch (_) {}
+        try { sessionStorage.clear() } catch (_) {}
       }
       // ─────────────────────────────────────────────────────────────────────
 
@@ -469,6 +473,9 @@ export function AuthProvider({ children }) {
     resetPassword,
     logout: () => {
       setIsPending2FA(false)
+      sessionCookieApi.clear()
+      try { localStorage.clear() } catch (_) {}
+      try { sessionStorage.clear() } catch (_) {}
       return supabase.auth.signOut()
     }, 
     authError,
