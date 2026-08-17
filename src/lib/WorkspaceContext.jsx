@@ -59,34 +59,25 @@ export function WorkspaceProvider({ children }) {
     setWorkspaceError(null);
 
     const fetchAll = async () => {
-      let [wsResult, memberResult] = await Promise.all([
-        supabase.from('workspaces').select('*').eq('id', workspaceId).maybeSingle(),
-        supabase.from('workspace_members').select('role').eq('workspace_id', workspaceId).eq('user_id', user.id).maybeSingle()
-      ])
-
-      // If user is not in workspace_members yet, delegate to serverless accept-invite API (bypasses RLS 403 errors)
-      if (!memberResult?.data && user?.email) {
+      // Step 1: Accept invite via serverless API FIRST (inserts into workspace_members with service role key,
+      // bypassing RLS). This must happen before SELECT queries so RLS allows reading workspace + membership.
+      if (user?.email) {
         try {
           await fetch('/api/accept-invite', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: user.email, userId: user.id, workspaceId })
           })
-
-          const refetched = await supabase
-            .from('workspace_members')
-            .select('role')
-            .eq('workspace_id', workspaceId)
-            .eq('user_id', user.id)
-            .maybeSingle()
-
-          if (refetched?.data) {
-            memberResult = refetched
-          }
         } catch (apiErr) {
           console.warn('WorkspaceContext accept-invite notice:', apiErr)
         }
       }
+
+      // Step 2: Now query workspace + membership (RLS should pass since user is now in workspace_members)
+      const [wsResult, memberResult] = await Promise.all([
+        supabase.from('workspaces').select('*').eq('id', workspaceId).maybeSingle(),
+        supabase.from('workspace_members').select('role').eq('workspace_id', workspaceId).eq('user_id', user.id).maybeSingle()
+      ])
 
       if (wsResult.error) {
         setWorkspaceError(wsResult.error.message)
@@ -101,7 +92,7 @@ export function WorkspaceProvider({ children }) {
       if (memberResult?.data) {
         setWorkspaceRole(memberResult.data.role)
       } else if (wsResult.data) {
-        // Fallback: If workspace exists and user is authenticated, default to member role so valid workspace URLs never fail with 404
+        // Fallback: workspace exists but membership row not visible yet, grant member access
         setWorkspaceRole('member')
       } else {
         setWorkspaceRole(null)
