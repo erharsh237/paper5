@@ -23,6 +23,36 @@ export default async function handler(req, res) {
   const supabaseAdmin = createClient(supabaseUrl, activeKey)
 
   try {
+    const cleanEmail = email ? email.trim().toLowerCase() : ''
+    const targetUserIds = new Set()
+    if (userId) targetUserIds.add(userId)
+
+    // Find all matching user IDs across tables
+    if (cleanEmail) {
+      try {
+        const { data: uData } = await supabaseAdmin.from('users').select('id').ilike('email', cleanEmail)
+        for (const u of (uData || [])) { if (u.id) targetUserIds.add(u.id) }
+      } catch (_) {}
+
+      try {
+        const { data: pData } = await supabaseAdmin.from('profiles').select('id').ilike('email', cleanEmail)
+        for (const p of (pData || [])) { if (p.id) targetUserIds.add(p.id) }
+      } catch (_) {}
+
+      if (serviceKey) {
+        try {
+          const { data: authList } = await supabaseAdmin.auth.admin.listUsers()
+          for (const au of (authList?.users || [])) {
+            if (au.email?.toLowerCase() === cleanEmail) {
+              targetUserIds.add(au.id)
+            }
+          }
+        } catch (_) {}
+      }
+    }
+
+    const idsList = Array.from(targetUserIds)
+
     // 0. If workspaceId passed, clean up deletion_requests in workspace settings
     if (workspaceId) {
       try {
@@ -34,8 +64,11 @@ export default async function handler(req, res) {
 
         if (ws?.settings?.deletion_requests) {
           const reqs = { ...ws.settings.deletion_requests }
-          if (userId && reqs[userId]) delete reqs[userId]
-          if (email && reqs[email.trim().toLowerCase()]) delete reqs[email.trim().toLowerCase()]
+          for (const id of idsList) {
+            delete reqs[id]
+          }
+          if (cleanEmail) delete reqs[cleanEmail]
+
           await supabaseAdmin
             .from('workspaces')
             .update({ settings: { ...ws.settings, deletion_requests: reqs } })
@@ -44,35 +77,44 @@ export default async function handler(req, res) {
       } catch (_) {}
     }
 
-    // 1. Remove from workspace memberships
-    if (userId) {
-      await supabaseAdmin.from('workspace_members').delete().eq('user_id', userId)
+    // 1. Remove from workspace memberships everywhere
+    for (const id of idsList) {
+      await supabaseAdmin.from('workspace_members').delete().eq('user_id', id)
     }
 
     // 2. Remove profile and personal data
-    if (userId) {
-      await supabaseAdmin.from('profiles').delete().eq('id', userId)
+    for (const id of idsList) {
+      await supabaseAdmin.from('profiles').delete().eq('id', id)
     }
-    if (email) {
-      await supabaseAdmin.from('profiles').delete().ilike('email', email.trim().toLowerCase())
-      await supabaseAdmin.from('invites').delete().ilike('email', email.trim().toLowerCase())
+    if (cleanEmail) {
+      await supabaseAdmin.from('profiles').delete().ilike('email', cleanEmail)
+      await supabaseAdmin.from('invites').delete().ilike('email', cleanEmail)
     }
 
     // 3. Remove user record from users table
-    if (userId) {
-      await supabaseAdmin.from('users').delete().eq('id', userId)
+    for (const id of idsList) {
+      await supabaseAdmin.from('users').delete().eq('id', id)
+    }
+    if (cleanEmail) {
+      await supabaseAdmin.from('users').delete().ilike('email', cleanEmail)
     }
 
-    // 4. Delete authentication account if service role key is available
-    if (serviceKey && userId) {
-      try {
-        await supabaseAdmin.auth.admin.deleteUser(userId)
-      } catch (authErr) {
-        console.warn('Auth admin delete notice:', authErr.message)
+    // 4. Delete authentication account from Supabase Auth
+    if (serviceKey) {
+      for (const id of idsList) {
+        try {
+          await supabaseAdmin.auth.admin.deleteUser(id)
+        } catch (authErr) {
+          console.warn(`Auth admin delete notice for ${id}:`, authErr.message)
+        }
       }
     }
 
-    return res.status(200).json({ success: true, message: 'Account and personal data successfully deleted' })
+    return res.status(200).json({
+      success: true,
+      message: 'Account and personal data successfully deleted',
+      deletedUserIds: idsList
+    })
   } catch (err) {
     console.error('Delete user error:', err)
     return res.status(500).json({ error: err.message || 'Failed to delete account' })

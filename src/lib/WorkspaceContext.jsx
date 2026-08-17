@@ -105,27 +105,40 @@ export function WorkspaceProvider({ children }) {
         setWorkspaceError('Workspace not found')
       }
 
-      if (memberResult?.data?.role) {
-        setWorkspaceRole(memberResult.data.role)
-      } else if (wsData) {
-        // Fallback: workspace exists but membership row not visible yet — grant member access
-        setWorkspaceRole('member')
-      } else {
-        setWorkspaceRole(null)
-      }
+      let myRole = memberResult?.data?.role || null
+      let myPerms = []
 
-      // Query serverless API to ensure accurate enriched permissions
+      // Query serverless API to ensure accurate enriched permissions and verify membership
       try {
         const memResp = await fetch(`/api/workspace-members?workspaceId=${encodeURIComponent(workspaceId)}`)
         if (memResp.ok) {
           const memJson = await memResp.json()
           const myMember = (memJson?.members || []).find(m => m.id === user.id || m.email?.toLowerCase() === user.email?.toLowerCase())
           if (myMember) {
-            if (myMember.role) setWorkspaceRole(myMember.role)
-            if (Array.isArray(myMember.permissions)) setUserPermissions(myMember.permissions)
+            myRole = myMember.role || 'member'
+            if (Array.isArray(myMember.permissions)) myPerms = myMember.permissions
+          } else {
+            // Not in workspace members list
+            myRole = null
           }
         }
       } catch (_) {}
+
+      // If user is workspace owner directly
+      if (!myRole && wsData && wsData.owner_id === user.id) {
+        myRole = 'owner'
+      }
+
+      if (myRole) {
+        setWorkspaceRole(myRole)
+        setUserPermissions(myPerms)
+      } else {
+        setWorkspaceRole(null)
+        setUserPermissions([])
+        if (wsData) {
+          setWorkspaceError('Access denied: You are not a member of this workspace.')
+        }
+      }
 
       setLoadingWorkspace(false)
     }

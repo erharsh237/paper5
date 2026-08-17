@@ -61,17 +61,8 @@ export default async function handler(req, res) {
         console.warn('Invites lookup notice:', e1)
       }
 
-      // 2. Grant membership for the specific workspaceId if provided
-      if (workspaceId) {
-        try {
-          await supabaseAdmin.from('workspace_members').upsert({
-            workspace_id: workspaceId,
-            user_id: userId,
-            role: 'member'
-          }, { onConflict: 'workspace_id,user_id' })
-        } catch (wErr) {
-          console.warn('workspace_members upsert notice:', wErr)
-        }
+      // 2. If workspaceId was passed and no invite was accepted, keep acceptedWorkspaceId for fetching workspace if requested
+      if (workspaceId && !acceptedWorkspaceId) {
         acceptedWorkspaceId = workspaceId
       }
     }

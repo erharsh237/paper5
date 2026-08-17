@@ -108,9 +108,13 @@ function CrossDomainRedirect({ toApp = false, path = '' }) {
 }
 
 function WorkspaceGuard({ children }) {
-  const { isLocked, is2FABlocked, loadingWorkspace } = useWorkspace()
+  const { isLocked, is2FABlocked, loadingWorkspace, workspace, workspaceRole, workspaceError } = useWorkspace()
   if (loadingWorkspace) return <PageLoading />
   
+  if (workspaceError || !workspace || !workspaceRole) {
+    return <Navigate to="/workspace" replace />
+  }
+
   if (is2FABlocked) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-layer-1)' }}>
