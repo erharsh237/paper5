@@ -142,14 +142,15 @@ input, textarea, select {
   opacity: 1;
 }
 
-.btn-primary {
+.btn-primary, a.btn-primary {
   background: var(--text-primary);
-  color: #fff;
+  color: #fff !important;
   border-radius: var(--radius-sm);
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
-.btn-primary:not(:disabled):hover {
+.btn-primary:not(:disabled):hover, a.btn-primary:not(:disabled):hover {
   background: #000;
+  color: #fff !important;
   transform: translateY(-2px) scale(1.02);
   box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.3);
 }
