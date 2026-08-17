@@ -78,7 +78,7 @@ export function WorkspaceProvider({ children }) {
       // Step 2: Query workspace + membership. Use service bypass API for workspace data
       const [wsResult, memberResult] = await Promise.all([
         supabase.from('workspaces').select('*').eq('id', workspaceId).maybeSingle(),
-        supabase.from('workspace_members').select('role, permissions').eq('workspace_id', workspaceId).eq('user_id', user.id).maybeSingle()
+        supabase.from('workspace_members').select('role').eq('workspace_id', workspaceId).eq('user_id', user.id).maybeSingle()
       ])
 
       // Step 3: If workspace still null due to RLS, try fetching it via the service API
@@ -105,16 +105,13 @@ export function WorkspaceProvider({ children }) {
         setWorkspaceError('Workspace not found')
       }
 
-      if (memberResult?.data) {
+      if (memberResult?.data?.role) {
         setWorkspaceRole(memberResult.data.role)
-        setUserPermissions(Array.isArray(memberResult.data.permissions) ? memberResult.data.permissions : [])
       } else if (wsData) {
         // Fallback: workspace exists but membership row not visible yet — grant member access
         setWorkspaceRole('member')
-        setUserPermissions([])
       } else {
         setWorkspaceRole(null)
-        setUserPermissions([])
       }
 
       // Query serverless API to ensure accurate enriched permissions
