@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SprintOS — Project Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ─────────────────────────────────────────
+   DESIGN TOKENS
+───────────────────────────────────────── */
+:root {
+  --bg: #F3F4FA;
+  --surface: #FFFFFF;
+  --surface-2: #EEF0F9;
+  --border: #E1E3F0;
+  --border-soft: #EAECF6;
+  --text: #1C1D2B;
+  --muted: #6E7091;
+  --muted-2: #A3A5C2;
+  --accent: #4F46E5;
+  --accent-dim: #E8E6FB;
+  --blue: #3D6FD6;
+  --amber: #C4791A;
+  --red: #D14343;
+  --violet: #7C5CE0;
+  --green: #1A9959;
+  --green-dim: #E6F5EE;
+
+  --card-shadow: 0 1px 2px rgba(30,32,80,.04), 0 4px 16px rgba(30,32,80,.05);
+  --card-shadow-hover: 0 2px 4px rgba(30,32,80,.06), 0 8px 28px rgba(30,32,80,.09);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --radius-pill: 100px;
+
+  --font: 'Manrope', system-ui, -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+/* ─────────────────────────────────────────
+   RESET & BASE
+───────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─────────────────────────────────────────
+   LAYOUT UTILITIES
+───────────────────────────────────────── */
+.container {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  transition: box-shadow .2s ease, transform .2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--card-shadow-hover);
+}
+
+/* ─────────────────────────────────────────
+   1. STICKY NAV
+───────────────────────────────────────── */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: rgba(243,244,250,.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  height: 60px;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+/* Logo mark */
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 32px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.logo-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(79,70,229,.18), 0 0 14px rgba(79,70,229,.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.logo-mark svg { width: 14px; height: 14px; }
+
+.logo-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -.3px;
+}
+
+.env-tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-radius: var(--radius-pill);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+/* Primary nav links */
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.nav-link {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  transition: color .15s, background .15s, box-shadow .15s;
+  white-space: nowrap;
+}
+
+.nav-link:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.nav-link.active {
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgba(30,32,80,.08);
+}
+
+/* Right-side actions */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  margin-left: 20px;
+}
+
+.nav-bell {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .15s, box-shadow .15s, transform .1s;
+  box-shadow: 0 1px 3px rgba(30,32,80,.06);
+}
+
+.nav-bell:hover {
+  background: var(--surface-2);
+  transform: translateY(-1px);
+}
+
+.bell-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--red);
+  border: 2px solid var(--bg);
+}
+
+.feedback-btn {
+  font-family: var(--font);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all .15s;
+  box-shadow: 0 1px 3px rgba(30,32,80,.06);
+  white-space: nowrap;
+}
+
+.feedback-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent-dim);
+  background: var(--accent-dim);
+  transform: translateY(-1px);
+}
+
+.nav-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--blue) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px rgba(79,70,229,.2);
+  transition: box-shadow .2s, transform .1s;
+}
+
+.nav-avatar:hover {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px rgba(79,70,229,.4);
+  transform: scale(1.05);
+}
+
+/* ─────────────────────────────────────────
+   2. HEADER ROW
+───────────────────────────────────────── */
+.page-header {
+  padding: 36px 0 28px;
+}
+
+.page-header-inner {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.header-left { flex: 1; min-width: 0; }
+
+.header-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.eyebrow-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(79,70,229,0.6);
+  animation: pulse-dot 2.4s ease infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .45; transform: scale(.75); }
+}
+
+.header-title {
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -.6px;
+  line-height: 1.15;
+}
+
+.header-title span { color: var(--accent); }
+
+.header-sub {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* Search bar */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 10px 16px;
+  min-width: 270px;
+  box-shadow: 0 1px 3px rgba(30,32,80,.05);
+  cursor: text;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.search-bar:hover, .search-bar:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79,70,229,.1);
+}
+
+.search-icon { color: var(--muted-2); flex-shrink: 0; }
+
+.search-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font);
+  font-size: 13.5px;
+  color: var(--text);
+  font-weight: 500;
+  width: 100%;
+}
+
+.search-input::placeholder {
+  color: var(--muted-2);
+}
+
+.search-kbd {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  background: var(--surface-2);
+  color: var(--muted);
+  padding: 3px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────
+   3. STAT STRIP
+───────────────────────────────────────── */
+.stat-strip {
+  margin-bottom: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  overflow: hidden;
+}
+
+.stat-cell {
+  padding: 24px 28px;
+  position: relative;
+  transition: background .15s;
+}
+
+.stat-cell:hover { background: rgba(238,240,249,.45); }
+
+.stat-cell + .stat-cell::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  height: 60%;
+  width: 1px;
+  background: var(--border-soft);
+}
+
+.stat-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.stat-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.stat-value {
+  font-family: var(--mono);
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+  letter-spacing: -1px;
+  margin-bottom: 8px;
+}
+
+.stat-delta {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted-2);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.delta-up { color: var(--green); }
+.delta-down { color: var(--red); }
+.delta-neutral { color: var(--amber); }
+
+/* ─────────────────────────────────────────
+   4. CHART + EMPTY-STATE ROW
+───────────────────────────────────────── */
+.two-col-row {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+/* Chart panel */
+.chart-panel { padding: 24px 28px; }
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.panel-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -.2px;
+}
+
+.panel-sub {
+  font-size: 12.5px;
+  color: var(--muted);
+  font-weight: 500;
+  margin-top: 3px;
+}
+
+/* Time-range toggle */
+.range-toggle {
+  display: flex;
+  gap: 3px;
+  background: var(--surface-2);
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid var(--border-soft);
+}
+
+.range-btn {
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.range-btn.active {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: 0 1px 4px rgba(30,32,80,.09);
+}
+
+.range-btn:hover:not(.active) { color: var(--text); }
+
+/* Bar chart */
+.chart-area {
+  height: 200px;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.chart-bar-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+  justify-content: flex-end;
+  cursor: pointer;
+}
+
+.bar-stack {
+  width: 100%;
+  max-width: 44px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.bar-seg {
+  width: 100%;
+  border-radius: 4px;
+  transition: opacity .15s, transform .15s;
+}
+
+.bar-seg.done { background: var(--accent); }
+.bar-seg.progress { background: var(--blue); }
+.bar-seg.todo { background: var(--surface-2); border: 1px solid var(--border); }
+
+.chart-bar-group:hover .bar-seg { opacity: .82; transform: scaleY(1.02); }
+.chart-bar-group:hover .bar-seg.done { opacity: 1; }
+
+.bar-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted-2);
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Chart legend */
+.chart-legend {
+  display: flex;
+  gap: 18px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* Empty state card */
+.empty-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 36px 28px;
+}
+
+.empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--accent-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+  box-shadow: 0 4px 12px rgba(79,70,229,.12);
+}
+
+.empty-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+  letter-spacing: -.2px;
+}
+
+.empty-desc {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.btn-accent {
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  padding: 10px 22px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .15s, transform .1s, box-shadow .15s;
+  box-shadow: 0 2px 8px rgba(79,70,229,.25);
+  letter-spacing: .01em;
+}
+
+.btn-accent:hover {
+  background: #4338ca;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(79,70,229,.35);
+}
+
+.btn-accent:active { transform: translateY(0); }
+
+/* ─────────────────────────────────────────
+   5. KANBAN BOARD
+───────────────────────────────────────── */
+.kanban-section { margin-bottom: 48px; }
+
+.kanban-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -.3px;
+}
+
+.kanban-meta {
+  font-size: 12.5px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.kanban-col {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  transition: box-shadow .2s;
+}
+
+.kanban-col:hover { box-shadow: var(--card-shadow-hover); }
+
+/* Column color top bar */
+.col-top-bar {
+  height: 3px;
+  width: 100%;
+}
+
+.col-top-bar.todo     { background: var(--muted-2); }
+.col-top-bar.progress { background: var(--blue); }
+.col-top-bar.review   { background: var(--violet); }
+.col-top-bar.blocked  { background: var(--red); }
+.col-top-bar.done     { background: var(--green); }
+
+.col-header { padding: 16px 16px 12px; }
+
+.col-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.col-title-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.col-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.col-dot.todo     { background: var(--muted-2); }
+.col-dot.progress { background: var(--blue); }
+.col-dot.review   { background: var(--violet); }
+.col-dot.blocked  { background: var(--red); }
+.col-dot.done     { background: var(--green); }
+
+.col-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -.1px;
+}
+
+.col-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--surface-2);
+  color: var(--muted);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-soft);
+}
+
+/* Progress bar */
+.col-progress-bar {
+  height: 3px;
+  background: var(--surface-2);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.col-progress-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  transition: width .4s ease;
+}
+
+.col-progress-fill.todo     { background: var(--muted-2); }
+.col-progress-fill.progress { background: var(--blue); }
+.col-progress-fill.review   { background: var(--violet); }
+.col-progress-fill.blocked  { background: var(--red); }
+.col-progress-fill.done     { background: var(--green); }
+
+/* Column body */
+.col-body {
+  padding: 14px 14px 20px;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.col-empty {
+  text-align: center;
+  padding: 16px 8px;
+  width: 100%;
+}
+
+.col-empty-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+  border: 1px solid var(--border-soft);
+}
+
+.col-empty-text {
+  font-size: 12.5px;
+  color: var(--muted);
+  font-weight: 500;
+  line-height: 1.55;
+  margin-bottom: 14px;
+}
+
+.col-add-task {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: none;
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all .15s;
+  font-family: var(--font);
+}
+
+.col-add-task:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ─────────────────────────────────────────
+   RESPONSIVE (980px Breakpoint)
+───────────────────────────────────────── */
+@media (max-width: 980px) {
+  .container { padding: 0 20px; }
+  .nav-inner { padding: 0 20px; }
+  .page-header { padding: 24px 0 20px; }
+  .page-header-inner { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .search-bar { min-width: unset; width: 100%; }
+
+  /* Stat strip -> 2 cols */
+  .stat-strip { grid-template-columns: repeat(2, 1fr); }
+  .stat-cell + .stat-cell::before { display: none; }
+  .stat-cell:nth-child(odd)::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 20%; height: 60%; width: 1px;
+    background: var(--border-soft);
+  }
+  .stat-cell:nth-child(1), .stat-cell:nth-child(2) {
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  /* Two-column chart row -> stacked */
+  .two-col-row { grid-template-columns: 1fr; }
+
+  /* Kanban board -> 2 cols */
+  .kanban-board { grid-template-columns: repeat(2, 1fr); }
+  .kanban-col:last-child { grid-column: span 2; }
+
+  .nav-links { display: none; }
+  .nav-logo { margin-right: 0; }
+}
+
+@media (max-width: 560px) {
+  .stat-strip { grid-template-columns: 1fr; }
+  .stat-cell:nth-child(odd)::after { display: none; }
+  .stat-cell:nth-child(1), .stat-cell:nth-child(2) { border-bottom: none; }
+  .stat-cell + .stat-cell { border-top: 1px solid var(--border-soft); }
+  .kanban-board { grid-template-columns: 1fr; }
+  .kanban-col:last-child { grid-column: span 1; }
+  .feedback-btn { display: none; }
+  .header-title { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ─────────────────────────────────────────
+     1. STICKY NAV
+───────────────────────────────────────── -->
+<nav class="nav">
+  <div class="nav-inner">
+    <!-- Logo -->
+    <a class="nav-logo" href="#">
+      <div class="logo-mark">
+        <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 7L5.5 10.5L12 3.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="logo-name">SprintOS</span>
+      <span class="env-tag">Beta</span>
+    </a>
+
+    <!-- Primary Nav Links -->
+    <div class="nav-links">
+      <a class="nav-link active" href="#">Dashboard</a>
+      <a class="nav-link" href="#">Projects</a>
+      <a class="nav-link" href="#">Sprints</a>
+      <a class="nav-link" href="#">Team</a>
+      <a class="nav-link" href="#">Reports</a>
+    </div>
+
+    <!-- Right Actions -->
+    <div class="nav-actions">
+      <button class="feedback-btn">💬 Feedback</button>
+      <button class="nav-bell" aria-label="Notifications">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M8 1.5A4.5 4.5 0 0 0 3.5 6v2.5L2 10h12l-1.5-1.5V6A4.5 4.5 0 0 0 8 1.5z" stroke="#6E7091" stroke-width="1.4" stroke-linejoin="round"/>
+          <path d="M6.5 13a1.5 1.5 0 0 0 3 0" stroke="#6E7091" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        <span class="bell-dot"></span>
+      </button>
+      <div class="nav-avatar" title="Paras Koul">PK</div>
+    </div>
+  </div>
+</nav>
+
+<!-- ─────────────────────────────────────────
+     2. HEADER ROW
+───────────────────────────────────────── -->
+<div class="container">
+  <header class="page-header">
+    <div class="page-header-inner">
+      <div class="header-left">
+        <div class="header-eyebrow">
+          <span class="eyebrow-dot"></span>
+          All systems normal
+        </div>
+        <h1 class="header-title">Good morning, <span>Paras</span> 👋</h1>
+        <p class="header-sub">Here's what's happening across your workspace today.</p>
+      </div>
+      <div class="search-bar">
+        <svg class="search-icon" width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <circle cx="6.5" cy="6.5" r="4.5" stroke="#A3A5C2" stroke-width="1.5"/>
+          <path d="M10 10L13 13" stroke="#A3A5C2" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <input class="search-input" type="text" placeholder="Search anything…" />
+        <kbd class="search-kbd">⌘K</kbd>
+      </div>
+    </div>
+  </header>
+
+  <!-- ─────────────────────────────────────────
+       3. STAT STRIP
+  ───────────────────────────────────────── -->
+  <div class="stat-strip">
+    <div class="stat-cell">
+      <div class="stat-label">
+        <span class="stat-dot" style="background: var(--blue)"></span>
+        Active Tasks
+      </div>
+      <div class="stat-value">24</div>
+      <div class="stat-delta">
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+          <path d="M5.5 2L9 7H2L5.5 2Z" fill="#1A9959"/>
+        </svg>
+        <span class="delta-up">+3 since yesterday</span>
+      </div>
+    </div>
+
+    <div class="stat-cell">
+      <div class="stat-label">
+        <span class="stat-dot" style="background: var(--red)"></span>
+        Overdue
+      </div>
+      <div class="stat-value">06</div>
+      <div class="stat-delta">
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+          <path d="M5.5 9L9 4H2L5.5 9Z" fill="#D14343"/>
+        </svg>
+        <span class="delta-down">+2 this week</span>
+      </div>
+    </div>
+
+    <div class="stat-cell">
+      <div class="stat-label">
+        <span class="stat-dot" style="background: var(--amber)"></span>
+        Due Soon
+      </div>
+      <div class="stat-value">11</div>
+      <div class="stat-delta">
+        <span class="delta-neutral">— within 48 hours</span>
+      </div>
+    </div>
+
+    <div class="stat-cell">
+      <div class="stat-label">
+        <span class="stat-dot" style="background: var(--green)"></span>
+        Completed
+      </div>
+      <div class="stat-value">87</div>
+      <div class="stat-delta">
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+          <path d="M5.5 2L9 7H2L5.5 2Z" fill="#1A9959"/>
+        </svg>
+        <span class="delta-up">+12 this sprint</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────
+       4. CHART + EMPTY-STATE ROW
+  ───────────────────────────────────────── -->
+  <div class="two-col-row">
+
+    <!-- Bar Chart Panel -->
+    <div class="card chart-panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Sprint Velocity</div>
+          <div class="panel-sub">Tasks completed per sprint cycle</div>
+        </div>
+        <div class="range-toggle">
+          <button class="range-btn">7D</button>
+          <button class="range-btn active">30D</button>
+          <button class="range-btn">90D</button>
+        </div>
+      </div>
+
+      <div class="chart-area" id="chartArea">
+        <!-- Week 1 -->
+        <div class="chart-bar-group">
+          <div class="bar-stack" style="height:85%">
+            <div class="bar-seg done" style="height:55%"></div>
+            <div style="height:3px"></div>
+            <div class="bar-seg progress" style="height:30%"></div>
+          </div>
+          <div class="bar-label">W1</div>
+        </div>
+        <!-- Week 2 -->
+        <div class="chart-bar-group">
+          <div class="bar-stack" style="height:65%">
+            <div class="bar-seg done" style="height:45%"></div>
+            <div style="height:3px"></div>
+            <div class="bar-seg progress" style="height:35%"></div>
+          </div>
+          <div class="bar-label">W2</div>
+        </div>
+        <!-- Week 3 -->
+        <div class="chart-bar-group">
+          <div class="bar-stack" style="height:90%">
+            <div class="bar-seg done" style="height:65%"></div>
+            <div style="height:3px"></div>
+            <div class="bar-seg progress" style="height:25%"></div>
+          </div>
+          <div class="bar-label">W3</div>
+        </div>
+        <!-- Week 4 -->
+        <div class="chart-bar-group">
+          <div class="bar-stack" style="height:72%">
+            <div class="bar-seg done" style="height:50%"></div>
+            <div style="height:3px"></div>
+            <div class="bar-seg progress" style="height:28%"></div>
+          </div>
+          <div class="bar-label">W4</div>
+        </div>
+        <!-- Week 5 -->
+        <div class="chart-bar-group">
+          <div class="bar-stack" style="height:100%">
+            <div class="bar-seg done" style="height:70%"></div>
+            <div style="height:3px"></div>
+            <div class="bar-seg progress" style="height:20%"></div>
+          </div>
+          <div class="bar-label">W5</div>
+        </div>
+        <!-- Week 6 -->
+        <div class="chart-bar-group">
+          <div class="bar-stack" style="height:58%">
+            <div class="bar-seg done" style="height:38%"></div>
+            <div style="height:3px"></div>
+            <div class="bar-seg progress" style="height:40%"></div>
+          </div>
+          <div class="bar-label">W6</div>
+        </div>
+        <!-- Week 7 (Current) -->
+        <div class="chart-bar-group">
+          <div class="bar-stack" style="height:45%">
+            <div class="bar-seg progress" style="height:70%; opacity:.6;"></div>
+          </div>
+          <div class="bar-label" style="color: var(--accent); font-weight:700;">Now</div>
+        </div>
+      </div>
+
+      <div class="chart-legend">
+        <div class="legend-item">
+          <span class="legend-dot" style="background: var(--accent)"></span>
+          Completed
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot" style="background: var(--blue)"></span>
+          In Progress
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot" style="background: var(--surface-2); border: 1px solid var(--border)"></span>
+          Not Started
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State Panel -->
+    <div class="card empty-panel">
+      <div class="empty-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="4" width="18" height="16" rx="3" stroke="#4F46E5" stroke-width="1.7"/>
+          <path d="M8 9h8M8 13h5" stroke="#4F46E5" stroke-width="1.7" stroke-linecap="round"/>
+          <circle cx="19" cy="19" r="4" fill="#4F46E5"/>
+          <path d="M19 17v2l1 1" stroke="white" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="empty-title">No upcoming deadlines</div>
+      <div class="empty-desc">
+        You're all caught up! Create a milestone to start tracking important dates and keep your sprint on schedule.
+      </div>
+      <button class="btn-accent">+ Create Milestone</button>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────
+       5. KANBAN BOARD
+  ───────────────────────────────────────── -->
+  <section class="kanban-section">
+    <div class="kanban-header">
+      <div class="section-title">Sprint Board</div>
+      <div class="kanban-meta">Sprint 4 · Aug 11 – Aug 25 · 0 of 12 tasks complete</div>
+    </div>
+
+    <div class="kanban-board">
+
+      <!-- TO DO -->
+      <div class="kanban-col">
+        <div class="col-top-bar todo"></div>
+        <div class="col-header">
+          <div class="col-title-row">
+            <div class="col-title-left">
+              <span class="col-dot todo"></span>
+              <span class="col-name">To Do</span>
+            </div>
+            <span class="col-count">0</span>
+          </div>
+          <div class="col-progress-bar">
+            <div class="col-progress-fill todo" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="col-body">
+          <div class="col-empty">
+            <div class="col-empty-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="2" y="2" width="12" height="12" rx="3" stroke="#A3A5C2" stroke-width="1.4"/>
+                <path d="M5.5 8h5M8 5.5v5" stroke="#A3A5C2" stroke-width="1.4" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="col-empty-text">Tasks you're ready to tackle will appear here.</div>
+            <button class="col-add-task">+ Add task</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- IN PROGRESS -->
+      <div class="kanban-col">
+        <div class="col-top-bar progress"></div>
+        <div class="col-header">
+          <div class="col-title-row">
+            <div class="col-title-left">
+              <span class="col-dot progress"></span>
+              <span class="col-name">In Progress</span>
+            </div>
+            <span class="col-count">0</span>
+          </div>
+          <div class="col-progress-bar">
+            <div class="col-progress-fill progress" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="col-body">
+          <div class="col-empty">
+            <div class="col-empty-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="5.5" stroke="#3D6FD6" stroke-width="1.4"/>
+                <path d="M8 5v3l2 1.5" stroke="#3D6FD6" stroke-width="1.4" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="col-empty-text">Move tasks here when work is actively underway.</div>
+            <button class="col-add-task">+ Add task</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- REVIEW / QA -->
+      <div class="kanban-col">
+        <div class="col-top-bar review"></div>
+        <div class="col-header">
+          <div class="col-title-row">
+            <div class="col-title-left">
+              <span class="col-dot review"></span>
+              <span class="col-name">Review / QA</span>
+            </div>
+            <span class="col-count">0</span>
+          </div>
+          <div class="col-progress-bar">
+            <div class="col-progress-fill review" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="col-body">
+          <div class="col-empty">
+            <div class="col-empty-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8.5L6 11.5L13 4.5" stroke="#7C5CE0" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="col-empty-text">Completed work waiting for review or QA sign-off.</div>
+            <button class="col-add-task">+ Add task</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- BLOCKED -->
+      <div class="kanban-col">
+        <div class="col-top-bar blocked"></div>
+        <div class="col-header">
+          <div class="col-title-row">
+            <div class="col-title-left">
+              <span class="col-dot blocked"></span>
+              <span class="col-name">Blocked</span>
+            </div>
+            <span class="col-count">0</span>
+          </div>
+          <div class="col-progress-bar">
+            <div class="col-progress-fill blocked" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="col-body">
+          <div class="col-empty">
+            <div class="col-empty-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="5.5" stroke="#D14343" stroke-width="1.4"/>
+                <path d="M8 5.5V8.5M8 10.5V11" stroke="#D14343" stroke-width="1.6" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="col-empty-text">Great — no blockers right now. Keep the momentum going.</div>
+            <button class="col-add-task">+ Add task</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DONE -->
+      <div class="kanban-col">
+        <div class="col-top-bar done"></div>
+        <div class="col-header">
+          <div class="col-title-row">
+            <div class="col-title-left">
+              <span class="col-dot done"></span>
+              <span class="col-name">Done</span>
+            </div>
+            <span class="col-count">0</span>
+          </div>
+          <div class="col-progress-bar">
+            <div class="col-progress-fill done" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="col-body">
+          <div class="col-empty">
+            <div class="col-empty-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8.5L6.5 12L13 5" stroke="#1A9959" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="col-empty-text">Finished tasks land here. Ship something great today.</div>
+            <button class="col-add-task">+ Add task</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<script>
+// Time-range toggle interactivity
+document.querySelectorAll('.range-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+
+</body>
+</html>
