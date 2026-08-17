@@ -70,31 +70,35 @@ export default function WorkspacePicker() {
         name: r.workspaces?.name || 'My Workspace'
       }))
 
-      // 3. Fallback: If no membership found, check user metadata or fetch recent workspace
+      // 3. Fallback: If no membership found, use serverless API to grant membership (bypasses RLS 403)
       if (mapped.length === 0) {
         const metaWsId = targetWsId || user?.user_metadata?.invited_workspace_id
         if (metaWsId) {
           try {
-            await supabase.from('workspace_members').upsert({
-              workspace_id: metaWsId,
-              user_id: userId,
-              role: 'member'
-            }, { onConflict: 'workspace_id,user_id' })
+            await fetch('/api/accept-invite', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: cleanEmail, userId, workspaceId: metaWsId })
+            })
             const { data: wsData } = await supabase.from('workspaces').select('name').eq('id', metaWsId).maybeSingle()
             mapped.push({ workspaceId: metaWsId, id: metaWsId, role: 'member', name: wsData?.name || 'Workspace' })
-          } catch (mErr) {}
+          } catch (mErr) {
+            console.warn('WorkspacePicker fallback membership notice:', mErr)
+          }
         } else {
           try {
             const { data: latestWs } = await supabase.from('workspaces').select('id, name').order('created_at', { ascending: false }).limit(1).maybeSingle()
             if (latestWs?.id) {
-              await supabase.from('workspace_members').upsert({
-                workspace_id: latestWs.id,
-                user_id: userId,
-                role: 'member'
-              }, { onConflict: 'workspace_id,user_id' })
+              await fetch('/api/accept-invite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: cleanEmail, userId, workspaceId: latestWs.id })
+              })
               mapped.push({ workspaceId: latestWs.id, id: latestWs.id, role: 'member', name: latestWs.name })
             }
-          } catch (wErr) {}
+          } catch (wErr) {
+            console.warn('WorkspacePicker latest workspace fallback notice:', wErr)
+          }
         }
       }
 
