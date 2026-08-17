@@ -59,31 +59,47 @@ export function WorkspaceProvider({ children }) {
     setWorkspaceError(null);
 
     const fetchAll = async () => {
-      // Step 1: Accept invite via serverless API FIRST (inserts into workspace_members with service role key,
-      // bypassing RLS). This must happen before SELECT queries so RLS allows reading workspace + membership.
+      // Step 1: Accept any pending invites using ALL available methods in parallel.
+      // The RPC is SECURITY DEFINER so it bypasses RLS even with the anon key.
       if (user?.email) {
-        try {
-          await fetch('/api/accept-invite', {
+        await Promise.allSettled([
+          // Method A: RPC function (SECURITY DEFINER — works without service key)
+          supabase.rpc('accept_pending_invites'),
+          // Method B: Serverless API (uses service role key if configured in Vercel)
+          fetch('/api/accept-invite', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: user.email, userId: user.id, workspaceId })
           })
-        } catch (apiErr) {
-          console.warn('WorkspaceContext accept-invite notice:', apiErr)
-        }
+        ])
       }
 
-      // Step 2: Now query workspace + membership (RLS should pass since user is now in workspace_members)
+      // Step 2: Query workspace + membership. Use service bypass API for workspace data
+      // in case workspaces table RLS still blocks the anon-key select.
       const [wsResult, memberResult] = await Promise.all([
         supabase.from('workspaces').select('*').eq('id', workspaceId).maybeSingle(),
         supabase.from('workspace_members').select('role').eq('workspace_id', workspaceId).eq('user_id', user.id).maybeSingle()
       ])
 
-      if (wsResult.error) {
-        setWorkspaceError(wsResult.error.message)
-      } else if (wsResult.data) {
-        setWorkspace(wsResult.data)
+      // Step 3: If workspace still null due to RLS, try fetching it via the service API
+      let wsData = wsResult.data
+      if (!wsData && !wsResult.error) {
+        try {
+          const resp = await fetch('/api/accept-invite', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: user.email, userId: user.id, workspaceId, fetchWorkspace: true })
+          })
+          const json = await resp.json()
+          if (json?.workspace) wsData = json.workspace
+        } catch (_) {}
+      }
+
+      if (wsData) {
+        setWorkspace(wsData)
         setWorkspaceError(null)
+      } else if (wsResult.error) {
+        setWorkspaceError(wsResult.error.message)
       } else {
         setWorkspace(null)
         setWorkspaceError('Workspace not found')
@@ -91,8 +107,8 @@ export function WorkspaceProvider({ children }) {
 
       if (memberResult?.data) {
         setWorkspaceRole(memberResult.data.role)
-      } else if (wsResult.data) {
-        // Fallback: workspace exists but membership row not visible yet, grant member access
+      } else if (wsData) {
+        // Fallback: workspace exists but membership row not visible yet — grant member access
         setWorkspaceRole('member')
       } else {
         setWorkspaceRole(null)

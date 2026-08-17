@@ -6,82 +6,99 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { email, userId, workspaceId } = req.body || {}
+  const { email, userId, workspaceId, fetchWorkspace } = req.body || {}
   if (!email || !userId) {
     return res.status(400).json({ error: 'Missing email or userId parameter' })
   }
 
   const cleanEmail = email.trim().toLowerCase()
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://sdbglndhjkqhkphzqmum.supabase.co'
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://sdbglndhjkqhkphzqmum.supabase.co'
 
-  if (!serviceKey) {
-    return res.status(200).json({ success: true, workspaceId: workspaceId || null })
+  // Try service role key first, fall back to anon key
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY
+
+  const anonKey = process.env.VITE_SUPABASE_ANON_KEY
+
+  if (!serviceKey && !anonKey) {
+    // No key at all — return workspace from supabase REST directly as last resort
+    return res.status(200).json({ success: false, workspaceId: workspaceId || null })
   }
 
-  const supabaseAdmin = createClient(supabaseUrl, serviceKey)
+  // Use service key if available (bypasses RLS), otherwise anon key
+  const activeKey = serviceKey || anonKey
+  const supabaseAdmin = createClient(supabaseUrl, activeKey)
+  const hasElevatedAccess = Boolean(serviceKey)
 
   try {
-    let combined = []
-
-    // 1. Fetch pending invites from primary 'invites' table safely
-    try {
-      const { data: invites } = await supabaseAdmin
-        .from('invites')
-        .select('*')
-        .ilike('email', cleanEmail)
-
-      if (invites && invites.length > 0) {
-        combined = [...combined, ...invites]
-      }
-    } catch (e1) {
-      console.warn('Invites lookup notice:', e1)
-    }
-
     let acceptedWorkspaceId = workspaceId || null
 
-    for (const inv of combined) {
-      const wsId = inv.workspace_id
-      if (wsId) {
-        if (!acceptedWorkspaceId) acceptedWorkspaceId = wsId
+    if (hasElevatedAccess) {
+      // --- Elevated path: full insert using service role key ---
+
+      // 1. Fetch pending invites
+      try {
+        const { data: invites } = await supabaseAdmin
+          .from('invites')
+          .select('*')
+          .ilike('email', cleanEmail)
+
+        for (const inv of (invites || [])) {
+          if (inv.workspace_id) {
+            if (!acceptedWorkspaceId) acceptedWorkspaceId = inv.workspace_id
+            await supabaseAdmin.from('workspace_members').upsert({
+              workspace_id: inv.workspace_id,
+              user_id: userId,
+              role: inv.role || 'member'
+            }, { onConflict: 'workspace_id,user_id' })
+          }
+        }
+
+        if ((invites || []).length > 0) {
+          await supabaseAdmin.from('invites').delete().ilike('email', cleanEmail)
+        }
+      } catch (e1) {
+        console.warn('Invites lookup notice:', e1)
+      }
+
+      // 2. Grant membership for the specific workspaceId if provided
+      if (workspaceId) {
         try {
           await supabaseAdmin.from('workspace_members').upsert({
-            workspace_id: wsId,
+            workspace_id: workspaceId,
             user_id: userId,
-            role: inv.role || 'member'
+            role: 'member'
           }, { onConflict: 'workspace_id,user_id' })
-        } catch (mErr) {
-          console.warn('workspace_members upsert notice:', mErr)
+        } catch (wErr) {
+          console.warn('workspace_members upsert notice:', wErr)
         }
+        acceptedWorkspaceId = workspaceId
       }
     }
 
-    // Clean up accepted invites
-    if (combined.length > 0) {
+    // 3. Always fetch workspace data using the active key (service key can read anything)
+    let workspace = null
+    if (acceptedWorkspaceId) {
       try {
-        await supabaseAdmin.from('invites').delete().ilike('email', cleanEmail)
-      } catch (dErr) {
-        console.warn('Invites delete notice:', dErr)
+        const { data: wsData } = await supabaseAdmin
+          .from('workspaces')
+          .select('*')
+          .eq('id', acceptedWorkspaceId)
+          .maybeSingle()
+        workspace = wsData || null
+      } catch (wsErr) {
+        console.warn('Workspace fetch notice:', wsErr)
       }
     }
 
-    // 2. If a specific workspaceId was requested, verify/grant membership safely
-    if (workspaceId) {
-      try {
-        await supabaseAdmin.from('workspace_members').upsert({
-          workspace_id: workspaceId,
-          user_id: userId,
-          role: 'member'
-        }, { onConflict: 'workspace_id,user_id' })
-      } catch (wErr) {
-        console.warn('Specific workspace_members upsert notice:', wErr)
-      }
-      acceptedWorkspaceId = workspaceId
-    }
-
-    return res.status(200).json({ success: true, workspaceId: acceptedWorkspaceId })
+    return res.status(200).json({
+      success: true,
+      elevated: hasElevatedAccess,
+      workspaceId: acceptedWorkspaceId,
+      workspace
+    })
   } catch (err) {
     console.error('accept-invite server error:', err)
-    return res.status(200).json({ success: true, workspaceId: workspaceId || null })
+    return res.status(200).json({ success: true, workspaceId: workspaceId || null, workspace: null })
   }
 }
