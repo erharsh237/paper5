@@ -4,6 +4,7 @@ import { useAuth } from '../lib/AuthContext'
 import { createWorkspace } from '../lib/workspaces'
 import { TEAM_SIZE_OPTIONS, WORKFLOWS, getRecommendedWorkflow, isWorkflowUnlocked } from '../lib/workflows'
 import { supabase } from '../lib/supabase'
+import PricingModal from '../components/PricingModal'
 import './WorkspacePicker.css'
 
 export default function WorkspacePicker() {
@@ -16,13 +17,14 @@ export default function WorkspacePicker() {
   const [teamSize, setTeamSize] = useState('2-5')
   const [selectedWorkflow, setSelectedWorkflow] = useState('kanban')
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showPricingModal, setShowPricingModal] = useState(false)
   const [modalStep, setModalStep] = useState(1) // 1: Details, 2: Data Consent
   const [saveData, setSaveData] = useState(false) // default off
   const [createError, setCreateError] = useState('')
 
   const userId = user?.id || user?.uid
   const userPlan = userData?.billing_plan_id || 'free'
-  const isInvitedMember = userPlan === 'member' || Boolean(user?.user_metadata?.invited_workspace_id)
+  const hasActivePaidPlan = ['starter', 'team', 'scale'].includes(userPlan) || (userData?.billing_status === 'active' && userPlan !== 'free' && userPlan !== 'member')
 
   useEffect(() => {
     if (!userId) {
@@ -36,7 +38,7 @@ export default function WorkspacePicker() {
       const cleanEmail = user?.email ? user.email.trim().toLowerCase() : ''
       let targetWsId = null
 
-      // 1. Accept any pending invites via serverless API (bypasses RLS 403 errors)
+      // 1. Accept any real pending invites via serverless API
       if (cleanEmail) {
         try {
           const resp = await fetch('/api/accept-invite', {
@@ -70,43 +72,11 @@ export default function WorkspacePicker() {
         name: r.workspaces?.name || 'My Workspace'
       }))
 
-      // 3. Fallback: If no membership found, use serverless API to grant membership (bypasses RLS 403)
-      if (mapped.length === 0) {
-        const metaWsId = targetWsId || user?.user_metadata?.invited_workspace_id
-        if (metaWsId) {
-          try {
-            await fetch('/api/accept-invite', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email: cleanEmail, userId, workspaceId: metaWsId })
-            })
-            const { data: wsData } = await supabase.from('workspaces').select('name').eq('id', metaWsId).maybeSingle()
-            mapped.push({ workspaceId: metaWsId, id: metaWsId, role: 'member', name: wsData?.name || 'Workspace' })
-          } catch (mErr) {
-            console.warn('WorkspacePicker fallback membership notice:', mErr)
-          }
-        } else {
-          try {
-            const { data: latestWs } = await supabase.from('workspaces').select('id, name').order('created_at', { ascending: false }).limit(1).maybeSingle()
-            if (latestWs?.id) {
-              await fetch('/api/accept-invite', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: cleanEmail, userId, workspaceId: latestWs.id })
-              })
-              mapped.push({ workspaceId: latestWs.id, id: latestWs.id, role: 'member', name: latestWs.name })
-            }
-          } catch (wErr) {
-            console.warn('WorkspacePicker latest workspace fallback notice:', wErr)
-          }
-        }
-      }
-
       if (isMounted) {
         setWorkspaces(mapped)
         setLoading(false)
 
-        // Navigate directly to their workspace immediately!
+        // Navigate directly to their workspace if member of one
         const finalWsId = targetWsId || (mapped.length > 0 ? mapped[0].workspaceId : null)
         if (finalWsId && !window.location.search.includes('picker=true')) {
           navigate(`/${finalWsId}`, { replace: true })
@@ -120,12 +90,6 @@ export default function WorkspacePicker() {
       isMounted = false
     }
   }, [userId, user?.email, navigate])
-
-  useEffect(() => {
-    if (!loading && workspaces.length === 0 && !isInvitedMember) {
-      setShowCreateModal(true)
-    }
-  }, [loading, workspaces, isInvitedMember])
 
   const handleNextStep = (e) => {
     if (e) e.preventDefault()
@@ -150,6 +114,16 @@ export default function WorkspacePicker() {
     }
   }
 
+  const handleSelectPlan = async (planId) => {
+    try {
+      await supabase.from('users').update({ billing_plan_id: planId, billing_status: 'active' }).eq('id', userId)
+      setShowPricingModal(false)
+      setShowCreateModal(true)
+    } catch (err) {
+      console.error('Plan selection notice:', err)
+    }
+  }
+
   if (loading) {
     return (
       <div className="workspace-picker-page">
@@ -166,6 +140,72 @@ export default function WorkspacePicker() {
     )
   }
 
+  // If user has 0 workspaces and no paid plan: Show Access Restricted / Upgrade Screen
+  if (workspaces.length === 0 && !hasActivePaidPlan) {
+    return (
+      <div className="workspace-picker-page">
+        <div className="wp-bg-elements" aria-hidden="true">
+          <div className="wp-orb wp-orb-1" />
+          <div className="wp-orb wp-orb-2" />
+          <div className="wp-orb wp-orb-3" />
+          <div className="wp-grid" />
+        </div>
+        
+        <div className="wp-container" style={{ maxWidth: '520px', margin: '0 auto', textAlign: 'center', padding: '60px 24px' }}>
+          <div style={{
+            width: '64px',
+            height: '64px',
+            borderRadius: '16px',
+            background: 'rgba(99, 102, 241, 0.1)',
+            border: '1px solid rgba(99, 102, 241, 0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '28px',
+            margin: '0 auto 20px'
+          }}>
+            🔒
+          </div>
+          
+          <h2 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary, #111827)', marginBottom: '12px', letterSpacing: '-0.02em' }}>
+            No Active Workspace
+          </h2>
+          
+          <p style={{ fontSize: '14px', color: 'var(--text-secondary, #6B7280)', lineHeight: 1.6, marginBottom: '28px' }}>
+            Your account is not currently a member of any active workspace. To access SprintOS, you must either be invited by a workspace administrator or subscribe to a plan.
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
+            <button
+              type="button"
+              className="btn-primary"
+              style={{ width: '100%', maxWidth: '280px', padding: '12px 20px', fontSize: '14px', fontWeight: 700, borderRadius: '8px' }}
+              onClick={() => setShowPricingModal(true)}
+            >
+              View Plans & Upgrade
+            </button>
+            
+            <button
+              type="button"
+              className="btn-ghost"
+              style={{ color: 'var(--text-secondary, #6B7280)', fontSize: '13px', padding: '8px 16px', cursor: 'pointer' }}
+              onClick={() => logout().then(() => navigate('/login'))}
+            >
+              Sign out securely
+            </button>
+          </div>
+        </div>
+
+        <PricingModal
+          isOpen={showPricingModal}
+          onClose={() => setShowPricingModal(false)}
+          currentPlan={userPlan}
+          onSelectPlan={handleSelectPlan}
+        />
+      </div>
+    )
+  }
+
   const isAdmin = workspaces.some(w => w.role === 'owner' || w.role === 'admin')
   const ownedCount = workspaces.filter(w => w.role === 'owner' || w.role === 'admin').length
   
@@ -173,7 +213,7 @@ export default function WorkspacePicker() {
   if (userPlan === 'team') maxWorkspaces = 5
   if (userPlan === 'scale') maxWorkspaces = 10
   
-  const canCreate = ownedCount < maxWorkspaces
+  const canCreate = ownedCount < maxWorkspaces || hasActivePaidPlan
   const isPickerForced = window.location.search.includes('picker=true')
   
   // Routing logic
@@ -248,89 +288,145 @@ export default function WorkspacePicker() {
       </div>
 
       {showCreateModal && (
-        <div className="wp-modal-backdrop" onClick={() => setShowCreateModal(false)}>
-          <div className="wp-modal" onClick={e => e.stopPropagation()}>
-            <div className="wp-modal-header">
-              <h2>{modalStep === 1 ? 'Create Your Workspace' : 'Data Storage Consent'}</h2>
-              <button className="wp-modal-close" onClick={() => setShowCreateModal(false)}>×</button>
-            </div>
-            
+        <div className="wp-modal-overlay" onClick={() => !isCreating && setShowCreateModal(false)}>
+          <div className="wp-modal-card" onClick={e => e.stopPropagation()}>
+            <button className="wp-modal-close" onClick={() => !isCreating && setShowCreateModal(false)} aria-label="Close">
+              ✕
+            </button>
+
             {modalStep === 1 ? (
               <form onSubmit={handleNextStep}>
+                <div className="wp-modal-header">
+                  <h2>Create Workspace</h2>
+                  <p>Configure your workspace name and preferences</p>
+                </div>
+
+                {createError && <div className="wp-error-banner">{createError}</div>}
+
                 <div className="wp-form-group">
-                  <label>Workspace Name</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. Acme Corp" 
-                    value={newName} 
+                  <label htmlFor="ws-name">Workspace Name</label>
+                  <input
+                    id="ws-name"
+                    type="text"
+                    className="wp-input"
+                    placeholder="e.g. Acme Engineering"
+                    value={newName}
                     onChange={e => setNewName(e.target.value)}
-                    required 
+                    required
                     autoFocus
+                    disabled={isCreating}
                   />
                 </div>
 
                 <div className="wp-form-group">
-                  <label>Team Size (Admin Config)</label>
-                  <select value={teamSize} onChange={e => {
-                    setTeamSize(e.target.value)
-                    const rec = getRecommendedWorkflow(e.target.value)
-                    setSelectedWorkflow(rec.id)
-                  }}>
+                  <label htmlFor="ws-teamsize">Team Size</label>
+                  <select
+                    id="ws-teamsize"
+                    className="wp-select"
+                    value={teamSize}
+                    onChange={e => {
+                      setTeamSize(e.target.value)
+                      setSelectedWorkflow(getRecommendedWorkflow(e.target.value))
+                    }}
+                    disabled={isCreating}
+                  >
                     {TEAM_SIZE_OPTIONS.map(opt => (
-                      <option key={opt.id} value={opt.id}>{opt.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="wp-form-group">
-                  <label>Aligned Agile Workflow</label>
-                  <select value={selectedWorkflow} onChange={e => setSelectedWorkflow(e.target.value)}>
-                    {WORKFLOWS.map(wf => (
-                      <option 
-                        key={wf.id} 
-                        value={wf.id}
-                        disabled={!isWorkflowUnlocked(wf.id, userPlan)}
-                      >
-                        {wf.name} ({wf.teamSizeHint}) {!isWorkflowUnlocked(wf.id, userPlan) ? '🔒 Upgrade Required' : ''}
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
                       </option>
                     ))}
                   </select>
                 </div>
 
-                {createError && <div className="wp-error-msg">{createError}</div>}
+                <div className="wp-form-group">
+                  <label>Workflow Mode</label>
+                  <div className="workflow-options-grid">
+                    {Object.entries(WORKFLOWS).map(([key, wf]) => {
+                      const isUnlocked = isWorkflowUnlocked(key, userPlan)
+                      const isSelected = selectedWorkflow === key
+
+                      return (
+                        <div
+                          key={key}
+                          className={`workflow-card-option ${isSelected ? 'selected' : ''} ${!isUnlocked ? 'locked' : ''}`}
+                          onClick={() => {
+                            if (isUnlocked) setSelectedWorkflow(key)
+                          }}
+                        >
+                          <div className="wf-card-header">
+                            <span className="wf-name">{wf.name}</span>
+                            {!isUnlocked && (
+                              <span className="wf-lock-badge">
+                                🔒 {wf.requiredPlan ? wf.requiredPlan.charAt(0).toUpperCase() + wf.requiredPlan.slice(1) : 'Pro'}
+                              </span>
+                            )}
+                          </div>
+                          <p className="wf-desc">{wf.description}</p>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
 
                 <div className="wp-modal-actions">
-                  <button type="button" className="btn-secondary" onClick={() => setShowCreateModal(false)}>Cancel</button>
-                  <button type="submit" className="btn-primary" disabled={!newName.trim()}>
-                    Next: Data Storage Consent →
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    onClick={() => setShowCreateModal(false)}
+                    disabled={isCreating}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    disabled={!newName.trim() || isCreating}
+                  >
+                    Continue →
                   </button>
                 </div>
               </form>
             ) : (
               <form onSubmit={handleCreate}>
-                <div className="wp-form-group">
-                  <label className="checkbox-label" style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={saveData} 
-                      onChange={e => setSaveData(e.target.checked)} 
+                <div className="wp-modal-header">
+                  <h2>Data Storage Consent</h2>
+                  <p>Choose whether SprintOS may store workspace state</p>
+                </div>
+
+                {createError && <div className="wp-error-banner">{createError}</div>}
+
+                <div className="wp-consent-box">
+                  <label className="wp-consent-label">
+                    <input
+                      type="checkbox"
+                      checked={saveData}
+                      onChange={e => setSaveData(e.target.checked)}
+                      disabled={isCreating}
                     />
                     <span>
-                      <strong>Allow SprintOS to securely store workspace telemetry & metadata</strong>
-                      <br />
-                      <small style={{ color: '#888' }}>
-                        This allows SprintOS to personalize agile workflows and store sprint history. Default is off for privacy.
+                      <strong>Allow SprintOS to persist workspace data</strong>
+                      <small>
+                        Enables saving tasks, deadlines, meeting notes, and team configuration across sessions.
                       </small>
                     </span>
                   </label>
                 </div>
 
-                {createError && <div className="wp-error-msg">{createError}</div>}
-
                 <div className="wp-modal-actions">
-                  <button type="button" className="btn-secondary" onClick={() => setModalStep(1)}>← Back</button>
-                  <button type="submit" className="btn-primary" disabled={isCreating}>
-                    {isCreating ? 'Creating Workspace...' : 'Finish & Launch Workspace'}
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    onClick={() => setModalStep(1)}
+                    disabled={isCreating}
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    disabled={isCreating}
+                  >
+                    {isCreating ? 'Provisioning…' : 'Create Workspace'}
                   </button>
                 </div>
               </form>
@@ -338,6 +434,13 @@ export default function WorkspacePicker() {
           </div>
         </div>
       )}
+
+      <PricingModal
+        isOpen={showPricingModal}
+        onClose={() => setShowPricingModal(false)}
+        currentPlan={userPlan}
+        onSelectPlan={handleSelectPlan}
+      />
     </div>
   )
 }

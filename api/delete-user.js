@@ -6,7 +6,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { userId, email, workspaceId } = req.body || {}
+  const { userId, email, workspaceId, fullDelete = false } = req.body || {}
   if (!userId && !email) {
     return res.status(400).json({ error: 'Missing userId or email parameter' })
   }
@@ -77,7 +77,35 @@ export default async function handler(req, res) {
       } catch (_) {}
     }
 
-    // 1. Remove from workspace memberships everywhere
+    // Check if the user belongs to any other workspaces
+    let hasOtherWorkspaces = false
+    if (!fullDelete && workspaceId && idsList.length > 0) {
+      try {
+        const { data: otherMemberships } = await supabaseAdmin
+          .from('workspace_members')
+          .select('workspace_id')
+          .in('user_id', idsList)
+          .neq('workspace_id', workspaceId)
+
+        if (otherMemberships && otherMemberships.length > 0) {
+          hasOtherWorkspaces = true
+        }
+      } catch (_) {}
+    }
+
+    // 1. Remove from workspace memberships for this workspace (or all if fullDelete / single workspace)
+    if (hasOtherWorkspaces && workspaceId) {
+      for (const id of idsList) {
+        await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', workspaceId).eq('user_id', id)
+      }
+      return res.status(200).json({
+        success: true,
+        message: 'Member removed from workspace (retains access to other workspaces)',
+        retainedWorkspaces: true
+      })
+    }
+
+    // --- User was in only 1 workspace or full deletion requested: Permanently purge account ---
     for (const id of idsList) {
       await supabaseAdmin.from('workspace_members').delete().eq('user_id', id)
     }
@@ -112,7 +140,8 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: 'Account and personal data successfully deleted',
+      message: 'Account and personal data completely removed',
+      accountPurged: true,
       deletedUserIds: idsList
     })
   } catch (err) {
