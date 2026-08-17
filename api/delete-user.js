@@ -119,10 +119,12 @@ export default async function handler(req, res) {
     // 2. Full Account Deletion / Single Workspace Purge:
     for (const id of idsList) {
       try {
-        const { data: allWsMembers } = await supabaseAdmin
+        const { data: allWsMembers, error: memFetchErr } = await supabaseAdmin
           .from('workspace_members')
-          .select('id, workspace_id, user_id, role')
+          .select('*')
           .eq('user_id', id)
+
+        stepResults.push({ step: 'fetch_user_memberships', id, count: allWsMembers?.length, fetchError: memFetchErr?.message || null })
 
         for (const mem of (allWsMembers || [])) {
           const currentWsId = mem.workspace_id
@@ -130,7 +132,7 @@ export default async function handler(req, res) {
           // Fetch all rows in this workspace
           const { data: wsRows } = await supabaseAdmin
             .from('workspace_members')
-            .select('id, user_id, role')
+            .select('*')
             .eq('workspace_id', currentWsId)
 
           const otherMembers = (wsRows || []).filter(m => m.user_id !== id && !idsList.includes(m.user_id))
@@ -155,22 +157,24 @@ export default async function handler(req, res) {
             await supabaseAdmin
               .from('workspace_members')
               .update({ role: 'owner' })
-              .eq('id', om.id)
+              .eq('workspace_id', currentWsId)
+              .eq('user_id', om.user_id)
           }
 
-          // Update workspace owner_id and created_by
+          // Update workspace created_by
           await supabaseAdmin
             .from('workspaces')
-            .update({ owner_id: successorId, created_by: successorId })
+            .update({ created_by: successorId })
             .eq('id', currentWsId)
 
-          // Delete target membership by row ID
+          // Delete target membership
           const { error: mErr } = await supabaseAdmin
             .from('workspace_members')
             .delete()
-            .eq('id', mem.id)
+            .eq('workspace_id', currentWsId)
+            .eq('user_id', id)
 
-          stepResults.push({ step: 'delete_membership_by_row_id', rowId: mem.id, workspaceId: currentWsId, error: mErr?.message || null })
+          stepResults.push({ step: 'delete_membership', workspaceId: currentWsId, id, error: mErr?.message || null })
         }
       } catch (wsErr) {
         stepResults.push({ step: 'workspace_cleanup_exception', error: wsErr.message })
