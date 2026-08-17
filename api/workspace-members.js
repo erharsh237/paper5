@@ -16,7 +16,11 @@ export default async function handler(req, res) {
 
   // POST: Update Member Role or Permissions
   if (req.method === 'POST') {
-    const { action, workspaceId, memberId, role, permissions } = req.body || {}
+    let body = req.body
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body) } catch (_) { body = {} }
+    }
+    const { action, workspaceId, memberId, role, permissions } = body || {}
     if (!workspaceId || !memberId) {
       return res.status(400).json({ error: 'Missing workspaceId or memberId' })
     }

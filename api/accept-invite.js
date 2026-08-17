@@ -6,7 +6,12 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { email, userId, workspaceId, fetchWorkspace } = req.body || {}
+  let body = req.body
+  if (typeof body === 'string') {
+    try { body = JSON.parse(body) } catch (_) { body = {} }
+  }
+
+  const { email, userId, workspaceId, fetchWorkspace } = body || {}
   if (!email || !userId) {
     return res.status(400).json({ error: 'Missing email or userId parameter' })
   }
