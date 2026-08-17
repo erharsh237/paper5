@@ -1,4 +1,20 @@
-import { createClient } from '@supabase/supabase-js'
+async function parseBody(req) {
+  if (req.body && typeof req.body === 'object') return req.body
+  if (req.body && typeof req.body === 'string') {
+    try { return JSON.parse(req.body) } catch (_) { return {} }
+  }
+  try {
+    const chunks = []
+    for await (const chunk of req) {
+      chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk)
+    }
+    if (chunks.length === 0) return {}
+    const raw = Buffer.concat(chunks).toString('utf8')
+    return JSON.parse(raw)
+  } catch (_) {
+    return {}
+  }
+}
 
 export default async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json')
@@ -6,14 +22,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  let body = req.body
-  if (typeof body === 'string') {
-    try { body = JSON.parse(body) } catch (_) { body = {} }
-  }
-
+  const body = await parseBody(req)
   const { userId, email, workspaceId, fullDelete = false } = body || {}
   if (!userId && !email) {
-    return res.status(400).json({ error: 'Missing userId or email parameter' })
+    return res.status(400).json({ error: 'Missing userId or email parameter', receivedBody: body })
   }
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://sdbglndhjkqhkphzqmum.supabase.co'
