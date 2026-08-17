@@ -132,6 +132,7 @@ export default async function handler(req, res) {
           .select('workspace_id, role')
           .eq('user_id', id)
 
+        for (const mem of (userMemberships || [])) {
           // Fetch all other members in this workspace
           const { data: allWsMembers } = await supabaseAdmin
             .from('workspace_members')
@@ -178,6 +179,7 @@ export default async function handler(req, res) {
             .eq('user_id', id)
 
           stepResults.push({ step: 'delete_membership', workspaceId: mem.workspace_id, id, error: mErr?.message || null })
+        }
       } catch (wsErr) {
         stepResults.push({ step: 'workspace_cleanup_exception', error: wsErr.message })
       }
