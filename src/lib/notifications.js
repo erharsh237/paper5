@@ -129,21 +129,52 @@ export function playBellChimeSound() {
 }
 
 export async function markNotificationRead(workspaceId, id, userEmail) {
+  if (!id || !userEmail) return
   const email = (userEmail || '').toLowerCase()
-  const { data: existing } = await supabase
-    .from('notifications')
-    .select('readBy')
-    .eq('workspace_id', workspaceId)
-    .eq('id', id)
-    .maybeSingle()
-    
-  const readBy = existing?.readBy || []
-  if (!readBy.includes(email)) {
-    readBy.push(email)
-    await supabase
+  try {
+    const { data: existing } = await supabase
       .from('notifications')
-      .update({ readBy })
-      .eq('workspace_id', workspaceId)
+      .select('readBy')
       .eq('id', id)
+      .maybeSingle()
+      
+    const currentReadBy = Array.isArray(existing?.readBy) ? existing.readBy : []
+    if (!currentReadBy.includes(email)) {
+      const readBy = [...currentReadBy, email]
+      const { error } = await supabase
+        .from('notifications')
+        .update({ readBy })
+        .eq('id', id)
+        
+      if (error) {
+        console.warn('markNotificationRead DB update warning:', error.message)
+      }
+    }
+  } catch (err) {
+    console.error('markNotificationRead exception:', err)
+  }
+}
+
+export async function markAllNotificationsRead(workspaceId, userEmail) {
+  if (!userEmail) return
+  const email = (userEmail || '').toLowerCase()
+  try {
+    const query = supabase
+      .from('notifications')
+      .select('id, readBy')
+    if (workspaceId) query.eq('workspace_id', workspaceId)
+    
+    const { data } = await query
+    for (const notif of (data || [])) {
+      const current = Array.isArray(notif.readBy) ? notif.readBy : []
+      if (!current.includes(email)) {
+        await supabase
+          .from('notifications')
+          .update({ readBy: [...current, email] })
+          .eq('id', notif.id)
+      }
+    }
+  } catch (err) {
+    console.error('markAllNotificationsRead exception:', err)
   }
 }

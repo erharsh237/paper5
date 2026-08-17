@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useMemo } from 'react'
 import { 
   subscribeNotifications, 
   markNotificationRead, 
+  markAllNotificationsRead,
   playBellChimeSound, 
   triggerChromeNotification,
   requestNotificationPermission 
@@ -62,7 +63,28 @@ export default function NotificationBell({ currentUser }) {
   }, [notifications, currentUser?.email])
 
   function handleDismiss(id) {
-    markNotificationRead(workspaceId, id, currentUser.email)
+    const email = (currentUser?.email || '').toLowerCase()
+    
+    // 1. Optimistic instant local update
+    setNotifications(prev => prev.map(n => {
+      if (n.id === id) {
+        const currentRead = Array.isArray(n.readBy) ? n.readBy : []
+        return { ...n, readBy: [...currentRead, email] }
+      }
+      return n
+    }))
+
+    // 2. Persist to DB
+    markNotificationRead(workspaceId, id, currentUser?.email)
+  }
+
+  function handleDismissAll() {
+    const email = (currentUser?.email || '').toLowerCase()
+    setNotifications(prev => prev.map(n => {
+      const currentRead = Array.isArray(n.readBy) ? n.readBy : []
+      return currentRead.includes(email) ? n : { ...n, readBy: [...currentRead, email] }
+    }))
+    markAllNotificationsRead(workspaceId, currentUser?.email)
   }
 
   return (
@@ -73,7 +95,18 @@ export default function NotificationBell({ currentUser }) {
       </button>
       {open && (
         <div className="notif-bell-panel">
-          <div className="notif-bell-header mono">NOTIFICATIONS</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <div className="notif-bell-header mono" style={{ margin: 0 }}>NOTIFICATIONS</div>
+            {unreadCount > 0 && (
+              <button 
+                type="button" 
+                onClick={handleDismissAll}
+                style={{ background: 'transparent', border: 'none', color: 'var(--accent, #4F46E5)', fontSize: '11px', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+              >
+                Mark all read
+              </button>
+            )}
+          </div>
           {notifications.length === 0 ? (
             <div className="notif-bell-empty">Nothing yet.</div>
           ) : (
