@@ -79,7 +79,19 @@ export function AuthProvider({ children }) {
 
       // Fetch user data
       const fetchUserData = async () => {
-        const { data } = await supabase.from('users').select('*').eq('id', u.id).maybeSingle()
+        const { data, error } = await supabase.from('users').select('*').eq('id', u.id).maybeSingle()
+        if (error || !data) {
+          // Check if profile or user exists; if completely missing, user has been purged
+          const { data: prof } = await supabase.from('profiles').select('id').eq('id', u.id).maybeSingle()
+          if (!prof && !data) {
+            setUser(null)
+            setUserData(null)
+            setLoading(false)
+            sessionCookieApi.clear()
+            supabase.auth.signOut().catch(() => {})
+            return
+          }
+        }
         if (data) {
           data.legalAcceptedVersion = data.legal_accepted_version
           data.legalAcceptedAt = data.legal_accepted_at
@@ -103,6 +115,13 @@ export function AuthProvider({ children }) {
       // Subscribe to realtime updates on users table
       channel = supabase.channel(`public:users:id=eq.${u.id}:auth:${Math.random().toString(36).substring(7)}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'users', filter: `id=eq.${u.id}` }, (payload) => {
+          if (payload.eventType === 'DELETE' || !payload.new) {
+            setUser(null)
+            setUserData(null)
+            sessionCookieApi.clear()
+            supabase.auth.signOut().catch(() => {})
+            return
+          }
           const data = payload.new
           if (data) {
             data.legalAcceptedVersion = data.legal_accepted_version

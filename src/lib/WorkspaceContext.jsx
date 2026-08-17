@@ -148,8 +148,8 @@ export function WorkspaceProvider({ children }) {
       .subscribe()
 
     const channelM = supabase.channel(`public:workspace_members:workspace_id=eq.${workspaceId}_user_id=eq.${user.id}:ws:${Math.random().toString(36).substring(7)}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_members', filter: `workspace_id=eq.${workspaceId}` }, (payload) => {
-        if (payload.new && payload.new.user_id === user.id) fetchAll()
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_members', filter: `workspace_id=eq.${workspaceId}` }, () => {
+        fetchAll()
       })
       .subscribe()
 

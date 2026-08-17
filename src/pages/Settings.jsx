@@ -577,22 +577,40 @@ export default function Settings() {
     }
   }
 
-  const handleRemoveMember = (memberUid, role) => {
+  const handleRemoveMember = (memberUid, role, memberEmail) => {
     if (role === 'owner' && ownerCount <= 1) {
       setAlertMessage('Access violation: Cannot remove the primary workspace owner.')
       return
     }
     openConfirm({
       title: 'Remove Member',
-      message: 'Are you sure you want to remove this member from the workspace? They will lose access immediately.',
-      confirmText: 'Remove',
+      message: 'Are you sure you want to remove this member from the workspace? If this is their only workspace, their account will be deactivated until added back or a plan is purchased.',
+      confirmText: 'Remove Member',
       variant: 'danger',
       onConfirm: async () => {
         closeConfirm()
         try {
-          await removeMember(workspaceId, memberUid)
+          const resp = await fetch('/api/delete-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: memberUid, email: memberEmail, workspaceId, fullDelete: false })
+          })
+          const json = await resp.json()
+          if (!resp.ok) throw new Error(json.error || 'Failed to remove member')
+          
+          setAlertMessage(json.accountPurged 
+            ? `Member removed. Because they had no other workspaces, their account has been deactivated.`
+            : `Member removed from workspace.`
+          )
+          setMembers(prev => prev.filter(x => x.id !== memberUid && x.user_id !== memberUid))
         } catch (err) {
-          setAlertMessage('Unable to process member removal. Please try again.')
+          console.warn('Remove member fallback:', err)
+          try {
+            await removeMember(workspaceId, memberUid)
+            setMembers(prev => prev.filter(x => x.id !== memberUid && x.user_id !== memberUid))
+          } catch (_) {
+            setAlertMessage('Unable to process member removal. Please try again.')
+          }
         }
       }
     })
@@ -610,13 +628,13 @@ export default function Settings() {
           const resp = await fetch('/api/delete-user', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: member.id, email: member.email, workspaceId })
+            body: JSON.stringify({ userId: member.id || member.user_id, email: member.email, workspaceId, fullDelete: true })
           })
           const json = await resp.json()
           if (!resp.ok) throw new Error(json.error || 'Failed to delete user')
           
           setAlertMessage(`Account for ${member.email} has been permanently deleted.`)
-          setMembers(prev => prev.filter(x => x.id !== member.id))
+          setMembers(prev => prev.filter(x => x.id !== member.id && x.user_id !== member.id))
         } catch (err) {
           setAlertMessage('Failed to delete account: ' + err.message)
         }
@@ -1465,7 +1483,7 @@ export default function Settings() {
                                 className="btn-ghost btn-sm"
                                 style={{ color: 'var(--accent-critical)' }}
                                 disabled={!isAdminOrOwner || m.id === user?.uid || (m.role === 'owner' && !isOwner)}
-                                onClick={() => handleRemoveMember(m.id, m.role)}
+                                onClick={() => handleRemoveMember(m.id || m.user_id, m.role, m.email)}
                               >
                                 Remove
                               </button>
