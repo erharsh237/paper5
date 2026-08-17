@@ -45,6 +45,7 @@ export default function Profile() {
   const [error, setError] = useState('')
   const [picUploading, setPicUploading] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
+  const [deletingAccount, setDeletingAccount] = useState(false)
 
   const prevStep = () => setCurrentStep(s => Math.max(0, s - 1))
   const nextStep = () => setCurrentStep(s => Math.min(TOTAL_STEPS - 1, s + 1))
@@ -346,25 +347,51 @@ export default function Profile() {
             
           </div>
 
-          <div className="profile-card profile-card--main" style={{ marginTop: '24px', border: '1px solid var(--accent-critical)' }}>
-            <h2 className="profile-section-title" style={{ color: 'var(--accent-critical)' }}>Danger Zone</h2>
-            <p className="profile-hint" style={{ marginBottom: '16px' }}>
-              Deleting your account will remove your access to the tracker immediately. Your existing deadlines and sprints will remain (so team history isn't broken), but your personal profile data will be erased. This action cannot be undone.
+          <div className="dash-surface-card" style={{ marginTop: '28px', padding: '24px 28px', border: '1px solid #FECACA', background: '#FEF2F2' }}>
+            <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#DC2626', margin: '0 0 8px 0', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Danger Zone</h2>
+            <p style={{ fontSize: '13px', color: '#7F1D1D', margin: '0 0 16px 0', lineHeight: 1.5 }}>
+              Deleting your account will remove your access immediately. Your personal profile data and memberships will be erased. This action cannot be undone.
             </p>
-            <button type="button" className="btn-ghost btn-sm" style={{ color: 'var(--accent-critical)', borderColor: 'var(--accent-critical)' }} onClick={async () => {
-              if (confirm('Are you absolutely sure you want to delete your account? You will lose access immediately.')) {
-                try {
-                  const { supabase } = await import('../lib/supabase')
-                  const { error } = await supabase.functions.invoke('delete-user')
-                  if (error) throw error
-                  logout()
-                } catch (err) {
-                  console.error('Failed to delete account:', err)
-                  setError('Could not delete account: ' + err.message)
+            <button
+              type="button"
+              disabled={deletingAccount}
+              style={{
+                background: '#DC2626',
+                color: '#FFFFFF',
+                border: 'none',
+                padding: '9px 18px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: deletingAccount ? 'not-allowed' : 'pointer',
+                opacity: deletingAccount ? 0.7 : 1,
+                transition: 'all 0.15s ease'
+              }}
+              onClick={async () => {
+                if (window.confirm('Are you absolutely sure you want to delete your account? You will lose access immediately.')) {
+                  setDeletingAccount(true)
+                  setError('')
+                  try {
+                    const uid = user?.id || user?.uid
+                    const resp = await fetch('/api/delete-user', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ userId: uid, email: user?.email })
+                    })
+                    const json = await resp.json()
+                    if (!resp.ok) throw new Error(json.error || 'Failed to delete user')
+                    
+                    await logout()
+                    navigate('/login')
+                  } catch (err) {
+                    console.error('Failed to delete account:', err)
+                    setError('Could not delete account: ' + err.message)
+                    setDeletingAccount(false)
+                  }
                 }
-              }
-            }}>
-              Delete Account & Data
+              }}
+            >
+              {deletingAccount ? 'Deleting Account…' : 'Delete Account & Data'}
             </button>
           </div>
         </div>
