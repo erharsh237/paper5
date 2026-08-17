@@ -1,21 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 
-async function parseBody(req) {
+function parseBody(req) {
   if (req.body && typeof req.body === 'object') return req.body
   if (req.body && typeof req.body === 'string') {
     try { return JSON.parse(req.body) } catch (_) { return {} }
   }
-  try {
-    const chunks = []
-    for await (const chunk of req) {
-      chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk)
-    }
-    if (chunks.length === 0) return {}
-    const raw = Buffer.concat(chunks).toString('utf8')
-    return JSON.parse(raw)
-  } catch (_) {
-    return {}
-  }
+  return req.body || {}
 }
 
 export default async function handler(req, res) {
