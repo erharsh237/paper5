@@ -476,9 +476,22 @@ export function AuthProvider({ children }) {
   }
 
   const resetPassword = async (email) => {
-    return supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/action`,
-    })
+    const cleanEmail = (email || '').trim().toLowerCase()
+    try {
+      const resp = await fetch('/api/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail })
+      })
+      const json = await resp.json()
+      if (!resp.ok) throw new Error(json.error || 'Failed to send password reset email')
+      return { data: json, error: null }
+    } catch (apiErr) {
+      console.warn('API forgot-password fallback:', apiErr.message)
+      return supabase.auth.resetPasswordForEmail(cleanEmail, {
+        redirectTo: `${window.location.origin}/auth/action`,
+      })
+    }
   }
 
   const logout = () => supabase.auth.signOut()
