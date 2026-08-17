@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../lib/AuthContext'
-import { useDeadlines, } from '../lib/useDeadlines'
+import { useDeadlines } from '../lib/useDeadlines'
 import { subscribeSprints } from '../lib/sprints'
 import { getUrgency } from '../lib/utils'
 import { hasSeenTour } from '../lib/onboarding'
@@ -25,6 +25,7 @@ export default function MyDashboard() {
   const [showTour, setShowTour] = useState(false)
   const [viewMode, setViewMode] = useState('board')
   const [timeRange, setTimeRange] = useState('7D')
+  const [hoveredIndex, setHoveredIndex] = useState(null)
   const [search, setSearch] = useState('')
   const [showNewModal, setShowNewModal] = useState(false)
   const [integrationConfig, setIntegrationConfig] = useState({})
@@ -123,11 +124,7 @@ export default function MyDashboard() {
     const now = new Date()
 
     if (timeRange === '7D') {
-      // Last 7 days (Monday through Sunday of current week)
-      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
       const currentDayIdx = now.getDay() // 0 = Sun
-      
-      // Calculate Monday of current week
       const monday = new Date(now)
       const diffToMonday = (currentDayIdx === 0 ? -6 : 1 - currentDayIdx)
       monday.setDate(now.getDate() + diffToMonday)
@@ -139,8 +136,8 @@ export default function MyDashboard() {
         d.setDate(monday.getDate() + i)
         const dateStr = d.toISOString().slice(0, 10)
         const dayLabel = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i]
+        const fullDateFormatted = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 
-        // Real count of tasks done or active for this date
         const doneTasks = myTasks.filter(t => {
           if (t.status !== 'done') return false
           const compDate = (t.completedAt || t.completed_at || t.dueDate || t.due_date || t.createdAt || '').slice(0, 10)
@@ -155,6 +152,7 @@ export default function MyDashboard() {
 
         days.push({
           label: dayLabel,
+          title: fullDateFormatted,
           done: doneTasks.length,
           inProgress: inProgTasks.length,
           total: doneTasks.length + inProgTasks.length,
@@ -178,7 +176,6 @@ export default function MyDashboard() {
     }
 
     if (timeRange === '30D') {
-      // Past 4 weeks (W1, W2, W3, W4, Now)
       const weeks = []
       for (let i = 4; i >= 0; i--) {
         const start = new Date(now)
@@ -188,6 +185,9 @@ export default function MyDashboard() {
         const end = new Date(now)
         end.setDate(now.getDate() - (i * 7))
         end.setHours(23, 59, 59, 999)
+
+        const startFmt = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        const endFmt = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
         const doneTasks = myTasks.filter(t => {
           if (t.status !== 'done') return false
@@ -203,6 +203,7 @@ export default function MyDashboard() {
 
         weeks.push({
           label: i === 0 ? 'Now' : `W${5 - i}`,
+          title: `${startFmt} – ${endFmt}`,
           done: doneTasks.length,
           inProgress: inProgTasks.length,
           total: doneTasks.length + inProgTasks.length,
@@ -230,6 +231,7 @@ export default function MyDashboard() {
     for (let i = 2; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
       const monthName = d.toLocaleString('default', { month: 'short' })
+      const fullMonthName = d.toLocaleString('default', { month: 'long', year: 'numeric' })
       const start = new Date(now.getFullYear(), now.getMonth() - i, 1)
       const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59)
 
@@ -247,6 +249,7 @@ export default function MyDashboard() {
 
       months.push({
         label: i === 0 ? 'This Mo' : monthName,
+        title: fullMonthName,
         done: doneTasks.length,
         inProgress: inProgTasks.length,
         total: doneTasks.length + inProgTasks.length,
@@ -278,6 +281,8 @@ export default function MyDashboard() {
     }
     return 'there'
   }, [user])
+
+  const activeHoverItem = hoveredIndex !== null ? velocityData.bars[hoveredIndex] : null
 
   return (
     <div className="dash-root">
@@ -392,42 +397,83 @@ export default function MyDashboard() {
           </div>
         </section>
 
-        {/* ── 4. TWO-COLUMN ROW: VELOCITY & REPOSITORIES (REAL DATA) ── */}
+        {/* ── 4. TWO-COLUMN ROW: VELOCITY & REPOSITORIES (RICH HOVER TOOLTIPS) ── */}
         <section className="dash-two-col">
           {/* Left: Task Velocity Card */}
-          <div className="dash-surface-card dash-chart-panel">
+          <div className="dash-surface-card dash-chart-panel" style={{ position: 'relative' }}>
             <div className="dash-panel-header">
               <div>
                 <div className="dash-panel-title">Task velocity</div>
-                <div className="dash-panel-desc">{velocityData.subtitle}</div>
+                <div className="dash-panel-desc">
+                  {activeHoverItem
+                    ? `${activeHoverItem.title}: ${activeHoverItem.done} completed, ${activeHoverItem.inProgress} in progress`
+                    : velocityData.subtitle}
+                </div>
               </div>
               <div className="dash-range-pills">
                 <button
                   type="button"
                   className={`dash-range-btn${timeRange === '7D' ? ' active' : ''}`}
-                  onClick={() => setTimeRange('7D')}
+                  onClick={() => { setTimeRange('7D'); setHoveredIndex(null); }}
                 >
                   7D
                 </button>
                 <button
                   type="button"
                   className={`dash-range-btn${timeRange === '30D' ? ' active' : ''}`}
-                  onClick={() => setTimeRange('30D')}
+                  onClick={() => { setTimeRange('30D'); setHoveredIndex(null); }}
                 >
                   30D
                 </button>
                 <button
                   type="button"
                   className={`dash-range-btn${timeRange === '90D' ? ' active' : ''}`}
-                  onClick={() => setTimeRange('90D')}
+                  onClick={() => { setTimeRange('90D'); setHoveredIndex(null); }}
                 >
                   90D
                 </button>
               </div>
             </div>
 
-            {/* Dynamic Real-Data Velocity Canvas */}
-            <div style={{ height: '140px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingTop: '10px' }}>
+            {/* Interactive Velocity Canvas with Tooltip */}
+            <div style={{ height: '140px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingTop: '10px', position: 'relative' }}>
+              
+              {/* Floating Tooltip Box */}
+              {activeHoverItem && (
+                <div style={{
+                  position: 'absolute',
+                  top: '-8px',
+                  left: `${((hoveredIndex + 0.5) / velocityData.bars.length) * 100}%`,
+                  transform: 'translateX(-50%)',
+                  background: '#1C1D2B',
+                  color: '#FFFFFF',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  fontSize: '11.5px',
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+                  zIndex: 20,
+                  pointerEvents: 'none',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.15)', paddingBottom: '3px', marginBottom: '3px' }}>
+                    {activeHoverItem.title}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                    <span style={{ color: '#A3A5C2' }}>Completed:</span>
+                    <strong style={{ color: '#10B981' }}>{activeHoverItem.done}</strong>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                    <span style={{ color: '#A3A5C2' }}>In Progress:</span>
+                    <strong style={{ color: '#3D6FD6' }}>{activeHoverItem.inProgress}</strong>
+                  </div>
+                </div>
+              )}
+
+              {/* Bars and Interactive Columns */}
               <div style={{
                 display: 'flex',
                 alignItems: 'flex-end',
@@ -439,26 +485,46 @@ export default function MyDashboard() {
               }}>
                 {velocityData.bars.map((bar, idx) => {
                   const hasTasks = bar.total > 0
+                  const isHovered = hoveredIndex === idx
                   return (
-                    <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
+                    <div
+                      key={idx}
+                      onMouseEnter={() => setHoveredIndex(idx)}
+                      onMouseLeave={() => setHoveredIndex(null)}
+                      style={{
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        height: '100%',
+                        justifyContent: 'flex-end',
+                        cursor: 'pointer',
+                        background: isHovered ? 'rgba(79, 70, 229, 0.06)' : 'transparent',
+                        borderRadius: '6px 6px 0 0',
+                        transition: 'background 0.15s ease',
+                        padding: '0 2px'
+                      }}
+                    >
                       {hasTasks ? (
                         <div style={{
                           width: '100%',
                           maxWidth: '36px',
-                          height: `${Math.max(12, bar.heightPct)}%`,
+                          height: `${Math.max(16, bar.heightPct)}%`,
                           display: 'flex',
                           flexDirection: 'column',
                           gap: '2px',
                           alignItems: 'center',
                           justifyContent: 'flex-end',
-                          transition: 'height 0.3s ease'
-                        }} title={`${bar.label}: ${bar.done} done, ${bar.inProgress} in progress`}>
+                          transform: isHovered ? 'scaleY(1.05)' : 'scaleY(1)',
+                          transition: 'transform 0.15s ease, height 0.3s ease'
+                        }}>
                           {bar.done > 0 && (
                             <div style={{
                               width: '100%',
                               height: `${bar.donePct}%`,
                               background: '#4F46E5',
-                              borderRadius: '3px 3px 0 0'
+                              borderRadius: '3px 3px 0 0',
+                              boxShadow: isHovered ? '0 0 8px rgba(79, 70, 229, 0.5)' : 'none'
                             }} />
                           )}
                           {bar.inProgress > 0 && (
@@ -474,10 +540,10 @@ export default function MyDashboard() {
                         <div style={{
                           width: '100%',
                           maxWidth: '36px',
-                          height: bar.isCurrent ? '4px' : '0px',
-                          background: bar.isCurrent ? '#4F46E5' : 'transparent',
+                          height: isHovered ? '8px' : (bar.isCurrent ? '4px' : '0px'),
+                          background: isHovered ? 'rgba(79, 70, 229, 0.4)' : (bar.isCurrent ? '#4F46E5' : 'transparent'),
                           borderRadius: '2px 2px 0 0',
-                          opacity: 0.5
+                          transition: 'all 0.15s ease'
                         }} />
                       )}
                     </div>
@@ -487,21 +553,27 @@ export default function MyDashboard() {
 
               {/* Day / Period Labels */}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', padding: '0 4px' }}>
-                {velocityData.bars.map((bar, idx) => (
-                  <span
-                    key={idx}
-                    style={{
-                      flex: 1,
-                      textAlign: 'center',
-                      fontSize: '11px',
-                      color: bar.isCurrent ? '#4F46E5' : '#A3A5C2',
-                      fontFamily: 'var(--font-mono)',
-                      fontWeight: bar.isCurrent ? 700 : 500
-                    }}
-                  >
-                    {bar.label}
-                  </span>
-                ))}
+                {velocityData.bars.map((bar, idx) => {
+                  const isHovered = hoveredIndex === idx
+                  return (
+                    <span
+                      key={idx}
+                      onMouseEnter={() => setHoveredIndex(idx)}
+                      onMouseLeave={() => setHoveredIndex(null)}
+                      style={{
+                        flex: 1,
+                        textAlign: 'center',
+                        fontSize: '11px',
+                        color: isHovered ? '#4F46E5' : (bar.isCurrent ? '#4F46E5' : '#A3A5C2'),
+                        fontFamily: 'var(--font-mono)',
+                        fontWeight: isHovered || bar.isCurrent ? 700 : 500,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {bar.label}
+                    </span>
+                  )
+                })}
               </div>
             </div>
 
