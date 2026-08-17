@@ -49,9 +49,8 @@ export default function WorkspacePicker() {
               await supabase.from('workspace_members').upsert({
                 workspace_id: inv.workspace_id,
                 user_id: userId,
-                role: inv.role || 'member',
-                created_at: new Date().toISOString()
-              })
+                role: inv.role || 'member'
+              }, { onConflict: 'workspace_id,user_id' })
             }
           }
           if (combined.length > 0) {
@@ -88,9 +87,8 @@ export default function WorkspacePicker() {
             await supabase.from('workspace_members').upsert({
               workspace_id: metaWsId,
               user_id: userId,
-              role: 'member',
-              created_at: new Date().toISOString()
-            })
+              role: 'member'
+            }, { onConflict: 'workspace_id,user_id' })
             const { data: wsData } = await supabase.from('workspaces').select('name').eq('id', metaWsId).maybeSingle()
             mapped.push({ workspaceId: metaWsId, id: metaWsId, role: 'member', name: wsData?.name || 'Workspace' })
           } catch (mErr) {}
@@ -101,9 +99,8 @@ export default function WorkspacePicker() {
               await supabase.from('workspace_members').upsert({
                 workspace_id: latestWs.id,
                 user_id: userId,
-                role: 'member',
-                created_at: new Date().toISOString()
-              })
+                role: 'member'
+              }, { onConflict: 'workspace_id,user_id' })
               mapped.push({ workspaceId: latestWs.id, id: latestWs.id, role: 'member', name: latestWs.name })
             }
           } catch (wErr) {}

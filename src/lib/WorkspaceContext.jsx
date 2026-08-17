@@ -88,9 +88,8 @@ export function WorkspaceProvider({ children }) {
           await supabase.from('workspace_members').upsert({
             workspace_id: workspaceId,
             user_id: user.id,
-            role: roleToAdd,
-            created_at: new Date().toISOString()
-          })
+            role: roleToAdd
+          }, { onConflict: 'workspace_id,user_id' })
 
           try {
             await supabase.from('invites').delete().eq('workspace_id', workspaceId).ilike('email', cleanEmail)

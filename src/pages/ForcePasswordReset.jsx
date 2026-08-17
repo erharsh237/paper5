@@ -104,10 +104,8 @@ export default function ForcePasswordReset() {
               await supabase.from('workspace_members').upsert({
                 workspace_id: inv.workspace_id,
                 user_id: data.user.id,
-                role: inv.role || 'member',
-                permissions: inv.permissions || [],
-                created_at: new Date().toISOString()
-              })
+                role: inv.role || 'member'
+              }, { onConflict: 'workspace_id,user_id' })
             }
           }
 
