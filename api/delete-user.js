@@ -132,48 +132,42 @@ export default async function handler(req, res) {
           .select('workspace_id, role')
           .eq('user_id', id)
 
-        for (const mem of (userMemberships || [])) {
-          // Fetch workspace details
-          const { data: wsData } = await supabaseAdmin
-            .from('workspaces')
-            .select('id, owner_id, created_by')
-            .eq('id', mem.workspace_id)
-            .maybeSingle()
+          // Fetch all other members in this workspace
+          const { data: allWsMembers } = await supabaseAdmin
+            .from('workspace_members')
+            .select('user_id, role')
+            .eq('workspace_id', mem.workspace_id)
 
-          const realOwnerId = wsData?.owner_id || wsData?.created_by
+          const otherMembers = (allWsMembers || []).filter(m => m.user_id !== id && !idsList.includes(m.user_id))
 
-          // If this user is the sole owner/creator of the workspace, delete the workspace entirely
-          if (realOwnerId === id || mem.role === 'owner') {
-            const { data: otherOwners } = await supabaseAdmin
-              .from('workspace_members')
-              .select('user_id')
-              .eq('workspace_id', mem.workspace_id)
-              .eq('role', 'owner')
-              .neq('user_id', id)
-
-            if (!otherOwners || otherOwners.length === 0) {
-              await supabaseAdmin.from('deadlines').delete().eq('workspace_id', mem.workspace_id)
-              await supabaseAdmin.from('sprints').delete().eq('workspace_id', mem.workspace_id)
-              await supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', mem.workspace_id)
-              await supabaseAdmin.from('invites').delete().eq('workspace_id', mem.workspace_id)
-              await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', mem.workspace_id)
-              await supabaseAdmin.from('workspaces').delete().eq('id', mem.workspace_id)
-              stepResults.push({ step: 'delete_owned_workspace', workspaceId: mem.workspace_id })
-              continue
-            }
-          }
-
-          // If workspace belongs to someone else, ensure the real owner is recorded as 'owner' in workspace_members first
-          if (realOwnerId && realOwnerId !== id) {
-            try {
+          if (otherMembers.length === 0) {
+            // No other members left: delete the entire workspace
+            await supabaseAdmin.from('deadlines').delete().eq('workspace_id', mem.workspace_id)
+            await supabaseAdmin.from('sprints').delete().eq('workspace_id', mem.workspace_id)
+            await supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', mem.workspace_id)
+            await supabaseAdmin.from('invites').delete().eq('workspace_id', mem.workspace_id)
+            await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', mem.workspace_id)
+            await supabaseAdmin.from('workspaces').delete().eq('id', mem.workspace_id)
+            stepResults.push({ step: 'delete_orphaned_workspace', workspaceId: mem.workspace_id })
+            continue
+          } else {
+            // There are other members: ensure at least one has role: 'owner'
+            const hasOtherOwner = otherMembers.some(m => m.role === 'owner')
+            if (!hasOtherOwner) {
+              const successorId = otherMembers[0].user_id
               await supabaseAdmin
                 .from('workspace_members')
-                .upsert({
-                  workspace_id: mem.workspace_id,
-                  user_id: realOwnerId,
-                  role: 'owner'
-                }, { onConflict: 'workspace_id,user_id' })
-            } catch (_) {}
+                .update({ role: 'owner' })
+                .eq('workspace_id', mem.workspace_id)
+                .eq('user_id', successorId)
+
+              await supabaseAdmin
+                .from('workspaces')
+                .update({ owner_id: successorId, created_by: successorId })
+                .eq('id', mem.workspace_id)
+
+              stepResults.push({ step: 'transferred_ownership', workspaceId: mem.workspace_id, newOwner: successorId })
+            }
           }
 
           // Delete specific membership row
@@ -184,7 +178,6 @@ export default async function handler(req, res) {
             .eq('user_id', id)
 
           stepResults.push({ step: 'delete_membership', workspaceId: mem.workspace_id, id, error: mErr?.message || null })
-        }
       } catch (wsErr) {
         stepResults.push({ step: 'workspace_cleanup_exception', error: wsErr.message })
       }
