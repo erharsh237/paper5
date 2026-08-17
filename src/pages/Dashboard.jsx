@@ -273,11 +273,7 @@ export default function Dashboard() {
       <nav className="dash-sticky-nav">
         <div className="dash-container dash-nav-inner">
           <Link to={`/${workspaceId}`} className="dash-nav-brand">
-            <div className="dash-logo-dot">
-              <svg viewBox="0 0 14 14" fill="none">
-                <path d="M2 7L5.5 10.5L12 3.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
+            <div className="dash-logo-dot" />
             <span className="dash-logo-name">SprintOS</span>
             <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
           </Link>
@@ -298,10 +294,6 @@ export default function Dashboard() {
         <header className="dash-page-header">
           <div className="dash-header-inner">
             <div className="dash-header-left">
-              <div className="dash-eyebrow">
-                <span className="dash-eyebrow-dot"></span>
-                ALL SYSTEMS NORMAL
-              </div>
               <h1 className="dash-greeting">Welcome back, <span>{userFirstName}</span></h1>
             </div>
 
