@@ -357,11 +357,21 @@ export default function Settings() {
   }
 
   const AVAILABLE_PERMISSIONS = [
-    { id: 'sprints.manage', label: 'Manage Sprints' },
-    { id: 'deadlines.manage', label: 'Manage Deadlines' },
-    { id: 'meetings.manage', label: 'Manage Meetings' },
-    { id: 'roles.manage', label: 'Manage Roles' },
-    { id: 'teamSettings.manage', label: 'Manage Team Settings' }
+    { 
+      id: 'sprints_and_tasks', 
+      label: 'Manage Sprints & Tasks',
+      keys: ['sprints.manage', 'deadlines.manage', 'sprints_and_tasks']
+    },
+    { 
+      id: 'meetings.manage', 
+      label: 'Manage Meeting Notes',
+      keys: ['meetings.manage']
+    },
+    { 
+      id: 'settings_and_roles', 
+      label: 'Manage Settings & Roles',
+      keys: ['teamSettings.manage', 'roles.manage', 'settings_and_roles']
+    }
   ]
 
   useEffect(() => {
@@ -475,9 +485,12 @@ export default function Settings() {
   }
 
   const toggleInvitePermission = (permId) => {
-    setInvitePermissions(prev => 
-      prev.includes(permId) ? prev.filter(p => p !== permId) : [...prev, permId]
-    );
+    const ap = AVAILABLE_PERMISSIONS.find(p => p.id === permId)
+    const keys = ap ? ap.keys : [permId]
+    setInvitePermissions(prev => {
+      const hasAny = keys.some(k => prev.includes(k))
+      return hasAny ? prev.filter(p => !keys.includes(p)) : Array.from(new Set([...prev, ...keys]))
+    });
   }
 
   const toggleMemberPermission = async (memberUid, currentPermissions, permId) => {
@@ -1230,28 +1243,36 @@ export default function Settings() {
                             </span>
                           ) : (
                             <div style={{ position: 'relative', display: 'inline-block' }}>
-                              <button
-                                type="button"
-                                disabled={!isAdminOrOwner}
-                                onClick={() => setEditingPermissionsMemberId(editingPermissionsMemberId === m.id ? null : m.id)}
-                                style={{
-                                  fontSize: '11.5px',
-                                  fontWeight: 600,
-                                  padding: '4px 10px',
-                                  borderRadius: '100px',
-                                  background: (m.permissions || []).length > 0 ? 'var(--accent-dim, #E8E6FB)' : 'var(--surface-2, #EEF0F9)',
-                                  color: (m.permissions || []).length > 0 ? 'var(--accent, #4F46E5)' : 'var(--text-secondary, #6E7091)',
-                                  border: '1px solid var(--border-soft, #EAECF6)',
-                                  cursor: isAdminOrOwner ? 'pointer' : 'default',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '6px'
-                                }}
-                                title="Click to view & edit permissions"
-                              >
-                                <span>{(m.permissions || []).length > 0 ? `${m.permissions.length} Custom Perms` : 'View tasks'}</span>
-                                {isAdminOrOwner && <span style={{ fontSize: '9px', opacity: 0.7 }}>▼</span>}
-                              </button>
+                              {/* Pill Button */}
+                              {(() => {
+                                const activeCustomPermsCount = AVAILABLE_PERMISSIONS.filter(ap =>
+                                  ap.keys.some(k => (m.permissions || []).includes(k))
+                                ).length
+                                return (
+                                  <button
+                                    type="button"
+                                    disabled={!isAdminOrOwner}
+                                    onClick={() => setEditingPermissionsMemberId(editingPermissionsMemberId === m.id ? null : m.id)}
+                                    style={{
+                                      fontSize: '11.5px',
+                                      fontWeight: 600,
+                                      padding: '4px 10px',
+                                      borderRadius: '100px',
+                                      background: activeCustomPermsCount > 0 ? 'var(--accent-dim, #E8E6FB)' : 'var(--surface-2, #EEF0F9)',
+                                      color: activeCustomPermsCount > 0 ? 'var(--accent, #4F46E5)' : 'var(--text-secondary, #6E7091)',
+                                      border: '1px solid var(--border-soft, #EAECF6)',
+                                      cursor: isAdminOrOwner ? 'pointer' : 'default',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '6px'
+                                    }}
+                                    title="Click to view & edit permissions"
+                                  >
+                                    <span>{activeCustomPermsCount > 0 ? `${activeCustomPermsCount} Custom Perms` : 'View tasks'}</span>
+                                    {isAdminOrOwner && <span style={{ fontSize: '9px', opacity: 0.7 }}>▼</span>}
+                                  </button>
+                                )
+                              })()}
 
                               {/* Permissions Dropdown Popover */}
                               {editingPermissionsMemberId === m.id && isAdminOrOwner && (
@@ -1278,7 +1299,7 @@ export default function Settings() {
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                     {AVAILABLE_PERMISSIONS.map(ap => {
                                       const currentPerms = m.permissions || []
-                                      const hasPerm = currentPerms.includes(ap.id)
+                                      const hasPerm = ap.keys.some(k => currentPerms.includes(k))
                                       return (
                                         <label key={ap.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text, #1C1D2B)', cursor: 'pointer' }}>
                                           <input
@@ -1286,8 +1307,8 @@ export default function Settings() {
                                             checked={hasPerm}
                                             onChange={async (e) => {
                                               const nextPerms = e.target.checked
-                                                ? [...currentPerms, ap.id]
-                                                : currentPerms.filter(p => p !== ap.id)
+                                                ? Array.from(new Set([...currentPerms, ...ap.keys]))
+                                                : currentPerms.filter(p => !ap.keys.includes(p))
                                               
                                               // Optimistic local update
                                               setMembers(prev => prev.map(member => member.id === m.id ? { ...member, permissions: nextPerms } : member))
@@ -1393,13 +1414,16 @@ export default function Settings() {
                     {inviteRole === 'member' && (
                       <div style={{ marginTop: '12px', padding: '12px', border: '1px solid var(--border-subtle)', borderRadius: '6px', background: 'var(--bg-layer-1)' }}>
                         <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>Permissions</label>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                          {AVAILABLE_PERMISSIONS.map(ap => (
-                            <label key={ap.id} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', cursor: 'pointer' }}>
-                              <input type="checkbox" checked={invitePermissions.includes(ap.id)} onChange={() => toggleInvitePermission(ap.id)} />
-                              {ap.label}
-                            </label>
-                          ))}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                          {AVAILABLE_PERMISSIONS.map(ap => {
+                            const isChecked = ap.keys.some(k => invitePermissions.includes(k)) || invitePermissions.includes(ap.id)
+                            return (
+                              <label key={ap.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text, #1C1D2B)', cursor: 'pointer' }}>
+                                <input type="checkbox" checked={isChecked} onChange={() => toggleInvitePermission(ap.id)} />
+                                {ap.label}
+                              </label>
+                            )
+                          })}
                         </div>
                       </div>
                     )}

@@ -193,8 +193,14 @@ export function WorkspaceProvider({ children }) {
     if (isAdminOrOwner) return true
     if (!permission) return true
     const perms = Array.isArray(userPermissions) ? userPermissions : []
-    if (permission === 'deadlines.manage' || permission === 'deadlines.create') {
-      return perms.includes('deadlines.manage') || perms.includes('deadlines.create') || perms.includes('tasks.manage') || perms.includes('tasks.create')
+    if (permission === 'deadlines.manage' || permission === 'deadlines.create' || permission === 'tasks.create' || permission === 'sprints.manage') {
+      return perms.includes('sprints_and_tasks') || perms.includes('deadlines.manage') || perms.includes('sprints.manage') || perms.includes('deadlines.create') || perms.includes('tasks.create')
+    }
+    if (permission === 'meetings.manage') {
+      return perms.includes('meetings.manage')
+    }
+    if (permission === 'teamSettings.manage' || permission === 'roles.manage' || permission === 'settings.manage') {
+      return perms.includes('settings_and_roles') || perms.includes('teamSettings.manage') || perms.includes('roles.manage')
     }
     return perms.includes(permission)
   }
