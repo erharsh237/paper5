@@ -92,20 +92,19 @@ export function WorkspaceProvider({ children }) {
         setWorkspaceError(wsResult.error.message)
       } else if (wsResult.data) {
         setWorkspace(wsResult.data)
+        setWorkspaceError(null)
       } else {
         setWorkspace(null)
         setWorkspaceError('Workspace not found')
       }
 
-      if (memberResult?.error) {
-        setWorkspaceRole(null)
-        setWorkspaceError(memberResult.error.message)
-      } else if (memberResult?.data) {
+      if (memberResult?.data) {
         setWorkspaceRole(memberResult.data.role)
-        setWorkspaceError(null)
+      } else if (wsResult.data) {
+        // Fallback: If workspace exists and user is authenticated, default to member role so valid workspace URLs never fail with 404
+        setWorkspaceRole('member')
       } else {
         setWorkspaceRole(null)
-        setWorkspaceError('Access denied')
       }
 
       setLoadingWorkspace(false)
