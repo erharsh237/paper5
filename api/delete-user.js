@@ -117,75 +117,60 @@ export default async function handler(req, res) {
     const stepResults = []
 
     // 2. Full Account Deletion / Single Workspace Purge:
-    // Process all workspaces where user is present
     for (const id of idsList) {
       try {
-        const { data: userMemberships } = await supabaseAdmin
+        const { data: allWsMembers } = await supabaseAdmin
           .from('workspace_members')
-          .select('workspace_id, role')
+          .select('id, workspace_id, user_id, role')
           .eq('user_id', id)
 
-        for (const mem of (userMemberships || [])) {
+        for (const mem of (allWsMembers || [])) {
           const currentWsId = mem.workspace_id
 
-          // Fetch all members in this workspace
-          const { data: allWsMembers } = await supabaseAdmin
+          // Fetch all rows in this workspace
+          const { data: wsRows } = await supabaseAdmin
             .from('workspace_members')
-            .select('user_id, role')
+            .select('id, user_id, role')
             .eq('workspace_id', currentWsId)
 
-          const otherMembers = (allWsMembers || []).filter(m => m.user_id !== id && !idsList.includes(m.user_id))
+          const otherMembers = (wsRows || []).filter(m => m.user_id !== id && !idsList.includes(m.user_id))
 
           if (otherMembers.length === 0) {
-            // Orphaned workspace: delete entire workspace
+            // Orphaned workspace: delete all child rows and workspace
             await supabaseAdmin.from('deadlines').delete().eq('workspace_id', currentWsId)
             await supabaseAdmin.from('sprints').delete().eq('workspace_id', currentWsId)
             await supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', currentWsId)
             await supabaseAdmin.from('invites').delete().eq('workspace_id', currentWsId)
-            await supabaseAdmin.from('workspaces').delete().eq('id', currentWsId)
             await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', currentWsId)
+            await supabaseAdmin.from('workspaces').delete().eq('id', currentWsId)
             stepResults.push({ step: 'delete_orphaned_workspace', workspaceId: currentWsId })
             continue
-          } else {
-            // Guarantee real workspace owner is recorded as 'owner' in workspace_members
-            const { data: wsRow } = await supabaseAdmin.from('workspaces').select('owner_id, created_by').eq('id', currentWsId).maybeSingle()
-            const primaryOwnerId = wsRow?.owner_id || wsRow?.created_by || otherMembers[0]?.user_id
-
-            if (primaryOwnerId && primaryOwnerId !== id) {
-              await supabaseAdmin
-                .from('workspace_members')
-                .upsert({
-                  workspace_id: currentWsId,
-                  user_id: primaryOwnerId,
-                  role: 'owner'
-                }, { onConflict: 'workspace_id,user_id' })
-
-              await supabaseAdmin
-                .from('workspaces')
-                .update({ owner_id: primaryOwnerId, created_by: primaryOwnerId })
-                .eq('id', currentWsId)
-            }
-
-            // Also upsert all other remaining members as 'owner'
-            for (const om of otherMembers) {
-              await supabaseAdmin
-                .from('workspace_members')
-                .upsert({
-                  workspace_id: currentWsId,
-                  user_id: om.user_id,
-                  role: 'owner'
-                }, { onConflict: 'workspace_id,user_id' })
-            }
-
-            // Now delete target membership row
-            const { error: mErr } = await supabaseAdmin
-              .from('workspace_members')
-              .delete()
-              .eq('workspace_id', currentWsId)
-              .eq('user_id', id)
-
-            stepResults.push({ step: 'delete_membership', workspaceId: currentWsId, id, error: mErr?.message || null })
           }
+
+          // Team workspace: transfer ownership to another member
+          const successorId = otherMembers[0].user_id
+
+          // Elevate all remaining members to 'owner'
+          for (const om of otherMembers) {
+            await supabaseAdmin
+              .from('workspace_members')
+              .update({ role: 'owner' })
+              .eq('id', om.id)
+          }
+
+          // Update workspace owner_id and created_by
+          await supabaseAdmin
+            .from('workspaces')
+            .update({ owner_id: successorId, created_by: successorId })
+            .eq('id', currentWsId)
+
+          // Delete target membership by row ID
+          const { error: mErr } = await supabaseAdmin
+            .from('workspace_members')
+            .delete()
+            .eq('id', mem.id)
+
+          stepResults.push({ step: 'delete_membership_by_row_id', rowId: mem.id, workspaceId: currentWsId, error: mErr?.message || null })
         }
       } catch (wsErr) {
         stepResults.push({ step: 'workspace_cleanup_exception', error: wsErr.message })
@@ -195,22 +180,36 @@ export default async function handler(req, res) {
     // Direct delete from target workspace if specified
     if (workspaceId) {
       for (const id of idsList) {
-        // Demote to member first in case it's marked owner
-        await supabaseAdmin.from('workspace_members').update({ role: 'member' }).eq('workspace_id', workspaceId).eq('user_id', id)
         await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', workspaceId).eq('user_id', id)
       }
     }
 
-    // 3. Clear workspaces where user is listed as owner_id / created_by so users table delete isn't blocked
+    // 3. Clear ANY workspace where user is still listed as created_by or owner_id
     for (const id of idsList) {
       try {
-        const { data: ownedWs } = await supabaseAdmin.from('workspaces').select('id').eq('owner_id', id)
-        for (const ow of (ownedWs || [])) {
-          const { data: members } = await supabaseAdmin.from('workspace_members').select('user_id').eq('workspace_id', ow.id).neq('user_id', id).limit(1)
+        const { data: createdWorkspaces } = await supabaseAdmin
+          .from('workspaces')
+          .select('id')
+          .or(`owner_id.eq.${id},created_by.eq.${id}`)
+
+        for (const cWs of (createdWorkspaces || [])) {
+          const { data: members } = await supabaseAdmin
+            .from('workspace_members')
+            .select('user_id')
+            .eq('workspace_id', cWs.id)
+            .neq('user_id', id)
+            .limit(1)
+
           if (members && members.length > 0) {
-            await supabaseAdmin.from('workspaces').update({ owner_id: members[0].user_id }).eq('id', ow.id)
+            await supabaseAdmin
+              .from('workspaces')
+              .update({ owner_id: members[0].user_id, created_by: members[0].user_id })
+              .eq('id', cWs.id)
           } else {
-            await supabaseAdmin.from('workspaces').delete().eq('id', ow.id)
+            await supabaseAdmin.from('deadlines').delete().eq('workspace_id', cWs.id)
+            await supabaseAdmin.from('sprints').delete().eq('workspace_id', cWs.id)
+            await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', cWs.id)
+            await supabaseAdmin.from('workspaces').delete().eq('id', cWs.id)
           }
         }
       } catch (_) {}
