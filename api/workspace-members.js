@@ -39,6 +39,38 @@ export default async function handler(req, res) {
         return res.status(200).json({ success: true, permissions: Array.isArray(permissions) ? permissions : [] })
       }
 
+      if (action === 'delete_member' || action === 'remove_member') {
+        const { error: delErr } = await supabaseAdmin
+          .from('workspace_members')
+          .delete()
+          .eq('workspace_id', workspaceId)
+          .eq('user_id', memberId)
+
+        if (delErr) console.warn('Delete member notice:', delErr.message)
+
+        await supabaseAdmin.from('profiles').delete().eq('id', memberId)
+        await supabaseAdmin.from('users').delete().eq('id', memberId)
+
+        try {
+          const { data: ws } = await supabaseAdmin.from('workspaces').select('settings').eq('id', workspaceId).maybeSingle()
+          if (ws?.settings?.deletion_requests) {
+            const reqs = { ...ws.settings.deletion_requests }
+            delete reqs[memberId]
+            await supabaseAdmin.from('workspaces').update({ settings: { ...ws.settings, deletion_requests: reqs } }).eq('id', workspaceId)
+          }
+        } catch (_) {}
+
+        if (serviceKey) {
+          try {
+            await supabaseAdmin.auth.admin.deleteUser(memberId)
+          } catch (aErr) {
+            console.warn('Auth delete notice:', aErr.message)
+          }
+        }
+
+        return res.status(200).json({ success: true, deleted: true, memberId })
+      }
+
       if (action === 'update_role') {
         const { error } = await supabaseAdmin
           .from('workspace_members')
