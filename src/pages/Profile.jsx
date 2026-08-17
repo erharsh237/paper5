@@ -122,10 +122,10 @@ export default function Profile() {
       const resp = await fetch('/api/delete-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: uid, email: user?.email, workspaceId })
+        body: JSON.stringify({ userId: uid, email: user?.email, workspaceId, fullDelete: true })
       })
       const json = await resp.json()
-      if (!resp.ok) throw new Error(json.error || 'Failed to delete user')
+      if (!resp.ok) throw new Error(json.error || 'Failed to delete account')
       
       setIsDeleteModalOpen(false)
       await logout()
@@ -459,10 +459,10 @@ export default function Profile() {
             </div>
             <p style={{ fontSize: '13px', color: '#7F1D1D', margin: '0 0 16px 0', lineHeight: 1.5 }}>
               {isDeletionPending
-                ? 'Your account deletion request has been submitted to your workspace Administrator. Your administrator is in charge of reviewing and finalizing the deletion.'
+                ? 'Your account deletion request has been submitted to your workspace Administrator. Once approved, your whole account and personal data will be permanently deleted from the database.'
                 : (isOwner
-                  ? 'Deleting your account will permanently remove your access and erase your personal profile data. This action cannot be undone.'
-                  : 'Deleting your account will submit a formal deletion request to your workspace Administrator for review and execution.')}
+                  ? 'Deleting your account will permanently remove your user record, workspace memberships, and all personal data from the database. This action cannot be undone.'
+                  : 'Deleting your account will submit a formal deletion request to your workspace Administrator. When approved, your whole account will be permanently deleted from the database.')}
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <button
@@ -516,8 +516,8 @@ export default function Profile() {
         title={isOwner ? 'Delete Account & Data' : 'Request Account Deletion'}
         message={
           isOwner
-            ? 'Are you absolutely sure you want to delete your account? Your personal profile data and memberships will be erased permanently.'
-            : 'Are you sure you want to request account deletion? A formal request will be sent to your workspace Administrator for final approval and deletion.'
+            ? 'Are you absolutely sure you want to delete your account? All your personal profile data, workspace memberships, and account records will be permanently erased from the database. This action cannot be undone.'
+            : 'Are you sure you want to request account deletion? A formal request will be sent to your workspace Administrator. Once approved, your whole account and personal data will be permanently deleted from the database.'
         }
         confirmText={
           isOwner
