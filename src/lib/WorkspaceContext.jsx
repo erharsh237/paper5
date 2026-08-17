@@ -178,7 +178,7 @@ export function WorkspaceProvider({ children }) {
     is2FABlocked: false,
   }
 
-  if (!loadingWorkspace && (workspaceError || !workspace)) {
+  if (!loadingWorkspace && !workspace) {
     return <NotFound />
   }
 
