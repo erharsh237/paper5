@@ -105,44 +105,62 @@ export default async function handler(req, res) {
       })
     }
 
-    // --- User was in only 1 workspace or full deletion requested: Permanently purge account ---
+    const stepResults = []
+
+    // 1. Remove from workspace memberships everywhere
     for (const id of idsList) {
-      await supabaseAdmin.from('workspace_members').delete().eq('user_id', id)
+      const { error: memErr, count } = await supabaseAdmin.from('workspace_members').delete({ count: 'exact' }).eq('user_id', id)
+      stepResults.push({ step: 'delete_workspace_members', id, error: memErr?.message || null, count })
     }
 
     // 2. Remove profile and personal data
     for (const id of idsList) {
-      await supabaseAdmin.from('profiles').delete().eq('id', id)
+      const { error: pErr } = await supabaseAdmin.from('profiles').delete().eq('id', id)
+      stepResults.push({ step: 'delete_profile_by_id', id, error: pErr?.message || null })
     }
     if (cleanEmail) {
-      await supabaseAdmin.from('profiles').delete().ilike('email', cleanEmail)
-      await supabaseAdmin.from('invites').delete().ilike('email', cleanEmail)
+      const { error: peErr } = await supabaseAdmin.from('profiles').delete().ilike('email', cleanEmail)
+      const { error: invErr } = await supabaseAdmin.from('invites').delete().ilike('email', cleanEmail)
+      stepResults.push({ step: 'delete_profile_by_email', error: peErr?.message || null })
+      stepResults.push({ step: 'delete_invites', error: invErr?.message || null })
     }
 
     // 3. Remove user record from users table
     for (const id of idsList) {
-      await supabaseAdmin.from('users').delete().eq('id', id)
+      const { error: uErr } = await supabaseAdmin.from('users').delete().eq('id', id)
+      stepResults.push({ step: 'delete_user_by_id', id, error: uErr?.message || null })
     }
     if (cleanEmail) {
-      await supabaseAdmin.from('users').delete().ilike('email', cleanEmail)
+      const { error: ueErr } = await supabaseAdmin.from('users').delete().ilike('email', cleanEmail)
+      stepResults.push({ step: 'delete_user_by_email', error: ueErr?.message || null })
     }
 
     // 4. Delete authentication account from Supabase Auth
+    let authDeleted = false
+    let authError = null
     if (serviceKey) {
       for (const id of idsList) {
         try {
-          await supabaseAdmin.auth.admin.deleteUser(id)
+          const { error: aErr } = await supabaseAdmin.auth.admin.deleteUser(id)
+          if (aErr) authError = aErr.message
+          else authDeleted = true
         } catch (authErr) {
-          console.warn(`Auth admin delete notice for ${id}:`, authErr.message)
+          authError = authErr.message
         }
       }
+    } else {
+      authError = 'No SUPABASE_SERVICE_ROLE_KEY configured in serverless environment'
     }
 
     return res.status(200).json({
       success: true,
       message: 'Account and personal data completely removed',
       accountPurged: true,
-      deletedUserIds: idsList
+      hasServiceKey: Boolean(serviceKey),
+      deletedUserIds: idsList,
+      authDeleted,
+      authError,
+      stepResults
     })
   } catch (err) {
     console.error('Delete user error:', err)
