@@ -124,14 +124,27 @@ export default function FeedbackModal({ isOpen, onClose }) {
             </div>
 
             <div className="form-group">
-              <label className="feedback-label">Your Email</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label className="feedback-label" style={{ margin: 0 }}>Your Email</label>
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary, #6b7280)', fontWeight: 500 }}>
+                  🔒 Account Email
+                </span>
+              </div>
               <input
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@company.com"
+                value={user?.email || email || ''}
+                readOnly
+                tabIndex={-1}
+                autoComplete="off"
                 className="feedback-input"
-                required
+                style={{
+                  background: 'var(--surface-2, #f3f4f6)',
+                  color: 'var(--text-primary, #111827)',
+                  cursor: 'not-allowed',
+                  opacity: 0.9,
+                  borderColor: 'var(--border-subtle, #e5e7eb)',
+                  boxShadow: 'none'
+                }}
               />
             </div>
 
