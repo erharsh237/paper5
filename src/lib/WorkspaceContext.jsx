@@ -47,10 +47,13 @@ export function WorkspaceProvider({ children }) {
   }, [workspace]);
 
 
+  const [userPermissions, setUserPermissions] = useState([])
+
   useEffect(() => {
     if (!user || !workspaceId) {
       setWorkspace(null);
       setWorkspaceRole(null);
+      setUserPermissions([]);
       setLoadingWorkspace(false);
       return;
     }
@@ -73,10 +76,9 @@ export function WorkspaceProvider({ children }) {
       }
 
       // Step 2: Query workspace + membership. Use service bypass API for workspace data
-      // in case workspaces table RLS still blocks the anon-key select.
       const [wsResult, memberResult] = await Promise.all([
         supabase.from('workspaces').select('*').eq('id', workspaceId).maybeSingle(),
-        supabase.from('workspace_members').select('role').eq('workspace_id', workspaceId).eq('user_id', user.id).maybeSingle()
+        supabase.from('workspace_members').select('role, permissions').eq('workspace_id', workspaceId).eq('user_id', user.id).maybeSingle()
       ])
 
       // Step 3: If workspace still null due to RLS, try fetching it via the service API
@@ -105,12 +107,28 @@ export function WorkspaceProvider({ children }) {
 
       if (memberResult?.data) {
         setWorkspaceRole(memberResult.data.role)
+        setUserPermissions(Array.isArray(memberResult.data.permissions) ? memberResult.data.permissions : [])
       } else if (wsData) {
         // Fallback: workspace exists but membership row not visible yet — grant member access
         setWorkspaceRole('member')
+        setUserPermissions([])
       } else {
         setWorkspaceRole(null)
+        setUserPermissions([])
       }
+
+      // Query serverless API to ensure accurate enriched permissions
+      try {
+        const memResp = await fetch(`/api/workspace-members?workspaceId=${encodeURIComponent(workspaceId)}`)
+        if (memResp.ok) {
+          const memJson = await memResp.json()
+          const myMember = (memJson?.members || []).find(m => m.id === user.id || m.email?.toLowerCase() === user.email?.toLowerCase())
+          if (myMember) {
+            if (myMember.role) setWorkspaceRole(myMember.role)
+            if (Array.isArray(myMember.permissions)) setUserPermissions(myMember.permissions)
+          }
+        }
+      } catch (_) {}
 
       setLoadingWorkspace(false)
     }
@@ -169,17 +187,32 @@ export function WorkspaceProvider({ children }) {
     }
   }
 
+  const isAdminOrOwner = workspaceRole === 'admin' || workspaceRole === 'owner'
+
+  const hasPermission = (permission) => {
+    if (isAdminOrOwner) return true
+    if (!permission) return true
+    const perms = Array.isArray(userPermissions) ? userPermissions : []
+    if (permission === 'deadlines.manage' || permission === 'deadlines.create') {
+      return perms.includes('deadlines.manage') || perms.includes('deadlines.create') || perms.includes('tasks.manage') || perms.includes('tasks.create')
+    }
+    return perms.includes(permission)
+  }
+
+  const canAddKanbanItems = hasPermission('deadlines.manage') || hasPermission('deadlines.create')
+
   const value = {
     workspaceId,
     workspace,
     workspaceRole,
+    userPermissions,
     loadingWorkspace,
     workspaceError,
-    isAdmin: workspaceRole === 'admin' || workspaceRole === 'owner',
+    isAdmin: isAdminOrOwner,
     isOwner: workspaceRole === 'owner',
+    hasPermission,
+    canAddKanbanItems,
     isLocked,
-    // SEC-7: is2FABlocked removed — enforce_2fa toggle was removed from Settings UI.
-    // Re-add when 2FA enforcement UI is restored.
     is2FABlocked: false,
   }
 

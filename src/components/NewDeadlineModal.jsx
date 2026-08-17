@@ -5,7 +5,7 @@ import { PRIORITIES, EVIDENCE_TYPES } from '../lib/utils'
 import { useWorkspace } from '../lib/WorkspaceContext'
 
 export default function NewDeadlineModal({ members, currentUser, activeSprint, onClose, title = 'New deadline', submitText = 'Create deadline' }) {
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, canAddKanbanItems } = useWorkspace();
   const [titleInput, setTitleInput] = useState('')
   const [description, setDescription] = useState('')
   const [priority, setPriority] = useState('medium')
@@ -24,6 +24,10 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, o
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
+
+    if (canAddKanbanItems === false) {
+      return setError('Permission Denied: You do not have permission to add tasks in this workspace. Please ask an admin to grant you task management permissions.')
+    }
 
     if (!titleInput.trim()) return setError('A title is required.')
     if (!dueDate) return setError('A valid due date is required.')

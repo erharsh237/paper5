@@ -357,12 +357,12 @@ export default function Settings() {
   }
 
   const AVAILABLE_PERMISSIONS = [
-    { id: 'sprints.manage', label: 'Manage Sprints' },
-    { id: 'deadlines.manage', label: 'Manage Deadlines' },
-    { id: 'meetings.manage', label: 'Manage Meetings' },
-    { id: 'roles.manage', label: 'Manage Roles' },
-    { id: 'teamSettings.manage', label: 'Manage Team Settings' },
-    { id: 'onboarding.manage', label: 'Manage Onboarding' }
+    { id: 'deadlines.manage', label: 'Create & Manage Kanban Tasks' },
+    { id: 'sprints.manage', label: 'Manage Sprints & Agile Flow' },
+    { id: 'meetings.manage', label: 'Create & Manage Meeting Notes' },
+    { id: 'roles.manage', label: 'Manage Roles & Access' },
+    { id: 'teamSettings.manage', label: 'Manage Workspace Settings' },
+    { id: 'onboarding.manage', label: 'Manage Onboarding & Tour' }
   ]
 
   useEffect(() => {

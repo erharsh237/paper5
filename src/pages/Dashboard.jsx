@@ -19,7 +19,7 @@ import './Dashboard.css'
 const TEAM_ID = 'default-team'
 
 export default function Dashboard() {
-  const { workspaceId, workspace, workspaceRole } = useWorkspace()
+  const { workspaceId, workspace, workspaceRole, canAddKanbanItems } = useWorkspace()
   const { user } = useAuth()
   const { deadlines, hasMore, loadMore, loadingMore } = useDeadlines(workspaceId, undefined)
   const [members, setMembers] = useState([])
@@ -602,14 +602,16 @@ export default function Dashboard() {
                 ? 'Prioritize upcoming work items to keep team execution on schedule.'
                 : "You're all caught up! Create a milestone to start tracking important dates and keep your sprint on schedule."}
             </div>
-            <button
-              type="button"
-              className="dash-btn-accent"
-              style={{ borderRadius: '10px', padding: '9px 22px' }}
-              onClick={() => setShowNewModal(true)}
-            >
-              + Create Milestone
-            </button>
+            {canAddKanbanItems && (
+              <button
+                type="button"
+                className="dash-btn-accent"
+                style={{ borderRadius: '10px', padding: '9px 22px' }}
+                onClick={() => setShowNewModal(true)}
+              >
+                + Create Milestone
+              </button>
+            )}
           </div>
         </section>
 
@@ -674,13 +676,15 @@ export default function Dashboard() {
             >
               {generatingReport ? 'Generating…' : '↓ Report'}
             </button>
-            <button
-              className="dash-btn-accent"
-              style={{ padding: '8px 16px', fontSize: '12.5px', borderRadius: '10px' }}
-              onClick={() => setShowNewModal(true)}
-            >
-              + New deadline
-            </button>
+            {canAddKanbanItems && (
+              <button
+                className="dash-btn-accent"
+                style={{ padding: '8px 16px', fontSize: '12.5px', borderRadius: '10px' }}
+                onClick={() => setShowNewModal(true)}
+              >
+                + New deadline
+              </button>
+            )}
           </div>
         </section>
 
@@ -697,12 +701,12 @@ export default function Dashboard() {
                 {kanbanColumns.map(col => (
                   <div key={col.id} className="dash-surface-card" style={{ overflow: 'hidden' }}>
                     <div style={{
-                      padding: '16px 18px 14px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      borderBottom: '1px solid var(--border-soft)'
-                    }}>
+                       padding: '16px 18px 14px',
+                       display: 'flex',
+                       alignItems: 'center',
+                       justifyContent: 'space-between',
+                       borderBottom: '1px solid var(--border-soft)'
+                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: col.color, flexShrink: 0 }} />
                         <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>{col.title}</span>
@@ -739,21 +743,23 @@ export default function Dashboard() {
                             {col.id === 'blocked' && 'No blockers 🎉'}
                             {col.id === 'done' && 'Ship your first task'}
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => setShowNewModal(true)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: 'var(--accent, #4F46E5)',
-                              fontSize: '12.5px',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              padding: '4px 8px'
-                            }}
-                          >
-                            + Add task
-                          </button>
+                          {canAddKanbanItems && (
+                            <button
+                              type="button"
+                              onClick={() => setShowNewModal(true)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--accent, #4F46E5)',
+                                fontSize: '12.5px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                padding: '4px 8px'
+                              }}
+                            >
+                              + Add task
+                            </button>
+                          )}
                         </div>
                       ) : (
                         <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
