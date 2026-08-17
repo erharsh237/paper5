@@ -169,7 +169,7 @@ export default function Profile() {
   async function handleRetakeTour() {
     try {
       const uid = user?.id || user?.uid
-      await resetTourSeen(uid)
+      await resetTourSeen(uid, user?.email)
       navigate(`/${workspaceId}?tour=true`)
     } catch (err) {
       console.error(err)

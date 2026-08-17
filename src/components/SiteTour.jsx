@@ -32,7 +32,7 @@ export default function SiteTour({ currentUser, onFinish }) {
     setDismissing(true)
     try {
       const uid = currentUser?.id || currentUser?.uid
-      await markTourSeen(uid)
+      await markTourSeen(uid, currentUser?.email)
     } finally {
       onFinish()
     }
