@@ -147,28 +147,37 @@ export default async function handler(req, res) {
             stepResults.push({ step: 'delete_orphaned_workspace', workspaceId: currentWsId })
             continue
           } else {
-            // Elevate ALL remaining members to 'owner' so trigger count is > 1
+            // Guarantee real workspace owner is recorded as 'owner' in workspace_members
+            const { data: wsRow } = await supabaseAdmin.from('workspaces').select('owner_id, created_by').eq('id', currentWsId).maybeSingle()
+            const primaryOwnerId = wsRow?.owner_id || wsRow?.created_by || otherMembers[0]?.user_id
+
+            if (primaryOwnerId && primaryOwnerId !== id) {
+              await supabaseAdmin
+                .from('workspace_members')
+                .upsert({
+                  workspace_id: currentWsId,
+                  user_id: primaryOwnerId,
+                  role: 'owner'
+                }, { onConflict: 'workspace_id,user_id' })
+
+              await supabaseAdmin
+                .from('workspaces')
+                .update({ owner_id: primaryOwnerId, created_by: primaryOwnerId })
+                .eq('id', currentWsId)
+            }
+
+            // Also upsert all other remaining members as 'owner'
             for (const om of otherMembers) {
               await supabaseAdmin
                 .from('workspace_members')
-                .update({ role: 'owner' })
-                .eq('workspace_id', currentWsId)
-                .eq('user_id', om.user_id)
+                .upsert({
+                  workspace_id: currentWsId,
+                  user_id: om.user_id,
+                  role: 'owner'
+                }, { onConflict: 'workspace_id,user_id' })
             }
 
-            await supabaseAdmin
-              .from('workspaces')
-              .update({ owner_id: otherMembers[0].user_id, created_by: otherMembers[0].user_id })
-              .eq('id', currentWsId)
-
-            // If user's role in this workspace is 'owner', demote them to 'member' first
-            await supabaseAdmin
-              .from('workspace_members')
-              .update({ role: 'member' })
-              .eq('workspace_id', currentWsId)
-              .eq('user_id', id)
-
-            // Now delete specific membership row
+            // Now delete target membership row
             const { error: mErr } = await supabaseAdmin
               .from('workspace_members')
               .delete()
