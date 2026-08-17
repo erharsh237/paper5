@@ -113,6 +113,9 @@ export default async function handler(req, res) {
             updated_at: new Date().toISOString()
           }, { onConflict: 'id' }).catch(e => console.warn('[API send-invite] Users upsert notice:', e))
         }
+        // Clear any lingering stale notifications from previous account lifecycles
+        try { await supabaseAdmin.from('notifications').delete().ilike('forEmail', cleanEmail) } catch (_) {}
+        try { await supabaseAdmin.from('notifications').delete().ilike('for_email', cleanEmail) } catch (_) {}
       }
     } catch (createEx) {
       console.warn('[API send-invite] Auth provisioning notice:', createEx)

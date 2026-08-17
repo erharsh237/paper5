@@ -220,7 +220,6 @@ export default async function handler(req, res) {
         // Clear references across child tables
         try { await supabaseAdmin.from('deadlines').delete().eq('created_by', id) } catch (_) {}
         try { await supabaseAdmin.from('sprints').delete().eq('created_by', id) } catch (_) {}
-        try { await supabaseAdmin.from('notifications').delete().eq('user_id', id) } catch (_) {}
         try { await supabaseAdmin.from('meeting_notes').delete().eq('created_by', id) } catch (_) {}
         try { await supabaseAdmin.from('integrations').delete().eq('user_id', id) } catch (_) {}
         try { await supabaseAdmin.from('activity_logs').delete().eq('user_id', id) } catch (_) {}
@@ -230,16 +229,21 @@ export default async function handler(req, res) {
       }
     }
 
-    // 4. Remove profile and personal data
+    // 4. Remove notifications, profile and personal data
     for (const id of idsList) {
       const { error: pErr } = await supabaseAdmin.from('profiles').delete().eq('id', id)
       stepResults.push({ step: 'delete_profile_by_id', id, error: pErr?.message || null })
     }
     if (cleanEmail) {
+      try { await supabaseAdmin.from('notifications').delete().ilike('forEmail', cleanEmail) } catch (_) {}
+      try { await supabaseAdmin.from('notifications').delete().ilike('for_email', cleanEmail) } catch (_) {}
+      try { await supabaseAdmin.from('notifications').delete().ilike('createdBy', cleanEmail) } catch (_) {}
+      try { await supabaseAdmin.from('notifications').delete().ilike('created_by', cleanEmail) } catch (_) {}
       const { error: peErr } = await supabaseAdmin.from('profiles').delete().ilike('email', cleanEmail)
       const { error: invErr } = await supabaseAdmin.from('invites').delete().ilike('email', cleanEmail)
+      const { error: winvErr } = await supabaseAdmin.from('workspace_invites').delete().ilike('email', cleanEmail)
       stepResults.push({ step: 'delete_profile_by_email', error: peErr?.message || null })
-      stepResults.push({ step: 'delete_invites', error: invErr?.message || null })
+      stepResults.push({ step: 'delete_invites', error: invErr?.message || winvErr?.message || null })
     }
 
     // 5. Remove or sanitize user record from users table
