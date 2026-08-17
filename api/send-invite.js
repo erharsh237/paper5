@@ -12,15 +12,16 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required parameter: email' })
   }
 
+  const cleanEmail = email.trim().toLowerCase()
   const finalPassword = password || 'aA1!tempPwd' + Math.floor(1000 + Math.random() * 9000)
   const resendApiKey = process.env.RESEND_API_KEY || process.env.VITE_RESEND_API_KEY
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://sdbglndhjkqhkphzqmum.supabase.co'
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY
 
   const subject = `You've been invited to join ${workspaceName || 'a workspace'} on SprintOS`
   const targetLoginUrl = loginUrl || 'https://app.paper5.co/login'
 
-  const textBody = `Workspace Invitation\n\nYou have been invited to join ${workspaceName || 'Workspace'} as a ${role || 'Member'} on SprintOS.\n\nLogin Email: ${email}\nTemporary Password: ${finalPassword}\n\nLog in to your workspace here: ${targetLoginUrl}\n\nPlease update your password upon your first sign in.`
+  const textBody = `Workspace Invitation\n\nYou have been invited to join ${workspaceName || 'Workspace'} as a ${role || 'Member'} on SprintOS.\n\nLogin Email: ${cleanEmail}\nTemporary Password: ${finalPassword}\n\nLog in to your workspace here: ${targetLoginUrl}\n\nPlease update your password upon your first sign in.`
 
   const htmlBody = `
     <!DOCTYPE html>
@@ -46,7 +47,7 @@ export default async function handler(req, res) {
         
         <div class="card">
           <div class="field">Login Email:</div>
-          <div class="value" style="margin-bottom: 12px;">${email}</div>
+          <div class="value" style="margin-bottom: 12px;">${cleanEmail}</div>
           <div class="field">Temporary Password:</div>
           <div class="value">${finalPassword}</div>
         </div>
@@ -67,36 +68,58 @@ export default async function handler(req, res) {
   let emailSent = false
   let resendDetails = null
 
-  // 1. Pre-provision user account in Supabase Auth with temporary password
-  if (supabaseUrl && supabaseServiceKey) {
+  // 1. Pre-provision user account in Supabase Auth using Admin API with email_confirm: true
+  // IMPORTANT: We do NOT use auth.signUp() or auth.admin.inviteUserByEmail() because they trigger Supabase's built-in "Verify Your Email Address" OTP email.
+  if (supabaseUrl && serviceKey) {
     try {
-      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
-      const { data: userData } = await supabaseAdmin.auth.signUp({
-        email,
-        password: finalPassword,
-        options: {
-          data: {
+      const supabaseAdmin = createClient(supabaseUrl, serviceKey)
+      
+      if (typeof supabaseAdmin.auth?.admin?.createUser === 'function') {
+        const { data: userData, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+          email: cleanEmail,
+          password: finalPassword,
+          email_confirm: true, // Auto-confirm email to SUPPRESS Supabase OTP / verification email!
+          user_metadata: {
             must_change_password: true,
-            invited_workspace: workspaceName
+            invited_workspace: workspaceName || 'Workspace'
+          }
+        })
+
+        let newUserId = userData?.user?.id
+
+        if (createErr && createErr.message?.toLowerCase().includes('already')) {
+          // If user already exists, update their password so temporary password works without OTP
+          const { data: userList } = await supabaseAdmin.auth.admin.listUsers()
+          const existingUser = (userList?.users || []).find(u => u.email?.toLowerCase() === cleanEmail)
+          if (existingUser) {
+            newUserId = existingUser.id
+            await supabaseAdmin.auth.admin.updateUserById(existingUser.id, {
+              password: finalPassword,
+              email_confirm: true,
+              user_metadata: {
+                ...existingUser.user_metadata,
+                must_change_password: true,
+                invited_workspace: workspaceName || 'Workspace'
+              }
+            })
           }
         }
-      })
-      
-      const newUserId = userData?.user?.id
-      if (newUserId) {
-        await supabaseAdmin.from('users').upsert({
-          id: newUserId,
-          email: email.trim().toLowerCase(),
-          requires_password_reset: true,
-          updated_at: new Date().toISOString()
-        }).catch(e => console.warn('[API send-invite] Users upsert notice:', e))
+
+        if (newUserId) {
+          await supabaseAdmin.from('users').upsert({
+            id: newUserId,
+            email: cleanEmail,
+            requires_password_reset: true,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'id' }).catch(e => console.warn('[API send-invite] Users upsert notice:', e))
+        }
       }
     } catch (createEx) {
       console.warn('[API send-invite] Auth provisioning notice:', createEx)
     }
   }
 
-  // 2. Try Resend API if key is available
+  // 2. Dispatch the single official invitation email via Resend API
   if (resendApiKey) {
     try {
       const response = await fetch('https://api.resend.com/emails', {
@@ -107,7 +130,7 @@ export default async function handler(req, res) {
         },
         body: JSON.stringify({
           from: process.env.SENDER_EMAIL || 'SprintOS <onboarding@resend.dev>',
-          to: [email],
+          to: [cleanEmail],
           subject: subject,
           html: htmlBody,
           text: textBody,
@@ -127,24 +150,6 @@ export default async function handler(req, res) {
       }
     } catch (e) {
       console.error('[API send-invite] Resend fetch exception:', e)
-    }
-  }
-
-  // 3. Try Supabase Auth Admin invite fallback if Resend didn't deliver directly
-  if (!emailSent && supabaseUrl && supabaseServiceKey) {
-    try {
-      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
-      if (supabaseAdmin?.auth?.admin?.inviteUserByEmail) {
-        const { data: supaData, error: supaErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-          redirectTo: targetLoginUrl,
-          data: { role, workspaceName }
-        })
-        if (!supaErr) {
-          emailSent = true
-        }
-      }
-    } catch (supaEx) {
-      console.warn('[API send-invite] Supabase auth invite exception:', supaEx)
     }
   }
 
