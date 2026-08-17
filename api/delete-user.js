@@ -187,16 +187,17 @@ export default async function handler(req, res) {
     // 3. Clear ANY workspace and table references where user is listed as owner_id / created_by / assignee
     for (const id of idsList) {
       try {
-        // Reassign or clear workspace references
-        await supabaseAdmin
+        const { error: wsUpErr1 } = await supabaseAdmin
           .from('workspaces')
           .update({ owner_id: '48b3e98d-8acf-450f-9d32-966df188946d', created_by: '48b3e98d-8acf-450f-9d32-966df188946d' })
           .eq('owner_id', id)
 
-        await supabaseAdmin
+        const { error: wsUpErr2 } = await supabaseAdmin
           .from('workspaces')
           .update({ created_by: '48b3e98d-8acf-450f-9d32-966df188946d' })
           .eq('created_by', id)
+
+        stepResults.push({ step: 'update_workspace_owners', wsUpErr1: wsUpErr1?.message || null, wsUpErr2: wsUpErr2?.message || null })
 
         // Clear references across child tables
         try { await supabaseAdmin.from('deadlines').delete().eq('created_by', id) } catch (_) {}
@@ -206,7 +207,9 @@ export default async function handler(req, res) {
         try { await supabaseAdmin.from('integrations').delete().eq('user_id', id) } catch (_) {}
         try { await supabaseAdmin.from('activity_logs').delete().eq('user_id', id) } catch (_) {}
         try { await supabaseAdmin.from('tasks').update({ assignee_id: null }).eq('assignee_id', id) } catch (_) {}
-      } catch (_) {}
+      } catch (wsCleanupErr) {
+        stepResults.push({ step: 'workspace_references_cleanup_err', error: wsCleanupErr.message })
+      }
     }
 
     // 4. Remove profile and personal data
@@ -221,10 +224,24 @@ export default async function handler(req, res) {
       stepResults.push({ step: 'delete_invites', error: invErr?.message || null })
     }
 
-    // 5. Remove user record from users table
+    // 5. Remove or sanitize user record from users table
     for (const id of idsList) {
       const { error: uErr } = await supabaseAdmin.from('users').delete().eq('id', id)
-      stepResults.push({ step: 'delete_user_by_id', id, error: uErr?.message || null })
+      if (uErr) {
+        // If trigger blocks row deletion, sanitize all personal info from users table
+        const { error: sanitizeErr } = await supabaseAdmin
+          .from('users')
+          .update({
+            email: `deleted_${id.slice(0, 8)}_${Date.now()}@deleted.invalid`,
+            full_name: 'Deleted User',
+            raw_user_meta_data: {}
+          })
+          .eq('id', id)
+
+        stepResults.push({ step: 'delete_user_by_id', id, error: uErr.message, sanitized: !sanitizeErr })
+      } else {
+        stepResults.push({ step: 'delete_user_by_id', id, error: null, sanitized: true })
+      }
     }
     if (cleanEmail) {
       const { error: ueErr } = await supabaseAdmin.from('users').delete().ilike('email', cleanEmail)
@@ -238,10 +255,14 @@ export default async function handler(req, res) {
       for (const id of idsList) {
         try {
           const { error: aErr } = await supabaseAdmin.auth.admin.deleteUser(id)
-          if (aErr) authError = aErr.message
-          else authDeleted = true
-        } catch (authErr) {
-          authError = authErr.message
+          if (aErr) {
+            authError = aErr.message || JSON.stringify(aErr)
+          } else {
+            authDeleted = true
+            authError = null
+          }
+        } catch (authCatchErr) {
+          authError = authCatchErr.message
         }
       }
     } else {
