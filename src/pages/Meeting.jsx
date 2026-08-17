@@ -168,7 +168,7 @@ export default function Meeting() {
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '13px' }}
                 >
                   <Plus size={15} />
-                  <span>+ Add Meeting Note</span>
+                  <span>Add Meeting Note</span>
                 </button>
               )}
             </div>
@@ -315,7 +315,7 @@ export default function Meeting() {
                       style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 18px', fontSize: '13px' }}
                     >
                       <Plus size={15} />
-                      <span>+ Create First Meeting Note</span>
+                      <span>Create First Meeting Note</span>
                     </button>
                   )}
                 </div>
