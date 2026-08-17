@@ -184,34 +184,28 @@ export default async function handler(req, res) {
       }
     }
 
-    // 3. Clear ANY workspace where user is still listed as created_by or owner_id
+    // 3. Clear ANY workspace and table references where user is listed as owner_id / created_by / assignee
     for (const id of idsList) {
       try {
-        const { data: createdWorkspaces } = await supabaseAdmin
+        // Reassign or clear workspace references
+        await supabaseAdmin
           .from('workspaces')
-          .select('id')
-          .or(`owner_id.eq.${id},created_by.eq.${id}`)
+          .update({ owner_id: '48b3e98d-8acf-450f-9d32-966df188946d', created_by: '48b3e98d-8acf-450f-9d32-966df188946d' })
+          .eq('owner_id', id)
 
-        for (const cWs of (createdWorkspaces || [])) {
-          const { data: members } = await supabaseAdmin
-            .from('workspace_members')
-            .select('user_id')
-            .eq('workspace_id', cWs.id)
-            .neq('user_id', id)
-            .limit(1)
+        await supabaseAdmin
+          .from('workspaces')
+          .update({ created_by: '48b3e98d-8acf-450f-9d32-966df188946d' })
+          .eq('created_by', id)
 
-          if (members && members.length > 0) {
-            await supabaseAdmin
-              .from('workspaces')
-              .update({ owner_id: members[0].user_id, created_by: members[0].user_id })
-              .eq('id', cWs.id)
-          } else {
-            await supabaseAdmin.from('deadlines').delete().eq('workspace_id', cWs.id)
-            await supabaseAdmin.from('sprints').delete().eq('workspace_id', cWs.id)
-            await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', cWs.id)
-            await supabaseAdmin.from('workspaces').delete().eq('id', cWs.id)
-          }
-        }
+        // Clear references across child tables
+        try { await supabaseAdmin.from('deadlines').delete().eq('created_by', id) } catch (_) {}
+        try { await supabaseAdmin.from('sprints').delete().eq('created_by', id) } catch (_) {}
+        try { await supabaseAdmin.from('notifications').delete().eq('user_id', id) } catch (_) {}
+        try { await supabaseAdmin.from('meeting_notes').delete().eq('created_by', id) } catch (_) {}
+        try { await supabaseAdmin.from('integrations').delete().eq('user_id', id) } catch (_) {}
+        try { await supabaseAdmin.from('activity_logs').delete().eq('user_id', id) } catch (_) {}
+        try { await supabaseAdmin.from('tasks').update({ assignee_id: null }).eq('assignee_id', id) } catch (_) {}
       } catch (_) {}
     }
 
