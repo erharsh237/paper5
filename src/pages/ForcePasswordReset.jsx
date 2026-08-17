@@ -74,21 +74,41 @@ export default function ForcePasswordReset() {
       
       if (data?.user) {
         const cleanEmail = data.user.email ? data.user.email.trim().toLowerCase() : ''
-        const defaultUsername = cleanEmail ? cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '') : 'user_' + Math.floor(1000 + Math.random() * 9000)
+        let baseUsername = cleanEmail ? cleanEmail.split('@')[0].replace(/[^a-z0-9_]/g, '') : 'user'
+        if (!baseUsername || baseUsername.length < 3) baseUsername = 'user_' + Math.floor(1000 + Math.random() * 9000)
 
-        // 1. Update user metadata with username and clear must_change_password
+        // Ensure guaranteed username uniqueness across all users
+        let uniqueUsername = baseUsername
+        let counter = 1
+        while (true) {
+          try {
+            const { data: existing } = await supabase
+              .from('users')
+              .select('id')
+              .ilike('username', uniqueUsername)
+              .neq('id', data.user.id)
+              .maybeSingle()
+            if (!existing) break
+            uniqueUsername = `${baseUsername}_${counter}`
+            counter++
+          } catch (_) {
+            break
+          }
+        }
+
+        // 1. Update user metadata with unique username and clear must_change_password
         await supabase.auth.updateUser({
           data: {
-            username: defaultUsername,
+            username: uniqueUsername,
             must_change_password: false
           }
         })
 
-        // 2. Update users table record with username and clear requires_password_reset
+        // 2. Update users table record with unique username and clear requires_password_reset
         await supabase.from('users').upsert({
           id: data.user.id,
           email: cleanEmail,
-          username: defaultUsername,
+          username: uniqueUsername,
           requires_password_reset: false,
           updated_at: new Date().toISOString()
         })

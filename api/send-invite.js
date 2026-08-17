@@ -106,9 +106,31 @@ export default async function handler(req, res) {
         }
 
         if (newUserId) {
+          let baseUsername = cleanEmail.split('@')[0].replace(/[^a-z0-9_]/g, '')
+          if (!baseUsername || baseUsername.length < 3) baseUsername = 'user_' + Math.floor(1000 + Math.random() * 9000)
+          
+          let uniqueUsername = baseUsername
+          let counter = 1
+          while (true) {
+            try {
+              const { data: existing } = await supabaseAdmin
+                .from('users')
+                .select('id')
+                .ilike('username', uniqueUsername)
+                .neq('id', newUserId)
+                .maybeSingle()
+              if (!existing) break
+              uniqueUsername = `${baseUsername}_${counter}`
+              counter++
+            } catch (_) {
+              break
+            }
+          }
+
           await supabaseAdmin.from('users').upsert({
             id: newUserId,
             email: cleanEmail,
+            username: uniqueUsername,
             requires_password_reset: true,
             updated_at: new Date().toISOString()
           }, { onConflict: 'id' }).catch(e => console.warn('[API send-invite] Users upsert notice:', e))

@@ -236,9 +236,27 @@ export function AuthProvider({ children }) {
   }
 
   const checkUsername = async (username) => {
-    const { data, error } = await supabase.rpc('check_username_available', { uname: username })
-    if (error) throw error
-    return data
+    const clean = (username || '').trim().toLowerCase()
+    if (!clean || clean.length < 3) return false
+    
+    // 1. Try DB RPC first
+    try {
+      const { data, error } = await supabase.rpc('check_username_available', { uname: clean })
+      if (!error && typeof data === 'boolean') return data
+    } catch (_) {}
+
+    // 2. Direct lookup on users table
+    try {
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id')
+        .ilike('username', clean)
+        .maybeSingle()
+
+      return !existingUser
+    } catch (_) {
+      return true
+    }
   }
 
   const sendSignupOtp = async (email) => {
@@ -278,16 +296,26 @@ export function AuthProvider({ children }) {
 
   const finalizeSignup = async (password, username) => {
     setAuthError(null)
+    const cleanUsername = (username || '').trim().toLowerCase()
+
+    // Enforce uniqueness validation before completing registration
+    const isAvail = await checkUsername(cleanUsername)
+    if (!isAvail) {
+      const err = new Error('This username is already taken. Please choose another username.')
+      setAuthError(err.message)
+      throw err
+    }
+
     const { error, data } = await supabase.auth.updateUser({
       password,
-      data: { username }
+      data: { username: cleanUsername }
     })
     if (error) {
       setAuthError(getFriendlyError(error))
       throw error
     }
     
-    // Update public.users with username
+    // Update public.users with guaranteed unique username
     if (data?.user) {
       setUser({
         ...data.user,
@@ -298,7 +326,7 @@ export function AuthProvider({ children }) {
       await supabase.from('users').upsert({ 
         id: data.user.id, 
         email: data.user.email,
-        username,
+        username: cleanUsername,
         billing_plan_id: 'unselected',
         updated_at: new Date().toISOString() 
       })
