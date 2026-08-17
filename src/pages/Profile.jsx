@@ -51,12 +51,16 @@ export default function Profile() {
   const [cancellingRequest, setCancellingRequest] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [successNotice, setSuccessNotice] = useState('')
+  const [localRequested, setLocalRequested] = useState(false)
+  const [localCancelled, setLocalCancelled] = useState(false)
 
-  const deletionRequest = useMemo(() => {
-    const key = user?.id || user?.email?.trim().toLowerCase()
+  const isDeletionPending = useMemo(() => {
+    if (localCancelled) return false
+    if (localRequested) return true
     const reqs = workspace?.settings?.deletion_requests || {}
-    return reqs[user?.id] || reqs[user?.email?.trim().toLowerCase()] || null
-  }, [workspace, user])
+    const hasReq = !!(reqs[user?.id] || reqs[user?.email?.trim().toLowerCase()])
+    return hasReq
+  }, [workspace, user, localRequested, localCancelled])
 
   const handleRequestAccountDeletion = async () => {
     setRequestingDeletion(true)
@@ -71,9 +75,11 @@ export default function Profile() {
       const json = await resp.json()
       if (!resp.ok) throw new Error(json.error || 'Failed to submit deletion request')
       
+      setLocalRequested(true)
+      setLocalCancelled(false)
       setIsDeleteModalOpen(false)
       setSuccessNotice('Account deletion request submitted to your workspace Administrator.')
-      setTimeout(() => setSuccessNotice(''), 5000)
+      setTimeout(() => setSuccessNotice(''), 6000)
     } catch (err) {
       console.error('Failed to request deletion:', err)
       setError('Could not submit request: ' + err.message)
@@ -96,8 +102,10 @@ export default function Profile() {
       const json = await resp.json()
       if (!resp.ok) throw new Error(json.error || 'Failed to cancel deletion request')
       
+      setLocalRequested(false)
+      setLocalCancelled(true)
       setSuccessNotice('Account deletion request cancelled.')
-      setTimeout(() => setSuccessNotice(''), 5000)
+      setTimeout(() => setSuccessNotice(''), 6000)
     } catch (err) {
       console.error('Failed to cancel deletion request:', err)
       setError('Could not cancel request: ' + err.message)
@@ -440,61 +448,66 @@ export default function Profile() {
             </div>
           )}
 
-          {deletionRequest ? (
-            <div className="dash-surface-card" style={{ marginTop: '28px', padding: '24px 28px', border: '1px solid #FCD34D', background: '#FFFBEB' }}>
-              <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#B45309', margin: '0 0 8px 0', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>⏳</span> Account Deletion Request Pending
-              </h2>
-              <p style={{ fontSize: '13px', color: '#92400E', margin: '0 0 16px 0', lineHeight: 1.5 }}>
-                You have submitted a request to delete your account. Your workspace administrator has been notified and is in charge of reviewing and finalizing the deletion of your account.
-              </p>
-              <button
-                type="button"
-                disabled={cancellingRequest}
-                onClick={handleCancelDeletionRequest}
-                style={{
-                  background: 'var(--surface, #FFFFFF)',
-                  color: '#B45309',
-                  border: '1px solid #FCD34D',
-                  padding: '8px 18px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  cursor: cancellingRequest ? 'not-allowed' : 'pointer'
-                }}
-              >
-                {cancellingRequest ? 'Cancelling…' : 'Cancel Deletion Request'}
-              </button>
+          <div className="dash-surface-card" style={{ marginTop: '28px', padding: '24px 28px', border: '1px solid #FECACA', background: '#FEF2F2' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+              <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#DC2626', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Danger Zone</h2>
+              {isDeletionPending && (
+                <span style={{ fontSize: '11.5px', fontWeight: 700, background: '#FEF3C7', color: '#92400E', padding: '2px 10px', borderRadius: '100px', border: '1px solid #FCD34D' }}>
+                  Deletion Request Pending Admin Approval ⏳
+                </span>
+              )}
             </div>
-          ) : (
-            <div className="dash-surface-card" style={{ marginTop: '28px', padding: '24px 28px', border: '1px solid #FECACA', background: '#FEF2F2' }}>
-              <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#DC2626', margin: '0 0 8px 0', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Danger Zone</h2>
-              <p style={{ fontSize: '13px', color: '#7F1D1D', margin: '0 0 16px 0', lineHeight: 1.5 }}>
-                {isOwner
+            <p style={{ fontSize: '13px', color: '#7F1D1D', margin: '0 0 16px 0', lineHeight: 1.5 }}>
+              {isDeletionPending
+                ? 'Your account deletion request has been submitted to your workspace Administrator. Your administrator is in charge of reviewing and finalizing the deletion.'
+                : (isOwner
                   ? 'Deleting your account will permanently remove your access and erase your personal profile data. This action cannot be undone.'
-                  : 'Deleting your account will submit a formal deletion request to your workspace Administrator for review and execution.'}
-              </p>
+                  : 'Deleting your account will submit a formal deletion request to your workspace Administrator for review and execution.')}
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <button
                 type="button"
-                disabled={requestingDeletion || deletingAccount}
+                disabled={isDeletionPending || requestingDeletion || deletingAccount}
                 style={{
-                  background: '#DC2626',
+                  background: isDeletionPending ? '#9CA3AF' : '#DC2626',
                   color: '#FFFFFF',
                   border: 'none',
                   padding: '9px 18px',
                   borderRadius: '8px',
                   fontSize: '13px',
                   fontWeight: 700,
-                  cursor: (requestingDeletion || deletingAccount) ? 'not-allowed' : 'pointer',
-                  opacity: (requestingDeletion || deletingAccount) ? 0.7 : 1,
+                  cursor: (isDeletionPending || requestingDeletion || deletingAccount) ? 'not-allowed' : 'pointer',
+                  opacity: isDeletionPending ? 0.75 : ((requestingDeletion || deletingAccount) ? 0.7 : 1),
                   transition: 'all 0.15s ease'
                 }}
-                onClick={() => setIsDeleteModalOpen(true)}
+                onClick={() => !isDeletionPending && setIsDeleteModalOpen(true)}
               >
-                {isOwner ? 'Delete Account & Data' : 'Request Account Deletion'}
+                {isDeletionPending
+                  ? 'Deletion Request Submitted'
+                  : (isOwner ? 'Delete Account & Data' : 'Request Account Deletion')}
               </button>
+
+              {isDeletionPending && (
+                <button
+                  type="button"
+                  disabled={cancellingRequest}
+                  onClick={handleCancelDeletionRequest}
+                  style={{
+                    background: '#FFFFFF',
+                    border: '1px solid #D1D5DB',
+                    color: '#4B5563',
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    fontSize: '12.5px',
+                    fontWeight: 600,
+                    cursor: cancellingRequest ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {cancellingRequest ? 'Cancelling…' : 'Cancel Request'}
+                </button>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </main>
 
