@@ -17,11 +17,10 @@ import { Link } from 'react-router-dom'
 import { getWorkflowById } from '../lib/workflows'
 import './Dashboard.css'
 
-// Single shared team workspace for this internal tool.
 const TEAM_ID = 'default-team'
 
 export default function Dashboard() {
-  const { workspaceId, workspace, workspaceRole } = useWorkspace();
+  const { workspaceId, workspace, workspaceRole } = useWorkspace()
   const { user } = useAuth()
   const { deadlines, hasMore, loadMore, loadingMore } = useDeadlines(workspaceId, undefined)
   const [members, setMembers] = useState([])
@@ -30,10 +29,12 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [assigneeFilter, setAssigneeFilter] = useState('all')
   const [search, setSearch] = useState('')
-  const now = new Date()
-  const [reportMonth, setReportMonth] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`)
-
+  const [viewMode, setViewMode] = useState('board')
   const [generatingReport, setGeneratingReport] = useState(false)
+  const now = new Date()
+  const [reportMonth, setReportMonth] = useState(
+    `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  )
 
   async function handleDownloadReport() {
     const [y, m] = reportMonth.split('-').map(Number)
@@ -66,10 +67,9 @@ export default function Dashboard() {
       if (statusFilter !== 'all' && d.status !== statusFilter) return false
       if (assigneeFilter !== 'all' && d.assigneeId !== assigneeFilter) return false
       if (search.trim() && !d.title.toLowerCase().includes(search.toLowerCase())) return false
+      return true
     })
   }, [deadlines, statusFilter, assigneeFilter, search])
-
-  const [viewMode, setViewMode] = useState('board')
 
   const activeWorkflow = useMemo(() => {
     const wfId = workspace?.settings?.agile_workflow || 'scrum'
@@ -79,11 +79,11 @@ export default function Dashboard() {
   const kanbanColumns = useMemo(() => {
     if (!activeWorkflow || !activeWorkflow.columns || activeWorkflow.columns.length === 0) {
       return [
-        { id: 'not_started', title: 'To Do', color: '#64748b', items: filtered.filter(d => d.status === 'not_started' || d.status === 'todo') },
-        { id: 'in_progress', title: 'In Progress', color: '#3b82f6', items: filtered.filter(d => d.status === 'in_progress') },
-        { id: 'review', title: 'Review / QA', color: '#f59e0b', items: filtered.filter(d => d.status === 'review') },
-        { id: 'blocked', title: 'Blocked', color: '#ef4444', items: filtered.filter(d => d.status === 'blocked') },
-        { id: 'done', title: 'Done', color: '#10b981', items: filtered.filter(d => d.status === 'done') },
+        { id: 'not_started', title: 'To Do',       color: '#64748b', items: filtered.filter(d => d.status === 'not_started' || d.status === 'todo') },
+        { id: 'in_progress', title: 'In Progress',  color: '#3b82f6', items: filtered.filter(d => d.status === 'in_progress') },
+        { id: 'review',      title: 'Review / QA',  color: '#f59e0b', items: filtered.filter(d => d.status === 'review') },
+        { id: 'blocked',     title: 'Blocked',       color: '#ef4444', items: filtered.filter(d => d.status === 'blocked') },
+        { id: 'done',        title: 'Done',          color: '#10b981', items: filtered.filter(d => d.status === 'done') },
       ]
     }
 
@@ -101,23 +101,27 @@ export default function Dashboard() {
       } else {
         colItems = filtered.filter(d => d.status === 'in_progress' || d.status === col.id)
       }
-
-      return {
-        id: col.id,
-        title: col.title,
-        color: colors[idx % colors.length],
-        items: colItems
-      }
+      return { id: col.id, title: col.title, color: colors[idx % colors.length], items: colItems }
     })
   }, [activeWorkflow, filtered])
 
+  const isAdmin = workspaceRole === 'owner' || workspaceRole === 'admin'
+  const activeWf = getWorkflowById(workspace?.settings?.agile_workflow || 'scrum')
+
   return (
     <div className="dash">
+      {/* ── HEADER ── */}
       <header className="dash-header">
         <div className="dash-header-inner">
           <div className="dash-brand">
             <span className="dash-brand-dot" />
-            <span className="mono">SprintOS <span className="dash-brand-sub" style={{ whiteSpace: "nowrap" }}>{workspace?.name ? `| ${workspace.name}` : ''}</span></span>
+            SprintOS
+            {workspace?.name && (
+              <>
+                <span className="dash-brand-divider" />
+                <span className="dash-brand-workspace">{workspace.name}</span>
+              </>
+            )}
           </div>
           <div className="dash-header-actions">
             <NavTabs />
@@ -127,134 +131,67 @@ export default function Dashboard() {
         </div>
       </header>
 
+      {/* ── BODY ── */}
       <main className="dash-body">
-        {/* Active Agile Workflow Banner (Visible strictly to Admins) */}
-        {(() => {
-          const isAdmin = workspaceRole === 'owner' || workspaceRole === 'admin'
-          if (!isAdmin) return null
 
-          const currentWorkflowId = workspace?.settings?.agile_workflow || 'scrum'
-          const activeWf = getWorkflowById(currentWorkflowId)
-          return (
-            <div style={{
-              marginBottom: '1.5rem',
-              padding: '14px 18px',
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.02) 100%)',
-              border: '1px solid rgba(16, 185, 129, 0.25)',
-              borderRadius: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '12px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '8px',
-                  background: '#10b981',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 800,
-                  fontSize: '15px'
-                }}>
-                  #{activeWf.num}
+        {/* Agile Workflow Banner — Admin only */}
+        {isAdmin && activeWf && (
+          <div className="workflow-banner">
+            <div className="workflow-banner-left">
+              <div className="workflow-banner-icon">#{activeWf.num}</div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
+                  <span className="workflow-banner-name">{activeWf.name}</span>
+                  <span className="workflow-banner-badge">{activeWf.badge}</span>
                 </div>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>
-                      {activeWf.name}
-                    </span>
-                    <span style={{ fontSize: '11px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '2px 8px', borderRadius: '100px', fontWeight: 600 }}>
-                      {activeWf.badge}
-                    </span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>
-                      (Team Size: {workspace?.settings?.team_size || activeWf.teamSizeLabel})
-                    </span>
-                  </div>
-                  <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                    {activeWf.description}
-                  </p>
+                <div className="workflow-banner-team">
+                  Team size: {workspace?.settings?.team_size || activeWf.teamSizeLabel}
+                  &ensp;·&ensp;
+                  <span className="workflow-banner-columns">
+                    {activeWf.columns.map(c => c.title).join(' → ')}
+                  </span>
                 </div>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 600 }}>
-                  Columns: {activeWf.columns.map(c => c.title).join(' ➔ ')}
-                </div>
-                {isAdmin && (
-                  <Link 
-                    to={`/${workspaceId}/settings`} 
-                    style={{ 
-                      fontSize: '12px', 
-                      color: '#10b981', 
-                      background: 'var(--bg-layer-1)', 
-                      padding: '6px 12px', 
-                      borderRadius: '6px', 
-                      border: '1px solid rgba(16, 185, 129, 0.3)',
-                      textDecoration: 'none', 
-                      fontWeight: 600 
-                    }}
-                  >
-                    ⚙️ Change Workflow
-                  </Link>
-                )}
               </div>
             </div>
-          )
-        })()}
+            <Link to={`/${workspaceId}/settings`} className="workflow-banner-link">
+              Change Workflow
+            </Link>
+          </div>
+        )}
 
+        {/* Sprint Overview */}
         <SprintOverview sprints={sprints} deadlines={deadlines} currentUser={user} members={members} />
 
+        {/* Stat Strip */}
         <section className="stat-strip">
-          <StatTile label="Active" value={stats.active} tone="info" />
-          <StatTile label="Overdue" value={stats.overdue} tone="critical" />
-          <StatTile label="Due soon" value={stats.dueSoon} tone="warn" />
-          <StatTile label="Completed" value={stats.done} tone="signal" />
+          <StatTile label="Active"    value={stats.active}  tone="info" />
+          <StatTile label="Overdue"   value={stats.overdue} tone="critical" />
+          <StatTile label="Due Soon"  value={stats.dueSoon} tone="warn" />
+          <StatTile label="Completed" value={stats.done}    tone="signal" />
         </section>
 
+        {/* Main + Sidebar */}
         <div className="dash-columns">
           <div className="dash-main">
-            <section className="controls-bar" style={{ flexWrap: 'wrap', gap: '12px' }}>
+
+            {/* Controls Bar */}
+            <section className="controls-bar">
               <div className="controls-left">
-                {/* View Switcher Toggle */}
-                <div style={{ display: 'inline-flex', background: 'var(--bg-layer-2)', padding: '2px', borderRadius: '8px', border: '1px solid var(--border-hair)', marginRight: '6px' }}>
+                {/* View Mode Toggle */}
+                <div className="view-toggle">
                   <button
                     type="button"
+                    className={`view-toggle-btn${viewMode === 'board' ? ' active' : ''}`}
                     onClick={() => setViewMode('board')}
-                    style={{
-                      padding: '5px 11px',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      borderRadius: '6px',
-                      border: 'none',
-                      background: viewMode === 'board' ? 'var(--bg-panel)' : 'transparent',
-                      color: viewMode === 'board' ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                      cursor: 'pointer',
-                      boxShadow: viewMode === 'board' ? 'var(--shadow-sm)' : 'none'
-                    }}
                   >
-                    📊 Kanban Board
+                    Kanban Board
                   </button>
                   <button
                     type="button"
+                    className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
                     onClick={() => setViewMode('list')}
-                    style={{
-                      padding: '5px 11px',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      borderRadius: '6px',
-                      border: 'none',
-                      background: viewMode === 'list' ? 'var(--bg-panel)' : 'transparent',
-                      color: viewMode === 'list' ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                      cursor: 'pointer',
-                      boxShadow: viewMode === 'list' ? 'var(--shadow-sm)' : 'none'
-                    }}
                   >
-                    📋 List View
+                    List View
                   </button>
                 </div>
 
@@ -264,6 +201,7 @@ export default function Dashboard() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
+
                 <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="filter-select">
                   <option value="all">All statuses</option>
                   <option value="not_started">Not started</option>
@@ -272,82 +210,51 @@ export default function Dashboard() {
                   <option value="blocked">Blocked</option>
                   <option value="done">Done</option>
                 </select>
+
                 <select value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)} className="filter-select">
                   <option value="all">Everyone</option>
                   {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
               </div>
+
               <div className="controls-right">
                 <input
                   type="month"
                   className="filter-select"
                   value={reportMonth}
                   onChange={(e) => setReportMonth(e.target.value)}
-                  title="Report month"
+                  title="Select report month"
                 />
-                <button className="btn-ghost btn-sm" onClick={handleDownloadReport} disabled={generatingReport} title="Only covers deadlines currently loaded — click Load more first if the report month is older than what's shown">
-                  {generatingReport ? 'Generating…' : '⬇ Download report'}
+                <button
+                  className="btn-ghost btn-sm"
+                  onClick={handleDownloadReport}
+                  disabled={generatingReport}
+                  title="Only covers deadlines currently loaded — click Load more first if the report month is older"
+                >
+                  {generatingReport ? 'Generating…' : '↓ Report'}
                 </button>
-                <button className="btn-primary btn-sm" onClick={() => setShowNewModal(true)}>+ New deadline</button>
+                <button className="btn-primary btn-sm" onClick={() => setShowNewModal(true)}>
+                  + New deadline
+                </button>
               </div>
             </section>
 
-            {/* KANBAN BOARD VIEW */}
+            {/* ── KANBAN BOARD ── */}
             {viewMode === 'board' ? (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-                gap: '16px',
-                alignItems: 'flex-start',
-                marginTop: '16px',
-                overflowX: 'auto'
-              }}>
+              <div className="kanban-board">
                 {kanbanColumns.map(col => (
-                  <div key={col.id} style={{
-                    background: 'var(--bg-layer-1)',
-                    borderRadius: '12px',
-                    border: '1px solid var(--border-hair)',
-                    padding: '14px',
-                    minWidth: '250px'
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginBottom: '12px',
-                      paddingBottom: '8px',
-                      borderBottom: '1px solid var(--border-subtle)'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: col.color }} />
+                  <div key={col.id} className="kanban-column">
+                    <div className="kanban-column-stripe" style={{ background: col.color }} />
+                    <div className="kanban-column-header">
+                      <div className="kanban-column-title-row">
+                        <span className="kanban-col-dot" style={{ background: col.color }} />
                         {col.title}
                       </div>
-                      <span style={{
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        background: 'var(--bg-panel)',
-                        padding: '2px 8px',
-                        borderRadius: '12px',
-                        color: 'var(--text-secondary)',
-                        border: '1px solid var(--border-hair)'
-                      }}>
-                        {col.items.length}
-                      </span>
+                      <span className="kanban-col-count">{col.items.length}</span>
                     </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: '120px' }}>
+                    <div className="kanban-column-body">
                       {col.items.length === 0 ? (
-                        <div style={{
-                          padding: '20px 12px',
-                          textAlign: 'center',
-                          fontSize: '12px',
-                          color: 'var(--text-tertiary)',
-                          border: '1px dashed var(--border-subtle)',
-                          borderRadius: '8px',
-                          background: 'var(--bg-inset)'
-                        }}>
-                          No tasks in {col.title}
-                        </div>
+                        <div className="kanban-empty">No tasks</div>
                       ) : (
                         col.items.map(d => (
                           <DeadlineCard
@@ -364,11 +271,11 @@ export default function Dashboard() {
                 ))}
               </div>
             ) : (
-              /* LIST VIEW */
+              /* ── LIST VIEW ── */
               <section className="deadline-list">
                 {filtered.length === 0 ? (
                   <div className="empty-state">
-                    <p>{deadlines.length === 0 ? 'No deadlines yet. Create the first one.' : 'Nothing matches these filters.'}</p>
+                    {deadlines.length === 0 ? 'No deadlines yet. Create the first one.' : 'Nothing matches these filters.'}
                   </div>
                 ) : (
                   filtered.map(d => (
@@ -384,6 +291,7 @@ export default function Dashboard() {
               </section>
             )}
 
+            {/* Load More */}
             {hasMore && (
               <div className="load-more-row">
                 <button className="btn-ghost btn-sm" onClick={loadMore} disabled={loadingMore}>
@@ -393,12 +301,14 @@ export default function Dashboard() {
             )}
           </div>
 
+          {/* ── SIDEBAR ── */}
           <aside className="dash-sidebar">
             <WorkloadPanel members={members} deadlines={deadlines} />
           </aside>
         </div>
       </main>
 
+      {/* New Deadline Modal */}
       {showNewModal && (
         <NewDeadlineModal
           teamId={TEAM_ID}
