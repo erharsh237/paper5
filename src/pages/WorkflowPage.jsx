@@ -134,37 +134,36 @@ export default function WorkflowPage() {
   // Access Restricted View for non-authorized users
   if (!isAuthorized) {
     return (
-      <div className="dash">
-        <header className="dash-header">
-          <div className="dash-header-inner">
-            <div className="dash-brand">
-              <span className="dash-brand-dot" />
-              <span className="mono">SprintOS <span className="dash-brand-sub" style={{ whiteSpace: "nowrap" }}>{workspace?.name ? `| ${workspace.name}` : ''}</span></span>
-            </div>
-            <div className="dash-header-actions">
-              <NavTabs />
+      <div className="dash-root">
+        <nav className="dash-sticky-nav">
+          <div className="dash-container dash-nav-inner">
+            <Link to={`/${workspaceId}`} className="dash-nav-brand">
+              <div className="dash-logo-dot" />
+              <span className="dash-logo-name">SprintOS</span>
+              <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
+            </Link>
+
+            <NavTabs />
+
+            <div className="dash-nav-actions">
               <NotificationBell currentUser={user} />
               <UserMenu />
             </div>
           </div>
-        </header>
+        </nav>
 
-        <main className="dash-body" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-          <div style={{
-            background: 'var(--bg-layer-1)',
-            border: '1px solid var(--border-hair)',
-            borderRadius: '16px',
+        <main className="dash-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', padding: '32px' }}>
+          <div className="dash-surface-card" style={{
             padding: '40px',
             maxWidth: '520px',
-            textAlign: 'center',
-            boxShadow: 'var(--shadow-md)'
+            textAlign: 'center'
           }}>
             <div style={{
               width: '56px',
               height: '56px',
               borderRadius: '14px',
-              background: 'rgba(239, 68, 68, 0.1)',
-              color: '#ef4444',
+              background: 'rgba(209, 67, 67, 0.1)',
+              color: '#D14343',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -172,15 +171,15 @@ export default function WorkflowPage() {
             }}>
               <ShieldCheck size={32} />
             </div>
-            <h2 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 10px 0', color: 'var(--text-primary)' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 10px 0', color: 'var(--text)' }}>
               Dedicated Workflow Maintenance Gated
             </h2>
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 24px 0' }}>
-              Maintaining board columns, editing WIP limits, and modifying workflow list items is reserved for workspace Admins and designated Workflow Leaders (Scrum Master, Product Owner, Lead Engineer, Project Manager).
+            <p style={{ fontSize: '13px', color: 'var(--muted)', lineHeight: 1.6, margin: '0 0 24px 0' }}>
+              Maintaining board columns, editing WIP limits, and modifying workflow list items is reserved for workspace Admins and designated Workflow Leaders.
             </p>
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-              <button className="btn-primary" onClick={() => navigate(`/${workspaceId}`)}>
+              <button className="dash-btn-accent" onClick={() => navigate(`/${workspaceId}`)}>
                 Return to My Tasks
               </button>
             </div>
@@ -191,22 +190,25 @@ export default function WorkflowPage() {
   }
 
   return (
-    <div className="dash">
-      <header className="dash-header">
-        <div className="dash-header-inner">
-          <div className="dash-brand">
-            <span className="dash-brand-dot" />
-            <span className="mono">SprintOS <span className="dash-brand-sub" style={{ whiteSpace: "nowrap" }}>{workspace?.name ? `| ${workspace.name}` : ''}</span></span>
-          </div>
-          <div className="dash-header-actions">
-            <NavTabs />
+    <div className="dash-root">
+      <nav className="dash-sticky-nav">
+        <div className="dash-container dash-nav-inner">
+          <Link to={`/${workspaceId}`} className="dash-nav-brand">
+            <div className="dash-logo-dot" />
+            <span className="dash-logo-name">SprintOS</span>
+            <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
+          </Link>
+
+          <NavTabs />
+
+          <div className="dash-nav-actions">
             <NotificationBell currentUser={user} />
             <UserMenu />
           </div>
         </div>
-      </header>
+      </nav>
 
-      <main className="dash-body">
+      <main className="dash-container" style={{ paddingBottom: '48px' }}>
         {/* Dedicated Workflow Header Banner */}
         <div style={{
           background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.02) 100%)',

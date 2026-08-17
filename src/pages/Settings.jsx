@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { Navigate } from 'react-router-dom'
+import { Navigate, Link } from 'react-router-dom'
 import { useWorkspace } from '../lib/WorkspaceContext'
 import { useAuth } from '../lib/AuthContext'
 import {
@@ -674,21 +674,24 @@ export default function Settings() {
   }
 
   return (
-    <div className="dash">
-      <header className="dash-header">
-        <div className="dash-header-inner">
-          <div className="dash-brand">
-            <span className="dash-brand-dot" />
-            <span className="mono">SprintOS <span className="dash-brand-sub" style={{ whiteSpace: "nowrap" }}>{workspace?.name ? `| ${workspace.name}` : ''}</span></span>
-          </div>
-          <div className="dash-header-actions">
-            <NavTabs />
+    <div className="dash-root">
+      <nav className="dash-sticky-nav">
+        <div className="dash-container dash-nav-inner">
+          <Link to={`/${workspaceId}`} className="dash-nav-brand">
+            <div className="dash-logo-dot" />
+            <span className="dash-logo-name">SprintOS</span>
+            <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
+          </Link>
+
+          <NavTabs />
+
+          <div className="dash-nav-actions">
             <UserMenu />
           </div>
         </div>
-      </header>
+      </nav>
 
-      <main className="dash-body" style={{ maxWidth: '900px' }}>
+      <main className="dash-container" style={{ maxWidth: '1000px', padding: '32px 32px 64px' }}>
         <div className="settings-layout">
           {/* Sidebar Nav */}
           <aside className="settings-sidebar">

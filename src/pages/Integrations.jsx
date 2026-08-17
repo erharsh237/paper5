@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, Link } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { INTEGRATIONS } from '../lib/integrations'
 import { subscribeIntegrationConfig, saveIntegrationConfig, subscribeIntegrationCredentials, saveIntegrationCredentials } from '../lib/integrations/config'
@@ -220,21 +220,24 @@ export default function Integrations() {
   }
 
   return (
-    <div className="dash">
-      <header className="dash-header">
-        <div className="dash-header-inner">
-          <div className="dash-brand">
-            <span className="dash-brand-dot" />
-            <span className="mono">SprintOS <span className="dash-brand-sub" style={{ whiteSpace: "nowrap" }}>{workspace?.name ? `| ${workspace.name}` : ''}</span></span>
-          </div>
-          <div className="dash-header-actions">
-            <NavTabs />
+    <div className="dash-root">
+      <nav className="dash-sticky-nav">
+        <div className="dash-container dash-nav-inner">
+          <Link to={`/${workspaceId}`} className="dash-nav-brand">
+            <div className="dash-logo-dot" />
+            <span className="dash-logo-name">SprintOS</span>
+            <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
+          </Link>
+
+          <NavTabs />
+
+          <div className="dash-nav-actions">
             <UserMenu />
           </div>
         </div>
-      </header>
+      </nav>
 
-      <main className="dash-body">
+      <main className="dash-container" style={{ paddingBottom: '48px' }}>
         <p className="integrations-intro">
           These are live — Discord/Slack actually post, GitHub actually reads your repo, Vercel actually checks
           deployment status. 

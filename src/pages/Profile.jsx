@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { subscribeProfile, saveProfile, saveAim, getAimLockStatus, uploadPhoto, uploadResume, deleteResume } from '../lib/profile'
 import { resetTourSeen } from '../lib/onboarding'
@@ -50,20 +50,18 @@ export default function Profile() {
   const nextStep = () => setCurrentStep(s => Math.min(TOTAL_STEPS - 1, s + 1))
 
   useEffect(() => {
-    if (!user?.email) return
-
-    return subscribeProfile(user.email, (p) => {
-      setProfile(p)
-      if (p) {
-        setName(p.name || user.displayName || '')
-        setPhone(p.phone || '')
-        setBio(p.bio || '')
-        setAim(p.aim || '')
-      } else {
-        setName(user.displayName || '')
+    const uid = user?.id || user?.email
+    if (!uid) return
+    return subscribeProfile(workspaceId, uid, (data) => {
+      setProfile(data)
+      if (data) {
+        setName(data.name || '')
+        setPhone(data.phone || '')
+        setBio(data.bio || '')
+        setAim(data.aim || '')
       }
     })
-  }, [user?.email, user?.displayName])
+  }, [user, workspaceId])
 
   const aimLock = getAimLockStatus(profile)
 
@@ -181,21 +179,24 @@ export default function Profile() {
 
 
   return (
-    <div className="dash">
-      <header className="dash-header">
-        <div className="dash-header-inner">
-          <div className="dash-brand">
-            <span className="dash-brand-dot" />
-            <span className="mono">SprintOS <span className="dash-brand-sub" style={{ whiteSpace: "nowrap" }}>{workspace?.name ? `| ${workspace.name}` : ''}</span></span>
-          </div>
-          <div className="dash-header-actions">
-            <NavTabs />
+    <div className="dash-root">
+      <nav className="dash-sticky-nav">
+        <div className="dash-container dash-nav-inner">
+          <Link to={`/${workspaceId}`} className="dash-nav-brand">
+            <div className="dash-logo-dot" />
+            <span className="dash-logo-name">SprintOS</span>
+            <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
+          </Link>
+
+          <NavTabs />
+
+          <div className="dash-nav-actions">
             <UserMenu />
           </div>
         </div>
-      </header>
+      </nav>
 
-      <main className="dash-body">
+      <main className="dash-container" style={{ paddingBottom: '48px' }}>
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '16px' }}>
           <button type="button" className="btn-ghost btn-sm" onClick={handleRetakeTour}>
             Retake site tour

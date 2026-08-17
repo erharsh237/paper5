@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { subscribeSprints } from '../lib/sprints'
 import { subscribeMembers } from '../lib/deadlines'
@@ -33,22 +34,25 @@ export default function Meeting() {
   const activeSprint = sprints.find(s => s.status === 'active')
 
   return (
-    <div className="dash">
-      <header className="dash-header">
-        <div className="dash-header-inner">
-          <div className="dash-brand">
-            <span className="dash-brand-dot" />
-            <span className="mono">SprintOS <span className="dash-brand-sub" style={{ whiteSpace: "nowrap" }}>{workspace?.name ? `| ${workspace.name}` : ''}</span></span>
-          </div>
-          <div className="dash-header-actions">
-            <NavTabs />
+    <div className="dash-root">
+      <nav className="dash-sticky-nav">
+        <div className="dash-container dash-nav-inner">
+          <Link to={`/${workspaceId}`} className="dash-nav-brand">
+            <div className="dash-logo-dot" />
+            <span className="dash-logo-name">SprintOS</span>
+            <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
+          </Link>
+
+          <NavTabs />
+
+          <div className="dash-nav-actions">
             <NotificationBell currentUser={user} />
             <UserMenu />
           </div>
         </div>
-      </header>
+      </nav>
 
-      <main className="dash-body">
+      <main className="dash-container" style={{ paddingBottom: '48px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'stretch' }}>
           {/* Calendar Top Area */}
           <div>

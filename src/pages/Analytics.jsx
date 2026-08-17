@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -51,43 +52,50 @@ export default function Analytics() {
   }, [sprints, deadlines])
 
   const overall = useMemo(() => {
-    const total = deadlines.length
-    const done = deadlines.filter(d => d.status === 'done').length
+    const done = deadlines.filter(d => d.status === 'done')
     const blocked = deadlines.filter(d => d.status === 'blocked').length
-    let blockedHours = 0
-    let delaySamples = []
-    deadlines.forEach(d => {
-      if (d.blockerInfo?.blockedAt) blockedHours += 1 // coarse count — we don't track unblock time yet
-      if (d.status === 'done' && d.completedAt?.toDate && d.dueDate) {
-        const delayMs = d.completedAt.toDate().getTime() - new Date(d.dueDate).getTime()
-        delaySamples.push(delayMs / (1000 * 60 * 60)) // hours
-      }
-    })
+    const total = deadlines.length
+    const completionRate = total ? Math.round((done.length / total) * 100) : 0
+
+    // Delay calculation
+    const delaySamples = done
+      .filter(d => d.completedAt && d.dueDate)
+      .map(d => (new Date(d.completedAt) - new Date(d.dueDate)) / (1000 * 60 * 60))
     const avgDelayHours = delaySamples.length
       ? Math.round(delaySamples.reduce((a, b) => a + b, 0) / delaySamples.length)
-      : null
-    return {
-      completionRate: total ? Math.round((done / total) * 100) : 0,
-      blocked,
-      avgDelayHours,
-      hasDelaySamples: delaySamples.length > 0,
-    }
+      : 0
+
+    return { total, done: done.length, blocked, completionRate, avgDelayHours, hasDelaySamples: delaySamples.length > 0 }
   }, [deadlines])
 
   const mostProductiveSprint = useMemo(() => {
-    if (sprintStats.length === 0) return null
-    return sprintStats.reduce((best, s) => (s.completed > (best?.completed || 0) ? s : best), null)
+    if (!sprintStats.length) return null
+    return [...sprintStats].sort((a, b) => b.completed - a.completed)[0]
   }, [sprintStats])
 
-  const priorityDelay = useMemo(() => {
-    const byPriority = { low: 0, medium: 0, high: 0, critical: 0 }
-    deadlines.forEach(d => {
-      if (d.status !== 'done' && new Date(d.dueDate) < new Date()) {
-        byPriority[d.priority] = (byPriority[d.priority] || 0) + 1
+  const velocityTrend = useMemo(() => {
+    return sprintStats.map(s => ({
+      name: s.name,
+      completed: s.completed,
+      estimated: s.estimated,
+      actual: s.actual,
+      rate: s.completionRate,
+    }))
+  }, [sprintStats])
+
+  const workloadPerMember = useMemo(() => {
+    return members.map(m => {
+      const assigned = deadlines.filter(d => d.assigneeId === m.id)
+      const done = assigned.filter(d => d.status === 'done').length
+      const active = assigned.filter(d => d.status !== 'done').length
+      return {
+        name: m.name || m.email,
+        active,
+        done,
+        total: assigned.length,
       }
-    })
-    return Object.entries(byPriority).map(([name, value]) => ({ name, overdue: value }))
-  }, [deadlines])
+    }).filter(m => m.total > 0)
+  }, [members, deadlines])
 
   const accountability = useMemo(
     () => computeAccountability(members, deadlines, sprints).filter(a => a.level > 0),
@@ -95,21 +103,24 @@ export default function Analytics() {
   )
 
   return (
-    <div className="dash">
-      <header className="dash-header">
-        <div className="dash-header-inner">
-          <div className="dash-brand">
-            <span className="dash-brand-dot" />
-            <span className="mono">SprintOS <span className="dash-brand-sub" style={{ whiteSpace: "nowrap" }}>{workspace?.name ? `| ${workspace.name}` : ''}</span></span>
-          </div>
-          <div className="dash-header-actions">
-            <NavTabs />
+    <div className="dash-root">
+      <nav className="dash-sticky-nav">
+        <div className="dash-container dash-nav-inner">
+          <Link to={`/${workspaceId}`} className="dash-nav-brand">
+            <div className="dash-logo-dot" />
+            <span className="dash-logo-name">SprintOS</span>
+            <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
+          </Link>
+
+          <NavTabs />
+
+          <div className="dash-nav-actions">
             <UserMenu />
           </div>
         </div>
-      </header>
+      </nav>
 
-      <main className="dash-body">
+      <main className="dash-container" style={{ paddingBottom: '48px' }}>
         <section className="stat-strip">
           <StatTile label="Completion rate" value={`${overall.completionRate}%`} tone="signal" />
           <StatTile label="Currently blocked" value={overall.blocked} tone="critical" />
