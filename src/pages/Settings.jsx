@@ -361,8 +361,7 @@ export default function Settings() {
     { id: 'deadlines.manage', label: 'Manage Deadlines' },
     { id: 'meetings.manage', label: 'Manage Meetings' },
     { id: 'roles.manage', label: 'Manage Roles' },
-    { id: 'teamSettings.manage', label: 'Manage Team Settings' },
-    { id: 'onboarding.manage', label: 'Manage Onboarding' }
+    { id: 'teamSettings.manage', label: 'Manage Team Settings' }
   ]
 
   useEffect(() => {
