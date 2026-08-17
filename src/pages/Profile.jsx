@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { subscribeProfile, saveProfile, saveAim, getAimLockStatus, uploadPhoto, uploadResume, deleteResume } from '../lib/profile'
