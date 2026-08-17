@@ -1095,18 +1095,23 @@ export default function Settings() {
             {activeTab === 'billing' && isAdminOrOwner && (
               <div className="settings-section">
                 <h2>Billing & Subscription</h2>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-layer-2)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--surface-2, #EEF0F9)', padding: '18px 20px', borderRadius: '12px', border: '1px solid var(--border-soft, #EAECF6)' }}>
                   <div>
-                    <p style={{ margin: '0 0 4px 0', fontWeight: 500, color: 'var(--accent-signal, #0f9d63)' }}>
-                      🎉 Launch Special Active: 100% Free Unrestricted Plan
-                    </p>
-                    <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
-                      All workspace limits, member invites, and stack integrations are completely free.
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <span style={{ fontWeight: 800, color: 'var(--text, #1C1D2B)', fontSize: '15px' }}>
+                        {planId === 'team' ? 'Team Plan' : planId === 'scale' ? 'Scale Plan' : 'Starter Plan (Launch Special)'}
+                      </span>
+                      <span style={{ fontSize: '11px', background: 'rgba(16, 185, 129, 0.12)', color: '#059669', padding: '2px 8px', borderRadius: '100px', fontWeight: 700 }}>
+                        Active
+                      </span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '13px', color: 'var(--muted, #6E7091)' }}>
+                      Billing Cycle: <strong style={{ color: 'var(--text, #1C1D2B)' }}>{(workspace?.billing_interval === 'annual' ? 'Annual' : 'Monthly')}</strong> · Expiry / Next Renewal: <strong style={{ color: 'var(--accent, #4F46E5)' }}>{new Date(Date.now() + ((workspace?.billing_interval === 'annual' ? 365 : 30) * 24 * 60 * 60 * 1000)).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</strong>
                     </p>
                   </div>
                   <div>
-                    <button className="btn-ghost btn-sm" onClick={() => setIsPricingModalOpen(true)}>
-                      View Plan Details
+                    <button className="dash-btn-accent" style={{ padding: '7px 14px', fontSize: '12.5px' }} onClick={() => setIsPricingModalOpen(true)}>
+                      Change Plan
                     </button>
                   </div>
                 </div>
@@ -1502,6 +1507,7 @@ export default function Settings() {
         isOpen={isInvoicesModalOpen} 
         onClose={() => setIsInvoicesModalOpen(false)} 
         currentPlanId={planId}
+        workspace={workspace}
       />
       <AlertModal message={alertMessage} onClose={() => setAlertMessage(null)} />
       <ConfirmModal
