@@ -93,7 +93,7 @@ export default async function handler(req, res) {
       } catch (_) {}
     }
 
-    // 1. Remove from workspace memberships for this workspace (or all if fullDelete / single workspace)
+    // 1. If only removing from a specific workspace and user has other workspaces:
     if (hasOtherWorkspaces && workspaceId) {
       for (const id of idsList) {
         await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', workspaceId).eq('user_id', id)
@@ -107,13 +107,53 @@ export default async function handler(req, res) {
 
     const stepResults = []
 
-    // 1. Remove from workspace memberships everywhere
+    // 2. Full Account Deletion / Single Workspace Purge:
+    // First, resolve workspaces where this user is the sole owner so Postgres trigger doesn't block deletion
     for (const id of idsList) {
-      const { error: memErr, count } = await supabaseAdmin.from('workspace_members').delete({ count: 'exact' }).eq('user_id', id)
-      stepResults.push({ step: 'delete_workspace_members', id, error: memErr?.message || null, count })
+      try {
+        const { data: userMemberships } = await supabaseAdmin
+          .from('workspace_members')
+          .select('workspace_id, role')
+          .eq('user_id', id)
+
+        for (const mem of (userMemberships || [])) {
+          if (mem.role === 'owner') {
+            const { data: owners } = await supabaseAdmin
+              .from('workspace_members')
+              .select('user_id')
+              .eq('workspace_id', mem.workspace_id)
+              .eq('role', 'owner')
+
+            // If sole owner of this workspace, delete the workspace entirely
+            if (!owners || owners.length <= 1) {
+              await supabaseAdmin.from('deadlines').delete().eq('workspace_id', mem.workspace_id)
+              await supabaseAdmin.from('sprints').delete().eq('workspace_id', mem.workspace_id)
+              await supabaseAdmin.from('workspaces').delete().eq('id', mem.workspace_id)
+            }
+          }
+
+          // Delete specific membership row
+          const { error: mErr } = await supabaseAdmin
+            .from('workspace_members')
+            .delete()
+            .eq('workspace_id', mem.workspace_id)
+            .eq('user_id', id)
+
+          stepResults.push({ step: 'delete_membership', workspaceId: mem.workspace_id, id, error: mErr?.message || null })
+        }
+      } catch (wsErr) {
+        stepResults.push({ step: 'workspace_cleanup_exception', error: wsErr.message })
+      }
     }
 
-    // 2. Remove profile and personal data
+    // Direct delete from target workspace if specified
+    if (workspaceId) {
+      for (const id of idsList) {
+        await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', workspaceId).eq('user_id', id)
+      }
+    }
+
+    // 3. Remove profile and personal data
     for (const id of idsList) {
       const { error: pErr } = await supabaseAdmin.from('profiles').delete().eq('id', id)
       stepResults.push({ step: 'delete_profile_by_id', id, error: pErr?.message || null })
@@ -125,7 +165,7 @@ export default async function handler(req, res) {
       stepResults.push({ step: 'delete_invites', error: invErr?.message || null })
     }
 
-    // 3. Remove user record from users table
+    // 4. Remove user record from users table
     for (const id of idsList) {
       const { error: uErr } = await supabaseAdmin.from('users').delete().eq('id', id)
       stepResults.push({ step: 'delete_user_by_id', id, error: uErr?.message || null })
@@ -135,7 +175,7 @@ export default async function handler(req, res) {
       stepResults.push({ step: 'delete_user_by_email', error: ueErr?.message || null })
     }
 
-    // 4. Delete authentication account from Supabase Auth
+    // 5. Delete authentication account from Supabase Auth
     let authDeleted = false
     let authError = null
     if (serviceKey) {
