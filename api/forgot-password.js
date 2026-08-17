@@ -39,21 +39,24 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: linkErr.message || 'Could not generate reset link' })
     }
 
-    let actionLink = linkData?.properties?.action_link
-    if (!actionLink) {
-      return res.status(500).json({ error: 'Failed to create password reset link' })
+    const tokenHash = linkData?.properties?.hashed_token
+    const emailOtp = linkData?.properties?.email_otp
+
+    // Generate direct, unbreakable link to app.paper5.co
+    let directActionLink = ''
+    if (tokenHash) {
+      directActionLink = `https://app.paper5.co/auth/action?token_hash=${encodeURIComponent(tokenHash)}&type=recovery`
+    } else if (emailOtp) {
+      directActionLink = `https://app.paper5.co/auth/action?email=${encodeURIComponent(cleanEmail)}&token=${encodeURIComponent(emailOtp)}&type=recovery`
+    } else {
+      let actionLink = linkData?.properties?.action_link || 'https://app.paper5.co/auth/action'
+      directActionLink = actionLink
+        .replace(/app\.paper5\.com/g, 'app.paper5.co')
+        .replace(/redirect_to=http%3A%2F%2Fapp\.paper5\.com/g, 'redirect_to=https%3A%2F%2Fapp.paper5.co')
+        .replace(/redirect_to=https%3A%2F%2Fapp\.paper5\.com/g, 'redirect_to=https%3A%2F%2Fapp.paper5.co')
     }
 
-    // Replace any erroneous .com with the real deployed domain .co
-    actionLink = actionLink
-      .replace(/app\.paper5\.com/g, 'app.paper5.co')
-      .replace(/redirect_to=http%3A%2F%2Fapp\.paper5\.com/g, 'redirect_to=https%3A%2F%2Fapp.paper5.co')
-      .replace(/redirect_to=https%3A%2F%2Fapp\.paper5\.com/g, 'redirect_to=https%3A%2F%2Fapp.paper5.co')
-
-    // If actionLink didn't have redirect_to, ensure it does
-    if (!actionLink.includes('redirect_to=')) {
-      actionLink += `${actionLink.includes('?') ? '&' : '?'}redirect_to=${encodeURIComponent(targetRedirect)}`
-    }
+    const actionLink = directActionLink
 
     const htmlBody = `
       <!DOCTYPE html>

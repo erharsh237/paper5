@@ -47,25 +47,46 @@ export default function AuthAction() {
 
     const verifyLink = async () => {
       // Case A: token_hash query param
-      if (tokenHash && queryType) {
-        if (queryType === 'recovery') {
+      if (tokenHash) {
+        try {
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: queryType || 'recovery',
+          })
+          if (error) throw error
+          setStatus('success')
+          if (queryType === 'recovery' || type === 'recovery') {
+            setMessage('Link verified. Please set your new password below.')
+            setShowPasswordForm(true)
+          } else {
+            setMessage('Your email has been verified successfully! You can now sign in.')
+          }
+        } catch (err) {
+          console.error('OTP verify error:', err)
+          setStatus('error')
+          setMessage('Failed to verify link. The link may have expired or already been used.')
+        }
+        return
+      }
+
+      // Case A2: email & token query params
+      const rawToken = searchParams.get('token')
+      const rawEmail = searchParams.get('email')
+      if (rawToken && rawEmail) {
+        try {
+          const { data, error } = await supabase.auth.verifyOtp({
+            email: rawEmail,
+            token: rawToken,
+            type: queryType || 'recovery',
+          })
+          if (error) throw error
           setStatus('success')
           setMessage('Link verified. Please set your new password below.')
           setShowPasswordForm(true)
-        } else {
-          try {
-            const { error } = await supabase.auth.verifyOtp({
-              token_hash: tokenHash,
-              type: queryType,
-            })
-            if (error) throw error
-            setStatus('success')
-            setMessage('Your email has been verified successfully! You can now sign in.')
-          } catch (err) {
-            console.error('Email verification error:', err)
-            setStatus('error')
-            setMessage('Failed to verify email. The link may have expired or already been used.')
-          }
+        } catch (err) {
+          console.error('Token verify error:', err)
+          setStatus('error')
+          setMessage('Failed to verify link. The link may have expired or already been used.')
         }
         return
       }
