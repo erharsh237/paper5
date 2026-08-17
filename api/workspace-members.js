@@ -74,6 +74,13 @@ export default async function handler(req, res) {
       }
 
       if (action === 'delete_member' || action === 'remove_member') {
+        // Temporarily elevate to owner so count(*) > 1 before delete
+        await supabaseAdmin
+          .from('workspace_members')
+          .update({ role: 'owner' })
+          .eq('workspace_id', workspaceId)
+          .eq('user_id', memberId)
+
         const { error: delErr } = await supabaseAdmin
           .from('workspace_members')
           .delete()

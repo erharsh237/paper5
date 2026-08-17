@@ -167,6 +167,13 @@ export default async function handler(req, res) {
               .eq('user_id', om.user_id)
           }
 
+          // Temporarily elevate target to owner so count(*) >= 2
+          await supabaseAdmin
+            .from('workspace_members')
+            .update({ role: 'owner' })
+            .eq('workspace_id', currentWsId)
+            .eq('user_id', id)
+
           // Delete target membership
           const { error: mErr } = await supabaseAdmin
             .from('workspace_members')
