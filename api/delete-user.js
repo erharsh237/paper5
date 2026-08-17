@@ -152,6 +152,12 @@ export default async function handler(req, res) {
           // Team workspace: transfer ownership to another member
           const successorId = otherMembers[0].user_id
 
+          // Update workspace created_by to successor FIRST
+          const { error: wsErr } = await supabaseAdmin
+            .from('workspaces')
+            .update({ created_by: successorId })
+            .eq('id', currentWsId)
+
           // Elevate all remaining members to 'owner'
           for (const om of otherMembers) {
             await supabaseAdmin
@@ -161,12 +167,6 @@ export default async function handler(req, res) {
               .eq('user_id', om.user_id)
           }
 
-          // Update workspace created_by
-          await supabaseAdmin
-            .from('workspaces')
-            .update({ created_by: successorId })
-            .eq('id', currentWsId)
-
           // Delete target membership
           const { error: mErr } = await supabaseAdmin
             .from('workspace_members')
@@ -174,7 +174,14 @@ export default async function handler(req, res) {
             .eq('workspace_id', currentWsId)
             .eq('user_id', id)
 
-          stepResults.push({ step: 'delete_membership', workspaceId: currentWsId, id, error: mErr?.message || null })
+          stepResults.push({
+            step: 'delete_membership',
+            workspaceId: currentWsId,
+            id,
+            successorId,
+            wsUpdateError: wsErr?.message || null,
+            error: mErr?.message || null
+          })
         }
       } catch (wsErr) {
         stepResults.push({ step: 'workspace_cleanup_exception', error: wsErr.message })
