@@ -47,7 +47,64 @@ export default function Profile() {
   const [picUploading, setPicUploading] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   const [deletingAccount, setDeletingAccount] = useState(false)
+  const [requestingDeletion, setRequestingDeletion] = useState(false)
+  const [cancellingRequest, setCancellingRequest] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [successNotice, setSuccessNotice] = useState('')
+
+  const deletionRequest = useMemo(() => {
+    const key = user?.id || user?.email?.trim().toLowerCase()
+    const reqs = workspace?.settings?.deletion_requests || {}
+    return reqs[user?.id] || reqs[user?.email?.trim().toLowerCase()] || null
+  }, [workspace, user])
+
+  const handleRequestAccountDeletion = async () => {
+    setRequestingDeletion(true)
+    setError('')
+    try {
+      const uid = user?.id || user?.uid
+      const resp = await fetch('/api/request-account-deletion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceId, userId: uid, email: user?.email, action: 'request' })
+      })
+      const json = await resp.json()
+      if (!resp.ok) throw new Error(json.error || 'Failed to submit deletion request')
+      
+      setIsDeleteModalOpen(false)
+      setSuccessNotice('Account deletion request submitted to your workspace Administrator.')
+      setTimeout(() => setSuccessNotice(''), 5000)
+    } catch (err) {
+      console.error('Failed to request deletion:', err)
+      setError('Could not submit request: ' + err.message)
+      setIsDeleteModalOpen(false)
+    } finally {
+      setRequestingDeletion(false)
+    }
+  }
+
+  const handleCancelDeletionRequest = async () => {
+    setCancellingRequest(true)
+    setError('')
+    try {
+      const uid = user?.id || user?.uid
+      const resp = await fetch('/api/request-account-deletion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceId, userId: uid, email: user?.email, action: 'cancel' })
+      })
+      const json = await resp.json()
+      if (!resp.ok) throw new Error(json.error || 'Failed to cancel deletion request')
+      
+      setSuccessNotice('Account deletion request cancelled.')
+      setTimeout(() => setSuccessNotice(''), 5000)
+    } catch (err) {
+      console.error('Failed to cancel deletion request:', err)
+      setError('Could not cancel request: ' + err.message)
+    } finally {
+      setCancellingRequest(false)
+    }
+  }
 
   const handleExecuteDeleteAccount = async () => {
     setDeletingAccount(true)
@@ -57,7 +114,7 @@ export default function Profile() {
       const resp = await fetch('/api/delete-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: uid, email: user?.email })
+        body: JSON.stringify({ userId: uid, email: user?.email, workspaceId })
       })
       const json = await resp.json()
       if (!resp.ok) throw new Error(json.error || 'Failed to delete user')
@@ -377,43 +434,87 @@ export default function Profile() {
             
           </div>
 
-          <div className="dash-surface-card" style={{ marginTop: '28px', padding: '24px 28px', border: '1px solid #FECACA', background: '#FEF2F2' }}>
-            <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#DC2626', margin: '0 0 8px 0', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Danger Zone</h2>
-            <p style={{ fontSize: '13px', color: '#7F1D1D', margin: '0 0 16px 0', lineHeight: 1.5 }}>
-              Deleting your account will remove your access immediately. Your personal profile data and memberships will be erased. This action cannot be undone.
-            </p>
-            <button
-              type="button"
-              disabled={deletingAccount}
-              style={{
-                background: '#DC2626',
-                color: '#FFFFFF',
-                border: 'none',
-                padding: '9px 18px',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontWeight: 700,
-                cursor: deletingAccount ? 'not-allowed' : 'pointer',
-                opacity: deletingAccount ? 0.7 : 1,
-                transition: 'all 0.15s ease'
-              }}
-              onClick={() => setIsDeleteModalOpen(true)}
-            >
-              {deletingAccount ? 'Deleting Account…' : 'Delete Account & Data'}
-            </button>
-          </div>
+          {successNotice && (
+            <div style={{ marginTop: '20px', padding: '12px 18px', borderRadius: '8px', background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#065F46', fontSize: '13px', fontWeight: 600 }}>
+              {successNotice}
+            </div>
+          )}
+
+          {deletionRequest ? (
+            <div className="dash-surface-card" style={{ marginTop: '28px', padding: '24px 28px', border: '1px solid #FCD34D', background: '#FFFBEB' }}>
+              <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#B45309', margin: '0 0 8px 0', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>⏳</span> Account Deletion Request Pending
+              </h2>
+              <p style={{ fontSize: '13px', color: '#92400E', margin: '0 0 16px 0', lineHeight: 1.5 }}>
+                You have submitted a request to delete your account. Your workspace administrator has been notified and is in charge of reviewing and finalizing the deletion of your account.
+              </p>
+              <button
+                type="button"
+                disabled={cancellingRequest}
+                onClick={handleCancelDeletionRequest}
+                style={{
+                  background: 'var(--surface, #FFFFFF)',
+                  color: '#B45309',
+                  border: '1px solid #FCD34D',
+                  padding: '8px 18px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: cancellingRequest ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {cancellingRequest ? 'Cancelling…' : 'Cancel Deletion Request'}
+              </button>
+            </div>
+          ) : (
+            <div className="dash-surface-card" style={{ marginTop: '28px', padding: '24px 28px', border: '1px solid #FECACA', background: '#FEF2F2' }}>
+              <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#DC2626', margin: '0 0 8px 0', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Danger Zone</h2>
+              <p style={{ fontSize: '13px', color: '#7F1D1D', margin: '0 0 16px 0', lineHeight: 1.5 }}>
+                {isOwner
+                  ? 'Deleting your account will permanently remove your access and erase your personal profile data. This action cannot be undone.'
+                  : 'Deleting your account will submit a formal deletion request to your workspace Administrator for review and execution.'}
+              </p>
+              <button
+                type="button"
+                disabled={requestingDeletion || deletingAccount}
+                style={{
+                  background: '#DC2626',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  padding: '9px 18px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: (requestingDeletion || deletingAccount) ? 'not-allowed' : 'pointer',
+                  opacity: (requestingDeletion || deletingAccount) ? 0.7 : 1,
+                  transition: 'all 0.15s ease'
+                }}
+                onClick={() => setIsDeleteModalOpen(true)}
+              >
+                {isOwner ? 'Delete Account & Data' : 'Request Account Deletion'}
+              </button>
+            </div>
+          )}
         </div>
       </main>
 
       <ConfirmModal
         isOpen={isDeleteModalOpen}
-        title="Delete Account & Data"
-        message="Are you absolutely sure you want to delete your account? Your personal profile data and memberships will be erased. You will lose access immediately."
-        confirmText={deletingAccount ? 'Deleting Account…' : 'Delete My Account'}
+        title={isOwner ? 'Delete Account & Data' : 'Request Account Deletion'}
+        message={
+          isOwner
+            ? 'Are you absolutely sure you want to delete your account? Your personal profile data and memberships will be erased permanently.'
+            : 'Are you sure you want to request account deletion? A formal request will be sent to your workspace Administrator for final approval and deletion.'
+        }
+        confirmText={
+          isOwner
+            ? (deletingAccount ? 'Deleting Account…' : 'Delete My Account')
+            : (requestingDeletion ? 'Submitting…' : 'Submit Deletion Request')
+        }
         cancelText="Cancel"
         variant="danger"
-        onConfirm={handleExecuteDeleteAccount}
-        onCancel={() => !deletingAccount && setIsDeleteModalOpen(false)}
+        onConfirm={isOwner ? handleExecuteDeleteAccount : handleRequestAccountDeletion}
+        onCancel={() => !deletingAccount && !requestingDeletion && setIsDeleteModalOpen(false)}
       />
     </div>
   )

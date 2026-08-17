@@ -598,6 +598,47 @@ export default function Settings() {
     })
   }
 
+  const handleApproveUserDeletion = (member) => {
+    openConfirm({
+      title: 'Approve Account Deletion',
+      message: `Are you sure you want to approve account deletion for ${member.name || member.email}? This will permanently delete their account and personal data across the workspace.`,
+      confirmText: 'Delete User Account',
+      variant: 'danger',
+      onConfirm: async () => {
+        closeConfirm()
+        try {
+          const resp = await fetch('/api/delete-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: member.id, email: member.email, workspaceId })
+          })
+          const json = await resp.json()
+          if (!resp.ok) throw new Error(json.error || 'Failed to delete user')
+          
+          setAlertMessage(`Account for ${member.email} has been permanently deleted.`)
+          setMembers(prev => prev.filter(x => x.id !== member.id))
+        } catch (err) {
+          setAlertMessage('Failed to delete account: ' + err.message)
+        }
+      }
+    })
+  }
+
+  const handleRejectUserDeletion = async (member) => {
+    try {
+      const resp = await fetch('/api/request-account-deletion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reject', userId: member.id, email: member.email, workspaceId })
+      })
+      const json = await resp.json()
+      if (!resp.ok) throw new Error(json.error || 'Failed to reject request')
+      setAlertMessage(`Deletion request for ${member.email} dismissed.`)
+    } catch (err) {
+      setAlertMessage('Failed to dismiss request: ' + err.message)
+    }
+  }
+
   const handleExportData = async () => {
     setExporting(true)
     try {
@@ -1201,6 +1242,33 @@ export default function Settings() {
                   )}
                 </div>
                 
+                {/* Deletion Requests Alert Banner */}
+                {(() => {
+                  const deletionRequests = workspace?.settings?.deletion_requests || {}
+                  const pendingDeletionCount = Object.keys(deletionRequests).length
+                  if (pendingDeletionCount === 0) return null
+                  return (
+                    <div style={{
+                      marginBottom: '16px',
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      background: '#FEF2F2',
+                      border: '1px solid #FECACA',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      color: '#DC2626',
+                      fontSize: '13px',
+                      fontWeight: 600
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>⚠️</span>
+                        <span>{pendingDeletionCount} member{pendingDeletionCount !== 1 ? 's have' : ' has'} requested account deletion. Review and approve below.</span>
+                      </div>
+                    </div>
+                  )
+                })()}
+
                 <table className="members-table">
                   <thead>
                     <tr>
@@ -1212,151 +1280,200 @@ export default function Settings() {
                     </tr>
                   </thead>
                   <tbody>
-                    {members.map(m => (
-                      <tr key={m.id}>
-                        {/* Checkbox removed from Members row */}
-                        <td>
-                          <div style={{ fontWeight: 500, fontSize: '13px', color: 'var(--text-primary)' }}>
-                            {m.displayLabel || m.email || ('Member (' + (m.id || '').slice(0, 6) + ')')}
-                          </div>
-                          {m.fullName && m.email && (
-                            <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '2px' }}>{m.email}</div>
-                          )}
-                          {m.id === user?.uid && <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginLeft: '6px' }}>(You)</span>}
-                        </td>
-                        <td>
-                          <select
-                            value={m.role}
-                            onChange={(e) => handleRoleChange(m.id, m.role, e.target.value)}
-                            disabled={!isOwner || m.id === user?.uid}
-                            style={{ background: 'var(--bg-inset)', color: 'var(--text-primary)', border: '1px solid var(--border)', padding: '4px 8px', borderRadius: '4px' }}
-                          >
-                            <option value="owner">Owner</option>
-                            <option value="admin">Admin</option>
-                            <option value="member">Member</option>
-                          </select>
-                        </td>
-                        <td>
-                          {['owner', 'admin'].includes(m.role) ? (
-                            <span style={{ fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '100px', background: 'rgba(16,185,129,0.1)', color: '#059669', border: '1px solid rgba(16,185,129,0.2)' }}>
-                              Full access
-                            </span>
-                          ) : (
-                            <div style={{ position: 'relative', display: 'inline-block' }}>
-                              {/* Pill Button */}
-                              {(() => {
-                                const activeCustomPermsCount = AVAILABLE_PERMISSIONS.filter(ap =>
-                                  ap.keys.some(k => (m.permissions || []).includes(k))
-                                ).length
-                                return (
-                                  <button
-                                    type="button"
-                                    disabled={!isAdminOrOwner}
-                                    onClick={() => setEditingPermissionsMemberId(editingPermissionsMemberId === m.id ? null : m.id)}
-                                    style={{
-                                      fontSize: '11.5px',
-                                      fontWeight: 600,
-                                      padding: '4px 10px',
-                                      borderRadius: '100px',
-                                      background: activeCustomPermsCount > 0 ? 'var(--accent-dim, #E8E6FB)' : 'var(--surface-2, #EEF0F9)',
-                                      color: activeCustomPermsCount > 0 ? 'var(--accent, #4F46E5)' : 'var(--text-secondary, #6E7091)',
-                                      border: '1px solid var(--border-soft, #EAECF6)',
-                                      cursor: isAdminOrOwner ? 'pointer' : 'default',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '6px'
-                                    }}
-                                    title="Click to view & edit permissions"
-                                  >
-                                    <span>{activeCustomPermsCount > 0 ? `${activeCustomPermsCount} Custom Perms` : 'View tasks'}</span>
-                                    {isAdminOrOwner && <span style={{ fontSize: '9px', opacity: 0.7 }}>▼</span>}
-                                  </button>
-                                )
-                              })()}
+                    {members.map(m => {
+                      const deletionRequests = workspace?.settings?.deletion_requests || {}
+                      const hasDeletionRequest = !!(
+                        deletionRequests[m.id] || 
+                        deletionRequests[m.email?.toLowerCase()]
+                      )
 
-                              {/* Permissions Dropdown Popover */}
-                              {editingPermissionsMemberId === m.id && isAdminOrOwner && (
-                                <div style={{
-                                  position: 'absolute',
-                                  top: 'calc(100% + 6px)',
-                                  left: 0,
-                                  zIndex: 100,
-                                  background: 'var(--surface, #FFFFFF)',
-                                  border: '1px solid var(--border-soft, #EAECF6)',
-                                  borderRadius: '12px',
-                                  padding: '14px',
-                                  boxShadow: '0 8px 24px rgba(30,32,80,0.15)',
-                                  minWidth: '240px',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  gap: '10px'
-                                }}>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-soft, #EAECF6)', paddingBottom: '6px' }}>
-                                    <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text, #1C1D2B)' }}>Edit Permissions</span>
-                                    <span style={{ fontSize: '11px', color: 'var(--muted, #6E7091)' }}>{m.displayLabel || m.email}</span>
-                                  </div>
-
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    {AVAILABLE_PERMISSIONS.map(ap => {
-                                      const currentPerms = m.permissions || []
-                                      const hasPerm = ap.keys.some(k => currentPerms.includes(k))
-                                      return (
-                                        <label key={ap.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text, #1C1D2B)', cursor: 'pointer' }}>
-                                          <input
-                                            type="checkbox"
-                                            checked={hasPerm}
-                                            onChange={async (e) => {
-                                              const nextPerms = e.target.checked
-                                                ? Array.from(new Set([...currentPerms, ...ap.keys]))
-                                                : currentPerms.filter(p => !ap.keys.includes(p))
-                                              
-                                              // Optimistic local update
-                                              setMembers(prev => prev.map(member => member.id === m.id ? { ...member, permissions: nextPerms } : member))
-                                              
-                                              // Save to serverless API
-                                              await updateMemberPermissions(workspaceId, m.id, nextPerms)
-                                            }}
-                                          />
-                                          <span>{ap.label}</span>
-                                        </label>
-                                      )
-                                    })}
-                                  </div>
-
-                                  <button
-                                    type="button"
-                                    onClick={() => setEditingPermissionsMemberId(null)}
-                                    style={{
-                                      marginTop: '4px',
-                                      padding: '6px 12px',
-                                      borderRadius: '6px',
-                                      background: 'var(--accent, #4F46E5)',
-                                      color: '#FFFFFF',
-                                      border: 'none',
-                                      fontSize: '11.5px',
-                                      fontWeight: 700,
-                                      cursor: 'pointer'
-                                    }}
-                                  >
-                                    Done
-                                  </button>
-                                </div>
+                      return (
+                        <tr key={m.id}>
+                          {/* Checkbox removed from Members row */}
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                              <div style={{ fontWeight: 500, fontSize: '13px', color: 'var(--text-primary)' }}>
+                                {m.displayLabel || m.email || ('Member (' + (m.id || '').slice(0, 6) + ')')}
+                              </div>
+                              {hasDeletionRequest && (
+                                <span style={{ fontSize: '10.5px', fontWeight: 700, background: '#FEE2E2', color: '#DC2626', padding: '1px 8px', borderRadius: '100px', border: '1px solid #FCA5A5' }}>
+                                  Deletion Requested ⚠️
+                                </span>
                               )}
                             </div>
-                          )}
-                        </td>
-                        <td>
-                          <button
-                            className="btn-ghost btn-sm"
-                            style={{ color: 'var(--accent-critical)' }}
-                            disabled={!isAdminOrOwner || m.id === user?.uid || (m.role === 'owner' && !isOwner)}
-                            onClick={() => handleRemoveMember(m.id, m.role)}
-                          >
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                            {m.fullName && m.email && (
+                              <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '2px' }}>{m.email}</div>
+                            )}
+                            {m.id === user?.uid && <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginLeft: '6px' }}>(You)</span>}
+                          </td>
+                          <td>
+                            <select
+                              value={m.role}
+                              onChange={(e) => handleRoleChange(m.id, m.role, e.target.value)}
+                              disabled={!isOwner || m.id === user?.uid}
+                              style={{ background: 'var(--bg-inset)', color: 'var(--text-primary)', border: '1px solid var(--border)', padding: '4px 8px', borderRadius: '4px' }}
+                            >
+                              <option value="owner">Owner</option>
+                              <option value="admin">Admin</option>
+                              <option value="member">Member</option>
+                            </select>
+                          </td>
+                          <td>
+                            {['owner', 'admin'].includes(m.role) ? (
+                              <span style={{ fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '100px', background: 'rgba(16,185,129,0.1)', color: '#059669', border: '1px solid rgba(16,185,129,0.2)' }}>
+                                Full access
+                              </span>
+                            ) : (
+                              <div style={{ position: 'relative', display: 'inline-block' }}>
+                                {/* Pill Button */}
+                                {(() => {
+                                  const activeCustomPermsCount = AVAILABLE_PERMISSIONS.filter(ap =>
+                                    ap.keys.some(k => (m.permissions || []).includes(k))
+                                  ).length
+                                  return (
+                                    <button
+                                      type="button"
+                                      disabled={!isAdminOrOwner}
+                                      onClick={() => setEditingPermissionsMemberId(editingPermissionsMemberId === m.id ? null : m.id)}
+                                      style={{
+                                        fontSize: '11.5px',
+                                        fontWeight: 600,
+                                        padding: '4px 10px',
+                                        borderRadius: '100px',
+                                        background: activeCustomPermsCount > 0 ? 'var(--accent-dim, #E8E6FB)' : 'var(--surface-2, #EEF0F9)',
+                                        color: activeCustomPermsCount > 0 ? 'var(--accent, #4F46E5)' : 'var(--text-secondary, #6E7091)',
+                                        border: '1px solid var(--border-soft, #EAECF6)',
+                                        cursor: isAdminOrOwner ? 'pointer' : 'default',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '6px'
+                                      }}
+                                      title="Click to view & edit permissions"
+                                    >
+                                      <span>{activeCustomPermsCount > 0 ? `${activeCustomPermsCount} Custom Perms` : 'View tasks'}</span>
+                                      {isAdminOrOwner && <span style={{ fontSize: '9px', opacity: 0.7 }}>▼</span>}
+                                    </button>
+                                  )
+                                })()}
+
+                                {/* Permissions Dropdown Popover */}
+                                {editingPermissionsMemberId === m.id && isAdminOrOwner && (
+                                  <div style={{
+                                    position: 'absolute',
+                                    top: 'calc(100% + 6px)',
+                                    left: 0,
+                                    zIndex: 100,
+                                    background: 'var(--surface, #FFFFFF)',
+                                    border: '1px solid var(--border-soft, #EAECF6)',
+                                    borderRadius: '12px',
+                                    padding: '14px',
+                                    boxShadow: '0 8px 24px rgba(30,32,80,0.15)',
+                                    minWidth: '240px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '10px'
+                                  }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-soft, #EAECF6)', paddingBottom: '6px' }}>
+                                      <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text, #1C1D2B)' }}>Edit Permissions</span>
+                                      <span style={{ fontSize: '11px', color: 'var(--muted, #6E7091)' }}>{m.displayLabel || m.email}</span>
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                      {AVAILABLE_PERMISSIONS.map(ap => {
+                                        const currentPerms = m.permissions || []
+                                        const hasPerm = ap.keys.some(k => currentPerms.includes(k))
+                                        return (
+                                          <label key={ap.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text, #1C1D2B)', cursor: 'pointer' }}>
+                                            <input
+                                              type="checkbox"
+                                              checked={hasPerm}
+                                              onChange={async (e) => {
+                                                const nextPerms = e.target.checked
+                                                  ? Array.from(new Set([...currentPerms, ...ap.keys]))
+                                                  : currentPerms.filter(p => !ap.keys.includes(p))
+                                                
+                                                // Optimistic local update
+                                                setMembers(prev => prev.map(member => member.id === m.id ? { ...member, permissions: nextPerms } : member))
+                                                
+                                                // Save to serverless API
+                                                await updateMemberPermissions(workspaceId, m.id, nextPerms)
+                                              }}
+                                            />
+                                            <span>{ap.label}</span>
+                                          </label>
+                                        )
+                                      })}
+                                    </div>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingPermissionsMemberId(null)}
+                                      style={{
+                                        marginTop: '4px',
+                                        padding: '6px 12px',
+                                        borderRadius: '6px',
+                                        background: 'var(--accent, #4F46E5)',
+                                        color: '#FFFFFF',
+                                        border: 'none',
+                                        fontSize: '11.5px',
+                                        fontWeight: 700,
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      Done
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                          <td>
+                            {hasDeletionRequest ? (
+                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                <button
+                                  type="button"
+                                  className="btn-danger btn-sm"
+                                  style={{
+                                    background: '#DC2626',
+                                    color: '#FFFFFF',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    padding: '5px 10px',
+                                    fontSize: '11.5px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer'
+                                  }}
+                                  disabled={!isAdminOrOwner}
+                                  onClick={() => handleApproveUserDeletion(m)}
+                                  title="Approve and permanently delete user account"
+                                >
+                                  Approve & Delete
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn-ghost btn-sm"
+                                  style={{ padding: '4px 8px', fontSize: '11.5px' }}
+                                  disabled={!isAdminOrOwner}
+                                  onClick={() => handleRejectUserDeletion(m)}
+                                  title="Dismiss deletion request"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                className="btn-ghost btn-sm"
+                                style={{ color: 'var(--accent-critical)' }}
+                                disabled={!isAdminOrOwner || m.id === user?.uid || (m.role === 'owner' && !isOwner)}
+                                onClick={() => handleRemoveMember(m.id, m.role)}
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
 

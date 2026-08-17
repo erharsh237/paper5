@@ -6,7 +6,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { userId, email } = req.body || {}
+  const { userId, email, workspaceId } = req.body || {}
   if (!userId && !email) {
     return res.status(400).json({ error: 'Missing userId or email parameter' })
   }
@@ -23,6 +23,27 @@ export default async function handler(req, res) {
   const supabaseAdmin = createClient(supabaseUrl, activeKey)
 
   try {
+    // 0. If workspaceId passed, clean up deletion_requests in workspace settings
+    if (workspaceId) {
+      try {
+        const { data: ws } = await supabaseAdmin
+          .from('workspaces')
+          .select('settings')
+          .eq('id', workspaceId)
+          .maybeSingle()
+
+        if (ws?.settings?.deletion_requests) {
+          const reqs = { ...ws.settings.deletion_requests }
+          if (userId && reqs[userId]) delete reqs[userId]
+          if (email && reqs[email.trim().toLowerCase()]) delete reqs[email.trim().toLowerCase()]
+          await supabaseAdmin
+            .from('workspaces')
+            .update({ settings: { ...ws.settings, deletion_requests: reqs } })
+            .eq('id', workspaceId)
+        }
+      } catch (_) {}
+    }
+
     // 1. Remove from workspace memberships
     if (userId) {
       await supabaseAdmin.from('workspace_members').delete().eq('user_id', userId)
