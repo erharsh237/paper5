@@ -1097,9 +1097,12 @@ export default function Dashboard() {
           teamId={TEAM_ID}
           members={members}
           currentUser={user}
-          activeSprint={activeSprint}
+          activeSprint={sprints.find(s => s.id === selectedSprintViewId) || activeSprints[0] || null}
           sprints={sprints}
-          onClose={() => setShowNewModal(false)}
+          onClose={() => {
+            setShowNewModal(false)
+            setSelectedSprintViewId(null)
+          }}
         />
       )}
 
