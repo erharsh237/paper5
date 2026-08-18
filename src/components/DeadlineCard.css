@@ -1,29 +1,29 @@
 .dcard {
   background: var(--surface, #FFFFFF);
   border: 1px solid var(--border-soft, #E2E8F0);
-  border-left: 3.5px solid var(--accent, #4F46E5);
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(30, 32, 80, 0.04);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 9px;
+  box-shadow: 0 1px 2px rgba(30, 32, 80, 0.04);
+  transition: all 0.15s ease;
   text-align: left;
   width: 100%;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .dcard:hover { 
-  border-color: rgba(79, 70, 229, 0.4);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(30, 32, 80, 0.08);
+  border-color: #CBD5E1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(30, 32, 80, 0.06);
 }
 
-.dcard--overdue { border-left-color: #EF4444; }
-.dcard--critical { border-left-color: #F59E0B; }
-.dcard--warn { border-left-color: #F59E0B; }
-.dcard--clear { border-left-color: #10B981; }
-.dcard--done { border-left-color: #10B981; opacity: 0.8; }
+.dcard--overdue { border-left: 3px solid #EF4444; }
+.dcard--critical { border-left: 3px solid #F59E0B; }
+.dcard--warn { border-left: 3px solid #F59E0B; }
+.dcard--clear { border-left: 3px solid #10B981; }
+.dcard--done { border-left: 3px solid #94A3B8; opacity: 0.85; }
 
 .dcard-main {
-  padding: 14px 16px;
+  padding: 10px 12px;
   cursor: pointer;
   text-align: left;
 }
@@ -32,66 +32,83 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
 }
 
-.dcard-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.dcard-badges { 
+  display: flex; 
+  gap: 5px; 
+  align-items: center;
+  flex-wrap: nowrap;
+}
 
 .dcard-due {
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--muted);
   font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .dcard-title {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   letter-spacing: -0.01em;
   line-height: 1.35;
   color: var(--text);
   text-align: left;
+  word-break: break-word;
 }
 
 .dcard-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
   text-align: left;
 }
 
 .dcard-assignee {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  gap: 5px;
+  font-size: 11px;
   color: var(--muted);
   font-weight: 500;
+  min-width: 0;
+  flex: 1;
+}
+
+.dcard-assignee-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 85px;
 }
 
 .avatar-dot {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: var(--surface-2);
-  border: 1px solid var(--border-soft);
+  background: var(--surface-2, #F8FAFC);
+  border: 1px solid var(--border-soft, #E2E8F0);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
   color: var(--text);
   flex-shrink: 0;
 }
 
 .dcard-date {
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--muted);
   font-family: var(--font-mono);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .dcard-expanded {

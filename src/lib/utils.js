@@ -85,6 +85,7 @@ export function formatWorkspaceDate(dateValue, settings) {
   
   return {
     full: `${dateStr} · ${timeStr}`,
+    short: format(date, 'MMM d'),
     relative: formatDistanceToNow(date, { addSuffix: true })
   };
 }

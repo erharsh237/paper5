@@ -156,26 +156,39 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
 
 
 
+  const displayName = deadline.assigneeName?.includes('@') 
+    ? deadline.assigneeName.split('@')[0] 
+    : (deadline.assigneeName || 'Member')
+
   return (
     <div className={`dcard dcard--${urgency}`}>
       <div className="dcard-main" onClick={() => setExpanded(!expanded)}>
         <div className="dcard-top">
           <div className="dcard-badges">
-            <UrgencyBadge urgency={urgency} status={deadline.status} />
+            {urgency === 'overdue' && deadline.status !== 'done' && (
+              <span className="badge badge--overdue">
+                <span className="badge-dot" /> Overdue
+              </span>
+            )}
+            {deadline.status === 'blocked' && (
+              <span className="badge badge--overdue">
+                <span className="badge-dot" /> Blocked
+              </span>
+            )}
             <PriorityBadge priority={deadline.priority} />
           </div>
-          <span className="dcard-due mono">{due.relative}</span>
-          {sprintLocked && <span className="dcard-due mono" title="Sprint locked — deadline, owner, priority, and estimate are frozen">🔒</span>}
+          <span className="dcard-due mono" title={due.full}>{due.relative}</span>
+          {sprintLocked && <span className="dcard-due mono" title="Sprint locked — deadline scope is frozen">🔒</span>}
         </div>
 
         <h3 className="dcard-title">{deadline.title}</h3>
 
         <div className="dcard-meta">
-          <span className="dcard-assignee">
-            <span className="avatar-dot mono">{deadline.assigneeName?.[0]?.toUpperCase() || '?'}</span>
-            {deadline.assigneeName}
+          <span className="dcard-assignee" title={deadline.assigneeEmail || deadline.assigneeName}>
+            <span className="avatar-dot mono">{displayName[0]?.toUpperCase() || '?'}</span>
+            <span className="dcard-assignee-name">{displayName}</span>
           </span>
-          <span className="dcard-date mono">{due.full}</span>
+          <span className="dcard-date mono" title={due.full}>{due.short || due.full}</span>
         </div>
       </div>
 
