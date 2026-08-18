@@ -445,6 +445,47 @@
   margin-bottom: 20px;
 }
 
+/* Time range pills */
+.dash-range-pills {
+  display: flex;
+  gap: 3px;
+  background: var(--surface-2, #F8FAFC);
+  padding: 3px;
+  border-radius: 9px;
+  border: 1px solid var(--border-soft, #E2E8F0);
+}
+
+.dash-range-btn {
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.dash-range-btn:focus,
+.dash-range-btn:focus-visible {
+  outline: none;
+}
+
+.dash-range-btn.active {
+  background: #FFFFFF;
+  color: var(--accent, #4F46E5);
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(30, 32, 80, 0.08);
+}
+
+.dash-range-btn:hover:not(.active) {
+  color: var(--text);
+}
+
 .dash-panel-title {
   font-size: 15px;
   font-weight: 700;
