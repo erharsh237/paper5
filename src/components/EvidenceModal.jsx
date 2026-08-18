@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { submitForReview } from '../lib/deadlines'
 import { createNotification, NOTIFICATION_TYPES } from '../lib/notifications'
 import { useWorkspace } from '../lib/WorkspaceContext'
@@ -46,7 +47,9 @@ export default function EvidenceModal({ deadline, currentUser, onClose }) {
     }
   }
 
-  return (
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
     <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal-panel" role="dialog" aria-modal="true" aria-label="Submit for review">
         <div className="modal-header">
@@ -99,6 +102,7 @@ export default function EvidenceModal({ deadline, currentUser, onClose }) {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

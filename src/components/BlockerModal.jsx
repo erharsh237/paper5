@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { setBlocked } from '../lib/deadlines'
 import { createNotification, NOTIFICATION_TYPES } from '../lib/notifications'
 import { BLOCKER_CATEGORIES } from '../lib/utils'
@@ -41,7 +42,9 @@ export default function BlockerModal({ deadline, currentUser, onClose }) {
     }
   }
 
-  return (
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
     <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal-panel" role="dialog" aria-modal="true" aria-label="Report blocker">
         <div className="modal-header">
@@ -95,6 +98,7 @@ export default function BlockerModal({ deadline, currentUser, onClose }) {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
