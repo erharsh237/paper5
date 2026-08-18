@@ -122,21 +122,29 @@ export default function ForcePasswordReset() {
               body: JSON.stringify({ email: cleanEmail, userId: data.user.id })
             })
           } catch (apiErr) {
-        // 4. Update in-memory Auth context state dynamically so UI switches instantly without manual refresh
-        setUser(prev => ({
-          ...(prev || {}),
-          user_metadata: {
-            ...(prev?.user_metadata || {}),
-            must_change_password: false,
-            username: uniqueUsername
+            console.warn('ForcePasswordReset accept-invite notice:', apiErr)
           }
-        }))
-        setUserData(prev => ({
-          ...(prev || {}),
-          username: uniqueUsername,
-          requires_password_reset: false,
-          requiresPasswordReset: false
-        }))
+        }
+
+        // 4. Update in-memory Auth context state dynamically so UI switches instantly without manual refresh
+        if (typeof setUser === 'function') {
+          setUser(prev => ({
+            ...(prev || {}),
+            user_metadata: {
+              ...(prev?.user_metadata || {}),
+              must_change_password: false,
+              username: uniqueUsername
+            }
+          }))
+        }
+        if (typeof setUserData === 'function') {
+          setUserData(prev => ({
+            ...(prev || {}),
+            username: uniqueUsername,
+            requires_password_reset: false,
+            requiresPasswordReset: false
+          }))
+        }
       }
       
       // Navigate cleanly to workspace picker
