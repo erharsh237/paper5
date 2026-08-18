@@ -863,26 +863,9 @@ export default function Dashboard() {
                           )}
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          {sDeadlines.length === 0 ? (
-                            <div className="dash-sprint-empty-tasks">
-                              <div style={{ marginBottom: '6px' }}>No deadlines assigned to Sprint {sprint.number} yet.</div>
-                              {sprintTab === 'active' && canAddKanbanItems && (
-                                <button
-                                  type="button"
-                                  className="dash-btn-accent"
-                                  onClick={() => {
-                                    setSelectedSprintViewId(sprint.id)
-                                    setShowNewModal(true)
-                                  }}
-                                  style={{ padding: '4px 12px', fontSize: '11px', borderRadius: '6px' }}
-                                >
-                                  + Assign First Deadline
-                                </button>
-                              )}
-                            </div>
-                          ) : (
-                            sDeadlines.map(d => {
+                        {sDeadlines.length > 0 && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            {sDeadlines.map(d => {
                               const statusColors = {
                                 not_started: '#1C1D2B',
                                 in_progress: '#3D6FD6',
@@ -912,9 +895,9 @@ export default function Dashboard() {
                                   </div>
                                 </div>
                               )
-                            })
-                          )}
-                        </div>
+                            })}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )
