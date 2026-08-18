@@ -93,13 +93,21 @@ export function subscribeUserWorkspaces(uid, callback) {
 }
 
 export function subscribeWorkspaceMembers(workspaceId, callback) {
+  if (!workspaceId) {
+    if (typeof callback === 'function') callback([])
+    return () => {}
+  }
+
+  let isSubscribed = true
+
   const fetchList = async () => {
+    if (!isSubscribed) return
     // 1. Try serverless API first (uses service role key to get real emails, full names, and permissions)
     try {
       const res = await fetch(`/api/workspace-members?workspaceId=${encodeURIComponent(workspaceId)}`)
       if (res.ok) {
         const json = await res.json()
-        if (json?.members && Array.isArray(json.members)) {
+        if (isSubscribed && json?.members && Array.isArray(json.members)) {
           callback(json.members)
           return
         }
@@ -109,46 +117,60 @@ export function subscribeWorkspaceMembers(workspaceId, callback) {
     }
 
     // 2. Direct client query fallback
-    const { data, error } = await supabase
-      .from('workspace_members')
-      .select(`
-        user_id,
-        role,
-        joined_at,
-        users ( id, email, full_name, avatar_url )
-      `)
-      .eq('workspace_id', workspaceId)
+    try {
+      const { data, error } = await supabase
+        .from('workspace_members')
+        .select(`
+          user_id,
+          role,
+          joined_at,
+          users ( id, email, full_name, avatar_url )
+        `)
+        .eq('workspace_id', workspaceId)
 
-    if (error || !data) {
-      console.warn('subscribeWorkspaceMembers error:', error)
-      callback([])
-      return
-    }
-
-    const mapped = data.map(row => {
-      const usersJoin = row.users
-      const email = usersJoin?.email || null
-      const fullName = usersJoin?.full_name || null
-      return {
-        id: row.user_id,
-        userId: row.user_id,
-        email,
-        displayLabel: email || fullName || ('Member (' + (row.user_id || '').slice(0, 6) + ')'),
-        fullName,
-        avatarUrl: usersJoin?.avatar_url || null,
-        role: row.role || 'member',
-        permissions: [],
-        joinedAt: row.joined_at
+      if (error || !data) {
+        if (isSubscribed) callback([])
+        return
       }
-    })
-    callback(mapped)
+
+      if (isSubscribed) {
+        const mapped = data.map(row => {
+          const usersJoin = row.users
+          const email = usersJoin?.email || null
+          const fullName = usersJoin?.full_name || null
+          return {
+            id: row.user_id,
+            userId: row.user_id,
+            email,
+            displayLabel: email || fullName || ('Member (' + (row.user_id || '').slice(0, 6) + ')'),
+            fullName,
+            avatarUrl: usersJoin?.avatar_url || null,
+            role: row.role || 'member',
+            permissions: [],
+            joinedAt: row.joined_at
+          }
+        })
+        callback(mapped)
+      }
+    } catch (_) {}
   }
 
   const channel = supabase.channel(`public:workspace_members:workspace_id=eq.${workspaceId}:wm:${Math.random().toString(36).substring(7)}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_members', filter: `workspace_id=eq.${workspaceId}` }, () => fetchList())
     .subscribe()
+  
   fetchList()
-  return () => supabase.removeChannel(channel)
+
+  // Heartbeat poll every 3.5 seconds to guarantee instant updates across all browsers/tabs without manual refresh
+  const pollTimer = setInterval(() => {
+    if (isSubscribed) fetchList()
+  }, 3500)
+
+  return () => {
+    isSubscribed = false
+    clearInterval(pollTimer)
+    supabase.removeChannel(channel)
+  }
 }
 
 export function subscribeInvites(workspaceId, callback) {
@@ -160,6 +182,7 @@ export function subscribeInvites(workspaceId, callback) {
   let isSubscribed = true
 
   const fetchList = async () => {
+    if (!isSubscribed) return
     try {
       const { data, error } = await supabase
         .from('invites')
@@ -172,7 +195,6 @@ export function subscribeInvites(workspaceId, callback) {
         callback(data)
       }
     } catch (err) {
-      console.warn('Failed to fetch pending invites from DB:', err.message)
       if (isSubscribed) callback([])
     }
   }
@@ -185,8 +207,14 @@ export function subscribeInvites(workspaceId, callback) {
 
   fetchList()
 
+  // Heartbeat poll every 3.5 seconds to keep pending invites perfectly in sync
+  const pollTimer = setInterval(() => {
+    if (isSubscribed) fetchList()
+  }, 3500)
+
   return () => {
     isSubscribed = false
+    clearInterval(pollTimer)
     supabase.removeChannel(channel)
   }
 }
