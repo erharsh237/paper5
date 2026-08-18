@@ -96,7 +96,7 @@ export async function createDeadline(workspaceId, teamId, data) {
     title: data.title,
     description: data.description || '',
     priority: data.priority || 'medium',
-    status: 'in_progress',
+    status: data.status || 'not_started',
     due_date: data.dueDate,
     assignee_id: data.assigneeId,
     assignee_name: data.assigneeName,
