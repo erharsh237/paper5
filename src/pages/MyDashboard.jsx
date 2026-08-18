@@ -673,9 +673,11 @@ export default function MyDashboard() {
         {viewMode === 'board' ? (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(5, 1fr)',
+            gridTemplateColumns: 'repeat(5, minmax(180px, 1fr))',
             gap: '14px',
-            alignItems: 'start'
+            alignItems: 'start',
+            overflowX: 'auto',
+            paddingBottom: '8px'
           }}>
             {kanbanColumns.map(col => (
               <div key={col.id} className="dash-surface-card" style={{ overflow: 'hidden' }}>
@@ -717,26 +719,9 @@ export default function MyDashboard() {
                 }}>
                   {col.items.length === 0 ? (
                     <div>
-                      <div style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 500, marginBottom: col.showAdd ? '10px' : '0' }}>
+                      <div style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 500 }}>
                         {col.emptyText}
                       </div>
-                      {col.showAdd && (
-                        <button
-                          type="button"
-                          onClick={() => setShowNewModal(true)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: 'var(--accent, #4F46E5)',
-                            fontSize: '12.5px',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            padding: '4px 8px'
-                          }}
-                        >
-                          + Add task
-                        </button>
-                      )}
                     </div>
                   ) : (
                     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>

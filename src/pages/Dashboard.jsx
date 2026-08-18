@@ -697,9 +697,11 @@ export default function Dashboard() {
             {viewMode === 'board' ? (
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gridTemplateColumns: 'repeat(5, minmax(180px, 1fr))',
                 gap: '14px',
-                alignItems: 'start'
+                alignItems: 'start',
+                overflowX: 'auto',
+                paddingBottom: '8px'
               }}>
                 {kanbanColumns.map(col => (
                   <div key={col.id} className="dash-surface-card" style={{ overflow: 'hidden' }}>
