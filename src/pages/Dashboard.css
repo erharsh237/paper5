@@ -605,6 +605,196 @@
   margin-bottom: 20px;
 }
 
+/* ─────────────────────────────────────────────────────────────
+   SPRINT CARDS GALLERY & MINI DEADLINE CARDS
+───────────────────────────────────────────────────────────── */
+.dash-sprint-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.dash-sprint-card {
+  background: #FFFFFF;
+  border: 1.5px solid var(--border-soft);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(30, 32, 80, 0.05), 0 1px 2px rgba(30, 32, 80, 0.03);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dash-sprint-card:hover {
+  border-color: rgba(79, 70, 229, 0.4);
+  box-shadow: 0 6px 18px rgba(30, 32, 80, 0.08);
+  transform: translateY(-1px);
+}
+
+.dash-sprint-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dash-sprint-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dash-sprint-number {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.2px;
+}
+
+.dash-sprint-badge-active {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.dash-sprint-badge-closed {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--border-soft);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.dash-sprint-goal-box {
+  border-left: 3px solid var(--accent);
+  background: rgba(79, 70, 229, 0.03);
+  border-radius: 0 8px 8px 0;
+  padding: 6px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.dash-sprint-timeline {
+  font-size: 11.5px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.dash-sprint-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dash-sprint-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.dash-sprint-progress-track {
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: 100px;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+}
+
+.dash-sprint-progress-bar {
+  height: 100%;
+  border-radius: 100px;
+  transition: width 0.4s ease;
+}
+
+.dash-sprint-deadlines-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.dash-sprint-deadlines-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.dash-sprint-deadlines-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: var(--font-mono);
+}
+
+.dash-sprint-add-task-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.dash-sprint-add-task-btn:hover {
+  background: var(--accent-dim);
+}
+
+.dash-sprint-mini-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 7px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  transition: all 0.15s ease;
+}
+
+.dash-sprint-mini-card:hover {
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: 0 1px 4px rgba(30, 32, 80, 0.05);
+}
+
+.dash-sprint-empty-tasks {
+  padding: 12px;
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--muted);
+  background: var(--surface-2);
+  border-radius: 8px;
+  border: 1px dashed var(--border-soft);
+}
+
 .dash-btn-accent {
   font-family: var(--font-sans);
   font-size: 13px;
