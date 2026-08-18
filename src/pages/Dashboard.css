@@ -606,33 +606,50 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
-   SPRINT CARDS GALLERY & MINI DEADLINE CARDS
+   SPRINT CARDS GALLERY & MINI DEADLINE CARDS (VERTICAL CARDS)
 ───────────────────────────────────────────────────────────── */
 .dash-sprint-cards-container {
   display: flex;
-  flex-direction: column;
-  gap: 14px;
-  max-height: 420px;
-  overflow-y: auto;
-  padding-right: 4px;
+  flex-direction: row;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 4px 4px 12px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+
+.dash-sprint-cards-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.dash-sprint-cards-container::-webkit-scrollbar-thumb {
+  background: var(--border-soft);
+  border-radius: 10px;
 }
 
 .dash-sprint-card {
   background: #FFFFFF;
   border: 1.5px solid var(--border-soft);
-  border-radius: 14px;
-  padding: 16px 18px;
+  border-radius: 16px;
+  padding: 18px 18px 16px;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   gap: 12px;
-  box-shadow: 0 2px 8px rgba(30, 32, 80, 0.05), 0 1px 2px rgba(30, 32, 80, 0.03);
+  width: 295px;
+  min-width: 295px;
+  max-width: 320px;
+  min-height: 330px;
+  box-shadow: 0 4px 14px rgba(30, 32, 80, 0.06), 0 1px 3px rgba(30, 32, 80, 0.04);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  scroll-snap-align: start;
+  flex-shrink: 0;
 }
 
 .dash-sprint-card:hover {
-  border-color: rgba(79, 70, 229, 0.4);
-  box-shadow: 0 6px 18px rgba(30, 32, 80, 0.08);
-  transform: translateY(-1px);
+  border-color: rgba(79, 70, 229, 0.45);
+  box-shadow: 0 8px 24px rgba(30, 32, 80, 0.1);
+  transform: translateY(-2px);
 }
 
 .dash-sprint-card-header {
