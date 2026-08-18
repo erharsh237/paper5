@@ -86,6 +86,11 @@ export async function updateSprint(workspaceId, id, patch) {
 }
 
 export async function deleteSprint(workspaceId, id) {
+  try {
+    await supabase.from('deadlines').update({ sprint_id: null }).eq('sprint_id', id).eq('workspace_id', workspaceId)
+  } catch (e) {
+    console.warn('Unlinking deadlines before sprint delete:', e)
+  }
   const { error } = await supabase.from('sprints').delete().eq('id', id).eq('workspace_id', workspaceId)
   if (error) throw error
   notifySprintChange()
