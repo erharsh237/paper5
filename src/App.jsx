@@ -76,21 +76,12 @@ function PageLoading() {
       background: 'var(--bg-layer-1, #09090b)',
       color: 'var(--text-primary, #ffffff)',
     }}>
-      <div style={{
-        width: '42px',
-        height: '42px',
-        border: '3px solid rgba(16, 185, 129, 0.2)',
-        borderTop: '3px solid #10b981',
-        borderRadius: '50%',
-        animation: 'spin 0.8s linear infinite'
-      }} />
-      <span style={{ fontSize: '13px', color: '#a1a1aa', fontWeight: 500, letterSpacing: '0.05em' }}>Loading SprintOS…</span>
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
+      <Cardio
+        size="46"
+        stroke="3.5"
+        speed="1.8"
+        color="#10b981"
+      />
     </div>
   )
 }
