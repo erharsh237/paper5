@@ -259,15 +259,26 @@ export default function WorkflowPage() {
         </div>
 
         {/* Maintenance Controls Bar */}
-        <section className="controls-bar" style={{ flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
-          <div className="controls-left">
-            <input
-              className="search-input"
-              placeholder="Filter list items…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="filter-select">
+        <section className="dash-controls-bar">
+          <div className="dash-controls-left">
+            <div className="dash-search-bar" style={{ minWidth: '220px', padding: '6px 12px' }}>
+              <svg className="dash-search-icon" width="14" height="14" viewBox="0 0 15 15" fill="none">
+                <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5"/>
+                <path d="M10 10L13 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              <input
+                className="dash-search-input"
+                placeholder="Filter list items…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="dash-filter-select"
+            >
               <option value="all">All Column Stages</option>
               <option value="not_started">To Do / Backlog</option>
               <option value="in_progress">In Progress</option>
@@ -277,16 +288,40 @@ export default function WorkflowPage() {
             </select>
           </div>
 
-          <div className="controls-right" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div className="dash-controls-right" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <button 
+              type="button"
               className="btn-ghost btn-sm" 
               onClick={() => setShowNewSprintModal(true)} 
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid var(--border-subtle)', borderRadius: '8px' }}
+              style={{
+                padding: '7px 14px',
+                fontSize: '12.5px',
+                borderRadius: '10px',
+                border: '1px solid var(--border-soft)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                fontWeight: 600
+              }}
+              title="Create a new sprint cycle"
             >
-              <Zap size={14} /> + New Sprint
+              <Zap size={14} /> + New sprint
             </button>
-            <button className="btn-primary btn-sm" onClick={() => setShowNewModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Plus size={15} /> Add Workflow Item
+            <button
+              type="button"
+              className="dash-btn-accent"
+              onClick={() => setShowNewModal(true)}
+              style={{
+                padding: '8px 16px',
+                fontSize: '12.5px',
+                borderRadius: '10px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <Plus size={15} /> + Add Workflow Item
             </button>
           </div>
         </section>
