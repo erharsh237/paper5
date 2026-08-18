@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { validatePassword } from '../lib/validation'
@@ -27,8 +27,15 @@ export default function AuthAction() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPasswordForm, setShowPasswordForm] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false)
 
   const isVerifying = useRef(false)
+
+  const pwdValidation = useMemo(() => validatePassword(newPassword), [newPassword])
+  const passwordsMatch = confirmPassword.length > 0 && newPassword === confirmPassword
+  const passwordsMismatch = confirmPassword.length > 0 && newPassword !== confirmPassword
 
   useEffect(() => {
     // If hash contains error
@@ -201,29 +208,142 @@ export default function AuthAction() {
             <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '24px', textAlign: 'left' }}>
               <div>
                 <label className="auth-label" style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 600 }}>New Password</label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Min 8 chars (A-Z, a-z, 0-9, special)"
-                  className="auth-input"
-                  required
-                  style={{ width: '100%' }}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    onFocus={() => setIsPasswordFocused(true)}
+                    placeholder="Min 8 chars (A-Z, a-z, 0-9, special)"
+                    className="auth-input"
+                    required
+                    maxLength={72}
+                    style={{ width: '100%', paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--text-secondary, #666)',
+                      padding: 0,
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                    aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showNewPassword ? (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    )}
+                  </button>
+                </div>
+
+                {/* Password Requirements Checklist */}
+                {(isPasswordFocused || newPassword.length > 0) && (
+                  <div style={{
+                    marginTop: '10px',
+                    padding: '12px 14px',
+                    background: 'rgba(0, 0, 0, 0.03)',
+                    border: '1px solid var(--border-subtle, #e5e7eb)',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px'
+                  }}>
+                    <div style={{ fontWeight: 600, color: 'var(--text-secondary, #4b5563)', marginBottom: '2px' }}>
+                      Password Requirements:
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: pwdValidation.requirements.minLength ? '#10b981' : '#6b7280' }}>
+                        <span style={{ fontWeight: 700 }}>{pwdValidation.requirements.minLength ? '✓' : '○'}</span>
+                        <span>Min 8 characters</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: pwdValidation.requirements.hasUpper ? '#10b981' : '#6b7280' }}>
+                        <span style={{ fontWeight: 700 }}>{pwdValidation.requirements.hasUpper ? '✓' : '○'}</span>
+                        <span>Uppercase (A-Z)</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: pwdValidation.requirements.hasLower ? '#10b981' : '#6b7280' }}>
+                        <span style={{ fontWeight: 700 }}>{pwdValidation.requirements.hasLower ? '✓' : '○'}</span>
+                        <span>Lowercase (a-z)</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: pwdValidation.requirements.hasNumber ? '#10b981' : '#6b7280' }}>
+                        <span style={{ fontWeight: 700 }}>{pwdValidation.requirements.hasNumber ? '✓' : '○'}</span>
+                        <span>Number (0-9)</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: pwdValidation.requirements.hasSpecial ? '#10b981' : '#6b7280' }}>
+                        <span style={{ fontWeight: 700 }}>{pwdValidation.requirements.hasSpecial ? '✓' : '○'}</span>
+                        <span>Special character</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
+
               <div>
                 <label className="auth-label" style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 600 }}>Confirm New Password</label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Repeat new password"
-                  className="auth-input"
-                  required
-                  style={{ width: '100%' }}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Repeat new password"
+                    className="auth-input"
+                    required
+                    maxLength={72}
+                    style={{ 
+                      width: '100%', 
+                      paddingRight: '40px',
+                      borderColor: passwordsMismatch ? '#ef4444' : passwordsMatch ? '#10b981' : undefined
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--text-secondary, #666)',
+                      padding: 0,
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirmPassword ? (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    )}
+                  </button>
+                </div>
+
+                {confirmPassword.length > 0 && (
+                  <div style={{ marginTop: '6px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', color: passwordsMatch ? '#10b981' : '#ef4444' }}>
+                    <span>{passwordsMatch ? '✓ Passwords match' : '✕ Passwords do not match'}</span>
+                  </div>
+                )}
               </div>
-              <button type="submit" className="auth-submit-btn" style={{ width: '100%', justifyContent: 'center', marginTop: '8px' }}>
+
+              <button 
+                type="submit" 
+                className="auth-submit-btn" 
+                disabled={!pwdValidation.valid || !passwordsMatch || status === 'processing'}
+                style={{ width: '100%', justifyContent: 'center', marginTop: '8px', opacity: (!pwdValidation.valid || !passwordsMatch) ? 0.6 : 1 }}
+              >
                 Set New Password
               </button>
             </form>
@@ -241,6 +361,5 @@ export default function AuthAction() {
         </div>
       </div>
       <AlertModal message={alertMessage} onClose={() => setAlertMessage(null)} />
-    </div>
   )
 }
