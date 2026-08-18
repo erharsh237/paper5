@@ -28,6 +28,8 @@ export default function AuthAction() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPasswordForm, setShowPasswordForm] = useState(false)
 
+  const isVerifying = useRef(false)
+
   useEffect(() => {
     // If hash contains error
     if (hashError) {
@@ -38,7 +40,7 @@ export default function AuthAction() {
 
     // Listen to Supabase auth events (handles PKCE code exchange & recovery hash automatically)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
+      if (event === 'PASSWORD_RECOVERY' || (session && (type === 'recovery' || window.location.pathname.includes('reset')))) {
         setStatus('success')
         setMessage('Link verified. Please set your new password below.')
         setShowPasswordForm(true)
@@ -46,83 +48,73 @@ export default function AuthAction() {
     })
 
     const verifyLink = async () => {
-      // Case A: token_hash query param
-      if (tokenHash) {
-        try {
-          const { data, error } = await supabase.auth.verifyOtp({
-            token_hash: tokenHash,
-            type: queryType || 'recovery',
-          })
-          if (error) throw error
-          setStatus('success')
-          if (queryType === 'recovery' || type === 'recovery') {
-            setMessage('Link verified. Please set your new password below.')
-            setShowPasswordForm(true)
-          } else {
-            setMessage('Your email has been verified successfully! You can now sign in.')
-          }
-        } catch (err) {
-          console.error('OTP verify error:', err)
-          setStatus('error')
-          setMessage('Failed to verify link. The link may have expired or already been used.')
-        }
-        return
-      }
+      if (isVerifying.current) return
+      isVerifying.current = true
 
-      // Case A2: email & token query params
-      const rawToken = searchParams.get('token')
-      const rawEmail = searchParams.get('email')
-      if (rawToken && rawEmail) {
-        try {
-          const { data, error } = await supabase.auth.verifyOtp({
-            email: rawEmail,
-            token: rawToken,
-            type: queryType || 'recovery',
-          })
-          if (error) throw error
+      // 1. Check if user already has an active recovery session
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
           setStatus('success')
           setMessage('Link verified. Please set your new password below.')
           setShowPasswordForm(true)
-        } catch (err) {
-          console.error('Token verify error:', err)
-          setStatus('error')
-          setMessage('Failed to verify link. The link may have expired or already been used.')
+          return
         }
-        return
-      }
+      } catch (_) {}
 
-      // Case B: PKCE auth code in URL
-      if (code) {
+      // 2. Try token verification attempts
+      const rawToken = searchParams.get('token')
+      const rawEmail = searchParams.get('email')
+      const rawOtp = searchParams.get('otp')
+
+      const payloadsToTry = []
+      if (tokenHash) payloadsToTry.push({ token_hash: tokenHash, type: 'recovery' })
+      if (rawToken) payloadsToTry.push({ token_hash: rawToken, type: 'recovery' })
+      if (rawEmail && rawToken) payloadsToTry.push({ email: rawEmail, token: rawToken, type: 'recovery' })
+      if (rawEmail && tokenHash) payloadsToTry.push({ email: rawEmail, token: tokenHash, type: 'recovery' })
+      if (rawEmail && rawOtp) payloadsToTry.push({ email: rawEmail, token: rawOtp, type: 'recovery' })
+      if (tokenHash) payloadsToTry.push({ token_hash: tokenHash, type: 'email' })
+
+      for (const p of payloadsToTry) {
         try {
-          const { error } = await supabase.auth.exchangeCodeForSession(code)
-          if (error) throw error
-          setStatus('success')
-          if (type === 'recovery' || window.location.pathname.includes('reset')) {
+          const { data, error } = await supabase.auth.verifyOtp(p)
+          if (!error && (data?.session || data?.user)) {
+            setStatus('success')
             setMessage('Link verified. Please set your new password below.')
             setShowPasswordForm(true)
-          } else {
-            setMessage('Your email has been verified successfully!')
+            return
+          }
+        } catch (_) {}
+      }
+
+      // 3. PKCE auth code in URL
+      if (code) {
+        try {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+          if (!error && data?.session) {
+            setStatus('success')
+            setMessage('Link verified. Please set your new password below.')
+            setShowPasswordForm(true)
+            return
           }
         } catch (err) {
-          console.error('PKCE exchange error:', err)
-          setStatus('error')
-          setMessage('Failed to verify link. It may be expired or invalid.')
+          console.warn('PKCE exchange error:', err)
         }
-        return
       }
 
-      // Case C: Active session exists (e.g. established via recovery hash fragment)
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        setStatus('success')
-        setMessage('Link verified. Please set your new password below.')
-        setShowPasswordForm(true)
-        return
-      }
+      // 4. If all automated attempts failed, check session one last time
+      try {
+        const { data: { session: finalSession } } = await supabase.auth.getSession()
+        if (finalSession) {
+          setStatus('success')
+          setMessage('Link verified. Please set your new password below.')
+          setShowPasswordForm(true)
+          return
+        }
+      } catch (_) {}
 
-      // Case D: No token found
       setStatus('error')
-      setMessage('Invalid or missing verification link. It may be malformed or expired.')
+      setMessage('Failed to verify link. The link may have expired or already been used.')
     }
 
     verifyLink()
@@ -149,16 +141,7 @@ export default function AuthAction() {
     setMessage('Updating your password...')
 
     try {
-      // If token_hash was passed explicitly, verify OTP to get session
-      if (tokenHash && queryType === 'recovery') {
-        const { error: verifyError } = await supabase.auth.verifyOtp({
-          token_hash: tokenHash,
-          type: 'recovery',
-        })
-        if (verifyError) console.warn('OTP verify note:', verifyError.message)
-      }
-
-      // Update password
+      // Update password directly using active session
       const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword,
       })
@@ -170,7 +153,7 @@ export default function AuthAction() {
     } catch (err) {
       console.error('Password reset error:', err)
       setStatus('error')
-      setMessage(err?.message || 'Failed to reset password. The link may have expired — please request a new one.')
+      setMessage(err?.message || 'Failed to reset password. Please try requesting a new reset link.')
       setShowPasswordForm(false)
     }
   }

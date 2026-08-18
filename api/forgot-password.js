@@ -41,21 +41,23 @@ export default async function handler(req, res) {
 
     const tokenHash = linkData?.properties?.hashed_token
     const emailOtp = linkData?.properties?.email_otp
+    let rawToken = ''
+    try {
+      if (linkData?.properties?.action_link) {
+        const u = new URL(linkData.properties.action_link)
+        rawToken = u.searchParams.get('token') || ''
+      }
+    } catch (_) {}
 
-    // Generate direct, unbreakable link to app.paper5.co
-    let directActionLink = ''
-    if (tokenHash) {
-      directActionLink = `https://app.paper5.co/auth/action?token_hash=${encodeURIComponent(tokenHash)}&type=recovery`
-    } else if (emailOtp) {
-      directActionLink = `https://app.paper5.co/auth/action?email=${encodeURIComponent(cleanEmail)}&token=${encodeURIComponent(emailOtp)}&type=recovery`
-    } else {
-      let actionLink = linkData?.properties?.action_link || 'https://app.paper5.co/auth/action'
-      directActionLink = actionLink
-        .replace(/app\.paper5\.com/g, 'app.paper5.co')
-        .replace(/redirect_to=http%3A%2F%2Fapp\.paper5\.com/g, 'redirect_to=https%3A%2F%2Fapp.paper5.co')
-        .replace(/redirect_to=https%3A%2F%2Fapp\.paper5\.com/g, 'redirect_to=https%3A%2F%2Fapp.paper5.co')
-    }
+    // Construct the direct recovery URL with all relevant token parameters
+    const params = new URLSearchParams()
+    if (tokenHash) params.set('token_hash', tokenHash)
+    if (rawToken) params.set('token', rawToken)
+    if (emailOtp) params.set('otp', emailOtp)
+    params.set('email', cleanEmail)
+    params.set('type', 'recovery')
 
+    const directActionLink = `https://app.paper5.co/auth/action?${params.toString()}`
     const actionLink = directActionLink
 
     const htmlBody = `
