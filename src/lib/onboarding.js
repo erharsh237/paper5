@@ -20,15 +20,15 @@ export async function hasSeenTour(uid, email = null) {
     }
   } catch (_) {}
 
-  // 3. Check profiles table fallback
+  // 3. Check users table fallback
   if (uid) {
     try {
-      const { data: profile } = await supabase
-        .from('profiles')
+      const { data: userRecord } = await supabase
+        .from('users')
         .select('tour_completed')
         .eq('id', uid)
         .maybeSingle()
-      if (profile?.tour_completed === true) {
+      if (userRecord?.tour_completed === true) {
         localStorage.setItem(`tour_completed_${uid}`, 'true')
         if (cleanEmail) localStorage.setItem(`tour_completed_${cleanEmail}`, 'true')
         return true
@@ -56,12 +56,12 @@ export async function markTourSeen(uid, email = null) {
     })
   } catch (_) {}
 
-  // 3. Persist to profiles table asynchronously
+  // 3. Persist to users table asynchronously
   if (uid) {
     try {
       await supabase
-        .from('profiles')
-        .update({ tour_completed: true })
+        .from('users')
+        .update({ tour_completed: true, updated_at: new Date().toISOString() })
         .eq('id', uid)
     } catch (_) {}
   }
@@ -85,8 +85,8 @@ export async function resetTourSeen(uid, email = null) {
   if (uid) {
     try {
       await supabase
-        .from('profiles')
-        .update({ tour_completed: false })
+        .from('users')
+        .update({ tour_completed: false, updated_at: new Date().toISOString() })
         .eq('id', uid)
     } catch (_) {}
   }
