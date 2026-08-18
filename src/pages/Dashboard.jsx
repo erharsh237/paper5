@@ -131,7 +131,8 @@ export default function Dashboard() {
     })
   }, [filtered])
 
-  // ── REAL DATA VELOCITY CALCULATION (7D / 30D / 90D)  const velocityData = useMemo(() => {
+  // ── REAL DATA VELOCITY CALCULATION (7D / 30D / 90D) ──
+  const velocityData = useMemo(() => {
     const nowDate = new Date()
     const isDone = t => t.status === 'done' || t.status === 'completed' || t.status === 'shipped'
     const isInProg = t => t.status === 'in_progress' || t.status === 'review' || t.status === 'qa' || t.status === 'blocked'
