@@ -131,9 +131,11 @@ export default function Dashboard() {
     })
   }, [filtered])
 
-  // ── REAL DATA VELOCITY CALCULATION (7D / 30D / 90D) ──
-  const velocityData = useMemo(() => {
+  // ── REAL DATA VELOCITY CALCULATION (7D / 30D / 90D)  const velocityData = useMemo(() => {
     const nowDate = new Date()
+    const isDone = t => t.status === 'done' || t.status === 'completed' || t.status === 'shipped'
+    const isInProg = t => t.status === 'in_progress' || t.status === 'review' || t.status === 'qa' || t.status === 'blocked'
+    const isScheduled = t => !isDone(t)
 
     if (timeRange === '7D') {
       const currentDayIdx = nowDate.getDay()
@@ -151,13 +153,13 @@ export default function Dashboard() {
         const fullDateFormatted = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 
         const doneTasks = deadlines.filter(t => {
-          if (t.status !== 'done') return false
+          if (!isDone(t)) return false
           const compDate = (t.completedAt || t.completed_at || t.dueDate || t.due_date || t.createdAt || '').slice(0, 10)
           return compDate === dateStr
         })
 
-        const inProgTasks = deadlines.filter(t => {
-          if (t.status !== 'in_progress') return false
+        const activeTasks = deadlines.filter(t => {
+          if (!isScheduled(t)) return false
           const taskDate = (t.dueDate || t.due_date || t.createdAt || '').slice(0, 10)
           return taskDate === dateStr
         })
@@ -166,8 +168,8 @@ export default function Dashboard() {
           label: dayLabel,
           title: fullDateFormatted,
           done: doneTasks.length,
-          inProgress: inProgTasks.length,
-          total: doneTasks.length + inProgTasks.length,
+          inProgress: activeTasks.length,
+          total: doneTasks.length + activeTasks.length,
           isCurrent: d.toDateString() === nowDate.toDateString()
         })
       }
@@ -181,8 +183,8 @@ export default function Dashboard() {
           donePct: d.total > 0 ? Math.round((d.done / d.total) * 100) : 0,
           progPct: d.total > 0 ? Math.round((d.inProgress / d.total) * 100) : 0,
         })),
-        totalDone: days.reduce((sum, d) => sum + d.done, 0),
-        totalProg: days.reduce((sum, d) => sum + d.inProgress, 0),
+        totalDone: deadlines.filter(isDone).length,
+        totalProg: deadlines.filter(isInProg).length,
         totalScope: deadlines.length
       }
     }
@@ -202,13 +204,13 @@ export default function Dashboard() {
         const endFmt = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
         const doneTasks = deadlines.filter(t => {
-          if (t.status !== 'done') return false
+          if (!isDone(t)) return false
           const d = new Date(t.completedAt || t.completed_at || t.dueDate || t.due_date || t.createdAt)
           return d >= start && d <= end
         })
 
-        const inProgTasks = deadlines.filter(t => {
-          if (t.status !== 'in_progress') return false
+        const activeTasks = deadlines.filter(t => {
+          if (!isScheduled(t)) return false
           const d = new Date(t.dueDate || t.due_date || t.createdAt)
           return d >= start && d <= end
         })
@@ -217,8 +219,8 @@ export default function Dashboard() {
           label: i === 0 ? 'Now' : `W${5 - i}`,
           title: `${startFmt} – ${endFmt}`,
           done: doneTasks.length,
-          inProgress: inProgTasks.length,
-          total: doneTasks.length + inProgTasks.length,
+          inProgress: activeTasks.length,
+          total: doneTasks.length + activeTasks.length,
           isCurrent: i === 0
         })
       }
@@ -232,8 +234,8 @@ export default function Dashboard() {
           donePct: w.total > 0 ? Math.round((w.done / w.total) * 100) : 0,
           progPct: w.total > 0 ? Math.round((w.inProgress / w.total) * 100) : 0,
         })),
-        totalDone: weeks.reduce((sum, w) => sum + w.done, 0),
-        totalProg: weeks.reduce((sum, w) => sum + w.inProgress, 0),
+        totalDone: deadlines.filter(isDone).length,
+        totalProg: deadlines.filter(isInProg).length,
         totalScope: deadlines.length
       }
     }
@@ -248,13 +250,13 @@ export default function Dashboard() {
       const end = new Date(nowDate.getFullYear(), nowDate.getMonth() - i + 1, 0, 23, 59, 59)
 
       const doneTasks = deadlines.filter(t => {
-        if (t.status !== 'done') return false
+        if (!isDone(t)) return false
         const dt = new Date(t.completedAt || t.completed_at || t.dueDate || t.due_date || t.createdAt)
         return dt >= start && dt <= end
       })
 
-      const inProgTasks = deadlines.filter(t => {
-        if (t.status !== 'in_progress') return false
+      const activeTasks = deadlines.filter(t => {
+        if (!isScheduled(t)) return false
         const dt = new Date(t.dueDate || t.due_date || t.createdAt)
         return dt >= start && dt <= end
       })
@@ -263,8 +265,8 @@ export default function Dashboard() {
         label: i === 0 ? 'This Mo' : monthName,
         title: fullMonthName,
         done: doneTasks.length,
-        inProgress: inProgTasks.length,
-        total: doneTasks.length + inProgTasks.length,
+        inProgress: activeTasks.length,
+        total: doneTasks.length + activeTasks.length,
         isCurrent: i === 0
       })
     }
@@ -278,8 +280,8 @@ export default function Dashboard() {
         donePct: m.total > 0 ? Math.round((m.done / m.total) * 100) : 0,
         progPct: m.total > 0 ? Math.round((m.inProgress / m.total) * 100) : 0,
       })),
-      totalDone: months.reduce((sum, m) => sum + m.done, 0),
-      totalProg: months.reduce((sum, m) => sum + m.inProgress, 0),
+      totalDone: deadlines.filter(isDone).length,
+      totalProg: deadlines.filter(isInProg).length,
       totalScope: deadlines.length
     }
   }, [deadlines, timeRange])
