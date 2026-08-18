@@ -12,7 +12,6 @@ export async function sendDeadlineEmail({
   toName, toEmail, title, description, dueDate, priority, assignedBy, appUrl,
 }) {
   if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) {
-    console.warn('EmailJS not configured — skipping email send.')
     return { skipped: true }
   }
 
