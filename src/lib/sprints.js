@@ -92,18 +92,11 @@ export async function deleteSprint(workspaceId, id) {
 }
 
 export async function setActiveSprint(workspaceId, teamId, sprintId) {
-  const { error: err1 } = await supabase.from('sprints')
-    .update({ status: 'completed' })
-    .eq('workspace_id', workspaceId)
-    .eq('status', 'active')
-    .neq('id', sprintId)
-  if (err1) throw err1
-
-  const { error: err2 } = await supabase.from('sprints')
+  const { error } = await supabase.from('sprints')
     .update({ status: 'active' })
     .eq('id', sprintId)
     .eq('workspace_id', workspaceId)
-  if (err2) throw err2
+  if (error) throw error
   notifySprintChange()
 }
 
@@ -129,5 +122,10 @@ export async function closeSprint(workspaceId, id) {
 }
 
 export async function reopenSprint(workspaceId, id) {
-  return setActiveSprint(workspaceId, undefined, id)
+  const { error } = await supabase.from('sprints')
+    .update({ status: 'active' })
+    .eq('id', id)
+    .eq('workspace_id', workspaceId)
+  if (error) throw error
+  notifySprintChange()
 }
