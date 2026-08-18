@@ -11,7 +11,15 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, s
   const [titleInput, setTitleInput] = useState('')
   const [description, setDescription] = useState('')
   const [priority, setPriority] = useState('medium')
-  const [assigneeId, setAssigneeId] = useState(members[0]?.id || '')
+  
+  const defaultMember = members.find(m => {
+    const mEmail = (m.email || '').trim().toLowerCase()
+    const myEmail = (currentUser?.email || '').trim().toLowerCase()
+    const myId = currentUser?.id || currentUser?.uid
+    return (mEmail && mEmail === myEmail) || (m.id === myId || m.userId === myId)
+  }) || members[0]
+
+  const [assigneeId, setAssigneeId] = useState(defaultMember?.id || '')
   const [selectedSprintId, setSelectedSprintId] = useState(activeSprint?.id || '')
   const [loadedSprints, setLoadedSprints] = useState(sprints)
   const [dueDate, setDueDate] = useState('')
@@ -21,6 +29,12 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, s
   const [submitting, setSubmitting] = useState(false)
   const [emailStatus, setEmailStatus] = useState(null) // null | 'sending' | 'sent' | 'failed' | 'skipped'
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!assigneeId && defaultMember?.id) {
+      setAssigneeId(defaultMember.id)
+    }
+  }, [defaultMember, assigneeId])
 
   useEffect(() => {
     if (sprints && sprints.length > 0) {
@@ -79,13 +93,18 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, s
       })
 
       // 1. In-App Notification (Notification Bell)
-      if (assignee?.email && assignee.email.toLowerCase() !== currentUser?.email?.toLowerCase()) {
+      const myEmail = (currentUser?.email || '').trim().toLowerCase()
+      const myId = currentUser?.id || currentUser?.uid
+      const assigneeEmail = (assignee?.email || '').trim().toLowerCase()
+      const isSelf = (assigneeEmail && assigneeEmail === myEmail) || (assignee?.id && (assignee.id === myId || assignee.userId === myId))
+
+      if (!isSelf && assigneeEmail) {
         try {
           await createNotification(workspaceId, undefined, {
             type: NOTIFICATION_TYPES.TASK_ASSIGNED,
             message: `${currentUser?.displayName || currentUser?.email || 'A team member'} assigned you a new deadline: "${titleInput.trim()}"`,
             deadlineId: createdItem?.id || null,
-            forEmail: assignee.email,
+            forEmail: assigneeEmail,
             createdBy: currentUser?.email,
           })
         } catch (notifErr) {
@@ -93,12 +112,12 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, s
         }
       }
 
-      if (notifyEmail) {
+      if (notifyEmail && !isSelf && assigneeEmail) {
         setEmailStatus('sending')
         try {
           await sendDeadlineEmail({
-            toName: assignee.name,
-            toEmail: assignee.email,
+            toName: assignee.name || assignee.fullName || assignee.displayLabel,
+            toEmail: assigneeEmail,
             title: titleInput.trim(),
             description: description.trim(),
             dueDate: parsedDate.toLocaleString(undefined, {

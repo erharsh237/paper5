@@ -21,22 +21,52 @@ function notifyNotificationsChange() {
 }
 
 export async function createNotification(workspaceId, teamId, { type, message, deadlineId, forEmail, createdBy }) {
-  const { data, error } = await supabase
+  const targetEmail = forEmail ? forEmail.trim().toLowerCase() : null
+  if (!targetEmail) {
+    console.warn('createNotification aborted: No target recipient forEmail provided')
+    return null
+  }
+
+  // Attempt insert with PostgreSQL snake_case columns
+  const insertPayload = {
+    workspace_id: workspaceId,
+    type,
+    message,
+    deadline_id: deadlineId || null,
+    for_email: targetEmail,
+    created_by: (createdBy || '').trim().toLowerCase(),
+    read_by: [],
+  }
+
+  let { data, error } = await supabase
     .from('notifications')
-    .insert({
-      workspace_id: workspaceId,
-      type,
-      message,
-      deadlineId: deadlineId || null,
-      forEmail: forEmail ? forEmail.trim().toLowerCase() : null,
-      createdBy: (createdBy || '').trim().toLowerCase(),
-      readBy: [],
-    })
+    .insert(insertPayload)
     .select()
     .maybeSingle()
-  if (error) throw error
+
+  // Fallback for camelCase schema if database columns are camelCase
+  if (error) {
+    try {
+      const fallbackPayload = {
+        workspace_id: workspaceId,
+        type,
+        message,
+        deadlineId: deadlineId || null,
+        forEmail: targetEmail,
+        createdBy: (createdBy || '').trim().toLowerCase(),
+        readBy: [],
+      }
+      const res = await supabase.from('notifications').insert(fallbackPayload).select().maybeSingle()
+      if (!res.error && res.data) {
+        notifyNotificationsChange()
+        return { id: res.data.id }
+      }
+    } catch (_) {}
+    throw error
+  }
+
   notifyNotificationsChange()
-  return { id: data.id }
+  return { id: data?.id }
 }
 
 export function subscribeNotifications(workspaceId, teamId, userEmail, callback) {
@@ -63,7 +93,8 @@ export function subscribeNotifications(workspaceId, teamId, userEmail, callback)
           createdAt: n.created_at || n.createdAt || new Date().toISOString(),
         })).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
-        const items = normalized.filter(n => !n.forEmail || n.forEmail === email)
+        // Strict recipient isolation: ONLY show notifications addressed to this user's email
+        const items = normalized.filter(n => n.forEmail && n.forEmail === email)
         callback(items)
       }
     } catch (err) {
