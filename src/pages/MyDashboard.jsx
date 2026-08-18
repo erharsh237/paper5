@@ -70,12 +70,16 @@ export default function MyDashboard() {
     return () => { cancelled = true }
   }, [user])
 
-  const myEmail = (user?.email || '').toLowerCase()
+  const myEmail = (user?.email || '').trim().toLowerCase()
   const activeSprint = useMemo(() => sprints.find(s => s.status === 'active'), [sprints])
 
   const myTasks = useMemo(
-    () => deadlines.filter(d => d.assigneeEmail?.toLowerCase() === myEmail),
-    [deadlines, myEmail]
+    () => deadlines.filter(d => {
+      const emailMatch = d.assigneeEmail && d.assigneeEmail.trim().toLowerCase() === myEmail
+      const idMatch = d.assigneeId && (d.assigneeId === user?.id || d.assigneeId === user?.uid)
+      return emailMatch || idMatch
+    }),
+    [deadlines, myEmail, user?.id, user?.uid]
   )
 
   const filteredMyTasks = useMemo(() => {
