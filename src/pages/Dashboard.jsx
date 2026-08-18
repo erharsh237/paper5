@@ -60,6 +60,7 @@ export default function Dashboard() {
 
   const activeSprints = useMemo(() => sprints.filter(s => s.status === 'active' || s.status === 'planning'), [sprints])
   const closedSprints = useMemo(() => sprints.filter(s => s.status === 'completed' || s.status === 'closed'), [sprints])
+  const activeSprint = useMemo(() => sprints.find(s => s.id === selectedSprintViewId) || activeSprints[0] || null, [sprints, selectedSprintViewId, activeSprints])
 
   const displayedSprintsList = useMemo(() => {
     return sprintTab === 'active' ? activeSprints : closedSprints
