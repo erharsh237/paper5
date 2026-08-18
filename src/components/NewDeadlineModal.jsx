@@ -49,8 +49,8 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, o
         priority,
         dueDate: parsedDate.toISOString(),
         assigneeId: assignee.id,
-        assigneeName: assignee.name,
-        assigneeEmail: assignee.email,
+        assigneeName: assignee.name || assignee.fullName || assignee.displayLabel || assignee.email || 'Member',
+        assigneeEmail: assignee.email || '',
         createdBy: currentUser?.email,
         createdByName: currentUser?.displayName || currentUser?.email || 'Someone',
         sprintId: activeSprint?.id || null,
@@ -125,9 +125,14 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, o
               <label htmlFor="assignee">Assign to</label>
               <select id="assignee" value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)}>
                 {members.length === 0 && <option value="">No team members yet</option>}
-                {members.map(m => (
-                  <option key={m.id} value={m.id}>{m.name} — {m.email}</option>
-                ))}
+                {members.map(m => {
+                  const name = m.name || m.fullName || m.displayLabel || (m.email ? m.email.split('@')[0] : `Member (${(m.id || '').slice(0, 6)})`)
+                  const email = m.email || ''
+                  const displayText = name && email && name !== email ? `${name} (${email})` : (name || email || 'Member')
+                  return (
+                    <option key={m.id} value={m.id}>{displayText}</option>
+                  )
+                })}
               </select>
             </div>
 

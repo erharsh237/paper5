@@ -248,6 +248,7 @@ export default async function handler(req, res) {
         role: m.role || 'member',
         permissions: Array.isArray(m.permissions) ? m.permissions : [],
         email: email,
+        name: fullName || email || displayLabel,
         fullName: fullName,
         displayLabel: displayLabel,
         avatarUrl: u.avatar_url || null,
