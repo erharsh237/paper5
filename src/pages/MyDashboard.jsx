@@ -23,7 +23,7 @@ export default function MyDashboard() {
   const { deadlines, hasMore, loadMore, loadingMore } = useDeadlines(workspaceId)
   const [sprints, setSprints] = useState([])
   const [showTour, setShowTour] = useState(false)
-  const [viewMode, setViewMode] = useState('board')
+  const [viewMode, setViewMode] = useState('list')
   const [timeRange, setTimeRange] = useState('7D')
   const [hoveredIndex, setHoveredIndex] = useState(null)
   const [search, setSearch] = useState('')
