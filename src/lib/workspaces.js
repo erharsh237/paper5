@@ -248,6 +248,7 @@ export async function changeMemberRole(workspaceId, memberUid, newRole) {
 export async function cancelInvite(workspaceId, inviteId, email = null) {
   const cleanEmail = email ? email.trim().toLowerCase() : null
 
+  // 1. Delete from database invites table
   if (inviteId) {
     await supabase.from('invites').delete().eq('id', inviteId)
   }
@@ -259,6 +260,19 @@ export async function cancelInvite(workspaceId, inviteId, email = null) {
     if (inviteId) await supabase.from('workspace_invites').delete().eq('id', inviteId)
     if (cleanEmail && workspaceId) await supabase.from('workspace_invites').delete().eq('workspace_id', workspaceId).eq('email', cleanEmail)
   } catch (e) {}
+
+  // 2. Completely remove the pre-provisioned Auth account and temp credentials if user is not in any workspace
+  if (cleanEmail) {
+    try {
+      await fetch('/api/delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail, workspaceId, fullDelete: true })
+      })
+    } catch (err) {
+      console.warn('Cancel invite cleanup notice:', err)
+    }
+  }
 }
 
 export async function createInvite(workspaceId, email, role, permissions = [], password, sendEmail = false) {

@@ -122,6 +122,40 @@ export default async function handler(req, res) {
         if (error) throw error
         return res.status(200).json({ success: true, role })
       }
+
+      if (action === 'cancel_invite' || action === 'delete_invite') {
+        const { inviteId, email } = req.body
+        const cleanEmail = email ? email.trim().toLowerCase() : null
+
+        if (inviteId) {
+          await supabaseAdmin.from('invites').delete().eq('id', inviteId)
+          try { await supabaseAdmin.from('workspace_invites').delete().eq('id', inviteId) } catch (_) {}
+        }
+        if (cleanEmail && workspaceId) {
+          await supabaseAdmin.from('invites').delete().eq('workspace_id', workspaceId).eq('email', cleanEmail)
+          try { await supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', workspaceId).eq('email', cleanEmail) } catch (_) {}
+        }
+
+        // Clean up pre-provisioned auth user if they belong to no other workspaces
+        if (cleanEmail && serviceKey) {
+          try {
+            const { data: authList } = await supabaseAdmin.auth.admin.listUsers()
+            const existing = (authList?.users || []).find(u => u.email?.toLowerCase() === cleanEmail)
+            if (existing) {
+              const { data: mems } = await supabaseAdmin.from('workspace_members').select('id').eq('user_id', existing.id)
+              if (!mems || mems.length === 0) {
+                await supabaseAdmin.auth.admin.deleteUser(existing.id)
+                await supabaseAdmin.from('users').delete().eq('id', existing.id)
+                await supabaseAdmin.from('profiles').delete().eq('id', existing.id)
+              }
+            }
+          } catch (e) {
+            console.warn('cancel_invite auth purge notice:', e)
+          }
+        }
+
+        return res.status(200).json({ success: true, cancelled: true })
+      }
     } catch (postErr) {
       console.error('Update member error:', postErr)
       return res.status(500).json({ error: postErr.message || 'Failed to update member' })
