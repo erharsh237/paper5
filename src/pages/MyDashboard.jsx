@@ -22,6 +22,7 @@ export default function MyDashboard() {
   const { user } = useAuth()
   const { deadlines, hasMore, loadMore, loadingMore } = useDeadlines(workspaceId)
   const [sprints, setSprints] = useState([])
+  const [adminScope, setAdminScope] = useState('team') // 'team' | 'mine'
   const [showTour, setShowTour] = useState(false)
   const [viewMode, setViewMode] = useState('list')
   const [timeRange, setTimeRange] = useState('7D')
@@ -82,27 +83,35 @@ export default function MyDashboard() {
     [deadlines, myEmail, user?.id, user?.uid]
   )
 
-  const filteredMyTasks = useMemo(() => {
-    return myTasks.filter(d => {
+  // For Admins, default to whole team scope. For members, display their assigned tasks.
+  const displayTasks = useMemo(() => {
+    if (isAdmin) {
+      return adminScope === 'mine' ? myTasks : deadlines
+    }
+    return myTasks
+  }, [isAdmin, adminScope, myTasks, deadlines])
+
+  const filteredTasks = useMemo(() => {
+    return displayTasks.filter(d => {
       if (search.trim() && !d.title?.toLowerCase().includes(search.toLowerCase())) return false
       return true
     })
-  }, [myTasks, search])
+  }, [displayTasks, search])
 
   const stats = useMemo(() => {
-    const active = myTasks.filter(d => d.status !== 'done')
+    const active = displayTasks.filter(d => d.status !== 'done')
     const overdue = active.filter(d => getUrgency(d.dueDate, d.status) === 'overdue')
     const dueSoon = active.filter(d => ['critical', 'warn'].includes(getUrgency(d.dueDate, d.status)))
-    const done = myTasks.filter(d => d.status === 'done')
-    const blocked = myTasks.filter(d => d.status === 'blocked')
-    return { total: myTasks.length, active: active.length, overdue: overdue.length, dueSoon: dueSoon.length, done: done.length, blocked: blocked.length }
-  }, [myTasks])
+    const done = displayTasks.filter(d => d.status === 'done' || d.status === 'completed' || d.status === 'shipped')
+    const blocked = displayTasks.filter(d => d.status === 'blocked')
+    return { total: displayTasks.length, active: active.length, overdue: overdue.length, dueSoon: dueSoon.length, done: done.length, blocked: blocked.length }
+  }, [displayTasks])
 
-  const sortedMyTasks = useMemo(() => {
-    return [...filteredMyTasks].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-  }, [filteredMyTasks])
+  const sortedTasks = useMemo(() => {
+    return [...filteredTasks].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+  }, [filteredTasks])
 
-  // 5 Canonical Kanban Columns for My Tasks
+  // 5 Canonical Kanban Columns
   const kanbanColumns = useMemo(() => {
     const standardCols = [
       { id: 'not_started', title: 'To Do', dotColor: '#1C1D2B', emptyText: 'Nothing queued', showAdd: true },
@@ -115,19 +124,19 @@ export default function MyDashboard() {
     return standardCols.map(col => {
       let items = []
       if (col.id === 'not_started') {
-        items = sortedMyTasks.filter(d => d.status === 'not_started' || d.status === 'todo')
+        items = sortedTasks.filter(d => d.status === 'not_started' || d.status === 'todo')
       } else if (col.id === 'in_progress') {
-        items = sortedMyTasks.filter(d => d.status === 'in_progress')
+        items = sortedTasks.filter(d => d.status === 'in_progress')
       } else if (col.id === 'review') {
-        items = sortedMyTasks.filter(d => d.status === 'review' || d.status === 'qa')
+        items = sortedTasks.filter(d => d.status === 'review' || d.status === 'qa')
       } else if (col.id === 'blocked') {
-        items = sortedMyTasks.filter(d => d.status === 'blocked')
+        items = sortedTasks.filter(d => d.status === 'blocked')
       } else if (col.id === 'done') {
-        items = sortedMyTasks.filter(d => d.status === 'done' || d.status === 'completed' || d.status === 'shipped')
+        items = sortedTasks.filter(d => d.status === 'done' || d.status === 'completed' || d.status === 'shipped')
       }
       return { ...col, items }
     })
-  }, [sortedMyTasks])
+  }, [sortedTasks])
 
   // ── REAL DATA VELOCITY CALCULATION (7D / 30D / 90D) ──
   const velocityData = useMemo(() => {
@@ -151,13 +160,13 @@ export default function MyDashboard() {
         const dayLabel = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i]
         const fullDateFormatted = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 
-        const doneTasks = myTasks.filter(t => {
+        const doneTasks = displayTasks.filter(t => {
           if (!isDone(t)) return false
           const compDate = (t.completedAt || t.completed_at || t.dueDate || t.due_date || t.createdAt || '').slice(0, 10)
           return compDate === dateStr
         })
 
-        const activeTasks = myTasks.filter(t => {
+        const activeTasks = displayTasks.filter(t => {
           if (!isScheduled(t)) return false
           const taskDate = (t.dueDate || t.due_date || t.createdAt || '').slice(0, 10)
           return taskDate === dateStr
@@ -182,9 +191,9 @@ export default function MyDashboard() {
           donePct: d.total > 0 ? Math.round((d.done / d.total) * 100) : 0,
           progPct: d.total > 0 ? Math.round((d.inProgress / d.total) * 100) : 0,
         })),
-        totalDone: myTasks.filter(isDone).length,
-        totalProg: myTasks.filter(isInProg).length,
-        totalScope: myTasks.length
+        totalDone: displayTasks.filter(isDone).length,
+        totalProg: displayTasks.filter(isInProg).length,
+        totalScope: displayTasks.length
       }
     }
 
@@ -202,13 +211,13 @@ export default function MyDashboard() {
         const startFmt = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
         const endFmt = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
-        const doneTasks = myTasks.filter(t => {
+        const doneTasks = displayTasks.filter(t => {
           if (!isDone(t)) return false
           const d = new Date(t.completedAt || t.completed_at || t.dueDate || t.due_date || t.createdAt)
           return d >= start && d <= end
         })
 
-        const activeTasks = myTasks.filter(t => {
+        const activeTasks = displayTasks.filter(t => {
           if (!isScheduled(t)) return false
           const d = new Date(t.dueDate || t.due_date || t.createdAt)
           return d >= start && d <= end
@@ -233,9 +242,9 @@ export default function MyDashboard() {
           donePct: w.total > 0 ? Math.round((w.done / w.total) * 100) : 0,
           progPct: w.total > 0 ? Math.round((w.inProgress / w.total) * 100) : 0,
         })),
-        totalDone: myTasks.filter(isDone).length,
-        totalProg: myTasks.filter(isInProg).length,
-        totalScope: myTasks.length
+        totalDone: displayTasks.filter(isDone).length,
+        totalProg: displayTasks.filter(isInProg).length,
+        totalScope: displayTasks.length
       }
     }
 
@@ -248,13 +257,13 @@ export default function MyDashboard() {
       const start = new Date(now.getFullYear(), now.getMonth() - i, 1)
       const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59)
 
-      const doneTasks = myTasks.filter(t => {
+      const doneTasks = displayTasks.filter(t => {
         if (!isDone(t)) return false
         const dt = new Date(t.completedAt || t.completed_at || t.dueDate || t.due_date || t.createdAt)
         return dt >= start && dt <= end
       })
 
-      const activeTasks = myTasks.filter(t => {
+      const activeTasks = displayTasks.filter(t => {
         if (!isScheduled(t)) return false
         const dt = new Date(t.dueDate || t.due_date || t.createdAt)
         return dt >= start && dt <= end
@@ -279,11 +288,11 @@ export default function MyDashboard() {
         donePct: m.total > 0 ? Math.round((m.done / m.total) * 100) : 0,
         progPct: m.total > 0 ? Math.round((m.inProgress / m.total) * 100) : 0,
       })),
-      totalDone: myTasks.filter(isDone).length,
-      totalProg: myTasks.filter(isInProg).length,
-      totalScope: myTasks.length
+      totalDone: displayTasks.filter(isDone).length,
+      totalProg: displayTasks.filter(isInProg).length,
+      totalScope: displayTasks.length
     }
-  }, [myTasks, timeRange])
+  }, [displayTasks, timeRange])
 
   // User First Name
   const userFirstName = useMemo(() => {
@@ -646,13 +655,66 @@ export default function MyDashboard() {
           </div>
         </section>
 
-        {/* ── 5. MY ASSIGNED TASKS HEADER & VIEW SWITCHER ── */}
+        {/* ── 5. TASKS HEADER & VIEW SWITCHER ── */}
         <section style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
-            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: 'var(--text)' }}>My Assigned Tasks</h2>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12.5px', color: 'var(--muted-2, #A3A5C2)' }}>
-              {myTasks.length} total
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
+              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: 'var(--text)' }}>
+                {isAdmin ? (adminScope === 'team' ? 'Team Deadlines' : 'My Assigned Tasks') : 'My Assigned Tasks'}
+              </h2>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12.5px', color: 'var(--muted-2, #A3A5C2)' }}>
+                {sortedTasks.length} total
+              </span>
+            </div>
+
+            {/* If Admin, show Whole Team / Assigned to Me toggle */}
+            {isAdmin && (
+              <div style={{
+                display: 'inline-flex',
+                gap: '2px',
+                background: 'var(--surface-2, #EEF0F9)',
+                padding: '3px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-soft, #E2E8F0)'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setAdminScope('team')}
+                  style={{
+                    border: 'none',
+                    background: adminScope === 'team' ? '#FFFFFF' : 'transparent',
+                    color: adminScope === 'team' ? 'var(--accent, #4F46E5)' : 'var(--muted, #64748B)',
+                    fontWeight: adminScope === 'team' ? 700 : 500,
+                    fontSize: '11.5px',
+                    padding: '3px 10px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    boxShadow: adminScope === 'team' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  Whole Team
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAdminScope('mine')}
+                  style={{
+                    border: 'none',
+                    background: adminScope === 'mine' ? '#FFFFFF' : 'transparent',
+                    color: adminScope === 'mine' ? 'var(--accent, #4F46E5)' : 'var(--muted, #64748B)',
+                    fontWeight: adminScope === 'mine' ? 700 : 500,
+                    fontSize: '11.5px',
+                    padding: '3px 10px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    boxShadow: adminScope === 'mine' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  Assigned to Me
+                </button>
+              </div>
+            )}
           </div>
 
           {/* View toggle pill */}
@@ -749,10 +811,12 @@ export default function MyDashboard() {
           </div>
         ) : (
           <section className="dash-list-view">
-            {sortedMyTasks.length === 0 ? (
-              <div className="dash-empty-list">No tasks assigned to you yet.</div>
+            {sortedTasks.length === 0 ? (
+              <div className="dash-empty-list">
+                {isAdmin && adminScope === 'team' ? 'No deadlines in workspace yet.' : 'No tasks assigned to you yet.'}
+              </div>
             ) : (
-              sortedMyTasks.map(d => (
+              sortedTasks.map(d => (
                 <DeadlineCard
                   key={d.id}
                   deadline={d}
