@@ -12,10 +12,9 @@ import UserMenu from '../components/UserMenu'
 import NotificationBell from '../components/NotificationBell'
 import DeadlineCard from '../components/DeadlineCard'
 import NewDeadlineModal from '../components/NewDeadlineModal'
-import NewSprintModal from '../components/NewSprintModal'
 import AlertModal from '../components/ui/AlertModal'
 
-import { ShieldCheck, Plus, Lock, Unlock, Layers, AlertTriangle, CheckCircle, Kanban, Sliders, ArrowRight, Zap } from 'lucide-react'
+import { ShieldCheck, Plus, Lock, Unlock, Layers, AlertTriangle, CheckCircle, Kanban, Sliders, ArrowRight } from 'lucide-react'
 import './Dashboard.css'
 
 // Roles authorized to maintain board columns and add/modify workflow items
@@ -37,7 +36,6 @@ export default function WorkflowPage() {
   const [members, setMembers] = useState([])
   const [sprints, setSprints] = useState([])
   const [showNewModal, setShowNewModal] = useState(false)
-  const [showNewSprintModal, setShowNewSprintModal] = useState(false)
   const [alertMessage, setAlertMessage] = useState(null)
   
   const [search, setSearch] = useState('')
@@ -288,26 +286,7 @@ export default function WorkflowPage() {
             </select>
           </div>
 
-          <div className="dash-controls-right" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <button 
-              type="button"
-              className="btn-ghost btn-sm" 
-              onClick={() => setShowNewSprintModal(true)} 
-              style={{
-                padding: '7px 14px',
-                fontSize: '12.5px',
-                borderRadius: '10px',
-                border: '1px solid var(--border-soft)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                cursor: 'pointer',
-                fontWeight: 600
-              }}
-              title="Create a new sprint cycle"
-            >
-              <Zap size={14} /> New Sprint
-            </button>
+          <div className="dash-controls-right">
             <button
               type="button"
               className="dash-btn-accent"
@@ -414,15 +393,6 @@ export default function WorkflowPage() {
           title="New workflow item"
           submitText="Create item"
           onClose={() => setShowNewModal(false)}
-        />
-      )}
-
-      {showNewSprintModal && (
-        <NewSprintModal
-          currentUser={user}
-          existingCount={sprints.length}
-          members={members}
-          onClose={() => setShowNewSprintModal(false)}
         />
       )}
 
