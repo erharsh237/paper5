@@ -99,77 +99,109 @@ export function subscribeWorkspaceMembers(workspaceId, callback) {
   }
 
   let isSubscribed = true
+  let isFetching = false
+  let abortController = null
 
   const fetchList = async () => {
-    if (!isSubscribed) return
-    // 1. Try serverless API first (uses service role key to get real emails, full names, and permissions)
+    if (!isSubscribed || isFetching) return
+    if (typeof document !== 'undefined' && document.hidden) return
+
+    isFetching = true
     try {
-      const res = await fetch(`/api/workspace-members?workspaceId=${encodeURIComponent(workspaceId)}`)
-      if (res.ok) {
-        const json = await res.json()
-        if (isSubscribed && json?.members && Array.isArray(json.members)) {
-          callback(json.members)
-          return
-        }
-      }
-    } catch (apiErr) {
-      console.warn('workspace-members API error, falling back to direct query:', apiErr)
-    }
+      if (abortController) abortController.abort()
+      abortController = new AbortController()
 
-    // 2. Direct client query fallback
-    try {
-      const { data, error } = await supabase
-        .from('workspace_members')
-        .select(`
-          user_id,
-          role,
-          joined_at,
-          users ( id, email, full_name, avatar_url )
-        `)
-        .eq('workspace_id', workspaceId)
-
-      if (error || !data) {
-        if (isSubscribed) callback([])
-        return
-      }
-
-      if (isSubscribed) {
-        const mapped = data.map(row => {
-          const usersJoin = row.users
-          const email = usersJoin?.email || null
-          const fullName = usersJoin?.full_name || null
-          return {
-            id: row.user_id,
-            userId: row.user_id,
-            email,
-            displayLabel: email || fullName || ('Member (' + (row.user_id || '').slice(0, 6) + ')'),
-            fullName,
-            avatarUrl: usersJoin?.avatar_url || null,
-            role: row.role || 'member',
-            permissions: [],
-            joinedAt: row.joined_at
-          }
+      // 1. Try serverless API first (uses service role key to get real emails, full names, and permissions)
+      try {
+        const res = await fetch(`/api/workspace-members?workspaceId=${encodeURIComponent(workspaceId)}`, {
+          signal: abortController.signal
         })
-        callback(mapped)
+        if (res.ok) {
+          const json = await res.json()
+          if (isSubscribed && json?.members && Array.isArray(json.members)) {
+            callback(json.members)
+            isFetching = false
+            return
+          }
+        }
+      } catch (_) {
+        // Ignored on suspension/abort
       }
-    } catch (_) {}
+
+      // 2. Direct client query fallback
+      try {
+        const { data, error } = await supabase
+          .from('workspace_members')
+          .select(`
+            user_id,
+            role,
+            joined_at,
+            users ( id, email, full_name, avatar_url )
+          `)
+          .eq('workspace_id', workspaceId)
+
+        if (!error && data && isSubscribed) {
+          const mapped = data.map(row => {
+            const usersJoin = row.users
+            const email = usersJoin?.email || null
+            const fullName = usersJoin?.full_name || null
+            return {
+              id: row.user_id,
+              userId: row.user_id,
+              email,
+              displayLabel: email || fullName || ('Member (' + (row.user_id || '').slice(0, 6) + ')'),
+              fullName,
+              avatarUrl: usersJoin?.avatar_url || null,
+              role: row.role || 'member',
+              permissions: [],
+              joinedAt: row.joined_at
+            }
+          })
+          callback(mapped)
+        }
+      } catch (_) {}
+    } finally {
+      isFetching = false
+    }
   }
 
-  const channel = supabase.channel(`public:workspace_members:workspace_id=eq.${workspaceId}:wm:${Math.random().toString(36).substring(7)}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_members', filter: `workspace_id=eq.${workspaceId}` }, () => fetchList())
-    .subscribe()
+  let channel = null
+  try {
+    channel = supabase.channel(`public:workspace_members:workspace_id=eq.${workspaceId}:wm:${Math.random().toString(36).substring(7)}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_members', filter: `workspace_id=eq.${workspaceId}` }, () => fetchList())
+      .subscribe()
+  } catch (_) {}
   
   fetchList()
 
-  // Heartbeat poll every 3.5 seconds to guarantee instant updates across all browsers/tabs without manual refresh
+  // Heartbeat poll every 4 seconds when tab is active
   const pollTimer = setInterval(() => {
     if (isSubscribed) fetchList()
-  }, 3500)
+  }, 4000)
+
+  // Fetch immediately upon tab focus / device wake
+  const handleVisibilityChange = () => {
+    if (typeof document !== 'undefined' && !document.hidden && isSubscribed) {
+      fetchList()
+    }
+  }
+
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('online', handleVisibilityChange)
+  }
 
   return () => {
     isSubscribed = false
     clearInterval(pollTimer)
-    supabase.removeChannel(channel)
+    if (abortController) abortController.abort()
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('online', handleVisibilityChange)
+    }
+    if (channel) {
+      try { supabase.removeChannel(channel) } catch (_) {}
+    }
   }
 }
 
@@ -180,9 +212,13 @@ export function subscribeInvites(workspaceId, callback) {
   }
 
   let isSubscribed = true
+  let isFetching = false
 
   const fetchList = async () => {
-    if (!isSubscribed) return
+    if (!isSubscribed || isFetching) return
+    if (typeof document !== 'undefined' && document.hidden) return
+
+    isFetching = true
     try {
       const { data, error } = await supabase
         .from('invites')
@@ -190,32 +226,54 @@ export function subscribeInvites(workspaceId, callback) {
         .eq('workspace_id', workspaceId)
         .order('created_at', { ascending: false })
 
-      if (error) throw error
-      if (isSubscribed && Array.isArray(data)) {
+      if (!error && isSubscribed && Array.isArray(data)) {
         callback(data)
       }
-    } catch (err) {
-      if (isSubscribed) callback([])
+    } catch (_) {
+      // Gracefully ignore suspended network IO
+    } finally {
+      isFetching = false
     }
   }
 
-  const channel = supabase.channel(`public:invites:workspace_id=eq.${workspaceId}:${Math.random().toString(36).substring(7)}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'invites', filter: `workspace_id=eq.${workspaceId}` }, () => {
-      if (isSubscribed) fetchList()
-    })
-    .subscribe()
+  let channel = null
+  try {
+    channel = supabase.channel(`public:invites:workspace_id=eq.${workspaceId}:${Math.random().toString(36).substring(7)}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invites', filter: `workspace_id=eq.${workspaceId}` }, () => {
+        if (isSubscribed) fetchList()
+      })
+      .subscribe()
+  } catch (_) {}
 
   fetchList()
 
-  // Heartbeat poll every 3.5 seconds to keep pending invites perfectly in sync
+  // Heartbeat poll every 4 seconds when tab is active
   const pollTimer = setInterval(() => {
     if (isSubscribed) fetchList()
-  }, 3500)
+  }, 4000)
+
+  // Fetch immediately upon tab focus / device wake
+  const handleVisibilityChange = () => {
+    if (typeof document !== 'undefined' && !document.hidden && isSubscribed) {
+      fetchList()
+    }
+  }
+
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('online', handleVisibilityChange)
+  }
 
   return () => {
     isSubscribed = false
     clearInterval(pollTimer)
-    supabase.removeChannel(channel)
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('online', handleVisibilityChange)
+    }
+    if (channel) {
+      try { supabase.removeChannel(channel) } catch (_) {}
+    }
   }
 }
 
