@@ -79,17 +79,18 @@ export function AuthProvider({ children }) {
 
       // Fetch user data
       const fetchUserData = async () => {
-        const { data, error } = await supabase.from('users').select('*').eq('id', u.id).maybeSingle()
-        if (error || !data) {
-          // Check if profile or user exists; if completely missing, user has been purged
-          const { data: prof } = await supabase.from('profiles').select('id').eq('id', u.id).maybeSingle()
-          if (!prof && !data) {
-            setUser(null)
-            setUserData(null)
-            setLoading(false)
-            sessionCookieApi.clear()
-            supabase.auth.signOut().catch(() => {})
-            return
+        let { data, error } = await supabase.from('users').select('*').eq('id', u.id).maybeSingle()
+        if (!data) {
+          const cleanEmail = u.email ? u.email.trim().toLowerCase() : ''
+          const defaultUsername = u.user_metadata?.username || (cleanEmail ? cleanEmail.split('@')[0].replace(/[^a-z0-9_]/g, '') : 'user')
+          data = {
+            id: u.id,
+            email: cleanEmail,
+            username: defaultUsername,
+            billing_plan_id: 'unselected',
+            billingPlanId: 'unselected',
+            requires_password_reset: !!u.user_metadata?.must_change_password,
+            requiresPasswordReset: !!u.user_metadata?.must_change_password
           }
         }
         if (data) {
@@ -97,7 +98,7 @@ export function AuthProvider({ children }) {
           data.legalAcceptedAt = data.legal_accepted_at
           data.billingStatus = data.billing_status
           data.billingPlanId = data.billing_plan_id
-          data.requiresPasswordReset = data.requires_password_reset
+          data.requiresPasswordReset = data.requires_password_reset || !!u.user_metadata?.must_change_password
         }
         setUserData(data)
         setLoading(false)
