@@ -38,22 +38,54 @@ export async function getWorkspace(workspaceId) {
 }
 
 export function subscribeWorkspace(workspaceId, callback) {
+  let isSubscribed = true
   const fetchDoc = async () => {
+    if (!isSubscribed || !workspaceId) return
     const data = await getWorkspace(workspaceId)
-    callback(data)
+    if (isSubscribed) callback(data)
   }
   const channel = supabase.channel(`public:workspaces:id=eq.${workspaceId}:fetch:${Math.random().toString(36).substring(7)}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'workspaces', filter: `id=eq.${workspaceId}` }, payload => {
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'workspaces', filter: `id=eq.${workspaceId}` }, () => {
        fetchDoc()
     })
     .subscribe()
   fetchDoc()
-  return () => supabase.removeChannel(channel)
+
+  const onLocalSync = () => fetchDoc()
+  if (typeof window !== 'undefined') {
+    window.addEventListener('sprintos:data-sync', onLocalSync)
+    window.addEventListener('focus', onLocalSync)
+  }
+  const onVisibilityChange = () => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') fetchDoc()
+  }
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', onVisibilityChange)
+  }
+
+  const interval = setInterval(() => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') fetchDoc()
+  }, 4000)
+
+  return () => {
+    isSubscribed = false
+    supabase.removeChannel(channel)
+    clearInterval(interval)
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('sprintos:data-sync', onLocalSync)
+      window.removeEventListener('focus', onLocalSync)
+    }
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }
 }
 
 export function subscribeUserWorkspaces(uid, callback) {
   if (!uid) return () => {}
+  let isSubscribed = true
   const fetchList = async () => {
+    if (!isSubscribed) return
     try {
       const { data, error } = await supabase
         .from('workspace_members')
@@ -66,7 +98,7 @@ export function subscribeUserWorkspaces(uid, callback) {
       
       if (error || !data) {
         if (error) console.error('subscribeUserWorkspaces Error:', error)
-        callback([])
+        if (isSubscribed) callback([])
         return
       }
       
@@ -76,20 +108,48 @@ export function subscribeUserWorkspaces(uid, callback) {
         role: row.role,
         name: row.workspaces?.name
       }))
-      callback(mapped)
+      if (isSubscribed) callback(mapped)
     } catch (err) {
       console.error('subscribeUserWorkspaces Exception:', err)
-      callback([])
+      if (isSubscribed) callback([])
     }
   }
   
   const channel = supabase.channel(`public:workspace_members:user_id=eq.${uid}:workspaces:${Math.random().toString(36).substring(7)}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_members', filter: `user_id=eq.${uid}` }, payload => {
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_members', filter: `user_id=eq.${uid}` }, () => {
        fetchList()
     })
     .subscribe()
   fetchList()
-  return () => supabase.removeChannel(channel)
+
+  const onLocalSync = () => fetchList()
+  if (typeof window !== 'undefined') {
+    window.addEventListener('sprintos:data-sync', onLocalSync)
+    window.addEventListener('focus', onLocalSync)
+  }
+  const onVisibilityChange = () => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') fetchList()
+  }
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', onVisibilityChange)
+  }
+
+  const interval = setInterval(() => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') fetchList()
+  }, 4000)
+
+  return () => {
+    isSubscribed = false
+    supabase.removeChannel(channel)
+    clearInterval(interval)
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('sprintos:data-sync', onLocalSync)
+      window.removeEventListener('focus', onLocalSync)
+    }
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }
 }
 
 export function subscribeWorkspaceMembers(workspaceId, callback) {

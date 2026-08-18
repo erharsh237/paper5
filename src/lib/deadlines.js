@@ -11,15 +11,25 @@ export function isSprintLockViolation(patch) {
   return Object.keys(patch).some(k => SPRINT_LOCKED_FIELDS.includes(k))
 }
 
+function notifyDeadlineChange() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('sprintos:deadlines-updated'))
+    window.dispatchEvent(new CustomEvent('sprintos:data-sync'))
+  }
+}
+
 export function subscribeDeadlines(workspaceId, teamId, callback, pageSize = DEADLINES_DEFAULT_PAGE_SIZE) {
+  let isSubscribed = true
+
   const fetchList = async () => {
+    if (!isSubscribed || !workspaceId) return
     const { data, error } = await supabase
       .from('deadlines')
       .select('*')
       .eq('workspace_id', workspaceId)
       .order('due_date', { ascending: true })
       .limit(pageSize)
-    if (!error) {
+    if (!error && isSubscribed) {
       const normalized = (data || []).map(row => ({
         ...row,
         dueDate: row.due_date || row.dueDate,
@@ -36,15 +46,47 @@ export function subscribeDeadlines(workspaceId, teamId, callback, pageSize = DEA
     }
   }
 
+  fetchList()
+
   const channel = supabase.channel(`public:deadlines:workspace_id=eq.${workspaceId}:${Math.random().toString(36).substring(7)}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'deadlines', filter: `workspace_id=eq.${workspaceId}` }, payload => {
        fetchList()
     })
     .subscribe()
+
+  const onLocalSync = () => fetchList()
+  if (typeof window !== 'undefined') {
+    window.addEventListener('sprintos:deadlines-updated', onLocalSync)
+    window.addEventListener('sprintos:data-sync', onLocalSync)
+    window.addEventListener('focus', onLocalSync)
+  }
+  const onVisibilityChange = () => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') fetchList()
+  }
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', onVisibilityChange)
+  }
+
+  // Periodic heartbeat sync (every 3 seconds when tab is active)
+  const interval = setInterval(() => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      fetchList()
+    }
+  }, 3000)
   
-  fetchList()
-  
-  return () => supabase.removeChannel(channel)
+  return () => {
+    isSubscribed = false
+    supabase.removeChannel(channel)
+    clearInterval(interval)
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('sprintos:deadlines-updated', onLocalSync)
+      window.removeEventListener('sprintos:data-sync', onLocalSync)
+      window.removeEventListener('focus', onLocalSync)
+    }
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }
 }
 
 export async function createDeadline(workspaceId, teamId, data) {
@@ -72,12 +114,14 @@ export async function createDeadline(workspaceId, teamId, data) {
     required_evidence: data.requiredEvidence || [],
   }]).select()
   if (error) throw error
+  notifyDeadlineChange()
   return result[0]
 }
 
 export async function updateDeadline(workspaceId, id, patch) {
   const { error } = await supabase.from('deadlines').update(patch).eq('id', id).eq('workspace_id', workspaceId)
   if (error) throw error
+  notifyDeadlineChange()
 }
 
 export async function updateDeadlineStatus(workspaceId, id, status) {
@@ -86,6 +130,7 @@ export async function updateDeadlineStatus(workspaceId, id, status) {
   if (status === 'not_started') patch.percent_complete = 0
   const { error } = await supabase.from('deadlines').update(patch).eq('id', id).eq('workspace_id', workspaceId)
   if (error) throw error
+  notifyDeadlineChange()
 }
 
 export async function addExtraWork(workspaceId, deadlineId, { note, addedBy, addedByName }) {
@@ -98,17 +143,20 @@ export async function addExtraWork(workspaceId, deadlineId, { note, addedBy, add
     added_at: new Date().toISOString(),
   }]).select()
   if (error) throw error
+  notifyDeadlineChange()
   return data[0]
 }
 
 export function subscribeExtraWork(workspaceId, deadlineId, callback) {
+  let isSubscribed = true
   const fetchList = async () => {
+    if (!isSubscribed) return
     const { data, error } = await supabase
       .from('extra_work')
       .select('*')
       .eq('deadline_id', deadlineId)
       .order('added_at', { ascending: true })
-    if (!error) callback(data || [])
+    if (!error && isSubscribed) callback(data || [])
   }
   const channel = supabase.channel(`public:extra_work:deadline_id=eq.${deadlineId}:${Math.random().toString(36).substring(7)}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'extra_work', filter: `deadline_id=eq.${deadlineId}` }, payload => {
@@ -116,7 +164,10 @@ export function subscribeExtraWork(workspaceId, deadlineId, callback) {
     })
     .subscribe()
   fetchList()
-  return () => supabase.removeChannel(channel)
+  return () => {
+    isSubscribed = false
+    supabase.removeChannel(channel)
+  }
 }
 
 export async function submitForReview(workspaceId, id, { evidenceType, evidenceContent, repoName, submittedBy }) {
@@ -129,13 +180,8 @@ export async function submitForReview(workspaceId, id, { evidenceType, evidenceC
     submitted_by: (submittedBy || '').toLowerCase(),
     submitted_at: new Date().toISOString(),
   }])
-  const { error } = await supabase.from('deadlines').update({
-    status: 'review',
-    reviewer_email: null,
-    reviewer_name: null,
-    review_note: null,
-  }).eq('id', id).eq('workspace_id', workspaceId)
-  if (error) throw error
+  await updateDeadlineStatus(workspaceId, id, 'review')
+  notifyDeadlineChange()
 }
 
 export function subscribeEvidence(workspaceId, deadlineId, callback) {
@@ -156,15 +202,17 @@ export function subscribeEvidence(workspaceId, deadlineId, callback) {
   return () => supabase.removeChannel(channel)
 }
 
-export async function approveReview(workspaceId, id, { reviewerEmail, reviewerName }) {
+export async function approveReview(workspaceId, id, { reviewerEmail, reviewerName, reviewNote }) {
   const { error } = await supabase.from('deadlines').update({
     status: 'done',
-    percent_complete: 100,
     reviewer_email: (reviewerEmail || '').toLowerCase(),
     reviewer_name: reviewerName,
+    review_note: reviewNote || '',
     completed_at: new Date().toISOString(),
+    percent_complete: 100,
   }).eq('id', id).eq('workspace_id', workspaceId)
   if (error) throw error
+  notifyDeadlineChange()
 }
 
 export async function rejectReview(workspaceId, id, { reviewerEmail, reviewerName, reviewNote }) {
@@ -175,6 +223,7 @@ export async function rejectReview(workspaceId, id, { reviewerEmail, reviewerNam
     review_note: reviewNote || '',
   }).eq('id', id).eq('workspace_id', workspaceId)
   if (error) throw error
+  notifyDeadlineChange()
 }
 
 export async function setBlocked(workspaceId, id, { category, reason, needHelpFrom, description }) {
@@ -189,6 +238,7 @@ export async function setBlocked(workspaceId, id, { category, reason, needHelpFr
     },
   }).eq('id', id).eq('workspace_id', workspaceId)
   if (error) throw error
+  notifyDeadlineChange()
 }
 
 export async function clearBlocked(workspaceId, id, nextStatus = 'in_progress') {
@@ -197,11 +247,13 @@ export async function clearBlocked(workspaceId, id, nextStatus = 'in_progress') 
     blocker_info: null,
   }).eq('id', id).eq('workspace_id', workspaceId)
   if (error) throw error
+  notifyDeadlineChange()
 }
 
 export async function deleteDeadline(workspaceId, id) {
   const { error } = await supabase.from('deadlines').delete().eq('id', id).eq('workspace_id', workspaceId)
   if (error) throw error
+  notifyDeadlineChange()
 }
 
 import { subscribeWorkspaceMembers } from './workspaces'
@@ -220,4 +272,5 @@ export async function addMember(workspaceId, teamId, { name, email, addedBy }) {
 export async function removeMember(workspaceId, id) {
   const { error } = await supabase.from('workspace_members').delete().eq('user_id', id).eq('workspace_id', workspaceId)
   if (error) throw error
+  notifyDeadlineChange()
 }
