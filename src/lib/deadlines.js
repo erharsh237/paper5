@@ -15,6 +15,9 @@ function notifyDeadlineChange() {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('sprintos:deadlines-updated'))
     window.dispatchEvent(new CustomEvent('sprintos:data-sync'))
+    try {
+      localStorage.setItem('sprintos:sync_deadlines', Date.now().toString())
+    } catch (_) {}
   }
 }
 
@@ -54,16 +57,24 @@ export function subscribeDeadlines(workspaceId, teamId, callback, pageSize = DEA
 
   fetchList()
 
-  const channel = supabase.channel(`public:deadlines:workspace_id=eq.${workspaceId}:${Math.random().toString(36).substring(7)}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'deadlines', filter: `workspace_id=eq.${workspaceId}` }, payload => {
+  const channel = supabase.channel(`public:deadlines:ws:${workspaceId}:${Math.random().toString(36).substring(7)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'deadlines' }, () => {
        fetchList()
     })
     .subscribe()
 
   const onLocalSync = () => fetchList()
+  const onStorageSync = (e) => {
+    if (e.key === 'sprintos:sync_deadlines' || e.key === 'sprintos:sync_notifications') {
+      fetchList()
+    }
+  }
+
   if (typeof window !== 'undefined') {
     window.addEventListener('sprintos:deadlines-updated', onLocalSync)
+    window.addEventListener('sprintos:notifications-updated', onLocalSync)
     window.addEventListener('sprintos:data-sync', onLocalSync)
+    window.addEventListener('storage', onStorageSync)
     window.addEventListener('focus', onLocalSync)
   }
   const onVisibilityChange = () => {
@@ -73,12 +84,12 @@ export function subscribeDeadlines(workspaceId, teamId, callback, pageSize = DEA
     document.addEventListener('visibilitychange', onVisibilityChange)
   }
 
-  // Periodic heartbeat sync (every 3 seconds when tab is active)
+  // Periodic heartbeat sync (every 2 seconds when tab is active)
   const interval = setInterval(() => {
     if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
       fetchList()
     }
-  }, 3000)
+  }, 2000)
   
   return () => {
     isSubscribed = false
@@ -86,7 +97,9 @@ export function subscribeDeadlines(workspaceId, teamId, callback, pageSize = DEA
     clearInterval(interval)
     if (typeof window !== 'undefined') {
       window.removeEventListener('sprintos:deadlines-updated', onLocalSync)
+      window.removeEventListener('sprintos:notifications-updated', onLocalSync)
       window.removeEventListener('sprintos:data-sync', onLocalSync)
+      window.removeEventListener('storage', onStorageSync)
       window.removeEventListener('focus', onLocalSync)
     }
     if (typeof document !== 'undefined') {

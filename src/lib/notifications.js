@@ -11,7 +11,12 @@ export const NOTIFICATION_TYPES = {
 function notifyNotificationsChange() {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('sprintos:notifications-updated'))
+    window.dispatchEvent(new CustomEvent('sprintos:deadlines-updated'))
     window.dispatchEvent(new CustomEvent('sprintos:data-sync'))
+    try {
+      localStorage.setItem('sprintos:sync_notifications', Date.now().toString())
+      localStorage.setItem('sprintos:sync_deadlines', Date.now().toString())
+    } catch (_) {}
   }
 }
 
@@ -68,9 +73,13 @@ export function subscribeNotifications(workspaceId, teamId, userEmail, callback)
 
   fetchList()
 
-  const channel = supabase.channel(`public:notifications:workspace_id=eq.${workspaceId}:${Math.random().toString(36).substring(7)}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `workspace_id=eq.${workspaceId}` }, () => {
+  const channel = supabase.channel(`public:notifications:ws:${workspaceId}:${Math.random().toString(36).substring(7)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => {
       fetchList()
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('sprintos:deadlines-updated'))
+        window.dispatchEvent(new CustomEvent('sprintos:data-sync'))
+      }
     })
     .subscribe()
 

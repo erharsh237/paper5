@@ -73,15 +73,20 @@ export default function MyDashboard() {
   }, [user])
 
   const myEmail = (user?.email || '').trim().toLowerCase()
+  const myUid = user?.id || user?.uid
+  const myName = (user?.displayName || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || '').trim().toLowerCase()
   const activeSprint = useMemo(() => sprints.find(s => s.status === 'active'), [sprints])
 
   const myTasks = useMemo(
     () => deadlines.filter(d => {
-      const emailMatch = d.assigneeEmail && d.assigneeEmail.trim().toLowerCase() === myEmail
-      const idMatch = d.assigneeId && (d.assigneeId === user?.id || d.assigneeId === user?.uid)
-      return emailMatch || idMatch
+      const dEmail = (d.assigneeEmail || '').trim().toLowerCase()
+      const dName = (d.assigneeName || '').trim().toLowerCase()
+      const emailMatch = dEmail && myEmail && (dEmail === myEmail || dEmail.includes(myEmail) || myEmail.includes(dEmail))
+      const idMatch = d.assigneeId && myUid && (d.assigneeId === myUid)
+      const nameMatch = myName && dName && (dName === myName || (dName.includes(myName) && myName.length > 2))
+      return emailMatch || idMatch || nameMatch
     }),
-    [deadlines, myEmail, user?.id, user?.uid]
+    [deadlines, myEmail, myUid, myName]
   )
 
   // For Admins, default to whole team scope. For members, display their assigned tasks.
