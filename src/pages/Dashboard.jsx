@@ -8,7 +8,6 @@ import { downloadMonthlyReport } from '../lib/report'
 import DeadlineCard from '../components/DeadlineCard'
 import NewDeadlineModal from '../components/NewDeadlineModal'
 import NewSprintModal from '../components/NewSprintModal'
-import SprintOverview from '../components/SprintOverview'
 import WorkloadPanel from '../components/WorkloadPanel'
 import NotificationBell from '../components/NotificationBell'
 import NavTabs from '../components/NavTabs'
@@ -770,48 +769,15 @@ export default function Dashboard() {
                 {filtered.length === 0 ? (
                   <div className="dash-empty-list">No deadlines match these filters.</div>
                 ) : (
-                  <div className="dash-list-table-wrapper">
-                    <table className="dash-list-table">
-                      <thead>
-                        <tr>
-                          <th>TITLE</th>
-                          <th>ASSIGNEE</th>
-                          <th>PRIORITY</th>
-                          <th>STATUS</th>
-                          <th>DUE DATE</th>
-                          <th>SPRINT</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filtered.map(d => {
-                          const assigneeObj = members.find(m => m.id === d.assigneeId || m.email === d.assigneeEmail)
-                          const sprintObj = sprints.find(s => s.id === d.sprintId)
-                          return (
-                            <tr key={d.id}>
-                              <td style={{ fontWeight: 600, color: 'var(--text)' }}>{d.title}</td>
-                              <td>{assigneeObj?.name || d.assigneeName || d.assigneeEmail || '—'}</td>
-                              <td>
-                                <span className={`dash-badge-priority ${d.priority || 'medium'}`}>
-                                  {d.priority || 'medium'}
-                                </span>
-                              </td>
-                              <td>
-                                <span className="dash-badge-status">
-                                  {d.status || 'not_started'}
-                                </span>
-                              </td>
-                              <td style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--muted)' }}>
-                                {d.dueDate ? new Date(d.dueDate).toLocaleDateString() : '—'}
-                              </td>
-                              <td style={{ fontSize: '12px', color: 'var(--muted)' }}>
-                                {sprintObj ? `Sprint ${sprintObj.number}` : 'Backlog'}
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                  filtered.map(d => (
+                    <DeadlineCard
+                      key={d.id}
+                      deadline={d}
+                      currentUser={user}
+                      teamId={TEAM_ID}
+                      sprintLocked={!!(d.sprintId && sprints.find(s => s.id === d.sprintId)?.locked)}
+                    />
+                  ))
                 )}
               </section>
             )}
@@ -831,8 +797,7 @@ export default function Dashboard() {
           </div>
 
           {/* Sidebar */}
-          <aside className="dash-sidebar-area" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <SprintOverview sprints={sprints} deadlines={deadlines} currentUser={user} members={members} />
+          <aside className="dash-sidebar-area">
             <WorkloadPanel members={members} deadlines={deadlines} />
           </aside>
         </div>
