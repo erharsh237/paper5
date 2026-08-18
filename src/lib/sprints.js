@@ -18,7 +18,14 @@ export function subscribeSprints(workspaceId, teamId, callback) {
   return () => supabase.removeChannel(channel)
 }
 
-export async function createSprint(workspaceId, teamId, { number, goal, startDate, endDate }) {
+export async function createSprint(workspaceId, teamId, { number, goal, startDate, endDate, status = 'active' }) {
+  if (status === 'active') {
+    await supabase.from('sprints')
+      .update({ status: 'completed' })
+      .eq('workspace_id', workspaceId)
+      .eq('status', 'active')
+  }
+
   const { data, error } = await supabase.from('sprints').insert([{
     workspace_id: workspaceId,
     team_id: teamId || null,
@@ -26,7 +33,7 @@ export async function createSprint(workspaceId, teamId, { number, goal, startDat
     goal: goal || '',
     start_date: startDate,
     end_date: endDate,
-    status: 'planning',
+    status: status || 'active',
     created_at: new Date().toISOString(),
   }]).select()
   if (error) throw error

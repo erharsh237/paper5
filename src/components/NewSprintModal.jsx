@@ -24,13 +24,13 @@ export default function NewSprintModal({ currentUser, existingCount, onClose }) 
 
     setSubmitting(true)
     try {
-      const ref = await createSprint(workspaceId, undefined, {
+      await createSprint(workspaceId, undefined, {
         number: Number(number),
         goal: goal.trim(),
         startDate,
         endDate,
+        status: activateNow ? 'active' : 'completed'
       })
-      if (activateNow && ref?.id) await setActiveSprint(workspaceId, undefined, ref.id)
       onClose()
     } catch (err) {
       console.error(err)
