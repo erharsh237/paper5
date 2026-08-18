@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { submitForReview } from '../lib/deadlines'
 import { createNotification, NOTIFICATION_TYPES } from '../lib/notifications'
@@ -8,7 +8,25 @@ import { EVIDENCE_TYPES } from '../lib/utils'
 
 export default function EvidenceModal({ deadline, currentUser, onClose }) {
   const { workspaceId } = useWorkspace();
-  const [evidenceType, setEvidenceType] = useState(EVIDENCE_TYPES[0].key)
+
+  // Extract required types configured when the deadline was created
+  const requiredTypesList = useMemo(() => {
+    const raw = deadline?.requiredEvidence || deadline?.required_evidence || []
+    return raw.map(item => typeof item === 'string' ? item : item.type).filter(Boolean)
+  }, [deadline])
+
+  // Filter available evidence types to the configured required types if specified
+  const availableOptions = useMemo(() => {
+    if (requiredTypesList.length > 0) {
+      const filtered = EVIDENCE_TYPES.filter(t => requiredTypesList.includes(t.key))
+      if (filtered.length > 0) return filtered
+    }
+    return EVIDENCE_TYPES
+  }, [requiredTypesList])
+
+  const [evidenceType, setEvidenceType] = useState(
+    availableOptions[0]?.key || EVIDENCE_TYPES[0].key
+  )
   const [evidenceContent, setEvidenceContent] = useState('')
   const [repoName, setRepoName] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -17,11 +35,7 @@ export default function EvidenceModal({ deadline, currentUser, onClose }) {
   async function handleSubmit(e) {
     e.preventDefault()
     if (!evidenceContent.trim()) return setError('Please provide a link, description, or detailed notes as evidence.')
-    if ((evidenceType === 'pr' || evidenceType === 'commit') && !repoName) return setError('Please select a repository to proceed.')
-    if (!deadline.definitionOfDone?.trim()) {
-      // Not a hard block — DoD is optional metadata in Phase 1 — but flag it
-      // so founders notice it wasn't set.
-    }
+    if ((evidenceType === 'github_pr' || evidenceType === 'github_commit') && !repoName) return setError('Please select a repository to proceed.')
     setError('')
     setSubmitting(true)
     try {
@@ -64,12 +78,34 @@ export default function EvidenceModal({ deadline, currentUser, onClose }) {
             </div>
           )}
 
-          <div className="field">
-            <label htmlFor="ev-type">Evidence type</label>
-            <select id="ev-type" value={evidenceType} onChange={(e) => setEvidenceType(e.target.value)}>
-              {EVIDENCE_TYPES.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
-            </select>
-          </div>
+          {/* If exactly 1 evidence type was required during creation, lock and display it */}
+          {availableOptions.length === 1 ? (
+            <div className="field">
+              <label>Evidence type</label>
+              <div style={{
+                background: 'var(--surface-2, #F8FAFC)',
+                border: '1px solid var(--border-soft, #E2E8F0)',
+                borderRadius: '8px',
+                padding: '9px 12px',
+                fontSize: '13px',
+                fontWeight: 600,
+                color: 'var(--accent, #4F46E5)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <span style={{ fontSize: '11px', background: 'var(--accent-dim, rgba(79, 70, 229, 0.08))', padding: '2px 8px', borderRadius: '4px' }}>Required</span>
+                <span>{availableOptions[0]?.label || availableOptions[0]?.key}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="field">
+              <label htmlFor="ev-type">Evidence type</label>
+              <select id="ev-type" value={evidenceType} onChange={(e) => setEvidenceType(e.target.value)}>
+                {availableOptions.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
+              </select>
+            </div>
+          )}
 
           {(evidenceType === 'github_pr' || evidenceType === 'github_commit') && (
             <div className="field">

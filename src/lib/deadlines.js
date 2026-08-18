@@ -41,6 +41,8 @@ export function subscribeDeadlines(workspaceId, teamId, callback, pageSize = DEA
         createdAt: row.created_at || row.createdAt,
         completedAt: row.completed_at || row.completedAt,
         percentComplete: row.percent_complete ?? row.percentComplete ?? 0,
+        requiredEvidence: row.required_evidence || row.requiredEvidence || [],
+        definitionOfDone: row.definition_of_done || row.definitionOfDone || '',
       }))
       callback(normalized)
     }
