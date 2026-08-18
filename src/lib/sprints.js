@@ -18,19 +18,15 @@ export function subscribeSprints(workspaceId, teamId, callback) {
   return () => supabase.removeChannel(channel)
 }
 
-export async function createSprint(workspaceId, teamId, { number, goal, startDate, endDate, createdBy, assigneeId, assigneeName }) {
+export async function createSprint(workspaceId, teamId, { number, goal, startDate, endDate }) {
   const { data, error } = await supabase.from('sprints').insert([{
     workspace_id: workspaceId,
-    team_id: teamId,
+    team_id: teamId || null,
     number,
     goal: goal || '',
     start_date: startDate,
     end_date: endDate,
     status: 'planning',
-    locked: false,
-    assignee_id: assigneeId || null,
-    assignee_name: assigneeName || null,
-    created_by: (createdBy || '').toLowerCase(),
     created_at: new Date().toISOString(),
   }]).select()
   if (error) throw error

@@ -2,11 +2,10 @@ import { useState } from 'react'
 import { createSprint, setActiveSprint } from '../lib/sprints'
 import { useWorkspace } from '../lib/WorkspaceContext'
 
-export default function NewSprintModal({ currentUser, existingCount, members = [], onClose }) {
+export default function NewSprintModal({ currentUser, existingCount, onClose }) {
   const { workspaceId } = useWorkspace();
-  const [number, setNumber] = useState(existingCount + 1)
+  const [number, setNumber] = useState((existingCount || 0) + 1)
   const [goal, setGoal] = useState('')
-  const [assigneeId, setAssigneeId] = useState('')
   const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [endDate, setEndDate] = useState(() => {
     const d = new Date()
@@ -25,17 +24,13 @@ export default function NewSprintModal({ currentUser, existingCount, members = [
 
     setSubmitting(true)
     try {
-      const selectedMember = members.find(m => m.id === assigneeId)
       const ref = await createSprint(workspaceId, undefined, {
         number: Number(number),
         goal: goal.trim(),
         startDate,
         endDate,
-        assigneeId: assigneeId || null,
-        assigneeName: selectedMember ? selectedMember.name || selectedMember.email : null,
-        createdBy: currentUser?.email,
       })
-      if (activateNow) await setActiveSprint(workspaceId, undefined, ref.id)
+      if (activateNow && ref?.id) await setActiveSprint(workspaceId, undefined, ref.id)
       onClose()
     } catch (err) {
       console.error(err)
@@ -71,20 +66,6 @@ export default function NewSprintModal({ currentUser, existingCount, members = [
               onChange={(e) => setGoal(e.target.value)}
               placeholder="e.g. Ship the detection engine MVP end-to-end"
             />
-          </div>
-
-          <div className="field">
-            <label htmlFor="sprint-assignee">Assign to</label>
-            <select
-              id="sprint-assignee"
-              value={assigneeId}
-              onChange={(e) => setAssigneeId(e.target.value)}
-            >
-              <option value="">(Unassigned)</option>
-              {members.map(m => (
-                <option key={m.id} value={m.id}>{m.name || m.email}</option>
-              ))}
-            </select>
           </div>
 
           <div className="field-row">
