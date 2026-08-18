@@ -7,6 +7,8 @@ import { getUrgency } from '../lib/utils'
 import { downloadMonthlyReport } from '../lib/report'
 import DeadlineCard from '../components/DeadlineCard'
 import NewDeadlineModal from '../components/NewDeadlineModal'
+import NewSprintModal from '../components/NewSprintModal'
+import SprintOverview from '../components/SprintOverview'
 import WorkloadPanel from '../components/WorkloadPanel'
 import NotificationBell from '../components/NotificationBell'
 import NavTabs from '../components/NavTabs'
@@ -25,6 +27,7 @@ export default function Dashboard() {
   const [members, setMembers] = useState([])
   const [sprints, setSprints] = useState([])
   const [showNewModal, setShowNewModal] = useState(false)
+  const [showNewSprintModal, setShowNewSprintModal] = useState(false)
   const [statusFilter, setStatusFilter] = useState('all')
   const [assigneeFilter, setAssigneeFilter] = useState('all')
   const [search, setSearch] = useState('')
@@ -677,13 +680,35 @@ export default function Dashboard() {
               {generatingReport ? 'Generating…' : '↓ Report'}
             </button>
             {canAddKanbanItems && (
-              <button
-                className="dash-btn-accent"
-                style={{ padding: '8px 16px', fontSize: '12.5px', borderRadius: '10px' }}
-                onClick={() => setShowNewModal(true)}
-              >
-                + New deadline
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="btn-ghost btn-sm"
+                  style={{
+                    padding: '7px 14px',
+                    fontSize: '12.5px',
+                    borderRadius: '10px',
+                    border: '1px solid var(--border-soft)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer',
+                    fontWeight: 600
+                  }}
+                  onClick={() => setShowNewSprintModal(true)}
+                  title="Create a new sprint cycle"
+                >
+                  <span style={{ fontSize: '13px' }}>⚡</span> + New sprint
+                </button>
+                <button
+                  type="button"
+                  className="dash-btn-accent"
+                  style={{ padding: '8px 16px', fontSize: '12.5px', borderRadius: '10px' }}
+                  onClick={() => setShowNewModal(true)}
+                >
+                  + New deadline
+                </button>
+              </>
             )}
           </div>
         </section>
@@ -811,7 +836,8 @@ export default function Dashboard() {
           </div>
 
           {/* Sidebar */}
-          <aside className="dash-sidebar-area">
+          <aside className="dash-sidebar-area" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <SprintOverview sprints={sprints} deadlines={deadlines} currentUser={user} members={members} />
             <WorkloadPanel members={members} deadlines={deadlines} />
           </aside>
         </div>
@@ -825,6 +851,16 @@ export default function Dashboard() {
           currentUser={user}
           activeSprint={activeSprint}
           onClose={() => setShowNewModal(false)}
+        />
+      )}
+
+      {/* New Sprint Modal */}
+      {showNewSprintModal && (
+        <NewSprintModal
+          currentUser={user}
+          existingCount={sprints.length}
+          members={members}
+          onClose={() => setShowNewSprintModal(false)}
         />
       )}
     </div>
