@@ -361,5 +361,6 @@ export default function AuthAction() {
         </div>
       </div>
       <AlertModal message={alertMessage} onClose={() => setAlertMessage(null)} />
+    </div>
   )
 }
