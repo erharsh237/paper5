@@ -204,35 +204,13 @@ export async function deleteDeadline(workspaceId, id) {
   if (error) throw error
 }
 
+import { subscribeWorkspaceMembers } from './workspaces'
+
 export function subscribeMembers(workspaceId, teamId, callback) {
-  const fetchList = async () => {
-    const { data, error } = await supabase
-      .from('workspace_members')
-      .select(`
-        role,
-        joined_at,
-        users ( email, full_name, avatar_url )
-      `)
-      .eq('workspace_id', workspaceId)
-    if (!error) {
-      const mapped = data.map(row => ({
-        id: row.users?.email,
-        email: row.users?.email,
-        name: row.users?.full_name,
-        avatarUrl: row.users?.avatar_url,
-        role: row.role,
-        joinedAt: row.joined_at
-      }))
-      callback(mapped)
-    }
-  }
-  const channel = supabase.channel(`public:workspace_members:workspace_id=eq.${workspaceId}:deadlines:${Math.random().toString(36).substring(7)}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_members', filter: `workspace_id=eq.${workspaceId}` }, payload => {
-       fetchList()
-    })
-    .subscribe()
-  fetchList()
-  return () => supabase.removeChannel(channel)
+  const cb = typeof teamId === 'function' ? teamId : callback
+  return subscribeWorkspaceMembers(workspaceId, (members) => {
+    if (typeof cb === 'function') cb(members)
+  })
 }
 
 export async function addMember(workspaceId, teamId, { name, email, addedBy }) {
