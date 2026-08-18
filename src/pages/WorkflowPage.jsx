@@ -209,27 +209,36 @@ export default function WorkflowPage() {
       <main className="dash-container" style={{ paddingBottom: '48px' }}>
         {/* Dedicated Workflow Header Banner */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.02) 100%)',
-          border: '1px solid rgba(16, 185, 129, 0.3)',
-          borderRadius: '12px',
+          background: 'var(--surface, #FFFFFF)',
+          border: '1px solid var(--border-soft, #E2E8F0)',
+          borderRadius: '14px',
           padding: '18px 24px',
           marginBottom: '24px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
-          gap: '16px'
+          gap: '16px',
+          boxShadow: '0 2px 8px rgba(30, 32, 80, 0.04)'
         }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ background: '#10b981', color: '#fff', fontSize: '12px', fontWeight: 800, padding: '2px 8px', borderRadius: '6px' }}>
+              <span style={{
+                background: 'var(--accent-dim, rgba(79, 70, 229, 0.08))',
+                color: 'var(--accent, #4F46E5)',
+                fontSize: '11.5px',
+                fontWeight: 700,
+                padding: '3px 8px',
+                borderRadius: '6px',
+                border: '1px solid rgba(79, 70, 229, 0.25)'
+              }}>
                 Tier #{activeWorkflow.num}
               </span>
-              <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>
+              <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: 'var(--text)' }}>
                 {activeWorkflow.name} Workflow Maintenance Center
               </h1>
             </div>
-            <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
+            <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--muted)', fontWeight: 500 }}>
               {activeWorkflow.description}
             </p>
           </div>
@@ -238,21 +247,20 @@ export default function WorkflowPage() {
             <Link 
               to={`/${workspaceId}/settings`} 
               className="btn-ghost btn-sm"
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                textDecoration: 'none',
+                fontSize: '12px',
+                fontWeight: 600,
+                border: '1px solid var(--border-soft)',
+                padding: '6px 12px',
+                borderRadius: '8px'
+              }}
             >
               <Sliders size={14} /> Configure Workflow
             </Link>
-            
-            {activeSprint && (
-              <button 
-                onClick={handleToggleSprintLock} 
-                className="btn-primary btn-sm"
-                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: activeSprint.locked ? '#ef4444' : '#10b981' }}
-              >
-                {activeSprint.locked ? <Lock size={14} /> : <Unlock size={14} />}
-                {activeSprint.locked ? `Unlock Sprint ${activeSprint.number}` : `Lock Sprint ${activeSprint.number}`}
-              </button>
-            )}
           </div>
         </div>
 
@@ -315,9 +323,9 @@ export default function WorkflowPage() {
         }}>
           {kanbanColumns.map(col => (
             <div key={col.id} style={{
-              background: 'var(--bg-layer-1)',
-              borderRadius: '12px',
-              border: col.isExceeded ? '1px solid #ef4444' : '1px solid var(--border-hair)',
+              background: 'var(--surface-2, #F8FAFC)',
+              borderRadius: '14px',
+              border: col.isExceeded ? '1px solid #ef4444' : '1px solid var(--border-soft, #E2E8F0)',
               padding: '16px',
               minWidth: '260px'
             }}>
@@ -327,9 +335,9 @@ export default function WorkflowPage() {
                 justifyContent: 'space-between',
                 marginBottom: '14px',
                 paddingBottom: '10px',
-                borderBottom: '1px solid var(--border-subtle)'
+                borderBottom: '1px solid var(--border-soft, #E2E8F0)'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>
                   <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: col.color }} />
                   {col.title}
                 </div>
@@ -343,11 +351,11 @@ export default function WorkflowPage() {
                   <span style={{
                     fontSize: '11px',
                     fontWeight: 800,
-                    background: col.isExceeded ? 'rgba(239, 68, 68, 0.15)' : 'var(--bg-panel)',
-                    color: col.isExceeded ? '#ef4444' : 'var(--text-secondary)',
+                    background: col.isExceeded ? 'rgba(239, 68, 68, 0.15)' : 'var(--surface, #FFFFFF)',
+                    color: col.isExceeded ? '#ef4444' : 'var(--muted)',
                     padding: '2px 10px',
                     borderRadius: '12px',
-                    border: '1px solid var(--border-hair)'
+                    border: '1px solid var(--border-soft, #E2E8F0)'
                   }}>
                     {col.items.length}
                   </span>
@@ -360,10 +368,10 @@ export default function WorkflowPage() {
                     padding: '24px 12px',
                     textAlign: 'center',
                     fontSize: '12px',
-                    color: 'var(--text-tertiary)',
-                    border: '1px dashed var(--border-subtle)',
+                    color: 'var(--muted)',
+                    border: '1px dashed var(--border-soft, #E2E8F0)',
                     borderRadius: '8px',
-                    background: 'var(--bg-inset)'
+                    background: 'var(--surface, #FFFFFF)'
                   }}>
                     No items in {col.title}
                   </div>
