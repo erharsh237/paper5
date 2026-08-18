@@ -56,7 +56,30 @@ export default function Dashboard() {
     return () => { unsub2(); unsub3() }
   }, [workspaceId])
 
+  const [selectedSprintViewId, setSelectedSprintViewId] = useState(null)
+
   const activeSprint = useMemo(() => sprints.find(s => s.status === 'active'), [sprints])
+
+  const currentDisplaySprint = useMemo(() => {
+    if (selectedSprintViewId) {
+      const found = sprints.find(s => s.id === selectedSprintViewId)
+      if (found) return found
+    }
+    return activeSprint || sprints[0] || null
+  }, [sprints, selectedSprintViewId, activeSprint])
+
+  const sprintDeadlines = useMemo(() => {
+    if (!currentDisplaySprint) return []
+    return deadlines.filter(d => d.sprintId === currentDisplaySprint.id)
+  }, [deadlines, currentDisplaySprint])
+
+  const sprintStats = useMemo(() => {
+    const total = sprintDeadlines.length
+    const done = sprintDeadlines.filter(d => d.status === 'done' || d.status === 'completed').length
+    const inProgress = sprintDeadlines.filter(d => d.status === 'in_progress').length
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0
+    return { total, done, inProgress, pct }
+  }, [sprintDeadlines])
 
   const stats = useMemo(() => {
     const active = deadlines.filter(d => d.status !== 'done')
@@ -586,33 +609,218 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Right: Sprints Card */}
-          <div className="dash-surface-card dash-milestone-panel">
-            <div className="dash-milestone-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="4" width="18" height="16" rx="3" stroke="var(--accent)" strokeWidth="1.7"/>
-                <path d="M8 9h8M8 13h5" stroke="var(--accent)" strokeWidth="1.7" strokeLinecap="round"/>
-                <circle cx="19" cy="19" r="4" fill="var(--accent)"/>
-                <path d="M19 17v2l1 1" stroke="white" strokeWidth="1.3" strokeLinecap="round"/>
-              </svg>
-            </div>
-            <div className="dash-milestone-title">
-              {activeSprint ? `Active: Sprint ${activeSprint.number}` : 'No upcoming Sprints'}
-            </div>
-            <div className="dash-milestone-desc">
-              {activeSprint
-                ? (activeSprint.goal || 'Track sprint execution and meet your deliverables on time.')
-                : "You're all caught up! Create a Sprint to start tracking important dates and keep your sprint on schedule."}
-            </div>
-            {canAddKanbanItems && (
-              <button
-                type="button"
-                className="dash-btn-accent"
-                style={{ borderRadius: '10px', padding: '9px 22px' }}
-                onClick={() => setShowNewSprintModal(true)}
-              >
-                + Create Sprint
-              </button>
+          {/* Right: Sprints Card with Mini Deadline Cards */}
+          <div className="dash-surface-card" style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', minHeight: '340px' }}>
+            {!currentDisplaySprint ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', height: '100%', padding: '24px 0', margin: 'auto' }}>
+                <div className="dash-milestone-icon" style={{ width: '46px', height: '46px', borderRadius: '14px', marginBottom: '14px' }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <rect x="3" y="4" width="18" height="16" rx="3" stroke="var(--accent)" strokeWidth="1.7"/>
+                    <path d="M8 9h8M8 13h5" stroke="var(--accent)" strokeWidth="1.7" strokeLinecap="round"/>
+                    <circle cx="19" cy="19" r="4" fill="var(--accent)"/>
+                    <path d="M19 17v2l1 1" stroke="white" strokeWidth="1.3" strokeLinecap="round"/>
+                  </svg>
+                </div>
+                <div className="dash-milestone-title" style={{ fontSize: '15px' }}>No upcoming Sprints</div>
+                <div className="dash-milestone-desc" style={{ fontSize: '12.5px', marginBottom: '18px', maxWidth: '280px' }}>
+                  You're all caught up! Create a Sprint to start tracking important dates and keep your sprint on schedule.
+                </div>
+                {canAddKanbanItems && (
+                  <button
+                    type="button"
+                    className="dash-btn-accent"
+                    style={{ borderRadius: '10px', padding: '8px 20px', fontSize: '12.5px' }}
+                    onClick={() => setShowNewSprintModal(true)}
+                  >
+                    + Create Sprint
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '14px' }}>
+                {/* Sprint Header & Selector */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-soft)', paddingBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.2px' }}>
+                      Sprint {currentDisplaySprint.number}
+                    </span>
+                    <span style={{
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      padding: '2px 7px',
+                      borderRadius: '100px',
+                      background: currentDisplaySprint.status === 'active' ? 'rgba(16, 185, 129, 0.12)' : 'var(--surface-2)',
+                      color: currentDisplaySprint.status === 'active' ? '#059669' : 'var(--muted)',
+                      border: `1px solid ${currentDisplaySprint.status === 'active' ? 'rgba(16, 185, 129, 0.3)' : 'var(--border-soft)'}`,
+                      textTransform: 'uppercase'
+                    }}>
+                      {currentDisplaySprint.status === 'active' ? '⚡ Active' : currentDisplaySprint.status}
+                    </span>
+
+                    {sprints.length > 1 && (
+                      <select
+                        value={currentDisplaySprint.id}
+                        onChange={(e) => setSelectedSprintViewId(e.target.value)}
+                        style={{
+                          fontSize: '11px',
+                          padding: '2px 6px',
+                          borderRadius: '6px',
+                          border: '1px solid var(--border-soft)',
+                          background: 'var(--surface-2)',
+                          color: 'var(--text)',
+                          fontWeight: 600,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {sprints.map(s => (
+                          <option key={s.id} value={s.id}>
+                            Sprint {s.number} ({s.status})
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+
+                  {canAddKanbanItems && (
+                    <button
+                      type="button"
+                      className="btn-ghost btn-sm"
+                      onClick={() => setShowNewSprintModal(true)}
+                      style={{ fontSize: '11.5px', padding: '4px 10px', borderRadius: '8px', border: '1px solid var(--border-soft)' }}
+                      title="Create a new sprint"
+                    >
+                      + New Sprint
+                    </button>
+                  )}
+                </div>
+
+                {/* Sprint Goal & Date Timeline */}
+                <div>
+                  {currentDisplaySprint.goal && (
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '4px' }}>
+                      "{currentDisplaySprint.goal}"
+                    </div>
+                  )}
+                  <div style={{ fontSize: '11.5px', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>📅</span>
+                    <span>
+                      {currentDisplaySprint.start_date ? new Date(currentDisplaySprint.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Start'}
+                      {' – '}
+                      {currentDisplaySprint.end_date ? new Date(currentDisplaySprint.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'End'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Execution Progress Bar */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 600, color: 'var(--muted)', marginBottom: '5px' }}>
+                    <span>Sprint Execution</span>
+                    <span>{sprintStats.done} of {sprintStats.total} done ({sprintStats.pct}%)</span>
+                  </div>
+                  <div style={{ height: '6px', background: 'var(--surface-2)', borderRadius: '100px', overflow: 'hidden', border: '1px solid var(--border-soft)' }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${sprintStats.pct}%`,
+                      background: 'linear-gradient(90deg, #4F46E5 0%, #10B981 100%)',
+                      borderRadius: '100px',
+                      transition: 'width 0.4s ease'
+                    }} />
+                  </div>
+                </div>
+
+                {/* Small Deadline Cards Section */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Assigned Deadlines ({sprintDeadlines.length})
+                    </span>
+                    {canAddKanbanItems && (
+                      <button
+                        type="button"
+                        onClick={() => setShowNewModal(true)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--accent, #4F46E5)',
+                          fontSize: '11.5px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          padding: '2px 4px'
+                        }}
+                      >
+                        + Add Deadline
+                      </button>
+                    )}
+                  </div>
+
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '7px',
+                    maxHeight: '145px',
+                    overflowY: 'auto',
+                    paddingRight: '4px'
+                  }}>
+                    {sprintDeadlines.length === 0 ? (
+                      <div style={{
+                        padding: '14px 12px',
+                        textAlign: 'center',
+                        fontSize: '12px',
+                        color: 'var(--muted)',
+                        background: 'var(--surface-2)',
+                        borderRadius: '8px',
+                        border: '1px dashed var(--border-soft)'
+                      }}>
+                        No deadlines assigned to Sprint {currentDisplaySprint.number} yet.
+                      </div>
+                    ) : (
+                      sprintDeadlines.map(d => {
+                        const statusColors = {
+                          not_started: '#1C1D2B',
+                          in_progress: '#3D6FD6',
+                          review: '#C4791A',
+                          blocked: '#D14343',
+                          done: '#10B981'
+                        }
+                        const dotColor = statusColors[d.status] || '#4F46E5'
+                        const assigneeName = d.assigneeName || (d.assigneeEmail ? d.assigneeEmail.split('@')[0] : 'Unassigned')
+
+                        return (
+                          <div
+                            key={d.id}
+                            style={{
+                              background: 'var(--surface-2)',
+                              border: '1px solid var(--border-soft)',
+                              borderRadius: '8px',
+                              padding: '7px 10px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '8px'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0 }}>
+                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+                              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={d.title}>
+                                {d.title}
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                              <span style={{ fontSize: '10.5px', color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
+                                {assigneeName}
+                              </span>
+                              <span className={`dash-badge-priority ${d.priority || 'medium'}`} style={{ fontSize: '9.5px', padding: '1px 5px' }}>
+                                {d.priority || 'medium'}
+                              </span>
+                            </div>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </section>
