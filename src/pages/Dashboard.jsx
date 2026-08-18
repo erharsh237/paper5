@@ -615,7 +615,7 @@ export default function Dashboard() {
           </div>
 
           {/* Right: Sprints Card with Active/Closed Toggle on Top Left */}
-          <div className="dash-surface-card" style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', minHeight: '340px' }}>
+          <div className="dash-surface-card dash-sprint-panel">
             
             {/* Top Bar: Tabs on Top Left, + New Sprint on Top Right */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-soft)', paddingBottom: '12px', marginBottom: '14px' }}>
@@ -742,7 +742,7 @@ export default function Dashboard() {
                         {canAddKanbanItems && (
                           <div>
                             {sprintTab === 'active' ? (
-                              is100PercentDone ? (
+                              is100PercentDone && (
                                 <button
                                   type="button"
                                   onClick={async () => {
@@ -759,22 +759,18 @@ export default function Dashboard() {
                                     color: '#FFFFFF',
                                     fontSize: '11px',
                                     fontWeight: 700,
-                                    padding: '5px 12px',
-                                    borderRadius: '8px',
+                                    padding: '4px 10px',
+                                    borderRadius: '7px',
                                     cursor: 'pointer',
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '5px',
-                                    boxShadow: '0 2px 8px rgba(5, 150, 105, 0.25)'
+                                    gap: '4px',
+                                    boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)'
                                   }}
                                   title="100% deadlines completed! Click to close sprint."
                                 >
-                                  <span>🏁</span> Close Sprint
+                                  <span>🏁</span> Close
                                 </button>
-                              ) : (
-                                <span style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 600, background: 'var(--surface-2)', padding: '3px 8px', borderRadius: '6px', border: '1px solid var(--border-soft)' }}>
-                                  {total === 0 ? 'No tasks assigned' : `${total - done} task${total - done === 1 ? '' : 's'} remaining`}
-                                </span>
                               )
                             ) : (
                               <button
@@ -802,7 +798,7 @@ export default function Dashboard() {
                                 }}
                                 title="Reopen sprint"
                               >
-                                <span>⚡</span> Reopen Sprint
+                                <span>⚡</span> Reopen
                               </button>
                             )}
                           </div>

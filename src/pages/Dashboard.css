@@ -452,119 +452,93 @@
   letter-spacing: -0.2px;
 }
 
-.dash-panel-desc {
-  font-size: 12.5px;
+.dash-panel-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dash-panel-meta-item {
+  font-size: 12px;
   color: var(--muted);
   font-weight: 500;
-  margin-top: 2px;
 }
 
-/* Time range pills */
-.dash-range-pills {
-  display: flex;
-  gap: 3px;
-  background: var(--surface-2);
-  padding: 3px;
-  border-radius: 10px;
-  border: 1px solid var(--border-soft);
-}
-
-.dash-range-btn {
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 5px 12px;
-  border-radius: 7px;
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.dash-range-btn.active {
-  background: var(--surface);
-  color: var(--accent);
-  box-shadow: 0 1px 4px rgba(30, 32, 80, 0.08);
-}
-
-.dash-range-btn:hover:not(.active) {
+.dash-panel-meta-value {
+  font-weight: 700;
   color: var(--text);
 }
 
-/* Bar Chart Canvas */
-.dash-chart-bars {
+.dash-chart-container {
   height: 180px;
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
-  padding-top: 8px;
+  position: relative;
 }
 
-.dash-bar-col {
+.dash-chart-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 140px;
+  padding: 0 8px;
+  gap: 12px;
+}
+
+.dash-chart-col {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
   height: 100%;
   justify-content: flex-end;
-  cursor: pointer;
 }
 
-.dash-bar-tube {
-  width: 100%;
-  max-width: 44px;
+.dash-chart-bar-group {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
-  align-items: center;
-  justify-content: flex-end;
+  align-items: flex-end;
+  gap: 4px;
+  height: 100%;
 }
 
-.dash-bar-slice {
-  width: 100%;
-  border-radius: 4px;
-  transition: opacity 0.15s ease, transform 0.15s ease;
+.dash-chart-bar {
+  width: 14px;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 4px;
 }
 
-.dash-bar-slice.done { background: var(--accent); }
-.dash-bar-slice.prog { background: var(--blue); }
+.dash-chart-bar.delivered {
+  background: var(--accent);
+}
 
-.dash-bar-col:hover .dash-bar-slice { opacity: 0.82; transform: scaleY(1.02); }
-.dash-bar-col:hover .dash-bar-slice.done { opacity: 1; }
+.dash-chart-bar.scope {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
 
-.dash-bar-tag {
-  font-family: var(--font-mono);
+.dash-chart-label {
   font-size: 11px;
-  color: var(--muted-2);
-  font-weight: 500;
-  text-align: center;
-  white-space: nowrap;
+  color: var(--muted);
+  margin-top: 8px;
+  font-weight: 600;
+  font-family: var(--font-mono);
 }
 
-.dash-chart-foot {
+.dash-chart-legend {
   display: flex;
-  gap: 18px;
-  margin-top: 16px;
-  padding-top: 16px;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid var(--border-soft);
 }
 
 .dash-legend-item {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   font-size: 12px;
   font-weight: 600;
   color: var(--muted);
-}
-
-.dash-legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 3px;
-  flex-shrink: 0;
 }
 
 /* Right Empty-State Card */
@@ -608,10 +582,21 @@
 /* ─────────────────────────────────────────────────────────────
    SPRINT CARDS GALLERY & MINI DEADLINE CARDS (VERTICAL CARDS)
 ───────────────────────────────────────────────────────────── */
+.dash-sprint-panel {
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  min-height: 340px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
 .dash-sprint-cards-container {
   display: flex;
   flex-direction: row;
-  gap: 16px;
+  gap: 14px;
   overflow-x: auto;
   padding: 4px 4px 12px;
   scroll-snap-type: x mandatory;
