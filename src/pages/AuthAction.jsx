@@ -32,6 +32,7 @@ export default function AuthAction() {
   const [isPasswordFocused, setIsPasswordFocused] = useState(false)
 
   const isVerifying = useRef(false)
+  const isResetCompleted = useRef(false)
 
   const pwdValidation = useMemo(() => validatePassword(newPassword), [newPassword])
   const passwordsMatch = confirmPassword.length > 0 && newPassword === confirmPassword
@@ -47,7 +48,8 @@ export default function AuthAction() {
 
     // Listen to Supabase auth events (handles PKCE code exchange & recovery hash automatically)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY' || (session && (type === 'recovery' || window.location.pathname.includes('reset')))) {
+      if (isResetCompleted.current) return
+      if (event === 'PASSWORD_RECOVERY') {
         setStatus('success')
         setMessage('Link verified. Please set your new password below.')
         setShowPasswordForm(true)
@@ -55,13 +57,13 @@ export default function AuthAction() {
     })
 
     const verifyLink = async () => {
-      if (isVerifying.current) return
+      if (isVerifying.current || isResetCompleted.current) return
       isVerifying.current = true
 
       // 1. Check if user already has an active recovery session
       try {
         const { data: { session } } = await supabase.auth.getSession()
-        if (session) {
+        if (session && !isResetCompleted.current) {
           setStatus('success')
           setMessage('Link verified. Please set your new password below.')
           setShowPasswordForm(true)
@@ -86,9 +88,11 @@ export default function AuthAction() {
         try {
           const { data, error } = await supabase.auth.verifyOtp(p)
           if (!error && (data?.session || data?.user)) {
-            setStatus('success')
-            setMessage('Link verified. Please set your new password below.')
-            setShowPasswordForm(true)
+            if (!isResetCompleted.current) {
+              setStatus('success')
+              setMessage('Link verified. Please set your new password below.')
+              setShowPasswordForm(true)
+            }
             return
           }
         } catch (_) {}
@@ -99,9 +103,11 @@ export default function AuthAction() {
         try {
           const { data, error } = await supabase.auth.exchangeCodeForSession(code)
           if (!error && data?.session) {
-            setStatus('success')
-            setMessage('Link verified. Please set your new password below.')
-            setShowPasswordForm(true)
+            if (!isResetCompleted.current) {
+              setStatus('success')
+              setMessage('Link verified. Please set your new password below.')
+              setShowPasswordForm(true)
+            }
             return
           }
         } catch (err) {
@@ -112,7 +118,7 @@ export default function AuthAction() {
       // 4. If all automated attempts failed, check session one last time
       try {
         const { data: { session: finalSession } } = await supabase.auth.getSession()
-        if (finalSession) {
+        if (finalSession && !isResetCompleted.current) {
           setStatus('success')
           setMessage('Link verified. Please set your new password below.')
           setShowPasswordForm(true)
@@ -120,8 +126,10 @@ export default function AuthAction() {
         }
       } catch (_) {}
 
-      setStatus('error')
-      setMessage('Failed to verify link. The link may have expired or already been used.')
+      if (!isResetCompleted.current) {
+        setStatus('error')
+        setMessage('Failed to verify link. The link may have expired or already been used.')
+      }
     }
 
     verifyLink()
@@ -154,9 +162,14 @@ export default function AuthAction() {
       })
       if (updateError) throw updateError
 
+      isResetCompleted.current = true
       setShowPasswordForm(false)
-      setStatus('success')
-      setMessage('Your password has been reset successfully! Please sign in with your new password.')
+      setStatus('completed')
+      setMessage('Your password has been reset successfully! Redirecting you to your workspace...')
+
+      setTimeout(() => {
+        navigate('/workspace', { replace: true })
+      }, 1800)
     } catch (err) {
       console.error('Password reset error:', err)
       setStatus('error')
@@ -176,11 +189,28 @@ export default function AuthAction() {
           </div>
 
           <h1 style={{ marginTop: '16px', marginBottom: '16px', fontSize: '24px' }}>
-            {type === 'recovery' || showPasswordForm ? 'Reset Your Password' : 'Email Verification'}
+            {status === 'completed' ? 'Password Reset Complete' : type === 'recovery' || showPasswordForm ? 'Reset Your Password' : 'Email Verification'}
           </h1>
 
           {status === 'processing' && (
             <p className="auth-subtitle">{message}</p>
+          )}
+
+          {status === 'completed' && (
+            <>
+              <div className="auth-success" style={{ marginBottom: '24px', background: 'rgba(15, 157, 99, 0.1)', border: '1px solid rgba(15, 157, 99, 0.2)', padding: '20px', borderRadius: '8px', color: '#0f9d63', textAlign: 'center' }}>
+                <div style={{ fontSize: '32px', marginBottom: '8px' }}>✓</div>
+                <div style={{ fontWeight: 700, fontSize: '16px', marginBottom: '6px' }}>Password Successfully Updated!</div>
+                <div style={{ fontSize: '13px', color: 'var(--text-secondary, #4b5563)' }}>{message}</div>
+              </div>
+              <button
+                className="auth-submit-btn"
+                onClick={() => navigate('/workspace', { replace: true })}
+                style={{ width: '100%', justifyContent: 'center' }}
+              >
+                Go to Workspace &rarr;
+              </button>
+            </>
           )}
 
           {status === 'error' && (
@@ -196,10 +226,10 @@ export default function AuthAction() {
               </div>
               <button
                 className="auth-submit-btn"
-                onClick={() => navigate('/login')}
+                onClick={() => navigate('/workspace', { replace: true })}
                 style={{ width: '100%', justifyContent: 'center' }}
               >
-                Sign In
+                Continue to Workspace &rarr;
               </button>
             </>
           )}
