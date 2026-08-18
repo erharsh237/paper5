@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Cardio } from 'ldrs/react';
+import 'ldrs/react/Cardio.css';
 import './States.css';
 
 // 1. Empty State
@@ -18,15 +20,24 @@ export function EmptyState({ title = "Nothing here yet", message, actionLabel, o
   );
 }
 
-// 2. Loading State (Spinner & Skeleton)
+// 2. Loading State (Heartbeat ECG Wave Loader)
 export function LoadingSpinner({ message = "Loading..." }) {
   return (
-    <div className="ui-state-container">
-      <div className="spinner" style={{ marginBottom: 16 }}></div>
-      {message && <p className="ui-state-message">{message}</p>}
+    <div className="ui-state-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
+      <div style={{ marginBottom: 12 }}>
+        <Cardio
+          size="40"
+          stroke="3.5"
+          speed="1.8"
+          color="var(--accent-signal, #10b981)"
+        />
+      </div>
+      {message && <p className="ui-state-message" style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>{message}</p>}
     </div>
   );
 }
+
+export const HeartbeatLoader = LoadingSpinner;
 
 export function LoadingSkeleton({ rows = 3 }) {
   return (
