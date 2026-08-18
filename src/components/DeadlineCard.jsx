@@ -312,7 +312,7 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
 
           {statusError && <div className="form-error">{statusError}</div>}
 
-          <div className="dcard-footnote mono">assigned by {deadline.createdByName || deadline.createdBy}</div>
+          <div className="dcard-footnote mono">assigned by {deadline.createdByName || deadline.createdBy || 'Team Lead'}</div>
 
           {extraWork.length > 0 && (
             <div className="dcard-extrawork">
