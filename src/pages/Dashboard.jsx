@@ -698,7 +698,7 @@ export default function Dashboard() {
                   onClick={() => setShowNewSprintModal(true)}
                   title="Create a new sprint cycle"
                 >
-                  <span style={{ fontSize: '13px' }}>⚡</span> + New sprint
+                  <span style={{ fontSize: '13px' }}>⚡</span> New Sprint
                 </button>
                 <button
                   type="button"
@@ -706,7 +706,7 @@ export default function Dashboard() {
                   style={{ padding: '8px 16px', fontSize: '12.5px', borderRadius: '10px' }}
                   onClick={() => setShowNewModal(true)}
                 >
-                  + New deadline
+                  + New Task
                 </button>
               </>
             )}

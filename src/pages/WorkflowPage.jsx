@@ -306,7 +306,7 @@ export default function WorkflowPage() {
               }}
               title="Create a new sprint cycle"
             >
-              <Zap size={14} /> + New sprint
+              <Zap size={14} /> New Sprint
             </button>
             <button
               type="button"
@@ -321,7 +321,7 @@ export default function WorkflowPage() {
                 gap: '6px'
               }}
             >
-              <Plus size={15} /> + Add Workflow Item
+              <Plus size={15} /> New Task
             </button>
           </div>
         </section>
