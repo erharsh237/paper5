@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 
 export default function ForcePasswordReset() {
-  const { logout } = useAuth()
+  const { logout, setUser, setUserData } = useAuth()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
@@ -122,9 +122,21 @@ export default function ForcePasswordReset() {
               body: JSON.stringify({ email: cleanEmail, userId: data.user.id })
             })
           } catch (apiErr) {
-            console.warn('ForcePasswordReset accept-invite notice:', apiErr)
+        // 4. Update in-memory Auth context state dynamically so UI switches instantly without manual refresh
+        setUser(prev => ({
+          ...(prev || {}),
+          user_metadata: {
+            ...(prev?.user_metadata || {}),
+            must_change_password: false,
+            username: uniqueUsername
           }
-        }
+        }))
+        setUserData(prev => ({
+          ...(prev || {}),
+          username: uniqueUsername,
+          requires_password_reset: false,
+          requiresPasswordReset: false
+        }))
       }
       
       // Navigate cleanly to workspace picker

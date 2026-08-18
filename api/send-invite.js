@@ -19,9 +19,9 @@ export default async function handler(req, res) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY
 
   const subject = `You've been invited to join ${workspaceName || 'a workspace'} on SprintOS`
-  const targetLoginUrl = loginUrl || 'https://app.paper5.co/login'
+  const targetJoinUrl = `https://app.paper5.co/signup?email=${encodeURIComponent(cleanEmail)}`
 
-  const textBody = `Workspace Invitation\n\nYou have been invited to join ${workspaceName || 'Workspace'} as a ${role || 'Member'} on SprintOS.\n\nLogin Email: ${cleanEmail}\nTemporary Password: ${finalPassword}\n\nLog in to your workspace here: ${targetLoginUrl}\n\nPlease update your password upon your first sign in.`
+  const textBody = `Workspace Invitation\n\nYou have been invited to join ${workspaceName || 'Workspace'} as a ${role || 'Member'} on SprintOS.\n\nInvited Email: ${cleanEmail}\nRole: ${role || 'Member'}\n\nAccept your invitation and join the workspace here:\n${targetJoinUrl}\n\nPlease verify your email and set your password to complete your account setup.`
 
   const htmlBody = `
     <!DOCTYPE html>
@@ -46,15 +46,15 @@ export default async function handler(req, res) {
         <p>You have been invited to join <strong>${workspaceName || 'Workspace'}</strong> as a <strong>${role || 'Member'}</strong> on SprintOS.</p>
         
         <div class="card">
-          <div class="field">Login Email:</div>
-          <div class="value" style="margin-bottom: 12px;">${cleanEmail}</div>
-          <div class="field">Temporary Password:</div>
-          <div class="value">${finalPassword}</div>
+          <div class="field">Invited Email:</div>
+          <div class="value" style="margin-bottom: 8px;">${cleanEmail}</div>
+          <div class="field">Assigned Role:</div>
+          <div class="value">${role || 'Member'}</div>
         </div>
 
-        <p>Please log in and update your password upon your first sign in.</p>
+        <p>Click below to verify your email address, set up your password, and join the workspace:</p>
 
-        <a href="${targetLoginUrl}" class="btn">Log In to Workspace &rarr;</a>
+        <a href="${targetJoinUrl}" class="btn">Accept Invitation & Join Workspace &rarr;</a>
 
         <div class="footer">
           If you did not expect this invitation, you can safely ignore this email.<br>
@@ -68,80 +68,13 @@ export default async function handler(req, res) {
   let emailSent = false
   let resendDetails = null
 
-  // 1. Pre-provision user account in Supabase Auth using Admin API with email_confirm: true
-  // IMPORTANT: We do NOT use auth.signUp() or auth.admin.inviteUserByEmail() because they trigger Supabase's built-in "Verify Your Email Address" OTP email.
+  // Clear any lingering stale notifications from previous account lifecycles
   if (supabaseUrl && serviceKey) {
     try {
       const supabaseAdmin = createClient(supabaseUrl, serviceKey)
-      
-      if (typeof supabaseAdmin.auth?.admin?.createUser === 'function') {
-        const { data: userData, error: createErr } = await supabaseAdmin.auth.admin.createUser({
-          email: cleanEmail,
-          password: finalPassword,
-          email_confirm: true, // Auto-confirm email to SUPPRESS Supabase OTP / verification email!
-          user_metadata: {
-            must_change_password: true,
-            invited_workspace: workspaceName || 'Workspace'
-          }
-        })
-
-        let newUserId = userData?.user?.id
-
-        if (createErr && createErr.message?.toLowerCase().includes('already')) {
-          // If user already exists, update their password so temporary password works without OTP
-          const { data: userList } = await supabaseAdmin.auth.admin.listUsers()
-          const existingUser = (userList?.users || []).find(u => u.email?.toLowerCase() === cleanEmail)
-          if (existingUser) {
-            newUserId = existingUser.id
-            await supabaseAdmin.auth.admin.updateUserById(existingUser.id, {
-              password: finalPassword,
-              email_confirm: true,
-              user_metadata: {
-                ...existingUser.user_metadata,
-                must_change_password: true,
-                invited_workspace: workspaceName || 'Workspace'
-              }
-            })
-          }
-        }
-
-        if (newUserId) {
-          let baseUsername = cleanEmail.split('@')[0].replace(/[^a-z0-9_]/g, '')
-          if (!baseUsername || baseUsername.length < 3) baseUsername = 'user_' + Math.floor(1000 + Math.random() * 9000)
-          
-          let uniqueUsername = baseUsername
-          let counter = 1
-          while (true) {
-            try {
-              const { data: existing } = await supabaseAdmin
-                .from('users')
-                .select('id')
-                .ilike('username', uniqueUsername)
-                .neq('id', newUserId)
-                .maybeSingle()
-              if (!existing) break
-              uniqueUsername = `${baseUsername}_${counter}`
-              counter++
-            } catch (_) {
-              break
-            }
-          }
-
-          await supabaseAdmin.from('users').upsert({
-            id: newUserId,
-            email: cleanEmail,
-            username: uniqueUsername,
-            requires_password_reset: true,
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'id' }).catch(e => console.warn('[API send-invite] Users upsert notice:', e))
-        }
-        // Clear any lingering stale notifications from previous account lifecycles
-        try { await supabaseAdmin.from('notifications').delete().ilike('forEmail', cleanEmail) } catch (_) {}
-        try { await supabaseAdmin.from('notifications').delete().ilike('for_email', cleanEmail) } catch (_) {}
-      }
-    } catch (createEx) {
-      console.warn('[API send-invite] Auth provisioning notice:', createEx)
-    }
+      await supabaseAdmin.from('notifications').delete().ilike('forEmail', cleanEmail).catch(() => {})
+      await supabaseAdmin.from('notifications').delete().ilike('for_email', cleanEmail).catch(() => {})
+    } catch (_) {}
   }
 
   // 2. Dispatch the single official invitation email via Resend API

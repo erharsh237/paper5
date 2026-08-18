@@ -70,7 +70,14 @@ export default function Signup() {
     if (decryptedPlan) {
       localStorage.setItem('sprintos_selected_plan', decryptedPlan)
     }
-  }, [decryptedPlan])
+    const queryEmail = searchParams.get('email')
+    if (queryEmail) {
+      const clean = queryEmail.trim().toLowerCase()
+      setEmail(clean)
+      const base = clean.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '')
+      if (base) setUsername(base)
+    }
+  }, [decryptedPlan, searchParams])
 
   useEffect(() => {
     let timer
