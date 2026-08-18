@@ -587,7 +587,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Right: Milestone / Deadlines Card */}
+          {/* Right: Sprints Card */}
           <div className="dash-surface-card dash-milestone-panel">
             <div className="dash-milestone-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -598,21 +598,21 @@ export default function Dashboard() {
               </svg>
             </div>
             <div className="dash-milestone-title">
-              {stats.dueSoon > 0 ? `${stats.dueSoon} deadlines due soon` : 'No upcoming deadlines'}
+              {activeSprint ? `Active: Sprint ${activeSprint.number}` : 'No upcoming Sprints'}
             </div>
             <div className="dash-milestone-desc">
-              {stats.dueSoon > 0
-                ? 'Prioritize upcoming work items to keep team execution on schedule.'
-                : "You're all caught up! Create a milestone to start tracking important dates and keep your sprint on schedule."}
+              {activeSprint
+                ? (activeSprint.goal || 'Track sprint execution and meet your deliverables on time.')
+                : "You're all caught up! Create a Sprint to start tracking important dates and keep your sprint on schedule."}
             </div>
             {canAddKanbanItems && (
               <button
                 type="button"
                 className="dash-btn-accent"
                 style={{ borderRadius: '10px', padding: '9px 22px' }}
-                onClick={() => setShowNewModal(true)}
+                onClick={() => setShowNewSprintModal(true)}
               >
-                + Create Milestone
+                + Create Sprint
               </button>
             )}
           </div>
@@ -680,35 +680,14 @@ export default function Dashboard() {
               {generatingReport ? 'Generating…' : '↓ Report'}
             </button>
             {canAddKanbanItems && (
-              <>
-                <button
-                  type="button"
-                  className="btn-ghost btn-sm"
-                  style={{
-                    padding: '7px 14px',
-                    fontSize: '12.5px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--border-soft)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    cursor: 'pointer',
-                    fontWeight: 600
-                  }}
-                  onClick={() => setShowNewSprintModal(true)}
-                  title="Create a new sprint cycle"
-                >
-                  <span style={{ fontSize: '13px' }}>⚡</span> New Sprint
-                </button>
-                <button
-                  type="button"
-                  className="dash-btn-accent"
-                  style={{ padding: '8px 16px', fontSize: '12.5px', borderRadius: '10px' }}
-                  onClick={() => setShowNewModal(true)}
-                >
-                  + New Task
-                </button>
-              </>
+              <button
+                type="button"
+                className="dash-btn-accent"
+                style={{ padding: '8px 16px', fontSize: '12.5px', borderRadius: '10px' }}
+                onClick={() => setShowNewModal(true)}
+              >
+                + New Deadline
+              </button>
             )}
           </div>
         </section>
@@ -761,30 +740,13 @@ export default function Dashboard() {
                     }}>
                       {col.items.length === 0 ? (
                         <div>
-                          <div style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 500, marginBottom: '10px' }}>
+                          <div style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 500 }}>
                             {col.id === 'not_started' && 'Nothing queued'}
                             {col.id === 'in_progress' && 'Nothing in flight'}
                             {col.id === 'review' && 'Nothing to review'}
                             {col.id === 'blocked' && 'No blockers 🎉'}
                             {col.id === 'done' && 'Ship your first task'}
                           </div>
-                          {canAddKanbanItems && (
-                            <button
-                              type="button"
-                              onClick={() => setShowNewModal(true)}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                color: 'var(--accent, #4F46E5)',
-                                fontSize: '12.5px',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                padding: '4px 8px'
-                              }}
-                            >
-                              + Add task
-                            </button>
-                          )}
                         </div>
                       ) : (
                         <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -808,15 +770,48 @@ export default function Dashboard() {
                 {filtered.length === 0 ? (
                   <div className="dash-empty-list">No deadlines match these filters.</div>
                 ) : (
-                  filtered.map(d => (
-                    <DeadlineCard
-                      key={d.id}
-                      deadline={d}
-                      currentUser={user}
-                      teamId={TEAM_ID}
-                      sprintLocked={!!(d.sprintId && sprints.find(s => s.id === d.sprintId)?.locked)}
-                    />
-                  ))
+                  <div className="dash-list-table-wrapper">
+                    <table className="dash-list-table">
+                      <thead>
+                        <tr>
+                          <th>TITLE</th>
+                          <th>ASSIGNEE</th>
+                          <th>PRIORITY</th>
+                          <th>STATUS</th>
+                          <th>DUE DATE</th>
+                          <th>SPRINT</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filtered.map(d => {
+                          const assigneeObj = members.find(m => m.id === d.assigneeId || m.email === d.assigneeEmail)
+                          const sprintObj = sprints.find(s => s.id === d.sprintId)
+                          return (
+                            <tr key={d.id}>
+                              <td style={{ fontWeight: 600, color: 'var(--text)' }}>{d.title}</td>
+                              <td>{assigneeObj?.name || d.assigneeName || d.assigneeEmail || '—'}</td>
+                              <td>
+                                <span className={`dash-badge-priority ${d.priority || 'medium'}`}>
+                                  {d.priority || 'medium'}
+                                </span>
+                              </td>
+                              <td>
+                                <span className="dash-badge-status">
+                                  {d.status || 'not_started'}
+                                </span>
+                              </td>
+                              <td style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--muted)' }}>
+                                {d.dueDate ? new Date(d.dueDate).toLocaleDateString() : '—'}
+                              </td>
+                              <td style={{ fontSize: '12px', color: 'var(--muted)' }}>
+                                {sprintObj ? `Sprint ${sprintObj.number}` : 'Backlog'}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </section>
             )}
@@ -850,6 +845,7 @@ export default function Dashboard() {
           members={members}
           currentUser={user}
           activeSprint={activeSprint}
+          sprints={sprints}
           onClose={() => setShowNewModal(false)}
         />
       )}

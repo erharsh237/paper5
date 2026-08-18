@@ -1,15 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createDeadline } from '../lib/deadlines'
 import { sendDeadlineEmail } from '../lib/email'
 import { PRIORITIES, EVIDENCE_TYPES } from '../lib/utils'
 import { useWorkspace } from '../lib/WorkspaceContext'
+import { subscribeSprints } from '../lib/sprints'
 
-export default function NewDeadlineModal({ members, currentUser, activeSprint, onClose, title = 'New deadline', submitText = 'Create deadline' }) {
+export default function NewDeadlineModal({ members, currentUser, activeSprint, sprints = [], onClose, title = 'New deadline', submitText = 'Create deadline' }) {
   const { workspaceId, canAddKanbanItems } = useWorkspace();
   const [titleInput, setTitleInput] = useState('')
   const [description, setDescription] = useState('')
   const [priority, setPriority] = useState('medium')
   const [assigneeId, setAssigneeId] = useState(members[0]?.id || '')
+  const [selectedSprintId, setSelectedSprintId] = useState(activeSprint?.id || '')
+  const [loadedSprints, setLoadedSprints] = useState(sprints)
   const [dueDate, setDueDate] = useState('')
   const [estimatedHours, setEstimatedHours] = useState('')
   const [requiredEvidence, setRequiredEvidence] = useState([])
@@ -18,8 +21,24 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, o
   const [emailStatus, setEmailStatus] = useState(null) // null | 'sending' | 'sent' | 'failed' | 'skipped'
   const [error, setError] = useState('')
 
+  useEffect(() => {
+    if (sprints && sprints.length > 0) {
+      setLoadedSprints(sprints)
+    } else if (workspaceId) {
+      const unsub = subscribeSprints(workspaceId, undefined, setLoadedSprints)
+      return () => unsub && unsub()
+    }
+  }, [workspaceId, sprints])
+
+  useEffect(() => {
+    if (activeSprint?.id && !selectedSprintId) {
+      setSelectedSprintId(activeSprint.id)
+    }
+  }, [activeSprint])
+
   const assignee = members.find(m => m.id === assigneeId)
-  const sprintLocked = !!activeSprint?.locked
+  const chosenSprint = loadedSprints.find(s => s.id === selectedSprintId)
+  const sprintLocked = !!(chosenSprint?.locked || (!selectedSprintId && activeSprint?.locked))
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -39,7 +58,7 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, o
 
     if (!assignee) return setError('Please assign a team member.')
     if (!currentUser?.email) return setError('Ownership assignment failed: No email address is associated with your account.')
-    if (sprintLocked) return setError('The current sprint is locked. Unlock the sprint to add new items.')
+    if (sprintLocked) return setError('The selected sprint is locked. Unlock the sprint to add new items.')
 
     setSubmitting(true)
     try {
@@ -53,7 +72,7 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, o
         assigneeEmail: assignee.email || '',
         createdBy: currentUser?.email,
         createdByName: currentUser?.displayName || currentUser?.email || 'Someone',
-        sprintId: activeSprint?.id || null,
+        sprintId: selectedSprintId || null,
         estimatedHours: estimatedHours === '' ? null : Number(estimatedHours),
         requiredEvidence: requiredEvidence.map(type => ({ type, status: 'pending' })),
       })
@@ -122,6 +141,22 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, o
 
           <div className="field-row">
             <div className="field">
+              <label htmlFor="sprint-select">Sprint</label>
+              <select
+                id="sprint-select"
+                value={selectedSprintId}
+                onChange={(e) => setSelectedSprintId(e.target.value)}
+              >
+                <option value="">No Sprint (Backlog)</option>
+                {loadedSprints.map(s => (
+                  <option key={s.id} value={s.id}>
+                    Sprint {s.number}{s.goal ? ` — ${s.goal}` : ''}{s.status === 'active' ? ' (Active)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="field">
               <label htmlFor="assignee">Assign to</label>
               <select id="assignee" value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)}>
                 {members.length === 0 && <option value="">No team members yet</option>}
@@ -135,7 +170,9 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, o
                 })}
               </select>
             </div>
+          </div>
 
+          <div className="field-row">
             <div className="field">
               <label htmlFor="priority">Priority</label>
               <select id="priority" value={priority} onChange={(e) => setPriority(e.target.value)}>
@@ -144,16 +181,7 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, o
                 ))}
               </select>
             </div>
-          </div>
 
-          <div className="field-row">
-            <div className="field">
-              <label htmlFor="due">Due date & time</label>
-              <input
-                id="due" type="datetime-local" value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-              />
-            </div>
             <div className="field">
               <label htmlFor="est-hours">Estimated hours</label>
               <input
@@ -162,6 +190,14 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, o
                 placeholder="e.g. 4"
               />
             </div>
+          </div>
+
+          <div className="field">
+            <label htmlFor="due">Due date & time</label>
+            <input
+              id="due" type="datetime-local" value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
           </div>
 
           <div className="field">
