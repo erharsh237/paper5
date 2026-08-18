@@ -208,9 +208,8 @@ export async function approveReview(workspaceId, id, { reviewerEmail, reviewerNa
   const { error } = await supabase.from('deadlines').update({
     status: 'done',
     reviewer_email: (reviewerEmail || '').toLowerCase(),
-    reviewer_name: reviewerName,
+    reviewer_name: reviewerName || '',
     review_note: reviewNote || '',
-    completed_at: new Date().toISOString(),
     percent_complete: 100,
   }).eq('id', id).eq('workspace_id', workspaceId)
   if (error) throw error
