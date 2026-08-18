@@ -64,13 +64,6 @@ export function subscribeSprints(workspaceId, teamId, callback) {
 }
 
 export async function createSprint(workspaceId, teamId, { number, goal, startDate, endDate, status = 'active' }) {
-  if (status === 'active') {
-    await supabase.from('sprints')
-      .update({ status: 'completed' })
-      .eq('workspace_id', workspaceId)
-      .eq('status', 'active')
-  }
-
   const { data, error } = await supabase.from('sprints').insert([{
     workspace_id: workspaceId,
     team_id: teamId || null,

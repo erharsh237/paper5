@@ -624,7 +624,7 @@ export default function Dashboard() {
               <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-2)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-soft)' }}>
                 <button
                   type="button"
-                  onClick={() => { setSprintTab('active'); setSelectedSprintViewId(null); }}
+                  onClick={() => setSprintTab('active')}
                   style={{
                     border: 'none',
                     background: sprintTab === 'active' ? 'var(--surface)' : 'transparent',
@@ -649,7 +649,7 @@ export default function Dashboard() {
 
                 <button
                   type="button"
-                  onClick={() => { setSprintTab('closed'); setSelectedSprintViewId(null); }}
+                  onClick={() => setSprintTab('closed')}
                   style={{
                     border: 'none',
                     background: sprintTab === 'closed' ? 'var(--surface)' : 'transparent',
@@ -687,7 +687,7 @@ export default function Dashboard() {
               )}
             </div>
 
-            {!currentDisplaySprint ? (
+            {displayedSprintsList.length === 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', height: '100%', padding: '24px 0', margin: 'auto' }}>
                 <div className="dash-milestone-icon" style={{ width: '44px', height: '44px', borderRadius: '14px', marginBottom: '12px' }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -717,231 +717,244 @@ export default function Dashboard() {
                 )}
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '12px' }}>
-                
-                {/* Sprint Title, Selector, and Close/Reopen Button */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text)' }}>
-                      Sprint {currentDisplaySprint.number}
-                    </span>
-                    
-                    {displayedSprintsList.length > 1 && (
-                      <select
-                        value={currentDisplaySprint.id}
-                        onChange={(e) => setSelectedSprintViewId(e.target.value)}
-                        style={{
-                          fontSize: '11px',
-                          padding: '2px 6px',
-                          borderRadius: '6px',
-                          border: '1px solid var(--border-soft)',
-                          background: 'var(--surface-2)',
-                          color: 'var(--text)',
-                          fontWeight: 600,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {displayedSprintsList.map(s => (
-                          <option key={s.id} value={s.id}>
-                            Sprint {s.number}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '380px', overflowY: 'auto', paddingRight: '4px' }}>
+                {displayedSprintsList.map(sprint => {
+                  const sDeadlines = deadlines.filter(d => d.sprintId === sprint.id)
+                  const total = sDeadlines.length
+                  const done = sDeadlines.filter(d => d.status === 'done' || d.status === 'completed').length
+                  const pct = total > 0 ? Math.round((done / total) * 100) : 0
+                  const is100PercentDone = total > 0 && done === total
 
-                  {/* Mark Closed / Reopen Sprint Action */}
-                  {canAddKanbanItems && (
-                    <div>
-                      {sprintTab === 'active' ? (
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            try {
-                              await closeSprint(workspaceId, currentDisplaySprint.id)
-                              setSprintTab('closed')
-                              setSelectedSprintViewId(currentDisplaySprint.id)
-                            } catch (err) {
-                              console.error(err)
-                            }
-                          }}
-                          style={{
-                            background: 'rgba(239, 68, 68, 0.08)',
-                            border: '1px solid rgba(239, 68, 68, 0.25)',
-                            color: '#DC2626',
-                            fontSize: '11px',
+                  return (
+                    <div 
+                      key={sprint.id}
+                      style={{
+                        background: 'var(--surface-2, #F8FAFC)',
+                        border: '1px solid var(--border-soft, #E2E8F0)',
+                        borderRadius: '12px',
+                        padding: '14px 16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '10px',
+                        boxShadow: '0 1px 3px rgba(30, 32, 80, 0.03)'
+                      }}
+                    >
+                      {/* Sprint Card Header */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text)' }}>
+                            Sprint {sprint.number}
+                          </span>
+                          <span style={{
+                            fontSize: '10px',
                             fontWeight: 700,
-                            padding: '3px 9px',
-                            borderRadius: '7px',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
-                          title="Mark this sprint as completed and move to closed"
-                        >
-                          <span>🏁</span> Close Sprint
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            try {
-                              await reopenSprint(workspaceId, currentDisplaySprint.id)
-                              setSprintTab('active')
-                              setSelectedSprintViewId(currentDisplaySprint.id)
-                            } catch (err) {
-                              console.error(err)
-                            }
-                          }}
-                          style={{
-                            background: 'rgba(16, 185, 129, 0.08)',
-                            border: '1px solid rgba(16, 185, 129, 0.25)',
-                            color: '#059669',
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            padding: '3px 9px',
-                            borderRadius: '7px',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
-                          title="Reopen and activate this sprint"
-                        >
-                          <span>⚡</span> Reopen
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
+                            padding: '2px 7px',
+                            borderRadius: '100px',
+                            background: sprint.status === 'active' ? 'rgba(16, 185, 129, 0.12)' : 'var(--surface)',
+                            color: sprint.status === 'active' ? '#059669' : 'var(--muted)',
+                            border: `1px solid ${sprint.status === 'active' ? 'rgba(16, 185, 129, 0.3)' : 'var(--border-soft)'}`,
+                            textTransform: 'uppercase'
+                          }}>
+                            {sprint.status === 'active' ? '⚡ Active' : '🏁 Closed'}
+                          </span>
+                        </div>
 
-                {/* Sprint Goal & Date Timeline */}
-                <div>
-                  {currentDisplaySprint.goal && (
-                    <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text)', marginBottom: '3px' }}>
-                      "{currentDisplaySprint.goal}"
-                    </div>
-                  )}
-                  <div style={{ fontSize: '11px', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span>📅</span>
-                    <span>
-                      {currentDisplaySprint.start_date ? new Date(currentDisplaySprint.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Start'}
-                      {' – '}
-                      {currentDisplaySprint.end_date ? new Date(currentDisplaySprint.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'End'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Progress bar */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 600, color: 'var(--muted)', marginBottom: '5px' }}>
-                    <span>{sprintTab === 'active' ? 'Sprint Execution' : 'Final Completion'}</span>
-                    <span>{sprintStats.done} of {sprintStats.total} done ({sprintStats.pct}%)</span>
-                  </div>
-                  <div style={{ height: '5px', background: 'var(--surface-2)', borderRadius: '100px', overflow: 'hidden', border: '1px solid var(--border-soft)' }}>
-                    <div style={{
-                      height: '100%',
-                      width: `${sprintStats.pct}%`,
-                      background: sprintTab === 'active' ? 'linear-gradient(90deg, #4F46E5 0%, #10B981 100%)' : '#10B981',
-                      borderRadius: '100px',
-                      transition: 'width 0.4s ease'
-                    }} />
-                  </div>
-                </div>
-
-                {/* Mini Deadline Cards Section */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Assigned Deadlines ({sprintDeadlines.length})
-                    </span>
-                    {sprintTab === 'active' && canAddKanbanItems && (
-                      <button
-                        type="button"
-                        onClick={() => setShowNewModal(true)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: 'var(--accent, #4F46E5)',
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          padding: '2px 4px'
-                        }}
-                      >
-                        + Add Deadline
-                      </button>
-                    )}
-                  </div>
-
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px',
-                    maxHeight: '135px',
-                    overflowY: 'auto',
-                    paddingRight: '4px'
-                  }}>
-                    {sprintDeadlines.length === 0 ? (
-                      <div style={{
-                        padding: '12px',
-                        textAlign: 'center',
-                        fontSize: '11.5px',
-                        color: 'var(--muted)',
-                        background: 'var(--surface-2)',
-                        borderRadius: '8px',
-                        border: '1px dashed var(--border-soft)'
-                      }}>
-                        No deadlines assigned to Sprint {currentDisplaySprint.number}.
-                      </div>
-                    ) : (
-                      sprintDeadlines.map(d => {
-                        const statusColors = {
-                          not_started: '#1C1D2B',
-                          in_progress: '#3D6FD6',
-                          review: '#C4791A',
-                          blocked: '#D14343',
-                          done: '#10B981'
-                        }
-                        const dotColor = statusColors[d.status] || '#4F46E5'
-                        const assigneeName = d.assigneeName || (d.assigneeEmail ? d.assigneeEmail.split('@')[0] : 'Unassigned')
-
-                        return (
-                          <div
-                            key={d.id}
-                            style={{
-                              background: 'var(--surface-2)',
-                              border: '1px solid var(--border-soft)',
-                              borderRadius: '8px',
-                              padding: '7px 10px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              gap: '8px'
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0 }}>
-                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
-                              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={d.title}>
-                                {d.title}
-                              </span>
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                              <span style={{ fontSize: '10.5px', color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
-                                {assigneeName}
-                              </span>
-                              <span className={`dash-badge-priority ${d.priority || 'medium'}`} style={{ fontSize: '9.5px', padding: '1px 5px' }}>
-                                {d.priority || 'medium'}
-                              </span>
-                            </div>
+                        {/* Close Sprint Button (ONLY when 100% complete) or Reopen */}
+                        {canAddKanbanItems && (
+                          <div>
+                            {sprintTab === 'active' ? (
+                              is100PercentDone ? (
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    try {
+                                      await closeSprint(workspaceId, sprint.id)
+                                      setSprintTab('closed')
+                                    } catch (err) {
+                                      console.error(err)
+                                    }
+                                  }}
+                                  style={{
+                                    background: 'rgba(16, 185, 129, 0.12)',
+                                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                                    color: '#059669',
+                                    fontSize: '11px',
+                                    fontWeight: 700,
+                                    padding: '4px 10px',
+                                    borderRadius: '7px',
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    boxShadow: '0 1px 3px rgba(16, 185, 129, 0.15)'
+                                  }}
+                                  title="100% deadlines completed! Click to close sprint."
+                                >
+                                  <span>🏁</span> Close Sprint
+                                </button>
+                              ) : (
+                                <span style={{ fontSize: '10.5px', color: 'var(--muted)', fontWeight: 600 }}>
+                                  {total === 0 ? 'No tasks yet' : `${total - done} task${total - done === 1 ? '' : 's'} remaining`}
+                                </span>
+                              )
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    await reopenSprint(workspaceId, sprint.id)
+                                    setSprintTab('active')
+                                  } catch (err) {
+                                    console.error(err)
+                                  }
+                                }}
+                                style={{
+                                  background: 'rgba(79, 70, 229, 0.08)',
+                                  border: '1px solid rgba(79, 70, 229, 0.25)',
+                                  color: 'var(--accent, #4F46E5)',
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                  padding: '3px 8px',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                                title="Reopen sprint"
+                              >
+                                <span>⚡</span> Reopen
+                              </button>
+                            )}
                           </div>
-                        )
-                      })
-                    )}
-                  </div>
-                </div>
+                        )}
+                      </div>
+
+                      {/* Sprint Goal & Date Timeline */}
+                      <div>
+                        {sprint.goal && (
+                          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '3px' }}>
+                            "{sprint.goal}"
+                          </div>
+                        )}
+                        <div style={{ fontSize: '11px', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span>📅</span>
+                          <span>
+                            {sprint.start_date ? new Date(sprint.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Start'}
+                            {' – '}
+                            {sprint.end_date ? new Date(sprint.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'End'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Execution Progress Bar */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 600, color: 'var(--muted)', marginBottom: '4px' }}>
+                          <span>{sprintTab === 'active' ? 'Sprint Execution' : 'Completed'}</span>
+                          <span>{done} of {total} done ({pct}%)</span>
+                        </div>
+                        <div style={{ height: '5px', background: 'var(--surface)', borderRadius: '100px', overflow: 'hidden', border: '1px solid var(--border-soft)' }}>
+                          <div style={{
+                            height: '100%',
+                            width: `${pct}%`,
+                            background: pct === 100 ? '#10B981' : 'linear-gradient(90deg, #4F46E5 0%, #10B981 100%)',
+                            borderRadius: '100px',
+                            transition: 'width 0.4s ease'
+                          }} />
+                        </div>
+                      </div>
+
+                      {/* Assigned Deadlines (Mini Cards) */}
+                      <div style={{ marginTop: '2px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <span style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            Assigned Deadlines ({sDeadlines.length})
+                          </span>
+                          {sprintTab === 'active' && canAddKanbanItems && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedSprintViewId(sprint.id)
+                                setShowNewModal(true)
+                              }}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--accent, #4F46E5)',
+                                fontSize: '10.5px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                padding: '1px 3px'
+                              }}
+                            >
+                              + Add Deadline
+                            </button>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                          {sDeadlines.length === 0 ? (
+                            <div style={{
+                              padding: '8px 10px',
+                              textAlign: 'center',
+                              fontSize: '11px',
+                              color: 'var(--muted)',
+                              background: 'var(--surface)',
+                              borderRadius: '6px',
+                              border: '1px dashed var(--border-soft)'
+                            }}>
+                              No deadlines assigned to Sprint {sprint.number} yet.
+                            </div>
+                          ) : (
+                            sDeadlines.map(d => {
+                              const statusColors = {
+                                not_started: '#1C1D2B',
+                                in_progress: '#3D6FD6',
+                                review: '#C4791A',
+                                blocked: '#D14343',
+                                done: '#10B981'
+                              }
+                              const dotColor = statusColors[d.status] || '#4F46E5'
+                              const assigneeName = d.assigneeName || (d.assigneeEmail ? d.assigneeEmail.split('@')[0] : 'Unassigned')
+
+                              return (
+                                <div
+                                  key={d.id}
+                                  style={{
+                                    background: 'var(--surface)',
+                                    border: '1px solid var(--border-soft)',
+                                    borderRadius: '6px',
+                                    padding: '6px 9px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    gap: '8px'
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+                                    <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={d.title}>
+                                      {d.title}
+                                    </span>
+                                  </div>
+
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                                    <span style={{ fontSize: '10px', color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
+                                      {assigneeName}
+                                    </span>
+                                    <span className={`dash-badge-priority ${d.priority || 'medium'}`} style={{ fontSize: '9px', padding: '1px 4px' }}>
+                                      {d.priority || 'medium'}
+                                    </span>
+                                  </div>
+                                </div>
+                              )
+                            })
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
