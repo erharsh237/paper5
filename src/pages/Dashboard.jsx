@@ -1018,13 +1018,13 @@ export default function Dashboard() {
                     </div>
 
                     <div style={{
-                      padding: '20px 14px',
+                      padding: '14px 10px',
                       minHeight: '160px',
                       display: 'flex',
                       flexDirection: 'column',
-                      alignItems: 'center',
+                      alignItems: col.items.length === 0 ? 'center' : 'stretch',
                       justifyContent: col.items.length === 0 ? 'center' : 'flex-start',
-                      textAlign: 'center'
+                      textAlign: col.items.length === 0 ? 'center' : 'left'
                     }}>
                       {col.items.length === 0 ? (
                         <div>
