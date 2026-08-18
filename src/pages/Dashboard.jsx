@@ -33,6 +33,7 @@ export default function Dashboard() {
   const [viewMode, setViewMode] = useState('board')
   const [timeRange, setTimeRange] = useState('7D')
   const [hoveredIndex, setHoveredIndex] = useState(null)
+  const [selectedPeriodFilter, setSelectedPeriodFilter] = useState(null)
   const [generatingReport, setGeneratingReport] = useState(false)
   const [sprintTab, setSprintTab] = useState('active') // 'active' | 'closed'
   const [selectedSprintViewId, setSelectedSprintViewId] = useState(null)
@@ -97,12 +98,15 @@ export default function Dashboard() {
 
   const filtered = useMemo(() => {
     return deadlines.filter(d => {
+      if (selectedPeriodFilter && Array.isArray(selectedPeriodFilter.taskIds)) {
+        if (!selectedPeriodFilter.taskIds.includes(d.id)) return false
+      }
       if (statusFilter !== 'all' && d.status !== statusFilter) return false
       if (assigneeFilter !== 'all' && d.assigneeId !== assigneeFilter && d.assigneeEmail !== assigneeFilter) return false
       if (search.trim() && !d.title?.toLowerCase().includes(search.toLowerCase())) return false
       return true
     })
-  }, [deadlines, statusFilter, assigneeFilter, search])
+  }, [deadlines, statusFilter, assigneeFilter, search, selectedPeriodFilter])
 
   // 5 Canonical Kanban Columns
   const kanbanColumns = useMemo(() => {
@@ -165,12 +169,17 @@ export default function Dashboard() {
           return taskDate === dateStr
         })
 
+        const combinedTasks = [...doneTasks, ...activeTasks]
+
         days.push({
           label: dayLabel,
+          dateStr,
           title: fullDateFormatted,
           done: doneTasks.length,
           inProgress: activeTasks.length,
-          total: doneTasks.length + activeTasks.length,
+          total: combinedTasks.length,
+          tasks: combinedTasks,
+          taskIds: combinedTasks.map(t => t.id),
           isCurrent: d.toDateString() === nowDate.toDateString()
         })
       }
@@ -216,12 +225,16 @@ export default function Dashboard() {
           return d >= start && d <= end
         })
 
+        const combinedTasks = [...doneTasks, ...activeTasks]
+
         weeks.push({
           label: i === 0 ? 'Now' : `W${5 - i}`,
           title: `${startFmt} – ${endFmt}`,
           done: doneTasks.length,
           inProgress: activeTasks.length,
-          total: doneTasks.length + activeTasks.length,
+          total: combinedTasks.length,
+          tasks: combinedTasks,
+          taskIds: combinedTasks.map(t => t.id),
           isCurrent: i === 0
         })
       }
@@ -262,12 +275,16 @@ export default function Dashboard() {
         return dt >= start && dt <= end
       })
 
+      const combinedTasks = [...doneTasks, ...activeTasks]
+
       months.push({
         label: i === 0 ? 'This Mo' : monthName,
         title: fullMonthName,
         done: doneTasks.length,
         inProgress: activeTasks.length,
-        total: doneTasks.length + activeTasks.length,
+        total: combinedTasks.length,
+        tasks: combinedTasks,
+        taskIds: combinedTasks.map(t => t.id),
         isCurrent: i === 0
       })
     }
@@ -467,24 +484,24 @@ export default function Dashboard() {
               {activeHoverItem && (
                 <div style={{
                   position: 'absolute',
-                  top: '-8px',
+                  top: '-14px',
                   left: `${((hoveredIndex + 0.5) / velocityData.bars.length) * 100}%`,
-                  transform: 'translateX(-50%)',
+                  transform: 'translate(-50%, -100%)',
                   background: '#1C1D2B',
                   color: '#FFFFFF',
-                  padding: '6px 12px',
-                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  borderRadius: '10px',
                   fontSize: '11.5px',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
-                  zIndex: 20,
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                  zIndex: 30,
                   pointerEvents: 'none',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '2px',
-                  textAlign: 'center'
+                  gap: '4px',
+                  minWidth: '160px',
+                  maxWidth: '240px'
                 }}>
-                  <div style={{ fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.15)', paddingBottom: '3px', marginBottom: '3px' }}>
+                  <div style={{ fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.15)', paddingBottom: '4px', marginBottom: '2px' }}>
                     {activeHoverItem.title}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
@@ -492,9 +509,35 @@ export default function Dashboard() {
                     <strong style={{ color: '#10B981' }}>{activeHoverItem.done}</strong>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                    <span style={{ color: '#A3A5C2' }}>In Progress:</span>
+                    <span style={{ color: '#A3A5C2' }}>In Progress / Sched:</span>
                     <strong style={{ color: '#3D6FD6' }}>{activeHoverItem.inProgress}</strong>
                   </div>
+
+                  {activeHoverItem.tasks?.length > 0 && (
+                    <div style={{
+                      marginTop: '4px',
+                      paddingTop: '4px',
+                      borderTop: '1px dashed rgba(255,255,255,0.15)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '3px'
+                    }}>
+                      {activeHoverItem.tasks.slice(0, 3).map(t => (
+                        <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px' }}>
+                          <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: t.status === 'done' ? '#10B981' : '#3D6FD6', flexShrink: 0 }} />
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</span>
+                        </div>
+                      ))}
+                      {activeHoverItem.tasks.length > 3 && (
+                        <div style={{ fontSize: '10px', color: '#A3A5C2' }}>
+                          +{activeHoverItem.tasks.length - 3} more
+                        </div>
+                      )}
+                      <div style={{ fontSize: '10.5px', color: '#818CF8', fontWeight: 600, marginTop: '2px', textAlign: 'center' }}>
+                        Click bar to filter tasks ↓
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -510,11 +553,14 @@ export default function Dashboard() {
                 {velocityData.bars.map((bar, idx) => {
                   const hasTasks = bar.total > 0
                   const isHovered = hoveredIndex === idx
+                  const isSelected = selectedPeriodFilter?.title === bar.title
                   return (
                     <div
                       key={idx}
+                      onClick={() => setSelectedPeriodFilter(isSelected ? null : bar)}
                       onMouseEnter={() => setHoveredIndex(idx)}
                       onMouseLeave={() => setHoveredIndex(null)}
+                      title={`Click to filter tasks for ${bar.title}`}
                       style={{
                         flex: 1,
                         display: 'flex',
@@ -523,9 +569,10 @@ export default function Dashboard() {
                         height: '100%',
                         justifyContent: 'flex-end',
                         cursor: 'pointer',
-                        background: isHovered ? 'rgba(79, 70, 229, 0.06)' : 'transparent',
+                        background: isSelected ? 'rgba(79, 70, 229, 0.14)' : (isHovered ? 'rgba(79, 70, 229, 0.06)' : 'transparent'),
                         borderRadius: '6px 6px 0 0',
-                        transition: 'background 0.15s ease',
+                        border: isSelected ? '1px dashed #4F46E5' : '1px solid transparent',
+                        transition: 'all 0.15s ease',
                         padding: '0 2px'
                       }}
                     >
@@ -539,7 +586,7 @@ export default function Dashboard() {
                           gap: '2px',
                           alignItems: 'center',
                           justifyContent: 'flex-end',
-                          transform: isHovered ? 'scaleY(1.05)' : 'scaleY(1)',
+                          transform: isHovered || isSelected ? 'scaleY(1.05)' : 'scaleY(1)',
                           transition: 'transform 0.15s ease, height 0.3s ease'
                         }}>
                           {bar.done > 0 && (
@@ -548,7 +595,7 @@ export default function Dashboard() {
                               height: `${bar.donePct}%`,
                               background: '#4F46E5',
                               borderRadius: '3px 3px 0 0',
-                              boxShadow: isHovered ? '0 0 8px rgba(79, 70, 229, 0.5)' : 'none'
+                              boxShadow: isHovered || isSelected ? '0 0 8px rgba(79, 70, 229, 0.5)' : 'none'
                             }} />
                           )}
                           {bar.inProgress > 0 && (
@@ -579,18 +626,20 @@ export default function Dashboard() {
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', padding: '0 4px' }}>
                 {velocityData.bars.map((bar, idx) => {
                   const isHovered = hoveredIndex === idx
+                  const isSelected = selectedPeriodFilter?.title === bar.title
                   return (
                     <span
                       key={idx}
+                      onClick={() => setSelectedPeriodFilter(isSelected ? null : bar)}
                       onMouseEnter={() => setHoveredIndex(idx)}
                       onMouseLeave={() => setHoveredIndex(null)}
                       style={{
                         flex: 1,
                         textAlign: 'center',
                         fontSize: '11px',
-                        color: isHovered ? '#4F46E5' : (bar.isCurrent ? '#4F46E5' : '#A3A5C2'),
+                        color: isSelected ? '#4F46E5' : (isHovered ? '#4F46E5' : (bar.isCurrent ? '#4F46E5' : '#A3A5C2')),
                         fontFamily: 'var(--font-mono)',
-                        fontWeight: isHovered || bar.isCurrent ? 700 : 500,
+                        fontWeight: isSelected || isHovered || bar.isCurrent ? 700 : 500,
                         cursor: 'pointer'
                       }}
                     >
@@ -906,6 +955,53 @@ export default function Dashboard() {
             )}
           </div>
         </section>
+
+        {/* Active Filter Banner when velocity bar clicked */}
+        {selectedPeriodFilter && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'rgba(79, 70, 229, 0.08)',
+            border: '1px solid rgba(79, 70, 229, 0.25)',
+            borderRadius: '10px',
+            padding: '10px 16px',
+            marginBottom: '16px',
+            fontSize: '13px',
+            color: 'var(--accent, #4F46E5)',
+            fontWeight: 600
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>🔍 Filtered by Velocity Timeline:</span>
+              <span style={{ color: 'var(--text)', fontWeight: 700 }}>{selectedPeriodFilter.title}</span>
+              <span style={{
+                background: '#4F46E5',
+                color: '#FFFFFF',
+                fontSize: '11px',
+                padding: '2px 8px',
+                borderRadius: '100px'
+              }}>
+                {filtered.length} task{filtered.length === 1 ? '' : 's'}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedPeriodFilter(null)}
+              style={{
+                background: 'rgba(79, 70, 229, 0.15)',
+                border: 'none',
+                color: 'var(--accent, #4F46E5)',
+                cursor: 'pointer',
+                fontWeight: 700,
+                fontSize: '12px',
+                padding: '4px 10px',
+                borderRadius: '6px'
+              }}
+            >
+              Clear Filter ✕
+            </button>
+          </div>
+        )}
 
         {/* ── 5. CONTROLS BAR ── */}
         <section className="dash-controls-bar">
