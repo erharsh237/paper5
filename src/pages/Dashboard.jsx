@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../lib/AuthContext'
 import { subscribeMembers } from '../lib/deadlines'
 import { useDeadlines } from '../lib/useDeadlines'
-import { subscribeSprints } from '../lib/sprints'
+import { subscribeSprints, closeSprint, reopenSprint } from '../lib/sprints'
 import { getUrgency } from '../lib/utils'
 import { downloadMonthlyReport } from '../lib/report'
 import DeadlineCard from '../components/DeadlineCard'
@@ -34,6 +34,8 @@ export default function Dashboard() {
   const [timeRange, setTimeRange] = useState('7D')
   const [hoveredIndex, setHoveredIndex] = useState(null)
   const [generatingReport, setGeneratingReport] = useState(false)
+  const [sprintTab, setSprintTab] = useState('active') // 'active' | 'closed'
+  const [selectedSprintViewId, setSelectedSprintViewId] = useState(null)
   
   const now = new Date()
   const [reportMonth, setReportMonth] = useState(
@@ -56,17 +58,20 @@ export default function Dashboard() {
     return () => { unsub2(); unsub3() }
   }, [workspaceId])
 
-  const [selectedSprintViewId, setSelectedSprintViewId] = useState(null)
+  const activeSprints = useMemo(() => sprints.filter(s => s.status === 'active' || s.status === 'planning'), [sprints])
+  const closedSprints = useMemo(() => sprints.filter(s => s.status === 'completed' || s.status === 'closed'), [sprints])
 
-  const activeSprint = useMemo(() => sprints.find(s => s.status === 'active'), [sprints])
+  const displayedSprintsList = useMemo(() => {
+    return sprintTab === 'active' ? activeSprints : closedSprints
+  }, [sprintTab, activeSprints, closedSprints])
 
   const currentDisplaySprint = useMemo(() => {
     if (selectedSprintViewId) {
-      const found = sprints.find(s => s.id === selectedSprintViewId)
+      const found = displayedSprintsList.find(s => s.id === selectedSprintViewId)
       if (found) return found
     }
-    return activeSprint || sprints[0] || null
-  }, [sprints, selectedSprintViewId, activeSprint])
+    return displayedSprintsList[0] || null
+  }, [displayedSprintsList, selectedSprintViewId])
 
   const sprintDeadlines = useMemo(() => {
     if (!currentDisplaySprint) return []
@@ -609,27 +614,102 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Right: Sprints Card with Mini Deadline Cards */}
+          {/* Right: Sprints Card with Active/Closed Toggle on Top Left */}
           <div className="dash-surface-card" style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', minHeight: '340px' }}>
+            
+            {/* Top Bar: Tabs on Top Left, + New Sprint on Top Right */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-soft)', paddingBottom: '12px', marginBottom: '14px' }}>
+              
+              {/* Top Left: Active & Closed Toggle Buttons */}
+              <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-2)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-soft)' }}>
+                <button
+                  type="button"
+                  onClick={() => { setSprintTab('active'); setSelectedSprintViewId(null); }}
+                  style={{
+                    border: 'none',
+                    background: sprintTab === 'active' ? 'var(--surface)' : 'transparent',
+                    color: sprintTab === 'active' ? 'var(--accent, #4F46E5)' : 'var(--muted)',
+                    fontWeight: sprintTab === 'active' ? 700 : 600,
+                    fontSize: '11.5px',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    boxShadow: sprintTab === 'active' ? '0 1px 3px rgba(30, 32, 80, 0.08)' : 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <span>⚡ Active</span>
+                  <span style={{ fontSize: '10px', opacity: 0.8, background: sprintTab === 'active' ? 'var(--accent-dim)' : 'transparent', padding: '1px 5px', borderRadius: '10px' }}>
+                    {activeSprints.length}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { setSprintTab('closed'); setSelectedSprintViewId(null); }}
+                  style={{
+                    border: 'none',
+                    background: sprintTab === 'closed' ? 'var(--surface)' : 'transparent',
+                    color: sprintTab === 'closed' ? 'var(--accent, #4F46E5)' : 'var(--muted)',
+                    fontWeight: sprintTab === 'closed' ? 700 : 600,
+                    fontSize: '11.5px',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    boxShadow: sprintTab === 'closed' ? '0 1px 3px rgba(30, 32, 80, 0.08)' : 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <span>🏁 Closed</span>
+                  <span style={{ fontSize: '10px', opacity: 0.8, background: sprintTab === 'closed' ? 'var(--accent-dim)' : 'transparent', padding: '1px 5px', borderRadius: '10px' }}>
+                    {closedSprints.length}
+                  </span>
+                </button>
+              </div>
+
+              {/* Top Right: New Sprint Action */}
+              {canAddKanbanItems && (
+                <button
+                  type="button"
+                  className="btn-ghost btn-sm"
+                  onClick={() => setShowNewSprintModal(true)}
+                  style={{ fontSize: '11.5px', padding: '4px 10px', borderRadius: '8px', border: '1px solid var(--border-soft)' }}
+                  title="Create a new sprint"
+                >
+                  + New Sprint
+                </button>
+              )}
+            </div>
+
             {!currentDisplaySprint ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', height: '100%', padding: '24px 0', margin: 'auto' }}>
-                <div className="dash-milestone-icon" style={{ width: '46px', height: '46px', borderRadius: '14px', marginBottom: '14px' }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <div className="dash-milestone-icon" style={{ width: '44px', height: '44px', borderRadius: '14px', marginBottom: '12px' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                     <rect x="3" y="4" width="18" height="16" rx="3" stroke="var(--accent)" strokeWidth="1.7"/>
                     <path d="M8 9h8M8 13h5" stroke="var(--accent)" strokeWidth="1.7" strokeLinecap="round"/>
                     <circle cx="19" cy="19" r="4" fill="var(--accent)"/>
                     <path d="M19 17v2l1 1" stroke="white" strokeWidth="1.3" strokeLinecap="round"/>
                   </svg>
                 </div>
-                <div className="dash-milestone-title" style={{ fontSize: '15px' }}>No upcoming Sprints</div>
-                <div className="dash-milestone-desc" style={{ fontSize: '12.5px', marginBottom: '18px', maxWidth: '280px' }}>
-                  You're all caught up! Create a Sprint to start tracking important dates and keep your sprint on schedule.
+                <div className="dash-milestone-title" style={{ fontSize: '14px' }}>
+                  {sprintTab === 'active' ? 'No active sprints' : 'No closed sprints yet'}
                 </div>
-                {canAddKanbanItems && (
+                <div className="dash-milestone-desc" style={{ fontSize: '12px', marginBottom: '16px', maxWidth: '260px' }}>
+                  {sprintTab === 'active' 
+                    ? "Create a sprint cycle to plan deliverables and track team velocity."
+                    : "Completed sprints will appear here once marked as closed."}
+                </div>
+                {sprintTab === 'active' && canAddKanbanItems && (
                   <button
                     type="button"
                     className="dash-btn-accent"
-                    style={{ borderRadius: '10px', padding: '8px 20px', fontSize: '12.5px' }}
+                    style={{ borderRadius: '10px', padding: '8px 18px', fontSize: '12px' }}
                     onClick={() => setShowNewSprintModal(true)}
                   >
                     + Create Sprint
@@ -637,27 +717,16 @@ export default function Dashboard() {
                 )}
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '14px' }}>
-                {/* Sprint Header & Selector */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-soft)', paddingBottom: '10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.2px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '12px' }}>
+                
+                {/* Sprint Title, Selector, and Close/Reopen Button */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text)' }}>
                       Sprint {currentDisplaySprint.number}
                     </span>
-                    <span style={{
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      padding: '2px 7px',
-                      borderRadius: '100px',
-                      background: currentDisplaySprint.status === 'active' ? 'rgba(16, 185, 129, 0.12)' : 'var(--surface-2)',
-                      color: currentDisplaySprint.status === 'active' ? '#059669' : 'var(--muted)',
-                      border: `1px solid ${currentDisplaySprint.status === 'active' ? 'rgba(16, 185, 129, 0.3)' : 'var(--border-soft)'}`,
-                      textTransform: 'uppercase'
-                    }}>
-                      {currentDisplaySprint.status === 'active' ? '⚡ Active' : currentDisplaySprint.status}
-                    </span>
-
-                    {sprints.length > 1 && (
+                    
+                    {displayedSprintsList.length > 1 && (
                       <select
                         value={currentDisplaySprint.id}
                         onChange={(e) => setSelectedSprintViewId(e.target.value)}
@@ -672,36 +741,89 @@ export default function Dashboard() {
                           cursor: 'pointer'
                         }}
                       >
-                        {sprints.map(s => (
+                        {displayedSprintsList.map(s => (
                           <option key={s.id} value={s.id}>
-                            Sprint {s.number} ({s.status})
+                            Sprint {s.number}
                           </option>
                         ))}
                       </select>
                     )}
                   </div>
 
+                  {/* Mark Closed / Reopen Sprint Action */}
                   {canAddKanbanItems && (
-                    <button
-                      type="button"
-                      className="btn-ghost btn-sm"
-                      onClick={() => setShowNewSprintModal(true)}
-                      style={{ fontSize: '11.5px', padding: '4px 10px', borderRadius: '8px', border: '1px solid var(--border-soft)' }}
-                      title="Create a new sprint"
-                    >
-                      + New Sprint
-                    </button>
+                    <div>
+                      {sprintTab === 'active' ? (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await closeSprint(workspaceId, currentDisplaySprint.id)
+                              setSprintTab('closed')
+                              setSelectedSprintViewId(currentDisplaySprint.id)
+                            } catch (err) {
+                              console.error(err)
+                            }
+                          }}
+                          style={{
+                            background: 'rgba(239, 68, 68, 0.08)',
+                            border: '1px solid rgba(239, 68, 68, 0.25)',
+                            color: '#DC2626',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            padding: '3px 9px',
+                            borderRadius: '7px',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          title="Mark this sprint as completed and move to closed"
+                        >
+                          <span>🏁</span> Close Sprint
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await reopenSprint(workspaceId, currentDisplaySprint.id)
+                              setSprintTab('active')
+                              setSelectedSprintViewId(currentDisplaySprint.id)
+                            } catch (err) {
+                              console.error(err)
+                            }
+                          }}
+                          style={{
+                            background: 'rgba(16, 185, 129, 0.08)',
+                            border: '1px solid rgba(16, 185, 129, 0.25)',
+                            color: '#059669',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            padding: '3px 9px',
+                            borderRadius: '7px',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          title="Reopen and activate this sprint"
+                        >
+                          <span>⚡</span> Reopen
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
 
                 {/* Sprint Goal & Date Timeline */}
                 <div>
                   {currentDisplaySprint.goal && (
-                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '4px' }}>
+                    <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text)', marginBottom: '3px' }}>
                       "{currentDisplaySprint.goal}"
                     </div>
                   )}
-                  <div style={{ fontSize: '11.5px', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span>📅</span>
                     <span>
                       {currentDisplaySprint.start_date ? new Date(currentDisplaySprint.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Start'}
@@ -711,30 +833,30 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* Execution Progress Bar */}
+                {/* Progress bar */}
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 600, color: 'var(--muted)', marginBottom: '5px' }}>
-                    <span>Sprint Execution</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 600, color: 'var(--muted)', marginBottom: '5px' }}>
+                    <span>{sprintTab === 'active' ? 'Sprint Execution' : 'Final Completion'}</span>
                     <span>{sprintStats.done} of {sprintStats.total} done ({sprintStats.pct}%)</span>
                   </div>
-                  <div style={{ height: '6px', background: 'var(--surface-2)', borderRadius: '100px', overflow: 'hidden', border: '1px solid var(--border-soft)' }}>
+                  <div style={{ height: '5px', background: 'var(--surface-2)', borderRadius: '100px', overflow: 'hidden', border: '1px solid var(--border-soft)' }}>
                     <div style={{
                       height: '100%',
                       width: `${sprintStats.pct}%`,
-                      background: 'linear-gradient(90deg, #4F46E5 0%, #10B981 100%)',
+                      background: sprintTab === 'active' ? 'linear-gradient(90deg, #4F46E5 0%, #10B981 100%)' : '#10B981',
                       borderRadius: '100px',
                       transition: 'width 0.4s ease'
                     }} />
                   </div>
                 </div>
 
-                {/* Small Deadline Cards Section */}
+                {/* Mini Deadline Cards Section */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                       Assigned Deadlines ({sprintDeadlines.length})
                     </span>
-                    {canAddKanbanItems && (
+                    {sprintTab === 'active' && canAddKanbanItems && (
                       <button
                         type="button"
                         onClick={() => setShowNewModal(true)}
@@ -742,7 +864,7 @@ export default function Dashboard() {
                           background: 'none',
                           border: 'none',
                           color: 'var(--accent, #4F46E5)',
-                          fontSize: '11.5px',
+                          fontSize: '11px',
                           fontWeight: 700,
                           cursor: 'pointer',
                           padding: '2px 4px'
@@ -756,22 +878,22 @@ export default function Dashboard() {
                   <div style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '7px',
-                    maxHeight: '145px',
+                    gap: '6px',
+                    maxHeight: '135px',
                     overflowY: 'auto',
                     paddingRight: '4px'
                   }}>
                     {sprintDeadlines.length === 0 ? (
                       <div style={{
-                        padding: '14px 12px',
+                        padding: '12px',
                         textAlign: 'center',
-                        fontSize: '12px',
+                        fontSize: '11.5px',
                         color: 'var(--muted)',
                         background: 'var(--surface-2)',
                         borderRadius: '8px',
                         border: '1px dashed var(--border-soft)'
                       }}>
-                        No deadlines assigned to Sprint {currentDisplaySprint.number} yet.
+                        No deadlines assigned to Sprint {currentDisplaySprint.number}.
                       </div>
                     ) : (
                       sprintDeadlines.map(d => {

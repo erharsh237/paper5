@@ -125,3 +125,16 @@ export async function unlockSprint(workspaceId, id) {
   if (error) throw error
   notifySprintChange()
 }
+
+export async function closeSprint(workspaceId, id) {
+  const { error } = await supabase.from('sprints')
+    .update({ status: 'completed' })
+    .eq('id', id)
+    .eq('workspace_id', workspaceId)
+  if (error) throw error
+  notifySprintChange()
+}
+
+export async function reopenSprint(workspaceId, id) {
+  return setActiveSprint(workspaceId, undefined, id)
+}
