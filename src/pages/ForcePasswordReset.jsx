@@ -1,14 +1,23 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
+import { validatePassword } from '../lib/validation'
+import './Auth.css'
 
 export default function ForcePasswordReset() {
   const { logout, setUser, setUserData } = useAuth()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [requiresStrict, setRequiresStrict] = useState(false)
+
+  const pwdValidation = useMemo(() => validatePassword(password), [password])
+  const passwordsMatch = confirmPassword.length > 0 && password === confirmPassword
+  const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword
 
   useEffect(() => {
     async function checkStrict() {
@@ -47,18 +56,19 @@ export default function ForcePasswordReset() {
       return
     }
 
+    if (!pwdValidation.valid) {
+      setError(`Password requirements not met: ${pwdValidation.errors.join(', ')}`)
+      return
+    }
+
     if (requiresStrict) {
       const strictRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,72}$/;
       if (!strictRegex.test(password)) {
         setError('Security requirement: Your workspace enforces strict passwords (12-72 characters, uppercase, lowercase, number, symbol).')
         return
       }
-    } else {
-      if (password.length < 8) {
-        setError('Security requirement: Password must be at least 8 characters long.')
-        return
-      }
     }
+
     if (password !== confirmPassword) {
       setError('Verification failed: Passwords do not match.')
       return
@@ -162,61 +172,222 @@ export default function ForcePasswordReset() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'var(--bg-layer-1)',
+      background: 'var(--bg-layer-1, #f9fafb)',
       padding: '20px'
     }}>
       <div style={{
-        background: 'var(--bg-layer-2)',
-        padding: '32px',
-        borderRadius: '12px',
-        border: '1px solid var(--border)',
-        maxWidth: '400px',
+        background: 'var(--bg-layer-2, #ffffff)',
+        padding: '36px 32px',
+        borderRadius: '16px',
+        border: '1px solid var(--border, #e5e7eb)',
+        boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+        maxWidth: '440px',
         width: '100%'
       }}>
-        <h2 style={{ margin: '0 0 16px 0', fontSize: '20px', color: 'var(--text-primary)' }}>Welcome to SprintOS!</h2>
-        <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: 'var(--text-secondary)' }}>
-          You've been invited to join a workspace. To secure your account, please set a password before continuing.
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', color: 'var(--text-primary, #111)' }}>
+          <div style={{ width: '24px', height: '24px', background: 'var(--text-primary, #111)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#fff' }} />
+          </div>
+          <span style={{ fontWeight: 600, fontSize: '16px' }}>SprintOS</span>
+        </div>
+
+        <h2 style={{ margin: '0 0 8px 0', fontSize: '22px', fontWeight: 700, color: 'var(--text-primary, #111)' }}>Welcome to SprintOS!</h2>
+        <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: 'var(--text-secondary, #6b7280)', lineHeight: '1.5' }}>
+          You've been invited to join a workspace. To secure your account, please set your password before continuing.
           {requiresStrict && (
-            <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-critical)', borderRadius: '6px', fontSize: '13px' }}>
+            <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-critical, #ef4444)', borderRadius: '8px', fontSize: '13px' }}>
               <strong>Strict Password Policy Enforced:</strong> Requires 12-72 characters, uppercase, lowercase, number, and symbol.
             </div>
           )}
         </p>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>New Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              minLength={8}
-              maxLength={72}
-              style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-layer)', color: 'var(--text-primary)' }}
-            />
+          <div>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary, #374151)', marginBottom: '6px' }}>New Password</label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                onFocus={() => setIsPasswordFocused(true)}
+                placeholder="Min 8 chars (A-Z, a-z, 0-9, special)"
+                required
+                minLength={8}
+                maxLength={72}
+                style={{ 
+                  width: '100%',
+                  padding: '10px 40px 10px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border, #d1d5db)',
+                  background: 'var(--bg-layer, #fff)',
+                  color: 'var(--text-primary, #111)',
+                  fontSize: '14px',
+                  boxSizing: 'border-box'
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--text-secondary, #666)',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                )}
+              </button>
+            </div>
+
+            {/* Password Requirements Checklist */}
+            {(isPasswordFocused || password.length > 0) && (
+              <div style={{
+                marginTop: '10px',
+                padding: '12px 14px',
+                background: 'rgba(0, 0, 0, 0.02)',
+                border: '1px solid var(--border-subtle, #e5e7eb)',
+                borderRadius: '8px',
+                fontSize: '12px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px'
+              }}>
+                <div style={{ fontWeight: 600, color: 'var(--text-secondary, #4b5563)', marginBottom: '2px' }}>
+                  Password Requirements:
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: pwdValidation.requirements.minLength ? '#10b981' : '#6b7280' }}>
+                    <span style={{ fontWeight: 700 }}>{pwdValidation.requirements.minLength ? '✓' : '○'}</span>
+                    <span>Min 8 characters</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: pwdValidation.requirements.hasUpper ? '#10b981' : '#6b7280' }}>
+                    <span style={{ fontWeight: 700 }}>{pwdValidation.requirements.hasUpper ? '✓' : '○'}</span>
+                    <span>Uppercase (A-Z)</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: pwdValidation.requirements.hasLower ? '#10b981' : '#6b7280' }}>
+                    <span style={{ fontWeight: 700 }}>{pwdValidation.requirements.hasLower ? '✓' : '○'}</span>
+                    <span>Lowercase (a-z)</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: pwdValidation.requirements.hasNumber ? '#10b981' : '#6b7280' }}>
+                    <span style={{ fontWeight: 700 }}>{pwdValidation.requirements.hasNumber ? '✓' : '○'}</span>
+                    <span>Number (0-9)</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: pwdValidation.requirements.hasSpecial ? '#10b981' : '#6b7280' }}>
+                    <span style={{ fontWeight: 700 }}>{pwdValidation.requirements.hasSpecial ? '✓' : '○'}</span>
+                    <span>Special character</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>Confirm Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
-              required
-              minLength={8}
-              maxLength={72}
-              style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-layer)', color: 'var(--text-primary)' }}
-            />
+          <div>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary, #374151)', marginBottom: '6px' }}>Confirm Password</label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                placeholder="Repeat password"
+                required
+                minLength={8}
+                maxLength={72}
+                style={{ 
+                  width: '100%',
+                  padding: '10px 40px 10px 12px',
+                  borderRadius: '8px',
+                  border: `1px solid ${passwordsMismatch ? '#ef4444' : passwordsMatch ? '#10b981' : 'var(--border, #d1d5db)'}`,
+                  background: 'var(--bg-layer, #fff)',
+                  color: 'var(--text-primary, #111)',
+                  fontSize: '14px',
+                  boxSizing: 'border-box'
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--text-secondary, #666)',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+                aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+              >
+                {showConfirmPassword ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                )}
+              </button>
+            </div>
+
+            {/* Password match indicator */}
+            {confirmPassword.length > 0 && (
+              <div style={{ marginTop: '6px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', color: passwordsMatch ? '#10b981' : '#ef4444' }}>
+                <span>{passwordsMatch ? '✓' : '✕'}</span>
+                <span>{passwordsMatch ? 'Passwords match' : 'Passwords do not match'}</span>
+              </div>
+            )}
           </div>
 
-          {error && <div style={{ color: 'var(--accent-critical)', fontSize: '13px' }}>{error}</div>}
+          {error && (
+            <div style={{
+              padding: '10px 12px',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.2)',
+              borderRadius: '8px',
+              color: 'var(--accent-critical, #ef4444)',
+              fontSize: '13px'
+            }}>
+              {error}
+            </div>
+          )}
 
-          <button type="submit" className="btn-primary" disabled={loading} style={{ padding: '10px', marginTop: '8px' }}>
+          <button 
+            type="submit" 
+            className="btn-primary" 
+            disabled={loading || !pwdValidation.valid || !passwordsMatch} 
+            style={{ 
+              padding: '12px', 
+              marginTop: '8px',
+              borderRadius: '8px',
+              fontWeight: 600,
+              fontSize: '14px',
+              justifyContent: 'center',
+              opacity: (loading || !pwdValidation.valid || !passwordsMatch) ? 0.6 : 1,
+              cursor: (loading || !pwdValidation.valid || !passwordsMatch) ? 'not-allowed' : 'pointer'
+            }}
+          >
             {loading ? 'Saving...' : 'Set Password'}
           </button>
           
-          <button type="button" className="btn-ghost" onClick={logout} disabled={loading} style={{ padding: '10px', justifyContent: 'center' }}>
+          <button 
+            type="button" 
+            className="btn-ghost" 
+            onClick={logout} 
+            disabled={loading} 
+            style={{ padding: '10px', justifyContent: 'center', fontSize: '13px', color: 'var(--text-secondary, #6b7280)' }}
+          >
             Sign Out
           </button>
         </form>
