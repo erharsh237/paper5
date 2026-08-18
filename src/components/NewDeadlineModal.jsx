@@ -4,6 +4,7 @@ import { sendDeadlineEmail } from '../lib/email'
 import { PRIORITIES, EVIDENCE_TYPES } from '../lib/utils'
 import { useWorkspace } from '../lib/WorkspaceContext'
 import { subscribeSprints } from '../lib/sprints'
+import { createNotification, NOTIFICATION_TYPES } from '../lib/notifications'
 
 export default function NewDeadlineModal({ members, currentUser, activeSprint, sprints = [], onClose, title = 'New deadline', submitText = 'Create deadline' }) {
   const { workspaceId, canAddKanbanItems } = useWorkspace();
@@ -62,7 +63,7 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, s
 
     setSubmitting(true)
     try {
-      await createDeadline(workspaceId, undefined, {
+      const createdItem = await createDeadline(workspaceId, undefined, {
         title: titleInput.trim(),
         description: description.trim(),
         priority,
@@ -76,6 +77,21 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, s
         estimatedHours: estimatedHours === '' ? null : Number(estimatedHours),
         requiredEvidence: requiredEvidence.map(type => ({ type, status: 'pending' })),
       })
+
+      // 1. In-App Notification (Notification Bell)
+      if (assignee?.email && assignee.email.toLowerCase() !== currentUser?.email?.toLowerCase()) {
+        try {
+          await createNotification(workspaceId, undefined, {
+            type: NOTIFICATION_TYPES.TASK_ASSIGNED,
+            message: `${currentUser?.displayName || currentUser?.email || 'A team member'} assigned you a new deadline: "${titleInput.trim()}"`,
+            deadlineId: createdItem?.id || null,
+            forEmail: assignee.email,
+            createdBy: currentUser?.email,
+          })
+        } catch (notifErr) {
+          console.error('In-app notification creation error:', notifErr)
+        }
+      }
 
       if (notifyEmail) {
         setEmailStatus('sending')

@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 
 export const NOTIFICATION_TYPES = {
+  TASK_ASSIGNED: 'task_assigned',
   BLOCKER: 'blocker',
   REVIEW_PENDING: 'review_pending',
   REVIEW_REJECTED: 'review_rejected',
