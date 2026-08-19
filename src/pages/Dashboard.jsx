@@ -1239,8 +1239,8 @@ export default function Dashboard() {
           teamId={TEAM_ID}
           members={members}
           currentUser={user}
-          activeSprint={sprints.find(s => s.id === selectedSprintViewId) || activeSprints[0] || null}
-          sprints={sprints}
+          activeSprint={activeSprints.find(s => s.id === selectedSprintViewId) || activeSprints[0] || null}
+          sprints={activeSprints}
           onClose={() => {
             setShowNewModal(false)
             setSelectedSprintViewId(null)

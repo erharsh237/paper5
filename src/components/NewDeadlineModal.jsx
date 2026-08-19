@@ -19,9 +19,11 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, s
     return (mEmail && mEmail === myEmail) || (m.id === myId || m.userId === myId)
   }) || members[0]
 
+  const isSprintOpen = (s) => s && s.status !== 'completed' && s.status !== 'closed' && (s.status === 'active' || s.status === 'planning')
+
   const [assigneeId, setAssigneeId] = useState(defaultMember?.id || '')
-  const [selectedSprintId, setSelectedSprintId] = useState(activeSprint?.id || '')
-  const [loadedSprints, setLoadedSprints] = useState(sprints)
+  const [selectedSprintId, setSelectedSprintId] = useState((activeSprint && isSprintOpen(activeSprint)) ? activeSprint.id : '')
+  const [loadedSprints, setLoadedSprints] = useState(Array.isArray(sprints) ? sprints.filter(isSprintOpen) : [])
   const [dueDate, setDueDate] = useState('')
   const [estimatedHours, setEstimatedHours] = useState('')
   const [requiredEvidence, setRequiredEvidence] = useState([])
@@ -38,21 +40,21 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, s
 
   useEffect(() => {
     if (sprints && sprints.length > 0) {
-      setLoadedSprints(sprints.filter(s => s.status !== 'closed'))
+      setLoadedSprints(sprints.filter(isSprintOpen))
     } else if (workspaceId) {
       const unsub = subscribeSprints(workspaceId, undefined, (all) => {
-        setLoadedSprints((all || []).filter(s => s.status !== 'closed'))
+        setLoadedSprints((all || []).filter(isSprintOpen))
       })
       return () => unsub && unsub()
     }
   }, [workspaceId, sprints])
 
   const activeSprints = useMemo(() => {
-    return (loadedSprints || []).filter(s => s.status !== 'closed')
+    return (loadedSprints || []).filter(isSprintOpen)
   }, [loadedSprints])
 
   useEffect(() => {
-    if (activeSprint?.id && activeSprint.status !== 'closed' && !selectedSprintId) {
+    if (activeSprint?.id && isSprintOpen(activeSprint) && !selectedSprintId) {
       setSelectedSprintId(activeSprint.id)
     }
   }, [activeSprint])
