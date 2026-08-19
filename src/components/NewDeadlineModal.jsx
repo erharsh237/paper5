@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createDeadline } from '../lib/deadlines'
 import { sendDeadlineEmail } from '../lib/email'
 import { PRIORITIES, EVIDENCE_TYPES } from '../lib/utils'
