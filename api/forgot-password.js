@@ -23,7 +23,14 @@ export default async function handler(req, res) {
   const supabaseAdmin = createClient(supabaseUrl, serviceKey)
 
   try {
-    // Generate recovery link using Supabase Admin API with guaranteed target domain app.paper5.co
+    // 1. Verify that an account exists for this email address
+    const { data: userProfile } = await supabaseAdmin
+      .from('users')
+      .select('id, email')
+      .ilike('email', cleanEmail)
+      .maybeSingle()
+
+    // 2. Generate recovery link using Supabase Admin API
     const targetRedirect = 'https://app.paper5.co/auth/action'
 
     const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
@@ -34,19 +41,16 @@ export default async function handler(req, res) {
       }
     })
 
+    if (!userProfile && linkErr) {
+      return res.status(404).json({ error: 'No account found with this email address.' })
+    }
+
     if (linkErr) {
-      // If user is not found, return 200 OK to prevent email enumeration and console errors (OWASP standard)
       if (linkErr.message?.toLowerCase().includes('not found') || linkErr.status === 400 || linkErr.status === 404) {
-        return res.status(200).json({
-          success: true,
-          message: 'If an account exists with this email, a password reset link has been sent.'
-        })
+        return res.status(404).json({ error: 'No account found with this email address.' })
       }
       console.error('generateLink error:', linkErr)
-      return res.status(200).json({
-        success: true,
-        message: 'Password reset request processed'
-      })
+      return res.status(400).json({ error: linkErr.message || 'Could not generate reset link' })
     }
 
     const tokenHash = linkData?.properties?.hashed_token
