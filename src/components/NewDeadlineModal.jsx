@@ -38,15 +38,21 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, s
 
   useEffect(() => {
     if (sprints && sprints.length > 0) {
-      setLoadedSprints(sprints)
+      setLoadedSprints(sprints.filter(s => s.status !== 'closed'))
     } else if (workspaceId) {
-      const unsub = subscribeSprints(workspaceId, undefined, setLoadedSprints)
+      const unsub = subscribeSprints(workspaceId, undefined, (all) => {
+        setLoadedSprints((all || []).filter(s => s.status !== 'closed'))
+      })
       return () => unsub && unsub()
     }
   }, [workspaceId, sprints])
 
+  const activeSprints = useMemo(() => {
+    return (loadedSprints || []).filter(s => s.status !== 'closed')
+  }, [loadedSprints])
+
   useEffect(() => {
-    if (activeSprint?.id && !selectedSprintId) {
+    if (activeSprint?.id && activeSprint.status !== 'closed' && !selectedSprintId) {
       setSelectedSprintId(activeSprint.id)
     }
   }, [activeSprint])
@@ -183,9 +189,9 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, s
                 onChange={(e) => setSelectedSprintId(e.target.value)}
               >
                 <option value="">No Sprint (Backlog)</option>
-                {loadedSprints.map(s => (
+                {activeSprints.map(s => (
                   <option key={s.id} value={s.id}>
-                    Sprint {s.number}{s.goal ? ` — ${s.goal}` : ''}{s.status === 'active' ? ' (Active)' : ''}
+                    Sprint {s.number}{s.goal ? ` — ${s.goal}` : ''}
                   </option>
                 ))}
               </select>
