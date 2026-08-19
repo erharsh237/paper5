@@ -30,7 +30,7 @@ export default function NotificationBell({ currentUser }) {
       setNotifications(items)
 
       const email = (currentUser?.email || '').toLowerCase()
-      const unreadItems = items.filter(n => !n.readBy?.includes(email))
+      const unreadItems = items.filter(n => !n.read && !n.readBy?.includes(email))
       const currentUnread = unreadItems.length
 
       if (!isInitialFetchRef.current && currentUnread > prevCountRef.current) {
@@ -59,7 +59,7 @@ export default function NotificationBell({ currentUser }) {
 
   const unreadCount = useMemo(() => {
     const email = (currentUser?.email || '').toLowerCase()
-    return notifications.filter(n => !n.readBy?.includes(email)).length
+    return notifications.filter(n => !n.read && !n.readBy?.includes(email)).length
   }, [notifications, currentUser?.email])
 
   function handleDismiss(id) {
@@ -69,12 +69,12 @@ export default function NotificationBell({ currentUser }) {
     setNotifications(prev => prev.map(n => {
       if (n.id === id) {
         const currentRead = Array.isArray(n.readBy) ? n.readBy : []
-        return { ...n, readBy: [...currentRead, email] }
+        return { ...n, read: true, readBy: currentRead.includes(email) ? currentRead : [...currentRead, email] }
       }
       return n
     }))
 
-    // 2. Persist to DB
+    // 2. Persist to DB & LocalStorage
     markNotificationRead(workspaceId, id, currentUser?.email)
   }
 
@@ -82,7 +82,7 @@ export default function NotificationBell({ currentUser }) {
     const email = (currentUser?.email || '').toLowerCase()
     setNotifications(prev => prev.map(n => {
       const currentRead = Array.isArray(n.readBy) ? n.readBy : []
-      return currentRead.includes(email) ? n : { ...n, readBy: [...currentRead, email] }
+      return { ...n, read: true, readBy: currentRead.includes(email) ? currentRead : [...currentRead, email] }
     }))
     markAllNotificationsRead(workspaceId, currentUser?.email)
   }
@@ -112,7 +112,7 @@ export default function NotificationBell({ currentUser }) {
           ) : (
             notifications.slice(0, 20).map(n => {
               const email = (currentUser?.email || '').toLowerCase()
-              const isRead = n.readBy?.includes(email)
+              const isRead = Boolean(n.read || n.readBy?.includes(email))
               return (
                 <div key={n.id} className={`notif-bell-item${isRead ? ' notif-bell-item--read' : ''}`}>
                   <p>{n.message}</p>

@@ -94,6 +94,13 @@ export function subscribeNotifications(workspaceId, teamIdOrEmail, userEmailOrCa
     if (!isSubscribed || !workspaceId || isFetching) return
     isFetching = true
     try {
+      // Get locally dismissed notifications for this user
+      let localDismissed = []
+      try {
+        const stored = localStorage.getItem(`sprintos:read_notifs_${email}`)
+        if (stored) localDismissed = JSON.parse(stored) || []
+      } catch (_) {}
+
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
@@ -106,18 +113,26 @@ export function subscribeNotifications(workspaceId, teamIdOrEmail, userEmailOrCa
           const tB = new Date(b.created_at || b.createdAt || 0).getTime()
           return tB - tA
         })
-        const normalized = sorted.map(row => ({
-          id: row.id,
-          workspaceId: row.workspace_id || row.workspaceId,
-          recipientId: row.recipient_id || row.recipientId,
-          forEmail: (row.recipient_email || row.for_email || row.forEmail || '').toLowerCase().trim(),
-          title: row.title || '',
-          message: row.message || '',
-          type: row.type || 'info',
-          read: Boolean(row.is_read ?? row.read ?? (Array.isArray(row.read_by || row.readBy) && (row.read_by || row.readBy).includes(email))),
-          createdAt: row.created_at || row.createdAt || new Date().toISOString(),
-          link: row.link || null,
-        }))
+        const normalized = sorted.map(row => {
+          const readByList = Array.isArray(row.read_by) ? row.read_by : (Array.isArray(row.readBy) ? row.readBy : [])
+          const isLocallyDismissed = localDismissed.includes(row.id)
+          const isRead = Boolean(row.is_read || row.read || isLocallyDismissed || (email && readByList.includes(email)))
+          const mergedReadBy = isRead && email && !readByList.includes(email) ? [...readByList, email] : readByList
+
+          return {
+            id: row.id,
+            workspaceId: row.workspace_id || row.workspaceId,
+            recipientId: row.recipient_id || row.recipientId,
+            forEmail: (row.recipient_email || row.for_email || row.forEmail || '').toLowerCase().trim(),
+            title: row.title || '',
+            message: row.message || '',
+            type: row.type || 'info',
+            read: isRead,
+            readBy: mergedReadBy,
+            createdAt: row.created_at || row.createdAt || new Date().toISOString(),
+            link: row.link || null,
+          }
+        })
 
         // Strict recipient isolation: ONLY show notifications addressed to this user's email
         const items = email ? normalized.filter(n => !n.forEmail || n.forEmail === email) : normalized
@@ -248,52 +263,90 @@ export function playBellChimeSound() {
 export async function markNotificationRead(workspaceId, id, userEmail) {
   if (!id || !userEmail) return
   const email = (userEmail || '').trim().toLowerCase()
+
+  // 1. Save to local storage cache immediately
+  try {
+    const key = `sprintos:read_notifs_${email}`
+    const existing = JSON.parse(localStorage.getItem(key) || '[]')
+    if (!existing.includes(id)) {
+      localStorage.setItem(key, JSON.stringify([...existing, id]))
+    }
+  } catch (_) {}
+
+  // 2. Persist to DB
   try {
     const { data: existing } = await supabase
       .from('notifications')
-      .select('readBy')
+      .select('read_by, readBy')
       .eq('id', id)
       .maybeSingle()
       
-    const currentReadBy = Array.isArray(existing?.readBy) ? existing.readBy : []
+    const currentReadBy = Array.isArray(existing?.read_by) ? existing.read_by : (Array.isArray(existing?.readBy) ? existing.readBy : [])
     if (!currentReadBy.includes(email)) {
       const readBy = [...currentReadBy, email]
-      const { error } = await supabase
-        .from('notifications')
-        .update({ readBy })
-        .eq('id', id)
-        
-      if (error) {
-        console.warn('markNotificationRead DB update warning:', error.message)
-      }
-      notifyNotificationsChange()
+      
+      try {
+        await supabase
+          .from('notifications')
+          .update({ read_by: readBy, is_read: true })
+          .eq('id', id)
+      } catch (_) {}
+
+      try {
+        await supabase
+          .from('notifications')
+          .update({ readBy, read: true })
+          .eq('id', id)
+      } catch (_) {}
     }
   } catch (err) {
-    console.error('markNotificationRead exception:', err)
+    console.warn('markNotificationRead DB update warning:', err)
   }
+
+  notifyNotificationsChange()
 }
 
 export async function markAllNotificationsRead(workspaceId, userEmail) {
   if (!userEmail) return
   const email = (userEmail || '').trim().toLowerCase()
+
   try {
-    const query = supabase
-      .from('notifications')
-      .select('id, readBy')
+    const query = supabase.from('notifications').select('id, read_by, readBy')
     if (workspaceId) query.eq('workspace_id', workspaceId)
     
     const { data } = await query
+    const allIds = (data || []).map(n => n.id)
+
+    // 1. Save all to local storage cache immediately
+    try {
+      const key = `sprintos:read_notifs_${email}`
+      const existing = JSON.parse(localStorage.getItem(key) || '[]')
+      const merged = Array.from(new Set([...existing, ...allIds]))
+      localStorage.setItem(key, JSON.stringify(merged))
+    } catch (_) {}
+
+    // 2. Persist all to DB
     for (const notif of (data || [])) {
-      const current = Array.isArray(notif.readBy) ? notif.readBy : []
+      const current = Array.isArray(notif.read_by) ? notif.read_by : (Array.isArray(notif.readBy) ? notif.readBy : [])
       if (!current.includes(email)) {
-        await supabase
-          .from('notifications')
-          .update({ readBy: [...current, email] })
-          .eq('id', notif.id)
+        const readBy = [...current, email]
+        try {
+          await supabase
+            .from('notifications')
+            .update({ read_by: readBy, is_read: true })
+            .eq('id', notif.id)
+        } catch (_) {}
+        try {
+          await supabase
+            .from('notifications')
+            .update({ readBy, read: true })
+            .eq('id', notif.id)
+        } catch (_) {}
       }
     }
-    notifyNotificationsChange()
   } catch (err) {
-    console.error('markAllNotificationsRead exception:', err)
+    console.warn('markAllNotificationsRead exception:', err)
   }
+
+  notifyNotificationsChange()
 }
