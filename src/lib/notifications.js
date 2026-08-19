@@ -8,6 +8,8 @@ export const NOTIFICATION_TYPES = {
   TASK_APPROVED: 'task_approved',
 }
 
+const PAGE_SIZE = 50
+
 function notifyNotificationsChange() {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('sprintos:notifications-updated'))
