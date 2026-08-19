@@ -21,11 +21,15 @@ function notifyDeadlineChange() {
   }
 }
 
-export function subscribeDeadlines(workspaceId, callback, pageSize = 100) {
+export function subscribeDeadlines(workspaceId, teamIdOrCallback, callbackOrPageSize, maybePageSize) {
   if (!workspaceId) {
-    if (typeof callback === 'function') callback([])
+    const cb = typeof teamIdOrCallback === 'function' ? teamIdOrCallback : (typeof callbackOrPageSize === 'function' ? callbackOrPageSize : null)
+    if (cb) cb([])
     return () => {}
   }
+  const callback = typeof teamIdOrCallback === 'function' ? teamIdOrCallback : (typeof callbackOrPageSize === 'function' ? callbackOrPageSize : () => {})
+  const pageSize = typeof callbackOrPageSize === 'number' ? callbackOrPageSize : (typeof maybePageSize === 'number' ? maybePageSize : 100)
+
   let isSubscribed = true
   let isFetching = false
 
@@ -58,7 +62,7 @@ export function subscribeDeadlines(workspaceId, callback, pageSize = 100) {
           requiredEvidence: row.required_evidence || row.requiredEvidence || [],
           definitionOfDone: row.definition_of_done || row.definitionOfDone || '',
         }))
-        callback(normalized)
+        if (typeof callback === 'function') callback(normalized)
       }
     } finally {
       isFetching = false

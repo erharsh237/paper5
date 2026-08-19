@@ -69,14 +69,24 @@ export async function createNotification(workspaceId, teamId, { type, message, d
   return { id: data?.id }
 }
 
-const PAGE_SIZE = 50
+export function subscribeNotifications(workspaceId, teamIdOrEmail, userEmailOrCallback, maybeCallback) {
+  if (!workspaceId) {
+    const cb = typeof userEmailOrCallback === 'function' ? userEmailOrCallback : (typeof maybeCallback === 'function' ? maybeCallback : null)
+    if (cb) cb([])
+    return () => {}
+  }
 
-export function subscribeNotifications(workspaceId, teamId, userEmail, callback) {
+  const rawEmail = (typeof teamIdOrEmail === 'string' && teamIdOrEmail.includes('@'))
+    ? teamIdOrEmail 
+    : (typeof userEmailOrCallback === 'string' ? userEmailOrCallback : '')
+  const email = (rawEmail || '').toLowerCase().trim()
+
+  const callback = typeof teamIdOrEmail === 'function' 
+    ? teamIdOrEmail 
+    : (typeof userEmailOrCallback === 'function' ? userEmailOrCallback : (typeof maybeCallback === 'function' ? maybeCallback : () => {}))
+
   let isSubscribed = true
   let isFetching = false
-  const email = (userEmail || '').trim().toLowerCase()
-
-  if (!workspaceId) return () => {}
 
   const fetchList = async () => {
     if (!isSubscribed || !workspaceId || isFetching) return
@@ -86,26 +96,30 @@ export function subscribeNotifications(workspaceId, teamId, userEmail, callback)
         .from('notifications')
         .select('*')
         .eq('workspace_id', workspaceId)
-        .order('created_at', { ascending: false })
         .limit(PAGE_SIZE)
 
-      if (!error && isSubscribed) {
-        const normalized = (data || []).map(row => ({
+      if (!error && isSubscribed && Array.isArray(data)) {
+        const sorted = [...data].sort((a, b) => {
+          const tA = new Date(a.created_at || a.createdAt || 0).getTime()
+          const tB = new Date(b.created_at || b.createdAt || 0).getTime()
+          return tB - tA
+        })
+        const normalized = sorted.map(row => ({
           id: row.id,
-          workspaceId: row.workspace_id,
-          recipientId: row.recipient_id,
-          forEmail: (row.recipient_email || row.for_email || '').toLowerCase().trim(),
-          title: row.title,
-          message: row.message,
+          workspaceId: row.workspace_id || row.workspaceId,
+          recipientId: row.recipient_id || row.recipientId,
+          forEmail: (row.recipient_email || row.for_email || row.forEmail || '').toLowerCase().trim(),
+          title: row.title || '',
+          message: row.message || '',
           type: row.type || 'info',
-          read: Boolean(row.is_read ?? row.read),
-          createdAt: row.created_at,
+          read: Boolean(row.is_read ?? row.read ?? (Array.isArray(row.read_by || row.readBy) && (row.read_by || row.readBy).includes(email))),
+          createdAt: row.created_at || row.createdAt || new Date().toISOString(),
           link: row.link || null,
         }))
 
         // Strict recipient isolation: ONLY show notifications addressed to this user's email
-        const items = normalized.filter(n => n.forEmail && n.forEmail === email)
-        callback(items)
+        const items = email ? normalized.filter(n => !n.forEmail || n.forEmail === email) : normalized
+        if (typeof callback === 'function') callback(items)
       }
     } catch (err) {
       console.warn('subscribeNotifications fetch error:', err)

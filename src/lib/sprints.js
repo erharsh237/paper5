@@ -7,11 +7,14 @@ function notifySprintChange() {
   }
 }
 
-export function subscribeSprints(workspaceId, teamId, callback) {
+export function subscribeSprints(workspaceId, teamIdOrCallback, maybeCallback) {
   if (!workspaceId) {
-    if (typeof callback === 'function') callback([])
+    const cb = typeof teamIdOrCallback === 'function' ? teamIdOrCallback : (typeof maybeCallback === 'function' ? maybeCallback : null)
+    if (cb) cb([])
     return () => {}
   }
+  const callback = typeof teamIdOrCallback === 'function' ? teamIdOrCallback : (typeof maybeCallback === 'function' ? maybeCallback : () => {})
+
   let isSubscribed = true
   let isFetching = false
 
@@ -24,7 +27,9 @@ export function subscribeSprints(workspaceId, teamId, callback) {
         .select('*')
         .eq('workspace_id', workspaceId)
         .order('number', { ascending: false })
-      if (!error && isSubscribed) callback(data || [])
+      if (!error && isSubscribed) {
+        if (typeof callback === 'function') callback(data || [])
+      }
     } finally {
       isFetching = false
     }
