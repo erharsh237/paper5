@@ -52,49 +52,134 @@ export function subscribeUpcomingMeetings(workspaceId, teamId, callback) {
 
 export function subscribeEventNotes(workspaceId, teamId, callback) {
   const cb = typeof teamId === 'function' ? teamId : callback
-  if (!cb) return () => {}
+  if (!cb || !workspaceId) {
+    if (typeof cb === 'function') cb({})
+    return () => {}
+  }
+
+  let isSubscribed = true
+  let isFetching = false
 
   const fetchList = async () => {
-    const { data } = await supabase
-      .from('teamSettings')
-      .select('eventNotes')
-      .eq('workspace_id', workspaceId)
-      .eq('id', 'main')
-      .maybeSingle()
-    if (data && data.eventNotes) {
-      cb(data.eventNotes)
-    } else {
-      cb({})
+    if (!isSubscribed || isFetching) return
+    isFetching = true
+    try {
+      // 1. Try fetching from workspaces settings
+      const { data: wsData } = await supabase
+        .from('workspaces')
+        .select('settings')
+        .eq('id', workspaceId)
+        .maybeSingle()
+
+      if (wsData?.settings?.eventNotes && Object.keys(wsData.settings.eventNotes).length > 0) {
+        if (isSubscribed) cb(wsData.settings.eventNotes)
+        return
+      }
+
+      // 2. Fallback to teamSettings
+      const { data: tsData } = await supabase
+        .from('teamSettings')
+        .select('eventNotes')
+        .eq('workspace_id', workspaceId)
+        .eq('id', 'main')
+        .maybeSingle()
+
+      if (tsData && tsData.eventNotes && Object.keys(tsData.eventNotes).length > 0) {
+        if (isSubscribed) cb(tsData.eventNotes)
+        return
+      }
+
+      // 3. Fallback to local storage cache if available
+      try {
+        const cached = localStorage.getItem(`sprintos:event_notes_${workspaceId}`)
+        if (cached) {
+          const parsed = JSON.parse(cached)
+          if (parsed && typeof parsed === 'object') {
+            if (isSubscribed) cb(parsed)
+            return
+          }
+        }
+      } catch (_) {}
+
+      if (isSubscribed) cb({})
+    } catch (_) {
+      if (isSubscribed) cb({})
+    } finally {
+      isFetching = false
     }
   }
+
   fetchList()
-  const channel = supabase.channel(`public:teamSettings:workspace_id=eq.${workspaceId}:${Math.random().toString(36).substring(7)}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'teamSettings', filter: `workspace_id=eq.${workspaceId}` }, () => {
-      fetchList()
-    })
+
+  const channel = supabase.channel(`public:teamSettings:ws:${workspaceId}:${Math.random().toString(36).substring(7)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'workspaces', filter: `id=eq.${workspaceId}` }, () => fetchList())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'teamSettings', filter: `workspace_id=eq.${workspaceId}` }, () => fetchList())
     .subscribe()
-  return () => supabase.removeChannel(channel)
+
+  const onLocalSync = () => fetchList()
+  if (typeof window !== 'undefined') {
+    window.addEventListener('sprintos:meetings-updated', onLocalSync)
+    window.addEventListener('sprintos:data-sync', onLocalSync)
+  }
+
+  return () => {
+    isSubscribed = false
+    supabase.removeChannel(channel)
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('sprintos:meetings-updated', onLocalSync)
+      window.removeEventListener('sprintos:data-sync', onLocalSync)
+    }
+  }
 }
 
 export async function saveEventNote(workspaceId, teamId, eventId, notesObj, currentUserEmail) {
-  const { data: existing } = await supabase
-    .from('teamSettings')
-    .select('eventNotes')
-    .eq('workspace_id', workspaceId)
-    .eq('id', 'main')
-    .maybeSingle()
-  
-  const currentNotes = existing?.eventNotes || {}
+  // 1. Get existing from workspace settings or teamSettings
+  let currentNotes = {}
+  let currentWsSettings = {}
+  try {
+    const { data: wsData } = await supabase.from('workspaces').select('settings').eq('id', workspaceId).maybeSingle()
+    if (wsData?.settings) {
+      currentWsSettings = wsData.settings
+      currentNotes = wsData.settings.eventNotes || {}
+    }
+  } catch (_) {}
+
+  if (Object.keys(currentNotes).length === 0) {
+    try {
+      const { data: tsData } = await supabase.from('teamSettings').select('eventNotes').eq('workspace_id', workspaceId).eq('id', 'main').maybeSingle()
+      if (tsData?.eventNotes) currentNotes = tsData.eventNotes
+    } catch (_) {}
+  }
+
   const updatedNotes = { ...currentNotes, [eventId]: notesObj }
-  
-  await supabase
-    .from('teamSettings')
-    .upsert({ 
-      workspace_id: workspaceId, 
-      id: 'main', 
-      eventNotes: updatedNotes, 
-      updatedAt: new Date().toISOString() 
+
+  // 2. Persist to workspaces settings
+  try {
+    await supabase.from('workspaces').update({
+      settings: { ...currentWsSettings, eventNotes: updatedNotes }
+    }).eq('id', workspaceId)
+  } catch (_) {}
+
+  // 3. Persist to teamSettings fallback
+  try {
+    await supabase.from('teamSettings').upsert({
+      workspace_id: workspaceId,
+      id: 'main',
+      eventNotes: updatedNotes,
+      updatedAt: new Date().toISOString()
     })
+  } catch (_) {}
+
+  // 4. Cache locally
+  try {
+    localStorage.setItem(`sprintos:event_notes_${workspaceId}`, JSON.stringify(updatedNotes))
+  } catch (_) {}
+
+  // 5. Notify local listeners
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('sprintos:meetings-updated'))
+    window.dispatchEvent(new CustomEvent('sprintos:data-sync'))
+  }
 
   // Play crystal bell chime sound
   playBellChimeSound()
@@ -111,29 +196,41 @@ export async function saveEventNote(workspaceId, teamId, eventId, notesObj, curr
 }
 
 export async function deleteEventNote(workspaceId, teamId, eventId) {
-  const { data: existing } = await supabase
-    .from('teamSettings')
-    .select('eventNotes')
-    .eq('workspace_id', workspaceId)
-    .eq('id', 'main')
-    .maybeSingle()
-    
-  const currentNotes = existing?.eventNotes || {}
+  let currentNotes = {}
+  let currentWsSettings = {}
+  try {
+    const { data: wsData } = await supabase.from('workspaces').select('settings').eq('id', workspaceId).maybeSingle()
+    if (wsData?.settings) {
+      currentWsSettings = wsData.settings
+      currentNotes = wsData.settings.eventNotes || {}
+    }
+  } catch (_) {}
+
   const updatedNotes = { ...currentNotes }
   delete updatedNotes[eventId]
 
-  const { error } = await supabase
-    .from('teamSettings')
-    .upsert({ 
-      workspace_id: workspaceId, 
-      id: 'main', 
-      eventNotes: updatedNotes, 
-      updatedAt: new Date().toISOString() 
-    })
+  try {
+    await supabase.from('workspaces').update({
+      settings: { ...currentWsSettings, eventNotes: updatedNotes }
+    }).eq('id', workspaceId)
+  } catch (_) {}
 
-  if (error) {
-    console.error('Failed to delete event note in DB:', error)
-    throw error
+  try {
+    await supabase.from('teamSettings').upsert({
+      workspace_id: workspaceId,
+      id: 'main',
+      eventNotes: updatedNotes,
+      updatedAt: new Date().toISOString()
+    })
+  } catch (_) {}
+
+  try {
+    localStorage.setItem(`sprintos:event_notes_${workspaceId}`, JSON.stringify(updatedNotes))
+  } catch (_) {}
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('sprintos:meetings-updated'))
+    window.dispatchEvent(new CustomEvent('sprintos:data-sync'))
   }
 
   return updatedNotes
