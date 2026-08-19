@@ -21,37 +21,47 @@ function notifyDeadlineChange() {
   }
 }
 
-export function subscribeDeadlines(workspaceId, teamId, callback, pageSize = DEADLINES_DEFAULT_PAGE_SIZE) {
+export function subscribeDeadlines(workspaceId, callback, pageSize = 100) {
+  if (!workspaceId) {
+    if (typeof callback === 'function') callback([])
+    return () => {}
+  }
   let isSubscribed = true
+  let isFetching = false
 
   const fetchList = async () => {
-    if (!isSubscribed || !workspaceId) return
-    const { data, error } = await supabase
-      .from('deadlines')
-      .select('*')
-      .eq('workspace_id', workspaceId)
-      .order('due_date', { ascending: true })
-      .limit(pageSize)
-    if (!error && isSubscribed) {
-      const normalized = (data || []).map(row => ({
-        ...row,
-        dueDate: row.due_date || row.dueDate,
-        dueDateIso: row.due_date || row.dueDate,
-        assigneeId: row.assignee_id || row.assigneeId,
-        assigneeName: row.assignee_name || row.assigneeName,
-        assigneeEmail: (row.assignee_email || row.assigneeEmail || '').toLowerCase(),
-        createdBy: row.created_by || row.createdBy || '',
-        createdByName: row.created_by_name || row.createdByName || row.created_by || row.createdBy || 'Team Lead',
-        sprintId: row.sprint_id || row.sprintId,
-        createdAt: row.created_at || row.createdAt,
-        completedAt: row.completed_at || row.completedAt,
-        estimatedHours: row.estimated_hours ?? row.estimatedHours ?? null,
-        actualHours: row.actual_hours ?? row.actualHours ?? 0,
-        percentComplete: row.percent_complete ?? row.percentComplete ?? 0,
-        requiredEvidence: row.required_evidence || row.requiredEvidence || [],
-        definitionOfDone: row.definition_of_done || row.definitionOfDone || '',
-      }))
-      callback(normalized)
+    if (!isSubscribed || isFetching) return
+    isFetching = true
+    try {
+      const { data, error } = await supabase
+        .from('deadlines')
+        .select('*')
+        .eq('workspace_id', workspaceId)
+        .order('due_date', { ascending: true })
+        .limit(pageSize)
+      if (!error && isSubscribed) {
+        const normalized = (data || []).map(row => ({
+          ...row,
+          dueDate: row.due_date || row.dueDate,
+          dueDateIso: row.due_date || row.dueDate,
+          assigneeId: row.assignee_id || row.assigneeId,
+          assigneeName: row.assignee_name || row.assigneeName,
+          assigneeEmail: (row.assignee_email || row.assigneeEmail || '').toLowerCase(),
+          createdBy: row.created_by || row.createdBy || '',
+          createdByName: row.created_by_name || row.createdByName || row.created_by || row.createdBy || 'Team Lead',
+          sprintId: row.sprint_id || row.sprintId,
+          createdAt: row.created_at || row.createdAt,
+          completedAt: row.completed_at || row.completedAt,
+          estimatedHours: row.estimated_hours ?? row.estimatedHours ?? null,
+          actualHours: row.actual_hours ?? row.actualHours ?? 0,
+          percentComplete: row.percent_complete ?? row.percentComplete ?? 0,
+          requiredEvidence: row.required_evidence || row.requiredEvidence || [],
+          definitionOfDone: row.definition_of_done || row.definitionOfDone || '',
+        }))
+        callback(normalized)
+      }
+    } finally {
+      isFetching = false
     }
   }
 
@@ -75,7 +85,6 @@ export function subscribeDeadlines(workspaceId, teamId, callback, pageSize = DEA
     window.addEventListener('sprintos:notifications-updated', onLocalSync)
     window.addEventListener('sprintos:data-sync', onLocalSync)
     window.addEventListener('storage', onStorageSync)
-    window.addEventListener('focus', onLocalSync)
   }
   const onVisibilityChange = () => {
     if (typeof document !== 'undefined' && document.visibilityState === 'visible') fetchList()
@@ -84,23 +93,14 @@ export function subscribeDeadlines(workspaceId, teamId, callback, pageSize = DEA
     document.addEventListener('visibilitychange', onVisibilityChange)
   }
 
-  // Periodic heartbeat sync (every 2 seconds when tab is active)
-  const interval = setInterval(() => {
-    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-      fetchList()
-    }
-  }, 2000)
-  
   return () => {
     isSubscribed = false
     supabase.removeChannel(channel)
-    clearInterval(interval)
     if (typeof window !== 'undefined') {
       window.removeEventListener('sprintos:deadlines-updated', onLocalSync)
       window.removeEventListener('sprintos:notifications-updated', onLocalSync)
       window.removeEventListener('sprintos:data-sync', onLocalSync)
       window.removeEventListener('storage', onStorageSync)
-      window.removeEventListener('focus', onLocalSync)
     }
     if (typeof document !== 'undefined') {
       document.removeEventListener('visibilitychange', onVisibilityChange)

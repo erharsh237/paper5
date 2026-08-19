@@ -39,10 +39,16 @@ export async function getWorkspace(workspaceId) {
 
 export function subscribeWorkspace(workspaceId, callback) {
   let isSubscribed = true
+  let isFetching = false
   const fetchDoc = async () => {
-    if (!isSubscribed || !workspaceId) return
-    const data = await getWorkspace(workspaceId)
-    if (isSubscribed) callback(data)
+    if (!isSubscribed || !workspaceId || isFetching) return
+    isFetching = true
+    try {
+      const data = await getWorkspace(workspaceId)
+      if (isSubscribed) callback(data)
+    } finally {
+      isFetching = false
+    }
   }
   const channel = supabase.channel(`public:workspaces:id=eq.${workspaceId}:fetch:${Math.random().toString(36).substring(7)}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'workspaces', filter: `id=eq.${workspaceId}` }, () => {
@@ -54,7 +60,6 @@ export function subscribeWorkspace(workspaceId, callback) {
   const onLocalSync = () => fetchDoc()
   if (typeof window !== 'undefined') {
     window.addEventListener('sprintos:data-sync', onLocalSync)
-    window.addEventListener('focus', onLocalSync)
   }
   const onVisibilityChange = () => {
     if (typeof document !== 'undefined' && document.visibilityState === 'visible') fetchDoc()
@@ -63,17 +68,11 @@ export function subscribeWorkspace(workspaceId, callback) {
     document.addEventListener('visibilitychange', onVisibilityChange)
   }
 
-  const interval = setInterval(() => {
-    if (typeof document !== 'undefined' && document.visibilityState === 'visible') fetchDoc()
-  }, 4000)
-
   return () => {
     isSubscribed = false
     supabase.removeChannel(channel)
-    clearInterval(interval)
     if (typeof window !== 'undefined') {
       window.removeEventListener('sprintos:data-sync', onLocalSync)
-      window.removeEventListener('focus', onLocalSync)
     }
     if (typeof document !== 'undefined') {
       document.removeEventListener('visibilitychange', onVisibilityChange)
@@ -84,8 +83,10 @@ export function subscribeWorkspace(workspaceId, callback) {
 export function subscribeUserWorkspaces(uid, callback) {
   if (!uid) return () => {}
   let isSubscribed = true
+  let isFetching = false
   const fetchList = async () => {
-    if (!isSubscribed) return
+    if (!isSubscribed || isFetching) return
+    isFetching = true
     try {
       const { data, error } = await supabase
         .from('workspace_members')
@@ -112,6 +113,8 @@ export function subscribeUserWorkspaces(uid, callback) {
     } catch (err) {
       console.error('subscribeUserWorkspaces Exception:', err)
       if (isSubscribed) callback([])
+    } finally {
+      isFetching = false
     }
   }
   
@@ -125,7 +128,6 @@ export function subscribeUserWorkspaces(uid, callback) {
   const onLocalSync = () => fetchList()
   if (typeof window !== 'undefined') {
     window.addEventListener('sprintos:data-sync', onLocalSync)
-    window.addEventListener('focus', onLocalSync)
   }
   const onVisibilityChange = () => {
     if (typeof document !== 'undefined' && document.visibilityState === 'visible') fetchList()
@@ -134,17 +136,11 @@ export function subscribeUserWorkspaces(uid, callback) {
     document.addEventListener('visibilitychange', onVisibilityChange)
   }
 
-  const interval = setInterval(() => {
-    if (typeof document !== 'undefined' && document.visibilityState === 'visible') fetchList()
-  }, 4000)
-
   return () => {
     isSubscribed = false
     supabase.removeChannel(channel)
-    clearInterval(interval)
     if (typeof window !== 'undefined') {
       window.removeEventListener('sprintos:data-sync', onLocalSync)
-      window.removeEventListener('focus', onLocalSync)
     }
     if (typeof document !== 'undefined') {
       document.removeEventListener('visibilitychange', onVisibilityChange)
@@ -234,11 +230,6 @@ export function subscribeWorkspaceMembers(workspaceId, callback) {
   
   fetchList()
 
-  // Heartbeat poll every 4 seconds when tab is active
-  const pollTimer = setInterval(() => {
-    if (isSubscribed) fetchList()
-  }, 4000)
-
   // Fetch immediately upon tab focus / device wake
   const handleVisibilityChange = () => {
     if (typeof document !== 'undefined' && !document.hidden && isSubscribed) {
@@ -253,7 +244,6 @@ export function subscribeWorkspaceMembers(workspaceId, callback) {
 
   return () => {
     isSubscribed = false
-    clearInterval(pollTimer)
     if (abortController) abortController.abort()
     if (typeof document !== 'undefined') {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
@@ -307,11 +297,6 @@ export function subscribeInvites(workspaceId, callback) {
 
   fetchList()
 
-  // Heartbeat poll every 4 seconds when tab is active
-  const pollTimer = setInterval(() => {
-    if (isSubscribed) fetchList()
-  }, 4000)
-
   // Fetch immediately upon tab focus / device wake
   const handleVisibilityChange = () => {
     if (typeof document !== 'undefined' && !document.hidden && isSubscribed) {
@@ -326,7 +311,6 @@ export function subscribeInvites(workspaceId, callback) {
 
   return () => {
     isSubscribed = false
-    clearInterval(pollTimer)
     if (typeof document !== 'undefined') {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('online', handleVisibilityChange)

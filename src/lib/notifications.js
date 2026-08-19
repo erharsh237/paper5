@@ -69,29 +69,39 @@ export async function createNotification(workspaceId, teamId, { type, message, d
   return { id: data?.id }
 }
 
+const PAGE_SIZE = 50
+
 export function subscribeNotifications(workspaceId, teamId, userEmail, callback) {
   let isSubscribed = true
+  let isFetching = false
+  const email = (userEmail || '').trim().toLowerCase()
+
   if (!workspaceId) return () => {}
 
   const fetchList = async () => {
-    if (!isSubscribed || !workspaceId) return
+    if (!isSubscribed || !workspaceId || isFetching) return
+    isFetching = true
     try {
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
         .eq('workspace_id', workspaceId)
-        .limit(50)
-        
-      if (!error && data && isSubscribed) {
-        const email = (userEmail || '').trim().toLowerCase()
-        const normalized = data.map(n => ({
-          ...n,
-          forEmail: (n.for_email || n.forEmail || '').trim().toLowerCase() || null,
-          deadlineId: n.deadline_id || n.deadlineId || null,
-          createdBy: (n.created_by || n.createdBy || '').trim().toLowerCase(),
-          readBy: Array.isArray(n.read_by) ? n.read_by : (Array.isArray(n.readBy) ? n.readBy : []),
-          createdAt: n.created_at || n.createdAt || new Date().toISOString(),
-        })).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .order('created_at', { ascending: false })
+        .limit(PAGE_SIZE)
+
+      if (!error && isSubscribed) {
+        const normalized = (data || []).map(row => ({
+          id: row.id,
+          workspaceId: row.workspace_id,
+          recipientId: row.recipient_id,
+          forEmail: (row.recipient_email || row.for_email || '').toLowerCase().trim(),
+          title: row.title,
+          message: row.message,
+          type: row.type || 'info',
+          read: Boolean(row.is_read ?? row.read),
+          createdAt: row.created_at,
+          link: row.link || null,
+        }))
 
         // Strict recipient isolation: ONLY show notifications addressed to this user's email
         const items = normalized.filter(n => n.forEmail && n.forEmail === email)
@@ -99,6 +109,8 @@ export function subscribeNotifications(workspaceId, teamId, userEmail, callback)
       }
     } catch (err) {
       console.warn('subscribeNotifications fetch error:', err)
+    } finally {
+      isFetching = false
     }
   }
 
@@ -118,7 +130,6 @@ export function subscribeNotifications(workspaceId, teamId, userEmail, callback)
   if (typeof window !== 'undefined') {
     window.addEventListener('sprintos:notifications-updated', onLocalSync)
     window.addEventListener('sprintos:data-sync', onLocalSync)
-    window.addEventListener('focus', onLocalSync)
   }
   const onVisibilityChange = () => {
     if (typeof document !== 'undefined' && document.visibilityState === 'visible') fetchList()
@@ -127,21 +138,12 @@ export function subscribeNotifications(workspaceId, teamId, userEmail, callback)
     document.addEventListener('visibilitychange', onVisibilityChange)
   }
 
-  // 3-second heartbeat sync when browser tab is active
-  const interval = setInterval(() => {
-    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-      fetchList()
-    }
-  }, 3000)
-
   return () => {
     isSubscribed = false
     supabase.removeChannel(channel)
-    clearInterval(interval)
     if (typeof window !== 'undefined') {
       window.removeEventListener('sprintos:notifications-updated', onLocalSync)
       window.removeEventListener('sprintos:data-sync', onLocalSync)
-      window.removeEventListener('focus', onLocalSync)
     }
     if (typeof document !== 'undefined') {
       document.removeEventListener('visibilitychange', onVisibilityChange)

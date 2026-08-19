@@ -8,16 +8,26 @@ function notifySprintChange() {
 }
 
 export function subscribeSprints(workspaceId, teamId, callback) {
+  if (!workspaceId) {
+    if (typeof callback === 'function') callback([])
+    return () => {}
+  }
   let isSubscribed = true
+  let isFetching = false
 
   const fetchList = async () => {
-    if (!isSubscribed || !workspaceId) return
-    const { data, error } = await supabase
-      .from('sprints')
-      .select('*')
-      .eq('workspace_id', workspaceId)
-      .order('number', { ascending: false })
-    if (!error && isSubscribed) callback(data || [])
+    if (!isSubscribed || isFetching) return
+    isFetching = true
+    try {
+      const { data, error } = await supabase
+        .from('sprints')
+        .select('*')
+        .eq('workspace_id', workspaceId)
+        .order('number', { ascending: false })
+      if (!error && isSubscribed) callback(data || [])
+    } finally {
+      isFetching = false
+    }
   }
 
   fetchList()
@@ -32,7 +42,6 @@ export function subscribeSprints(workspaceId, teamId, callback) {
   if (typeof window !== 'undefined') {
     window.addEventListener('sprintos:sprints-updated', onLocalSync)
     window.addEventListener('sprintos:data-sync', onLocalSync)
-    window.addEventListener('focus', onLocalSync)
   }
   const onVisibilityChange = () => {
     if (typeof document !== 'undefined' && document.visibilityState === 'visible') fetchList()
@@ -41,21 +50,12 @@ export function subscribeSprints(workspaceId, teamId, callback) {
     document.addEventListener('visibilitychange', onVisibilityChange)
   }
 
-  // Periodic heartbeat sync (every 3 seconds when tab is active)
-  const interval = setInterval(() => {
-    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-      fetchList()
-    }
-  }, 3000)
-
   return () => {
     isSubscribed = false
     supabase.removeChannel(channel)
-    clearInterval(interval)
     if (typeof window !== 'undefined') {
       window.removeEventListener('sprintos:sprints-updated', onLocalSync)
       window.removeEventListener('sprintos:data-sync', onLocalSync)
-      window.removeEventListener('focus', onLocalSync)
     }
     if (typeof document !== 'undefined') {
       document.removeEventListener('visibilitychange', onVisibilityChange)
