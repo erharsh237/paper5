@@ -35,8 +35,18 @@ export default async function handler(req, res) {
     })
 
     if (linkErr) {
+      // If user is not found, return 200 OK to prevent email enumeration and console errors (OWASP standard)
+      if (linkErr.message?.toLowerCase().includes('not found') || linkErr.status === 400 || linkErr.status === 404) {
+        return res.status(200).json({
+          success: true,
+          message: 'If an account exists with this email, a password reset link has been sent.'
+        })
+      }
       console.error('generateLink error:', linkErr)
-      return res.status(400).json({ error: linkErr.message || 'Could not generate reset link' })
+      return res.status(200).json({
+        success: true,
+        message: 'Password reset request processed'
+      })
     }
 
     const tokenHash = linkData?.properties?.hashed_token
