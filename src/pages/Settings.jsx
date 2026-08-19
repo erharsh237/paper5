@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { Navigate, Link } from 'react-router-dom'
 import { useWorkspace } from '../lib/WorkspaceContext'
