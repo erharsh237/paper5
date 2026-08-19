@@ -1496,74 +1496,131 @@ export default function Settings() {
                 </table>
 
                 {isAdminOrOwner && (
-                  <div className="invite-box">
-                    <h3>Invite Member</h3>
-                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                      You have used {members.length + invites.length} of {maxMembers} seats available on your current plan ({members.length} active member{members.length !== 1 ? 's' : ''}{invites.length > 0 ? `, ${invites.length} pending invite${invites.length !== 1 ? 's' : ''}` : ''}).
-                    </p>
-                    <form onSubmit={handleCreateInvite} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
-                      <div style={{ display: 'flex', gap: '12px' }}>
-                        <div style={{ flex: 1 }}>
-                          <input
-                            type="email"
-                            placeholder="Email address"
-                            value={inviteEmail}
-                            onChange={handleEmailChange}
-                            required
-                            style={{ width: '100%', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg-inset)', color: 'var(--text-primary)' }}
-                          />
+                  <div className="invite-box" style={{ marginTop: '24px' }}>
+                    {typeof maxMembers === 'number' && (members.length + invites.length) >= maxMembers ? (
+                      <div style={{
+                        background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)',
+                        border: '1px solid rgba(79, 70, 229, 0.2)',
+                        borderRadius: '10px',
+                        padding: '18px 20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: '16px'
+                      }}>
+                        <div style={{ flex: '1 1 300px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                            <span style={{ fontSize: '15px' }}>🔒</span>
+                            <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text, #1E293B)' }}>
+                              All {maxMembers} Seats Used
+                            </h4>
+                            <span style={{
+                              fontSize: '11px',
+                              fontFamily: 'var(--font-mono)',
+                              fontWeight: 700,
+                              background: 'rgba(239, 68, 68, 0.1)',
+                              color: '#DC2626',
+                              padding: '2px 8px',
+                              borderRadius: '6px'
+                            }}>
+                              {members.length + invites.length} / {maxMembers} filled
+                            </span>
+                          </div>
+                          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary, #64748B)', lineHeight: 1.5 }}>
+                            You have used all {maxMembers} seats available on your current <strong>{planId.toUpperCase()}</strong> plan ({members.length} active member{members.length !== 1 ? 's' : ''}{invites.length > 0 ? `, ${invites.length} pending invite${invites.length !== 1 ? 's' : ''}` : ''}). To invite more team members, please upgrade your plan or free up a seat by canceling a pending invite or removing a member.
+                          </p>
                         </div>
-                        <div>
-                          <select
-                            value={inviteRole}
-                            onChange={e => setInviteRole(e.target.value)}
-                            style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg-inset)', color: 'var(--text-primary)' }}
-                          >
-                            <option value="member">Member</option>
-                            <option value="admin">Admin</option>
-                          </select>
-                        </div>
+                        <button
+                          type="button"
+                          className="dash-btn-accent"
+                          onClick={() => setIsPricingModalOpen(true)}
+                          style={{
+                            padding: '9px 18px',
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            borderRadius: '8px',
+                            boxShadow: '0 2px 8px rgba(79, 70, 229, 0.25)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <span>⚡</span> Upgrade Plan
+                        </button>
                       </div>
-                      
-                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                        <div style={{ flex: 1, position: 'relative' }}>
-                          <span style={{ position: 'absolute', top: '-8px', left: '8px', fontSize: '10px', background: 'var(--bg-layer-1)', padding: '0 4px', color: 'var(--text-secondary)' }}>Generated Password</span>
-                          <input
-                            type="text"
-                            value={invitePassword || 'Enter email first...'}
-                            readOnly
-                            style={{ width: '100%', padding: '8px 12px', borderRadius: '4px', border: '1px dashed var(--border)', background: 'rgba(0,0,0,0.05)', color: invitePassword ? 'var(--text-secondary)' : 'var(--text-tertiary)', fontFamily: invitePassword ? 'monospace' : 'inherit', fontStyle: invitePassword ? 'normal' : 'italic' }}
-                          />
-                        </div>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
-                          <input type="checkbox" checked={inviteSendEmail} onChange={e => setInviteSendEmail(e.target.checked)} />
-                          Send login details via email
-                        </label>
-                      </div>
+                    ) : (
+                      <>
+                        <h3>Invite Member</h3>
+                        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                          You have used {members.length + invites.length} of {maxMembers} seats available on your current plan ({members.length} active member{members.length !== 1 ? 's' : ''}{invites.length > 0 ? `, ${invites.length} pending invite${invites.length !== 1 ? 's' : ''}` : ''}).
+                        </p>
+                        <form onSubmit={handleCreateInvite} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
+                          <div style={{ display: 'flex', gap: '12px' }}>
+                            <div style={{ flex: 1 }}>
+                              <input
+                                type="email"
+                                placeholder="Email address"
+                                value={inviteEmail}
+                                onChange={handleEmailChange}
+                                required
+                                style={{ width: '100%', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg-inset)', color: 'var(--text-primary)' }}
+                              />
+                            </div>
+                            <div>
+                              <select
+                                value={inviteRole}
+                                onChange={e => setInviteRole(e.target.value)}
+                                style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg-inset)', color: 'var(--text-primary)' }}
+                              >
+                                <option value="member">Member</option>
+                                <option value="admin">Admin</option>
+                              </select>
+                            </div>
+                          </div>
+                          
+                          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                            <div style={{ flex: 1, position: 'relative' }}>
+                              <span style={{ position: 'absolute', top: '-8px', left: '8px', fontSize: '10px', background: 'var(--bg-layer-1)', padding: '0 4px', color: 'var(--text-secondary)' }}>Generated Password</span>
+                              <input
+                                type="text"
+                                value={invitePassword || 'Enter email first...'}
+                                readOnly
+                                style={{ width: '100%', padding: '8px 12px', borderRadius: '4px', border: '1px dashed var(--border)', background: 'rgba(0,0,0,0.05)', color: invitePassword ? 'var(--text-secondary)' : 'var(--text-tertiary)', fontFamily: invitePassword ? 'monospace' : 'inherit', fontStyle: invitePassword ? 'normal' : 'italic' }}
+                              />
+                            </div>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
+                              <input type="checkbox" checked={inviteSendEmail} onChange={e => setInviteSendEmail(e.target.checked)} />
+                              Send login details via email
+                            </label>
+                          </div>
 
-                      <button type="submit" className="btn-primary" disabled={inviting} style={{ alignSelf: 'flex-start' }}>
-                        {inviting ? 'Sending...' : 'Create & Send Invite'}
-                      </button>
-                    </form>
-                    
-                    {inviteRole === 'member' && (
-                      <div style={{ marginTop: '12px', padding: '12px', border: '1px solid var(--border-subtle)', borderRadius: '6px', background: 'var(--bg-layer-1)' }}>
-                        <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>Permissions</label>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-                          {AVAILABLE_PERMISSIONS.map(ap => {
-                            const isChecked = ap.keys.some(k => invitePermissions.includes(k)) || invitePermissions.includes(ap.id)
-                            return (
-                              <label key={ap.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text, #1C1D2B)', cursor: 'pointer' }}>
-                                <input type="checkbox" checked={isChecked} onChange={() => toggleInvitePermission(ap.id)} />
-                                {ap.label}
-                              </label>
-                            )
-                          })}
-                        </div>
-                      </div>
+                          <button type="submit" className="btn-primary" disabled={inviting} style={{ alignSelf: 'flex-start' }}>
+                            {inviting ? 'Sending...' : 'Create & Send Invite'}
+                          </button>
+                        </form>
+                        
+                        {inviteRole === 'member' && (
+                          <div style={{ marginTop: '12px', padding: '12px', border: '1px solid var(--border-subtle)', borderRadius: '6px', background: 'var(--bg-layer-1)' }}>
+                            <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>Permissions</label>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                              {AVAILABLE_PERMISSIONS.map(ap => {
+                                const isChecked = ap.keys.some(k => invitePermissions.includes(k)) || invitePermissions.includes(ap.id)
+                                return (
+                                  <label key={ap.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text, #1C1D2B)', cursor: 'pointer' }}>
+                                    <input type="checkbox" checked={isChecked} onChange={() => toggleInvitePermission(ap.id)} />
+                                    {ap.label}
+                                  </label>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {inviteError && <div className="form-error" style={{ marginTop: '12px' }}>{inviteError}</div>}
+                      </>
                     )}
-                    
-                    {inviteError && <div className="form-error" style={{ marginTop: '12px' }}>{inviteError}</div>}
 
                     {invites.length > 0 && (
                       <div style={{ marginTop: '24px' }}>
