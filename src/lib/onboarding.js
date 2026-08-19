@@ -20,22 +20,6 @@ export async function hasSeenTour(uid, email = null) {
     }
   } catch (_) {}
 
-  // 3. Check users table fallback
-  if (uid) {
-    try {
-      const { data: userRecord } = await supabase
-        .from('users')
-        .select('tour_completed')
-        .eq('id', uid)
-        .maybeSingle()
-      if (userRecord?.tour_completed === true) {
-        localStorage.setItem(`tour_completed_${uid}`, 'true')
-        if (cleanEmail) localStorage.setItem(`tour_completed_${cleanEmail}`, 'true')
-        return true
-      }
-    } catch (_) {}
-  }
-
   return false
 }
 
@@ -55,16 +39,6 @@ export async function markTourSeen(uid, email = null) {
       data: { tour_completed: true }
     })
   } catch (_) {}
-
-  // 3. Persist to users table asynchronously
-  if (uid) {
-    try {
-      await supabase
-        .from('users')
-        .update({ tour_completed: true, updated_at: new Date().toISOString() })
-        .eq('id', uid)
-    } catch (_) {}
-  }
 }
 
 export async function resetTourSeen(uid, email = null) {
@@ -81,13 +55,4 @@ export async function resetTourSeen(uid, email = null) {
       data: { tour_completed: false }
     })
   } catch (_) {}
-
-  if (uid) {
-    try {
-      await supabase
-        .from('users')
-        .update({ tour_completed: false, updated_at: new Date().toISOString() })
-        .eq('id', uid)
-    } catch (_) {}
-  }
 }
