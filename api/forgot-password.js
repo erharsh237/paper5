@@ -142,10 +142,12 @@ export default async function handler(req, res) {
       }
     }
 
-    // If Resend was not used or did not succeed, trigger Supabase built-in auth email dispatch
+    // If Resend was not used or did not succeed, trigger Supabase built-in auth email dispatch via Anon client
     if (!emailSentViaResend) {
       try {
-        await supabaseAdmin.auth.resetPasswordForEmail(cleanEmail, {
+        const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || serviceKey
+        const supabaseAnon = createClient(supabaseUrl, anonKey)
+        await supabaseAnon.auth.resetPasswordForEmail(cleanEmail, {
           redirectTo: targetRedirect
         })
       } catch (sbErr) {
@@ -159,6 +161,6 @@ export default async function handler(req, res) {
     })
   } catch (err) {
     console.error('Password reset handler exception:', err)
-    return res.status(200).json({ success: true, message: 'Password reset request processed' })
+    return res.status(500).json({ error: err.message || 'Internal server error' })
   }
 }
