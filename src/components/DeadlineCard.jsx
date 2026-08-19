@@ -27,86 +27,44 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
   const [rejectNote, setRejectNote] = useState('')
   const [evidence, setEvidence] = useState([])
   const [extraWork, setExtraWork] = useState([])
+  
   const urgency = getUrgency(deadline.dueDate, deadline.status)
   const due = formatWorkspaceDate(deadline.dueDate, workspace?.settings)
+  
   const isAssignee = currentUser?.email &&
     deadline.assigneeEmail?.toLowerCase() === currentUser.email.toLowerCase()
-  // Only the assignee moves their own progress.
   const canUpdateStatus = isAssignee
   const isDirty = draftStatus !== deadline.status
-  // Any signed-in team member other than the assignee can review — the spec
-  // just says "another founder approves," no fixed reviewer role.
   const canReview = !isAssignee && deadline.status === 'review' && !!currentUser?.email
-  // Freely selectable transitions from the card's own dropdown. 'blocked'
-  // and 'review'/'done' go through their dedicated flows below instead,
-  // since both require structured info the plain dropdown can't capture.
   const FREE_STATUSES = STATUSES.filter(s => ['not_started', 'in_progress'].includes(s.key))
 
-  // Keep the draft in sync if status changes elsewhere (other tab/device).
   useEffect(() => {
     setDraftStatus(deadline.status)
   }, [deadline.status])
 
-  // Evidence and extra-work notes live in subcollections now (see
-  // deadlines.js) instead of arrays on the parent doc, specifically so the
-  // list-view listener every page keeps open doesn't carry them. Only
-  // subscribe once the card is actually expanded, and drop the listener
-  // again on collapse — no reason to hold N extra realtime listeners open
-  // for cards nobody's looking at.
   useEffect(() => {
     if (!expanded) return
     const unsub1 = subscribeEvidence(workspaceId, deadline.id, setEvidence)
     const unsub2 = subscribeExtraWork(workspaceId, deadline.id, setExtraWork)
     return () => { unsub1(); unsub2() }
-  }, [expanded, deadline.id])
-
-  async function handleSaveUpdate() {
-    if (!isDirty) return
-    setSaving(true)
-    setStatusError(null)
-    try {
-      await updateDeadlineStatus(workspaceId, deadline.id, draftStatus)
-    } catch (err) {
-      console.error('Failed to update status:', err)
-      setStatusError(
-        err?.code === 'permission-denied'
-          ? "You don't have permission to update this — check you're the assignee and rules are deployed."
-          : 'Update failed. Please try again.'
-      )
-      setDraftStatus(deadline.status) // revert visibly, don't leave it hanging
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  async function handleClearBlocker() {
-    setSaving(true)
-    setStatusError(null)
-    try {
-      await clearBlocked(workspaceId, deadline.id, 'in_progress')
-    } catch (err) {
-      console.error(err)
-      setStatusError('Could not clear the blocker. Try again.')
-    } finally {
-      setSaving(false)
-    }
-  }
+  }, [expanded, deadline.id, workspaceId])
 
   async function handleApprove() {
-    if (!confirm(`Approve "${deadline.title}" as done?`)) return
     setSaving(true)
     try {
-      await approveReview(workspaceId, deadline.id, { reviewerEmail: currentUser.email, reviewerName: currentUser.displayName || currentUser.email })
-      await createNotification(workspaceId, undefined, {
-        type: NOTIFICATION_TYPES.TASK_APPROVED,
-        message: `${currentUser?.displayName || currentUser?.email} approved "${deadline.title}"`,
-        deadlineId: deadline.id,
-        forEmail: deadline.assigneeEmail,
-        createdBy: currentUser?.email,
+      await approveReview(workspaceId, deadline.id, {
+        reviewerId: currentUser?.uid || currentUser?.id,
+        reviewerName: currentUser?.displayName || currentUser?.email,
       })
-    } catch (err) {
-      console.error(err)
-      setStatusError('Could not approve. Try again.')
+      if (deadline.assigneeEmail) {
+        await createNotification(workspaceId, undefined, {
+          type: NOTIFICATION_TYPES.TASK_APPROVED,
+          message: `${currentUser?.displayName || currentUser?.email} approved your deadline: "${deadline.title}"`,
+          deadlineId: deadline.id,
+          forEmail: deadline.assigneeEmail,
+          createdBy: currentUser?.email,
+        })
+      }
     } finally {
       setSaving(false)
     }
@@ -117,22 +75,30 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
     setSaving(true)
     try {
       await rejectReview(workspaceId, deadline.id, {
-        reviewerEmail: currentUser.email,
-        reviewerName: currentUser.displayName || currentUser.email,
-        reviewNote: rejectNote.trim(),
+        reviewerId: currentUser?.uid || currentUser?.id,
+        reviewerName: currentUser?.displayName || currentUser?.email,
+        note: rejectNote.trim(),
       })
-      await createNotification(workspaceId, undefined, {
-        type: NOTIFICATION_TYPES.REVIEW_REJECTED,
-        message: `${currentUser?.displayName || currentUser?.email} sent "${deadline.title}" back — ${rejectNote.trim()}`,
-        deadlineId: deadline.id,
-        forEmail: deadline.assigneeEmail,
-        createdBy: currentUser?.email,
-      })
-      setRejectNote('')
+      if (deadline.assigneeEmail) {
+        await createNotification(workspaceId, undefined, {
+          type: NOTIFICATION_TYPES.REVIEW_REJECTED,
+          message: `${currentUser?.displayName || currentUser?.email} sent back your deadline with note: "${rejectNote.trim()}"`,
+          deadlineId: deadline.id,
+          forEmail: deadline.assigneeEmail,
+          createdBy: currentUser?.email,
+        })
+      }
       setShowRejectForm(false)
-    } catch (err) {
-      console.error(err)
-      setStatusError('Could not send back. Try again.')
+      setRejectNote('')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleClearBlocker() {
+    setSaving(true)
+    try {
+      await clearBlocked(workspaceId, deadline.id, 'in_progress')
     } finally {
       setSaving(false)
     }
@@ -175,6 +141,8 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
   return (
     <div className={`dcard dcard--${urgency}`}>
       <div className="dcard-main" onClick={() => setExpanded(!expanded)}>
+        
+        {/* Top Header: Badges & Right Actions */}
         <div className="dcard-top">
           <div className="dcard-badges">
             {urgency === 'overdue' && deadline.status !== 'done' && (
@@ -190,7 +158,7 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
             <PriorityBadge priority={deadline.priority} />
           </div>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div className="dcard-top-right">
             <span className="dcard-due mono" title={due.full}>{due.relative}</span>
             {sprintLocked && <span className="dcard-due mono" title="Sprint locked — deadline scope is frozen">🔒</span>}
             {isAdmin && (
@@ -199,21 +167,6 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
                 className="dcard-delete-btn"
                 onClick={handleDeleteDeadline}
                 title="Delete Deadline (Admin only)"
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#EF4444',
-                  padding: '2px 4px',
-                  borderRadius: '4px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  opacity: 0.75,
-                  transition: 'opacity 0.15s ease, transform 0.15s ease',
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'scale(1.15)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.75'; e.currentTarget.style.transform = 'scale(1)'; }}
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="3 6 5 6 21 6"></polyline>
@@ -241,24 +194,31 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
         <div className="dcard-expanded">
           {deadline.description && <p className="dcard-desc">{deadline.description}</p>}
 
+          {/* Required Evidence Box */}
           {deadline.requiredEvidence && deadline.requiredEvidence.length > 0 && (
-            <div className="dcard-blocker">
-              <div className="dcard-extrawork-title">Required Evidence</div>
-              {deadline.requiredEvidence.map(req => {
-                const isSubmitted = evidence.some(ev => ev.type === req.type)
-                return (
-                  <div key={req.type} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', marginBottom: '4px' }}>
-                    <span style={{ fontFamily: 'var(--mono)' }}>{isSubmitted ? '[✓]' : '[ ]'}</span>
-                    <span>{EVIDENCE_TYPES.find(t => t.key === req.type)?.label || req.type}</span>
-                  </div>
-                )
-              })}
+            <div className="dcard-evidence-box">
+              <div className="dcard-section-title">REQUIRED EVIDENCE</div>
+              <div className="dcard-evidence-list">
+                {deadline.requiredEvidence.map(req => {
+                  const isSubmitted = evidence.some(ev => ev.type === req.type)
+                  return (
+                    <div key={req.type} className="dcard-evidence-item">
+                      <span className={`dcard-evidence-check ${isSubmitted ? 'checked' : 'pending'}`}>
+                        {isSubmitted ? '✓' : ''}
+                      </span>
+                      <span className="dcard-evidence-label">
+                        {EVIDENCE_TYPES.find(t => t.key === req.type)?.label || req.type}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
 
           {deadline.status === 'blocked' && deadline.blockerInfo && (
             <div className="dcard-blocker">
-              <div className="dcard-extrawork-title">Blocked</div>
+              <div className="dcard-section-title" style={{ color: '#DC2626' }}>Blocked Reason</div>
               <p><strong>{deadline.blockerInfo.reason}</strong></p>
               {deadline.blockerInfo.needHelpFrom && <p>Needs help from: {deadline.blockerInfo.needHelpFrom}</p>}
               {deadline.blockerInfo.description && <p>{deadline.blockerInfo.description}</p>}
@@ -267,7 +227,7 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
 
           {deadline.status === 'review' && evidence.length > 0 && (
             <div className="dcard-blocker">
-              <div className="dcard-extrawork-title">Evidence submitted</div>
+              <div className="dcard-section-title">Evidence submitted</div>
               {evidence.slice(-1).map((ev) => (
                 <p key={ev.id}>
                   [{ev.type}] {ev.repoName ? `(${ev.repoName}) ` : ''}{ev.content}
@@ -278,54 +238,71 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
 
           {deadline.reviewNote && deadline.status === 'in_progress' && (
             <div className="dcard-blocker">
-              <div className="dcard-extrawork-title">Sent back by reviewer</div>
+              <div className="dcard-section-title">Sent back by reviewer</div>
               <p>{deadline.reviewNote}</p>
             </div>
           )}
 
+          {/* Controls & Actions */}
           <div className="dcard-controls">
             {canUpdateStatus && deadline.status !== 'blocked' && deadline.status !== 'review' && deadline.status !== 'done' ? (
-              <>
-                <select
-                  value={draftStatus}
-                  onChange={(e) => setDraftStatus(e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
-                  disabled={saving}
-                  className="dcard-status-select"
-                >
-                  {FREE_STATUSES.map(s => (
-                    <option key={s.key} value={s.key}>{s.label}</option>
-                  ))}
-                </select>
-                <button
-                  className="dcard-update"
-                  disabled={!isDirty || saving}
-                  onClick={(e) => { e.stopPropagation(); handleSaveUpdate() }}
-                >
-                  Update
-                </button>
-                <button
-                  className="dcard-delete"
-                  disabled={saving}
-                  onClick={(e) => { e.stopPropagation(); setShowBlockerModal(true) }}
-                >
-                  Mark blocked
-                </button>
-                <button
-                  className="dcard-complete"
-                  disabled={saving}
-                  onClick={(e) => { e.stopPropagation(); setShowEvidenceModal(true) }}
-                >
-                  Submit for review
-                </button>
-              </>
+              <div className="dcard-action-group">
+                <div className="dcard-select-row">
+                  <span className="dcard-control-label">Status</span>
+                  <select
+                    value={draftStatus}
+                    onChange={async (e) => {
+                      const newStatus = e.target.value
+                      setDraftStatus(newStatus)
+                      setSaving(true)
+                      setStatusError(null)
+                      try {
+                        await updateDeadlineStatus(workspaceId, deadline.id, newStatus)
+                      } catch (err) {
+                        console.error('Failed to update status:', err)
+                        setStatusError('Failed to update status.')
+                        setDraftStatus(deadline.status)
+                      } finally {
+                        setSaving(false)
+                      }
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    disabled={saving}
+                    className="dcard-status-select"
+                  >
+                    {FREE_STATUSES.map(s => (
+                      <option key={s.key} value={s.key}>{s.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="dcard-btn-row">
+                  <button
+                    type="button"
+                    className="dcard-btn-blocked"
+                    disabled={saving}
+                    onClick={(e) => { e.stopPropagation(); setShowBlockerModal(true) }}
+                  >
+                    Mark Blocked
+                  </button>
+                  <button
+                    type="button"
+                    className="dcard-btn-review"
+                    disabled={saving}
+                    onClick={(e) => { e.stopPropagation(); setShowEvidenceModal(true) }}
+                  >
+                    Submit for Review →
+                  </button>
+                </div>
+              </div>
             ) : canUpdateStatus && deadline.status === 'blocked' ? (
               <button
-                className="dcard-update"
+                type="button"
+                className="dcard-btn-resume"
                 disabled={saving}
                 onClick={(e) => { e.stopPropagation(); handleClearBlocker() }}
               >
-                Clear blocker & resume
+                Clear Blocker & Resume
               </button>
             ) : canReview ? (
               showRejectForm ? (
@@ -338,15 +315,15 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
                     rows={2}
                   />
                   <div className="dcard-extraform-actions">
-                    <button className="dcard-update" disabled={!rejectNote.trim() || saving} onClick={handleReject}>Send back</button>
-                    <button className="dcard-extraform-cancel" onClick={() => setShowRejectForm(false)}>Cancel</button>
+                    <button type="button" className="dcard-btn-blocked" disabled={!rejectNote.trim() || saving} onClick={handleReject}>Send Back</button>
+                    <button type="button" className="dcard-extraform-cancel" onClick={() => setShowRejectForm(false)}>Cancel</button>
                   </div>
                 </div>
               ) : (
-                <>
-                  <button className="dcard-complete" disabled={saving} onClick={(e) => { e.stopPropagation(); handleApprove() }}>Approve</button>
-                  <button className="dcard-delete" disabled={saving} onClick={(e) => { e.stopPropagation(); setShowRejectForm(true) }}>Reject</button>
-                </>
+                <div className="dcard-btn-row">
+                  <button type="button" className="dcard-btn-approve" disabled={saving} onClick={(e) => { e.stopPropagation(); handleApprove() }}>✓ Approve</button>
+                  <button type="button" className="dcard-btn-reject" disabled={saving} onClick={(e) => { e.stopPropagation(); setShowRejectForm(true) }}>✕ Reject</button>
+                </div>
               )
             ) : (
               <span className="dcard-status-readonly mono">
@@ -357,11 +334,17 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
 
           {statusError && <div className="form-error">{statusError}</div>}
 
-          <div className="dcard-footnote mono">assigned by {deadline.createdByName || deadline.createdBy || 'Team Lead'}</div>
+          {/* Clean Footnote */}
+          <div className="dcard-footnote">
+            <span style={{ color: 'var(--muted-2)' }}>assigned by</span>
+            <span className="dcard-creator-name" title={deadline.createdByName || deadline.createdBy}>
+              {deadline.createdByName || deadline.createdBy || 'Team Lead'}
+            </span>
+          </div>
 
           {extraWork.length > 0 && (
             <div className="dcard-extrawork">
-              <div className="dcard-extrawork-title">Extra work logged</div>
+              <div className="dcard-section-title">Extra work logged</div>
               {extraWork.map((item) => (
                 <div className="dcard-extrawork-item" key={item.id}>
                   <p>{item.note}</p>
@@ -383,13 +366,15 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
                 />
                 <div className="dcard-extraform-actions">
                   <button
-                    className="dcard-update"
+                    type="button"
+                    className="dcard-btn-save-note"
                     disabled={!extraNote.trim() || savingExtra}
                     onClick={handleAddExtraWork}
                   >
                     Save note
                   </button>
                   <button
+                    type="button"
                     className="dcard-extraform-cancel"
                     onClick={() => { setShowExtraForm(false); setExtraNote('') }}
                   >
@@ -399,6 +384,7 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
               </div>
             ) : (
               <button
+                type="button"
                 className="dcard-add-extra"
                 onClick={(e) => { e.stopPropagation(); setShowExtraForm(true) }}
               >
