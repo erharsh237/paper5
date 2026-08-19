@@ -403,6 +403,32 @@ export default function Settings() {
   const planId = workspace?.billing_plan_id || workspace?.billing?.planId || 'free'
   const maxMembers = (planId === 'free' || planId === 'starter') ? 3 : planId === 'team' ? 7 : 'unlimited'
 
+  const activeMemberEmails = useMemo(() => {
+    return new Set(members.map(m => (m.email || '').trim().toLowerCase()).filter(Boolean))
+  }, [members])
+
+  const activePendingInvites = useMemo(() => {
+    return invites.filter(i => {
+      const email = (i.email || '').trim().toLowerCase()
+      return email && !activeMemberEmails.has(email)
+    })
+  }, [invites, activeMemberEmails])
+
+  const usedSeats = members.length + activePendingInvites.length
+  const isSeatLimitReached = typeof maxMembers === 'number' && usedSeats >= maxMembers
+
+  // Automatically clean up stale pending invites for members who have already joined
+  useEffect(() => {
+    if (!workspaceId || members.length === 0 || invites.length === 0) return
+    const memberEmails = new Set(members.map(m => (m.email || '').trim().toLowerCase()).filter(Boolean))
+    invites.forEach(inv => {
+      const invEmail = (inv.email || '').trim().toLowerCase()
+      if (invEmail && memberEmails.has(invEmail)) {
+        cancelInvite(workspaceId, inv.id, inv.email).catch(() => {})
+      }
+    })
+  }, [workspaceId, members, invites])
+
   if (isAdmin === false) {
     return <Navigate to={`/${workspaceId}`} replace />
   }
@@ -451,9 +477,25 @@ export default function Settings() {
     setInviteError('')
     setGeneratedLink('')
 
-    const capacity = checkMemberCapacity(planId, members.length + invites.length)
-    if (capacity.overCapacity) {
-      setInviteError(`Seat limit reached (${capacity.limit} members max for the ${planId} plan). Please upgrade to Scale to invite more members.`)
+    const cleanE = inviteEmail.trim().toLowerCase()
+    if (!cleanE) return
+
+    // 1. Prevent inviting someone who is already an active member
+    if (activeMemberEmails.has(cleanE)) {
+      setInviteError(`${inviteEmail.trim()} is already an active member of this workspace.`)
+      return
+    }
+
+    // 2. Prevent duplicate pending invites
+    if (activePendingInvites.some(i => (i.email || '').trim().toLowerCase() === cleanE)) {
+      setInviteError(`An active invitation has already been sent to ${inviteEmail.trim()}.`)
+      return
+    }
+
+    // 3. Seat capacity check
+    const capacity = checkMemberCapacity(planId, usedSeats)
+    if (capacity.overCapacity || (typeof maxMembers === 'number' && usedSeats >= maxMembers)) {
+      setInviteError(`Seat limit reached (${maxMembers} seats max for the ${planId.toUpperCase()} plan). Please upgrade to invite more members.`)
       return
     }
 
@@ -461,7 +503,6 @@ export default function Settings() {
     try {
       const res = await createInvite(workspaceId, inviteEmail, inviteRole, inviteRole === 'member' ? invitePermissions : [], invitePassword, inviteSendEmail)
       
-      const cleanE = inviteEmail.trim().toLowerCase()
       setInvites(prev => {
         const filtered = (prev || []).filter(i => (i.email || '').toLowerCase().trim() !== cleanE)
         return [...filtered, {
@@ -1497,7 +1538,7 @@ export default function Settings() {
 
                 {isAdminOrOwner && (
                   <div className="invite-box" style={{ marginTop: '24px' }}>
-                    {typeof maxMembers === 'number' && (members.length + invites.length) >= maxMembers ? (
+                    {isSeatLimitReached ? (
                       <div style={{
                         background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)',
                         border: '1px solid rgba(79, 70, 229, 0.2)',
@@ -1524,11 +1565,11 @@ export default function Settings() {
                               padding: '2px 8px',
                               borderRadius: '6px'
                             }}>
-                              {members.length + invites.length} / {maxMembers} filled
+                              {usedSeats} / {maxMembers} filled
                             </span>
                           </div>
                           <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary, #64748B)', lineHeight: 1.5 }}>
-                            You have used all {maxMembers} seats available on your current <strong>{planId.toUpperCase()}</strong> plan ({members.length} active member{members.length !== 1 ? 's' : ''}{invites.length > 0 ? `, ${invites.length} pending invite${invites.length !== 1 ? 's' : ''}` : ''}). To invite more team members, please upgrade your plan or free up a seat by canceling a pending invite or removing a member.
+                            You have used all {maxMembers} seats available on your current <strong>{planId.toUpperCase()}</strong> plan ({members.length} active member{members.length !== 1 ? 's' : ''}{activePendingInvites.length > 0 ? `, ${activePendingInvites.length} pending invite${activePendingInvites.length !== 1 ? 's' : ''}` : ''}). To invite more team members, please upgrade your plan or free up a seat by canceling a pending invite or removing a member.
                           </p>
                         </div>
                         <button
@@ -1554,7 +1595,7 @@ export default function Settings() {
                       <>
                         <h3>Invite Member</h3>
                         <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                          You have used {members.length + invites.length} of {maxMembers} seats available on your current plan ({members.length} active member{members.length !== 1 ? 's' : ''}{invites.length > 0 ? `, ${invites.length} pending invite${invites.length !== 1 ? 's' : ''}` : ''}).
+                          You have used {usedSeats} of {maxMembers} seats available on your current plan ({members.length} active member{members.length !== 1 ? 's' : ''}{activePendingInvites.length > 0 ? `, ${activePendingInvites.length} pending invite${activePendingInvites.length !== 1 ? 's' : ''}` : ''}).
                         </p>
                         <form onSubmit={handleCreateInvite} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
                           <div style={{ display: 'flex', gap: '12px' }}>
@@ -1622,12 +1663,12 @@ export default function Settings() {
                       </>
                     )}
 
-                    {invites.length > 0 && (
+                    {activePendingInvites.length > 0 && (
                       <div style={{ marginTop: '24px' }}>
                         <h4 style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase' }}>Pending Invites</h4>
                         <table className="members-table">
                           <tbody>
-                            {invites.map(inv => (
+                            {activePendingInvites.map(inv => (
                               <tr key={inv.id}>
                                 <td style={{ width: '40px' }}>
                                   <input 

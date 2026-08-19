@@ -426,6 +426,17 @@ export async function createInvite(workspaceId, email, role, permissions = [], p
   const inviterId = authData?.user?.id
   const cleanEmail = email.trim().toLowerCase()
 
+  // 1. Check if user is already an active workspace member
+  const { data: existingMembers } = await supabase
+    .from('workspace_members')
+    .select('user_id, users(email)')
+    .eq('workspace_id', workspaceId)
+
+  const isAlreadyMember = (existingMembers || []).some(m => (m.users?.email || '').trim().toLowerCase() === cleanEmail)
+  if (isAlreadyMember) {
+    throw new Error(`${cleanEmail} is already an active member of this workspace.`)
+  }
+
   try {
     await supabase.from('invites').delete().eq('workspace_id', workspaceId).eq('email', cleanEmail)
   } catch (e) {}
