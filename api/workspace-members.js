@@ -113,14 +113,15 @@ export default async function handler(req, res) {
       }
 
       if (action === 'update_role') {
+        const cleanRole = role === 'admin' ? 'admin' : 'member'
         const { error } = await supabaseAdmin
           .from('workspace_members')
-          .update({ role: role || 'member' })
+          .update({ role: cleanRole })
           .eq('workspace_id', workspaceId)
           .eq('user_id', memberId)
 
         if (error) throw error
-        return res.status(200).json({ success: true, role })
+        return res.status(200).json({ success: true, role: cleanRole })
       }
 
       if (action === 'cancel_invite' || action === 'delete_invite') {

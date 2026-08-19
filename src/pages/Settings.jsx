@@ -607,20 +607,31 @@ export default function Settings() {
   }
 
   const handleRoleChange = async (memberUid, currentRole, newRole) => {
-    if (currentRole === 'owner' && newRole !== 'owner' && ownerCount <= 1) {
-      setAlertMessage('Access violation: Cannot demote the primary workspace owner.')
+    if (!isOwner) {
+      setAlertMessage('Access denied: Only the workspace owner can modify member roles.')
       return
     }
+    if (currentRole === 'owner' || newRole === 'owner') {
+      setAlertMessage('Access violation: Workspace ownership is unique and cannot be modified.')
+      return
+    }
+    const cleanRole = newRole === 'admin' ? 'admin' : 'member'
     try {
-      await changeMemberRole(workspaceId, memberUid, newRole)
+      await changeMemberRole(workspaceId, memberUid, cleanRole)
+      setMembers(prev => prev.map(m => (m.id === memberUid || m.user_id === memberUid) ? { ...m, role: cleanRole } : m))
+      setAlertMessage(`Member role updated to ${cleanRole === 'admin' ? 'Admin' : 'Member'}.`)
     } catch (err) {
       setAlertMessage('Failed to change member role. Please try again.')
     }
   }
 
   const handleRemoveMember = (memberUid, role, memberEmail) => {
-    if (role === 'owner' && ownerCount <= 1) {
-      setAlertMessage('Access violation: Cannot remove the primary workspace owner.')
+    if (role === 'owner') {
+      setAlertMessage('Access violation: The primary workspace owner cannot be removed.')
+      return
+    }
+    if (role === 'admin' && !isOwner) {
+      setAlertMessage('Access violation: Only the workspace owner can remove administrators.')
       return
     }
     openConfirm({
@@ -814,14 +825,21 @@ export default function Settings() {
               <SettingsIcon />
               <span className="tooltip">General</span>
             </button>
-            {isAdminOrOwner && (
+            <button 
+              className={`settings-nav-item ${activeTab === 'members' ? 'settings-nav-item--active' : ''}`}
+              onClick={() => setActiveTab('members')}
+            >
+              <UsersIcon />
+              <span className="tooltip">Members</span>
+            </button>
+            {isOwner && (
               <>
                 <button 
-                  className={`settings-nav-item ${activeTab === 'security' ? 'settings-nav-item--active' : ''}`}
-                  onClick={() => setActiveTab('security')}
+                  className={`settings-nav-item ${activeTab === 'billing' ? 'settings-nav-item--active' : ''}`}
+                  onClick={() => setActiveTab('billing')}
                 >
-                  <ShieldIcon />
-                  <span className="tooltip">Security</span>
+                  <BillingIcon />
+                  <span className="tooltip">Billing & Payments</span>
                 </button>
                 <button 
                   className={`settings-nav-item ${activeTab === 'developer' ? 'settings-nav-item--active' : ''}`}
@@ -831,30 +849,20 @@ export default function Settings() {
                   <span className="tooltip">Developer</span>
                 </button>
                 <button 
-                  className={`settings-nav-item ${activeTab === 'billing' ? 'settings-nav-item--active' : ''}`}
-                  onClick={() => setActiveTab('billing')}
+                  className={`settings-nav-item ${activeTab === 'security' ? 'settings-nav-item--active' : ''}`}
+                  onClick={() => setActiveTab('security')}
                 >
-                  <BillingIcon />
-                  <span className="tooltip">Billing</span>
+                  <ShieldIcon />
+                  <span className="tooltip">Security</span>
+                </button>
+                <button 
+                  className={`settings-nav-item settings-nav-item--danger ${activeTab === 'danger' ? 'settings-nav-item--active' : ''}`}
+                  onClick={() => setActiveTab('danger')}
+                >
+                  <WarningIcon />
+                  <span className="tooltip">Danger Zone</span>
                 </button>
               </>
-            )}
-            <button 
-              className={`settings-nav-item ${activeTab === 'members' ? 'settings-nav-item--active' : ''}`}
-              onClick={() => setActiveTab('members')}
-            >
-              <UsersIcon />
-              <span className="tooltip">Members</span>
-            </button>
-            
-            {isOwner && (
-              <button 
-                className={`settings-nav-item settings-nav-item--danger ${activeTab === 'danger' ? 'settings-nav-item--active' : ''}`}
-                onClick={() => setActiveTab('danger')}
-              >
-                <WarningIcon />
-                <span className="tooltip">Danger Zone</span>
-              </button>
             )}
           </aside>
 
@@ -1045,7 +1053,7 @@ export default function Settings() {
               </div>
             )}
 
-            {activeTab === 'security' && isAdminOrOwner && (
+            {activeTab === 'security' && isOwner && (
               <div className="settings-section">
                 <h2>Security & Auditing</h2>
                 <form onSubmit={handleSaveAdvancedSettings} className="settings-form" style={{ marginTop: '20px' }}>
@@ -1118,7 +1126,7 @@ export default function Settings() {
               </div>
             )}
 
-            {activeTab === 'developer' && isAdminOrOwner && (
+            {activeTab === 'developer' && isOwner && (
               <div className="settings-section">
                 <h2>Developer & API Access</h2>
                 <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
@@ -1204,7 +1212,7 @@ export default function Settings() {
               </div>
             )}
 
-            {activeTab === 'billing' && isAdminOrOwner && (
+            {activeTab === 'billing' && isOwner && (
               <div className="settings-section">
                 <h2>Billing & Subscription</h2>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--surface-2, #EEF0F9)', padding: '18px 20px', borderRadius: '12px', border: '1px solid var(--border-soft, #EAECF6)' }}>
@@ -1366,16 +1374,41 @@ export default function Settings() {
                             {m.id === user?.uid && <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginLeft: '6px' }}>(You)</span>}
                           </td>
                           <td>
-                            <select
-                              value={m.role}
-                              onChange={(e) => handleRoleChange(m.id, m.role, e.target.value)}
-                              disabled={!isOwner || m.id === user?.uid}
-                              style={{ background: 'var(--bg-inset)', color: 'var(--text-primary)', border: '1px solid var(--border)', padding: '4px 8px', borderRadius: '4px' }}
-                            >
-                              <option value="owner">Owner</option>
-                              <option value="admin">Admin</option>
-                              <option value="member">Member</option>
-                            </select>
+                            {m.role === 'owner' ? (
+                              <span style={{
+                                fontSize: '11.5px',
+                                fontWeight: 700,
+                                padding: '4px 10px',
+                                borderRadius: '6px',
+                                background: 'rgba(79, 70, 229, 0.1)',
+                                color: 'var(--accent, #4F46E5)',
+                                border: '1px solid rgba(79, 70, 229, 0.25)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}>
+                                👑 Owner
+                              </span>
+                            ) : (
+                              <select
+                                value={m.role}
+                                onChange={(e) => handleRoleChange(m.id || m.user_id, m.role, e.target.value)}
+                                disabled={!isOwner}
+                                style={{
+                                  background: 'var(--bg-inset)',
+                                  color: 'var(--text-primary)',
+                                  border: '1px solid var(--border)',
+                                  padding: '4px 8px',
+                                  borderRadius: '4px',
+                                  cursor: isOwner ? 'pointer' : 'not-allowed',
+                                  opacity: isOwner ? 1 : 0.7
+                                }}
+                                title={isOwner ? 'Change member role' : 'Only workspace owner can change member roles'}
+                              >
+                                <option value="admin">Admin</option>
+                                <option value="member">Member</option>
+                              </select>
+                            )}
                           </td>
                           <td>
                             {['owner', 'admin'].includes(m.role) ? (
@@ -1523,7 +1556,7 @@ export default function Settings() {
                               <button
                                 className="btn-ghost btn-sm"
                                 style={{ color: 'var(--accent-critical)' }}
-                                disabled={!isAdminOrOwner || m.id === user?.uid || (m.role === 'owner' && !isOwner)}
+                                disabled={m.role === 'owner' || (m.role === 'admin' && !isOwner) || m.id === user?.uid || !isAdminOrOwner}
                                 onClick={() => handleRemoveMember(m.id || m.user_id, m.role, m.email)}
                               >
                                 Remove
