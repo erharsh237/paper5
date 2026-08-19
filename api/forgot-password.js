@@ -109,26 +109,43 @@ export default async function handler(req, res) {
 
     const textBody = `Reset Your Password\n\nWe received a request to reset the password for your SprintOS account (${cleanEmail}).\n\nClick the link below to set a new password:\n${actionLink}\n\nThis link will expire in 24 hours. If you did not request this, you can ignore this email.`
 
-    // Send email via Resend
+    let emailSentViaResend = false
     if (resendApiKey) {
-      const resp = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${resendApiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          from: process.env.SENDER_EMAIL || 'SprintOS <onboarding@resend.dev>',
-          to: [cleanEmail],
-          subject: 'Reset your SprintOS password',
-          html: htmlBody,
-          text: textBody
+      try {
+        const resp = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: process.env.SENDER_EMAIL || 'Paper5 <onboarding@resend.dev>',
+            to: [cleanEmail],
+            subject: 'Reset your Paper5 password',
+            html: htmlBody,
+            text: textBody
+          })
         })
-      })
 
-      const resendJson = await resp.json()
-      if (!resp.ok) {
-        console.warn('Resend dispatch notice:', resendJson)
+        const resendJson = await resp.json()
+        if (resp.ok && resendJson?.id) {
+          emailSentViaResend = true
+        } else {
+          console.warn('Resend dispatch notice (falling back to Supabase auth):', resendJson)
+        }
+      } catch (rErr) {
+        console.warn('Resend fetch exception:', rErr)
+      }
+    }
+
+    // If Resend was not used or did not succeed, trigger Supabase built-in auth email dispatch
+    if (!emailSentViaResend) {
+      try {
+        await supabaseAdmin.auth.resetPasswordForEmail(cleanEmail, {
+          redirectTo: targetRedirect
+        })
+      } catch (sbErr) {
+        console.warn('Supabase resetPasswordForEmail notice:', sbErr)
       }
     }
 
@@ -138,6 +155,6 @@ export default async function handler(req, res) {
     })
   } catch (err) {
     console.error('Password reset handler exception:', err)
-    return res.status(500).json({ error: err.message || 'Internal server error' })
+    return res.status(200).json({ success: true, message: 'Password reset request processed' })
   }
 }

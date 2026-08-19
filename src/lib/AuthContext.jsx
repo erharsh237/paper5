@@ -478,27 +478,24 @@ export function AuthProvider({ children }) {
 
   const resetPassword = async (email) => {
     const cleanEmail = (email || '').trim().toLowerCase()
-    try {
-      const resp = await fetch('/api/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cleanEmail })
-      })
-      const json = await resp.json().catch(() => ({}))
-      if (resp.ok) {
-        return { data: json, error: null }
-      }
-      throw new Error(json.error || 'Failed to send password reset email')
-    } catch (apiErr) {
-      console.warn('API forgot-password fallback:', apiErr.message)
-      const { data: sbData, error: sbErr } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
-        redirectTo: `${window.location.origin}/auth/action`,
-      })
-      if (sbErr && !sbErr.message?.toLowerCase().includes('not found')) {
-        return { data: null, error: sbErr }
-      }
-      return { data: { success: true }, error: null }
-    }
+    
+    // 1. Direct Supabase auth transactional reset email
+    const sbPromise = supabase.auth.resetPasswordForEmail(cleanEmail, {
+      redirectTo: `${window.location.origin}/auth/action`,
+    }).catch(err => {
+      console.warn('Supabase resetPasswordForEmail note:', err?.message)
+      return { error: err }
+    })
+
+    // 2. Vercel Serverless API for branded HTML email
+    const apiPromise = fetch('/api/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: cleanEmail })
+    }).then(r => r.json()).catch(() => ({}))
+
+    await Promise.allSettled([sbPromise, apiPromise])
+    return { data: { success: true }, error: null }
   }
 
   const logout = () => supabase.auth.signOut()
