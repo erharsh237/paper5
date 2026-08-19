@@ -112,8 +112,19 @@ export function subscribeDeadlines(workspaceId, teamIdOrCallback, callbackOrPage
   }
 }
 
+async function callDeadlineApi(action, payload) {
+  const res = await fetch('/api/deadlines', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, ...payload })
+  })
+  const json = await res.json()
+  if (!res.ok) throw new Error(json.error || 'Deadline action failed')
+  return json
+}
+
 export async function createDeadline(workspaceId, teamId, data) {
-  const { data: result, error } = await supabase.from('deadlines').insert([{
+  const insertPayload = {
     workspace_id: workspaceId,
     team_id: teamId,
     title: data.title,
@@ -135,39 +146,71 @@ export async function createDeadline(workspaceId, teamId, data) {
     labels: data.labels || [],
     definition_of_done: data.definitionOfDone || '',
     required_evidence: data.requiredEvidence || [],
-  }]).select()
-  if (error) throw error
-  notifyDeadlineChange()
-  return result[0]
+  }
+
+  try {
+    const { data: result, error } = await supabase.from('deadlines').insert([insertPayload]).select()
+    if (error) throw error
+    notifyDeadlineChange()
+    return result[0]
+  } catch (err) {
+    const res = await callDeadlineApi('create_deadline', {
+      workspaceId,
+      teamId,
+      deadlineData: data
+    })
+    notifyDeadlineChange()
+    return res.data
+  }
 }
 
 export async function updateDeadline(workspaceId, id, patch) {
-  const { error } = await supabase.from('deadlines').update(patch).eq('id', id).eq('workspace_id', workspaceId)
-  if (error) throw error
-  notifyDeadlineChange()
+  try {
+    const { error } = await supabase.from('deadlines').update(patch).eq('id', id).eq('workspace_id', workspaceId)
+    if (error) throw error
+    notifyDeadlineChange()
+  } catch (err) {
+    await callDeadlineApi('update_deadline', { workspaceId, id, patch })
+    notifyDeadlineChange()
+  }
 }
 
 export async function updateDeadlineStatus(workspaceId, id, status) {
   const patch = { status }
   if (status === 'done') patch.percent_complete = 100
   if (status === 'not_started') patch.percent_complete = 0
-  const { error } = await supabase.from('deadlines').update(patch).eq('id', id).eq('workspace_id', workspaceId)
-  if (error) throw error
-  notifyDeadlineChange()
+  try {
+    const { error } = await supabase.from('deadlines').update(patch).eq('id', id).eq('workspace_id', workspaceId)
+    if (error) throw error
+    notifyDeadlineChange()
+  } catch (err) {
+    await callDeadlineApi('update_status', { workspaceId, id, status })
+    notifyDeadlineChange()
+  }
 }
 
 export async function addExtraWork(workspaceId, deadlineId, { note, addedBy, addedByName }) {
-  const { data, error } = await supabase.from('extra_work').insert([{
-    workspace_id: workspaceId,
-    deadline_id: deadlineId,
-    note,
-    added_by: addedBy,
-    added_by_name: addedByName,
-    added_at: new Date().toISOString(),
-  }]).select()
-  if (error) throw error
-  notifyDeadlineChange()
-  return data[0]
+  try {
+    const { data, error } = await supabase.from('extra_work').insert([{
+      workspace_id: workspaceId,
+      deadline_id: deadlineId,
+      note,
+      added_by: addedBy,
+      added_by_name: addedByName,
+      added_at: new Date().toISOString(),
+    }]).select()
+    if (error) throw error
+    notifyDeadlineChange()
+    return data[0]
+  } catch (err) {
+    const res = await callDeadlineApi('add_extra_work', {
+      workspaceId,
+      id: deadlineId,
+      extraWorkData: { note, addedBy, addedByName }
+    })
+    notifyDeadlineChange()
+    return res.data
+  }
 }
 
 export function subscribeExtraWork(workspaceId, deadlineId, callback) {
@@ -194,15 +237,17 @@ export function subscribeExtraWork(workspaceId, deadlineId, callback) {
 }
 
 export async function submitForReview(workspaceId, id, { evidenceType, evidenceContent, repoName, submittedBy }) {
-  await supabase.from('evidence').insert([{
-    workspace_id: workspaceId,
-    deadline_id: id,
-    type: evidenceType,
-    content: evidenceContent,
-    repo_name: repoName || null,
-    submitted_by: (submittedBy || '').toLowerCase(),
-    submitted_at: new Date().toISOString(),
-  }])
+  try {
+    await supabase.from('evidence').insert([{
+      workspace_id: workspaceId,
+      deadline_id: id,
+      type: evidenceType,
+      content: evidenceContent,
+      repo_name: repoName || null,
+      submitted_by: (submittedBy || '').toLowerCase(),
+      submitted_at: new Date().toISOString(),
+    }])
+  } catch (_) {}
   await updateDeadlineStatus(workspaceId, id, 'review')
   notifyDeadlineChange()
 }
@@ -226,56 +271,90 @@ export function subscribeEvidence(workspaceId, deadlineId, callback) {
 }
 
 export async function approveReview(workspaceId, id, { reviewerEmail, reviewerName, reviewNote }) {
-  const { error } = await supabase.from('deadlines').update({
-    status: 'done',
-    reviewer_email: (reviewerEmail || '').toLowerCase(),
-    reviewer_name: reviewerName || '',
-    review_note: reviewNote || '',
-    percent_complete: 100,
-  }).eq('id', id).eq('workspace_id', workspaceId)
-  if (error) throw error
-  notifyDeadlineChange()
+  try {
+    const { error } = await supabase.from('deadlines').update({
+      status: 'done',
+      reviewer_email: (reviewerEmail || '').toLowerCase(),
+      reviewer_name: reviewerName || '',
+      review_note: reviewNote || '',
+      percent_complete: 100,
+    }).eq('id', id).eq('workspace_id', workspaceId)
+    if (error) throw error
+    notifyDeadlineChange()
+  } catch (err) {
+    await callDeadlineApi('approve_review', {
+      workspaceId,
+      id,
+      reviewData: { reviewerEmail, reviewerName, reviewNote }
+    })
+    notifyDeadlineChange()
+  }
 }
 
 export async function rejectReview(workspaceId, id, { reviewerEmail, reviewerName, reviewNote }) {
-  const { error } = await supabase.from('deadlines').update({
-    status: 'in_progress',
-    reviewer_email: (reviewerEmail || '').toLowerCase(),
-    reviewer_name: reviewerName,
-    review_note: reviewNote || '',
-  }).eq('id', id).eq('workspace_id', workspaceId)
-  if (error) throw error
-  notifyDeadlineChange()
+  try {
+    const { error } = await supabase.from('deadlines').update({
+      status: 'in_progress',
+      reviewer_email: (reviewerEmail || '').toLowerCase(),
+      reviewer_name: reviewerName,
+      review_note: reviewNote || '',
+    }).eq('id', id).eq('workspace_id', workspaceId)
+    if (error) throw error
+    notifyDeadlineChange()
+  } catch (err) {
+    await callDeadlineApi('reject_review', {
+      workspaceId,
+      id,
+      reviewData: { reviewerEmail, reviewerName, reviewNote }
+    })
+    notifyDeadlineChange()
+  }
 }
 
 export async function setBlocked(workspaceId, id, { category, reason, needHelpFrom, description }) {
-  const { error } = await supabase.from('deadlines').update({
-    status: 'blocked',
-    blocker_info: {
-      category: category || 'unknown',
-      reason,
-      needHelpFrom: needHelpFrom || '',
-      description: description || '',
-      blockedAt: new Date().toISOString(),
-    },
-  }).eq('id', id).eq('workspace_id', workspaceId)
-  if (error) throw error
-  notifyDeadlineChange()
+  const blockerInfo = {
+    category: category || 'unknown',
+    reason,
+    needHelpFrom: needHelpFrom || '',
+    description: description || '',
+    blockedAt: new Date().toISOString(),
+  }
+  try {
+    const { error } = await supabase.from('deadlines').update({
+      status: 'blocked',
+      blocker_info: blockerInfo,
+    }).eq('id', id).eq('workspace_id', workspaceId)
+    if (error) throw error
+    notifyDeadlineChange()
+  } catch (err) {
+    await callDeadlineApi('set_blocked', { workspaceId, id, blockerInfo })
+    notifyDeadlineChange()
+  }
 }
 
 export async function clearBlocked(workspaceId, id, nextStatus = 'in_progress') {
-  const { error } = await supabase.from('deadlines').update({
-    status: nextStatus,
-    blocker_info: null,
-  }).eq('id', id).eq('workspace_id', workspaceId)
-  if (error) throw error
-  notifyDeadlineChange()
+  try {
+    const { error } = await supabase.from('deadlines').update({
+      status: nextStatus,
+      blocker_info: null,
+    }).eq('id', id).eq('workspace_id', workspaceId)
+    if (error) throw error
+    notifyDeadlineChange()
+  } catch (err) {
+    await callDeadlineApi('clear_blocked', { workspaceId, id, status: nextStatus })
+    notifyDeadlineChange()
+  }
 }
 
 export async function deleteDeadline(workspaceId, id) {
-  const { error } = await supabase.from('deadlines').delete().eq('id', id).eq('workspace_id', workspaceId)
-  if (error) throw error
-  notifyDeadlineChange()
+  try {
+    const { error } = await supabase.from('deadlines').delete().eq('id', id).eq('workspace_id', workspaceId)
+    if (error) throw error
+    notifyDeadlineChange()
+  } catch (err) {
+    await callDeadlineApi('delete_deadline', { workspaceId, id })
+    notifyDeadlineChange()
+  }
 }
 
 import { subscribeWorkspaceMembers } from './workspaces'
