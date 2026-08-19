@@ -41,16 +41,8 @@ export default async function handler(req, res) {
       }
     })
 
-    if (!userProfile && linkErr) {
+    if (linkErr || !linkData?.properties) {
       return res.status(404).json({ error: 'No account found with this email address.' })
-    }
-
-    if (linkErr) {
-      if (linkErr.message?.toLowerCase().includes('not found') || linkErr.status === 400 || linkErr.status === 404) {
-        return res.status(404).json({ error: 'No account found with this email address.' })
-      }
-      console.error('generateLink error:', linkErr)
-      return res.status(400).json({ error: linkErr.message || 'Could not generate reset link' })
     }
 
     const tokenHash = linkData?.properties?.hashed_token

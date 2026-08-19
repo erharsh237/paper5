@@ -480,30 +480,27 @@ export function AuthProvider({ children }) {
     const cleanEmail = (email || '').trim().toLowerCase()
     setAuthError(null)
 
-    // 1. Direct Supabase Auth resetPasswordForEmail
-    const sbResult = await supabase.auth.resetPasswordForEmail(cleanEmail, {
-      redirectTo: `${window.location.origin}/auth/action`,
+    // 1. Verify existence and dispatch via serverless recovery function
+    const resp = await fetch('/api/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: cleanEmail })
     })
 
-    if (sbResult.error) {
-      const errText = sbResult.error.message || ''
-      if (errText.toLowerCase().includes('not found') || sbResult.error.status === 400 || sbResult.error.status === 404) {
-        const notFoundMsg = 'No account found with this email address.'
-        setAuthError(notFoundMsg)
-        return { data: null, error: new Error(notFoundMsg) }
-      }
+    const json = await resp.json().catch(() => ({}))
+
+    if (!resp.ok || json.error) {
+      const msg = json.error || 'No account found with this email address.'
+      setAuthError(msg)
+      return { data: null, error: new Error(msg) }
     }
 
-    // 2. Also trigger serverless API for branded email template
-    try {
-      await fetch('/api/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cleanEmail })
-      })
-    } catch (_) {}
+    // 2. Also trigger Supabase client auth mailer in background for verified accounts
+    supabase.auth.resetPasswordForEmail(cleanEmail, {
+      redirectTo: `${window.location.origin}/auth/action`,
+    }).catch(() => {})
 
-    return { data: { success: true }, error: null }
+    return { data: json, error: null }
   }
 
   const logout = () => supabase.auth.signOut()
