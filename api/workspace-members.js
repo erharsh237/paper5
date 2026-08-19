@@ -57,20 +57,38 @@ export default async function handler(req, res) {
       }
 
       if (action === 'update_permissions') {
-        const updatePayload = {
-          permissions: Array.isArray(permissions) ? permissions : []
-        }
-        const { error } = await supabaseAdmin
-          .from('workspace_members')
-          .update(updatePayload)
-          .eq('workspace_id', workspaceId)
-          .eq('user_id', memberId)
+        const cleanPerms = Array.isArray(permissions) ? permissions : []
 
-        if (error) {
-          // If column 'permissions' doesn't exist, try settings or ignore column error
-          console.warn('Update permissions notice:', error.message)
+        // 1. Persist to workspaces.settings.member_permissions (JSONB)
+        try {
+          const { data: ws } = await supabaseAdmin
+            .from('workspaces')
+            .select('settings')
+            .eq('id', workspaceId)
+            .maybeSingle()
+
+          const currentSettings = ws?.settings || {}
+          const memberPerms = { ...(currentSettings.member_permissions || {}) }
+          memberPerms[memberId] = cleanPerms
+
+          await supabaseAdmin
+            .from('workspaces')
+            .update({ settings: { ...currentSettings, member_permissions: memberPerms } })
+            .eq('id', workspaceId)
+        } catch (wsErr) {
+          console.warn('workspaces settings member_permissions update error:', wsErr.message)
         }
-        return res.status(200).json({ success: true, permissions: Array.isArray(permissions) ? permissions : [] })
+
+        // 2. Also attempt update on workspace_members table directly
+        try {
+          await supabaseAdmin
+            .from('workspace_members')
+            .update({ permissions: cleanPerms })
+            .eq('workspace_id', workspaceId)
+            .eq('user_id', memberId)
+        } catch (_) {}
+
+        return res.status(200).json({ success: true, permissions: cleanPerms })
       }
 
       if (action === 'delete_member' || action === 'remove_member') {
@@ -235,19 +253,33 @@ export default async function handler(req, res) {
       }
     }
 
+    // Fetch workspace settings to retrieve member_permissions map
+    let memberPermsMap = {}
+    try {
+      const { data: wsData } = await supabaseAdmin
+        .from('workspaces')
+        .select('settings')
+        .eq('id', workspaceId)
+        .maybeSingle()
+      if (wsData?.settings?.member_permissions) {
+        memberPermsMap = wsData.settings.member_permissions
+      }
+    } catch (_) {}
+
     // Build enriched member records
     const enrichedMembers = (members || []).map(m => {
       const u = userDetailsMap.get(m.user_id) || {}
       const email = u.email || m.email || null
       const fullName = u.full_name || m.full_name || null
       const displayLabel = fullName || email || (email ? email.split('@')[0] : `Member (${(m.user_id || '').slice(0, 6)})`)
+      const perms = memberPermsMap[m.user_id] || (Array.isArray(m.permissions) ? m.permissions : [])
 
       return {
         id: m.user_id,
         userId: m.user_id,
         workspaceId: m.workspace_id,
         role: m.role || 'member',
-        permissions: Array.isArray(m.permissions) ? m.permissions : [],
+        permissions: Array.isArray(perms) ? perms : [],
         email: email,
         name: fullName || email || displayLabel,
         fullName: fullName,

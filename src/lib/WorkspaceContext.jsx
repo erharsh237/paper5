@@ -108,6 +108,12 @@ export function WorkspaceProvider({ children }) {
       let myRole = memberResult?.data?.role || null
       let myPerms = []
 
+      // Extract direct permissions from workspace settings
+      if (wsData?.settings?.member_permissions) {
+        const directPerms = wsData.settings.member_permissions[user.id] || wsData.settings.member_permissions[user.email?.toLowerCase()]
+        if (Array.isArray(directPerms)) myPerms = directPerms
+      }
+
       // Query serverless API to ensure accurate enriched permissions and verify membership
       try {
         const memResp = await fetch(`/api/workspace-members?workspaceId=${encodeURIComponent(workspaceId)}`)
@@ -115,9 +121,11 @@ export function WorkspaceProvider({ children }) {
           const memJson = await memResp.json()
           const myMember = (memJson?.members || []).find(m => m.id === user.id || m.email?.toLowerCase() === user.email?.toLowerCase())
           if (myMember) {
-            myRole = myMember.role || 'member'
-            if (Array.isArray(myMember.permissions)) myPerms = myMember.permissions
-          } else {
+            myRole = myMember.role || myRole || 'member'
+            if (Array.isArray(myMember.permissions) && myMember.permissions.length > 0) {
+              myPerms = myMember.permissions
+            }
+          } else if (!myRole && wsData && wsData.owner_id !== user.id && wsData.created_by !== user.id) {
             // Not in workspace members list
             myRole = null
           }
@@ -125,7 +133,7 @@ export function WorkspaceProvider({ children }) {
       } catch (_) {}
 
       // If user is workspace owner directly
-      if (!myRole && wsData && wsData.owner_id === user.id) {
+      if (!myRole && wsData && (wsData.owner_id === user.id || wsData.created_by === user.id)) {
         myRole = 'owner'
       }
 

@@ -186,21 +186,31 @@ export function subscribeWorkspaceMembers(workspaceId, callback) {
 
       // 2. Direct client query fallback
       try {
-        const { data, error } = await supabase
-          .from('workspace_members')
-          .select(`
-            user_id,
-            role,
-            joined_at,
-            users ( id, email, full_name, avatar_url )
-          `)
-          .eq('workspace_id', workspaceId)
+        const [{ data, error }, { data: wsData }] = await Promise.all([
+          supabase
+            .from('workspace_members')
+            .select(`
+              user_id,
+              role,
+              joined_at,
+              users ( id, email, full_name, avatar_url )
+            `)
+            .eq('workspace_id', workspaceId),
+          supabase
+            .from('workspaces')
+            .select('settings')
+            .eq('id', workspaceId)
+            .maybeSingle()
+        ])
+
+        const memberPermsMap = wsData?.settings?.member_permissions || {}
 
         if (!error && data && isSubscribed) {
           const mapped = data.map(row => {
             const usersJoin = row.users
             const email = usersJoin?.email || null
             const fullName = usersJoin?.full_name || null
+            const perms = memberPermsMap[row.user_id] || (Array.isArray(row.permissions) ? row.permissions : [])
             return {
               id: row.user_id,
               userId: row.user_id,
@@ -209,7 +219,7 @@ export function subscribeWorkspaceMembers(workspaceId, callback) {
               fullName,
               avatarUrl: usersJoin?.avatar_url || null,
               role: row.role || 'member',
-              permissions: [],
+              permissions: Array.isArray(perms) ? perms : [],
               joinedAt: row.joined_at
             }
           })
@@ -467,6 +477,23 @@ export async function createInvite(workspaceId, email, role, permissions = [], p
 }
 
 export async function updateMemberPermissions(workspaceId, userId, permissions) {
+  const cleanPerms = Array.isArray(permissions) ? permissions : []
+
+  // 1. Direct client update on workspaces settings (instant RLS or authenticated user persistence)
+  try {
+    const { data: ws } = await supabase.from('workspaces').select('settings').eq('id', workspaceId).maybeSingle()
+    if (ws?.settings) {
+      const currentPermsMap = { ...(ws.settings.member_permissions || {}) }
+      currentPermsMap[userId] = cleanPerms
+      await supabase.from('workspaces').update({
+        settings: { ...ws.settings, member_permissions: currentPermsMap }
+      }).eq('id', workspaceId)
+    }
+  } catch (clientErr) {
+    console.warn('Direct client permissions update notice:', clientErr)
+  }
+
+  // 2. Serverless API update (runs as service admin to bypass RLS and persist)
   try {
     const res = await fetch('/api/workspace-members', {
       method: 'POST',
@@ -475,14 +502,21 @@ export async function updateMemberPermissions(workspaceId, userId, permissions) 
         action: 'update_permissions',
         workspaceId,
         memberId: userId,
-        permissions: Array.isArray(permissions) ? permissions : []
+        permissions: cleanPerms
       })
     })
     const json = await res.json()
     if (!res.ok) throw new Error(json.error || 'Failed to update permissions')
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sprintos:data-sync'))
+    }
     return json
   } catch (err) {
     console.warn('updateMemberPermissions API error:', err.message)
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sprintos:data-sync'))
+    }
   }
 }
 
