@@ -28,3 +28,39 @@ export async function sendDeadlineEmail({
 
   return emailjs.send(SERVICE_ID, TEMPLATE_ID, params, { publicKey: PUBLIC_KEY })
 }
+
+export async function sendBlockerEmail({
+  workspaceId,
+  workspaceName,
+  deadlineTitle,
+  deadlineId,
+  blockedBy,
+  blockedByName,
+  reason,
+  category,
+  description,
+  helperEmails,
+}) {
+  try {
+    const res = await fetch('/api/send-blocker-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        workspaceId,
+        workspaceName,
+        deadlineTitle,
+        deadlineId,
+        blockedBy,
+        blockedByName,
+        reason,
+        category,
+        description,
+        helperEmails,
+        appUrl: typeof window !== 'undefined' ? `${window.location.origin}/${workspaceId}` : `https://app.paper5.co/${workspaceId}`
+      })
+    })
+    return await res.json()
+  } catch (err) {
+    console.warn('sendBlockerEmail API error:', err)
+  }
+}
