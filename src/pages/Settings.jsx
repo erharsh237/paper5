@@ -1717,10 +1717,34 @@ export default function Settings() {
                                 <td><span style={{ fontSize: '11px', textTransform: 'uppercase', background: 'var(--bg-layer-2)', padding: '2px 6px', borderRadius: '4px' }}>{inv.role}</span></td>
                                 <td>
                                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', alignItems: 'center' }}>
-                                    {inv.role === 'member' && (inv.permissions || []).map(p => {
-                                      const pDef = AVAILABLE_PERMISSIONS.find(ap => ap.id === p);
-                                      return <span key={p} style={{ fontSize: '10px', background: 'var(--bg-layer-2)', padding: '2px 6px', borderRadius: '4px', color: 'var(--text-secondary)' }}>{pDef ? pDef.label : p}</span>
-                                    })}
+                                    {inv.role === 'member' && (() => {
+                                      const activePerms = AVAILABLE_PERMISSIONS.filter(ap =>
+                                        ap.keys.some(k => (inv.permissions || []).includes(k)) ||
+                                        (inv.permissions || []).includes(ap.id)
+                                      )
+                                      if (activePerms.length === 0) {
+                                        return (
+                                          <span style={{ fontSize: '11px', color: 'var(--text-secondary, #6E7091)' }}>
+                                            View tasks
+                                          </span>
+                                        )
+                                      }
+                                      return activePerms.map(ap => (
+                                        <span
+                                          key={ap.id}
+                                          style={{
+                                            fontSize: '10.5px',
+                                            fontWeight: 600,
+                                            background: 'var(--accent-dim, #E8E6FB)',
+                                            padding: '2px 8px',
+                                            borderRadius: '6px',
+                                            color: 'var(--accent, #4F46E5)'
+                                          }}
+                                        >
+                                          {ap.label}
+                                        </span>
+                                      ))
+                                    })()}
                                   </div>
                                 </td>
                                 <td>
