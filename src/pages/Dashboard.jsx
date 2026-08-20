@@ -20,7 +20,7 @@ import './Dashboard.css'
 const TEAM_ID = 'default-team'
 
 export default function Dashboard() {
-  const { workspaceId, workspace, workspaceRole, canAddKanbanItems } = useWorkspace()
+  const { workspaceId, workspace, workspaceRole, isAdmin, isOwner, canAddKanbanItems } = useWorkspace()
   const { user } = useAuth()
   const { deadlines, hasMore, loadMore, loadingMore } = useDeadlines(workspaceId, undefined)
   const [members, setMembers] = useState([])
@@ -47,7 +47,7 @@ export default function Dashboard() {
     const [y, m] = reportMonth.split('-').map(Number)
     setGeneratingReport(true)
     try {
-      await downloadMonthlyReport(deadlines, members, { year: y, month: m - 1 })
+      await downloadMonthlyReport(deadlines, members, { year: y, month: m - 1, workspace, sprints })
     } finally {
       setGeneratingReport(false)
     }
@@ -1090,21 +1090,25 @@ export default function Dashboard() {
           </div>
 
           <div className="dash-controls-right">
-            <input
-              type="month"
-              className="dash-filter-select"
-              value={reportMonth}
-              onChange={(e) => setReportMonth(e.target.value)}
-              title="Select report month"
-            />
-            <button
-              className="btn-ghost btn-sm"
-              onClick={handleDownloadReport}
-              disabled={generatingReport}
-              style={{ borderRadius: '8px', border: '1px solid var(--border-soft)', padding: '7px 12px', fontSize: '12.5px' }}
-            >
-              {generatingReport ? 'Generating…' : '↓ Report'}
-            </button>
+            {(isAdmin || isOwner) && (
+              <>
+                <input
+                  type="month"
+                  className="dash-filter-select"
+                  value={reportMonth}
+                  onChange={(e) => setReportMonth(e.target.value)}
+                  title="Select report month"
+                />
+                <button
+                  className="btn-ghost btn-sm"
+                  onClick={handleDownloadReport}
+                  disabled={generatingReport}
+                  style={{ borderRadius: '8px', border: '1px solid var(--border-soft)', padding: '7px 12px', fontSize: '12.5px' }}
+                >
+                  {generatingReport ? 'Generating…' : '↓ Report'}
+                </button>
+              </>
+            )}
             {canAddKanbanItems && (
               <button
                 type="button"
