@@ -284,6 +284,8 @@ export function subscribeWorkspaceMembers(workspaceId, callback) {
   }
 }
 
+export const subscribeMembers = subscribeWorkspaceMembers
+
 export function subscribeInvites(workspaceId, callback) {
   if (!workspaceId) {
     if (typeof callback === 'function') callback([])
