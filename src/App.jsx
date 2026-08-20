@@ -73,14 +73,14 @@ function PageLoading() {
       alignItems: 'center',
       justifyContent: 'center',
       gap: '16px',
-      background: 'var(--bg-layer-1, #09090b)',
-      color: 'var(--text-primary, #ffffff)',
+      background: 'var(--bg-void, #ffffff)',
+      color: 'var(--text-primary, #000000)',
     }}>
       <Cardio
         size="46"
         stroke="3.5"
         speed="1.8"
-        color="#10b981"
+        color="var(--accent-signal, #000000)"
       />
     </div>
   )

@@ -39,16 +39,16 @@ export default function InitialPreloader({ children }) {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '16px',
-            background: 'var(--bg-surface, #ffffff)',
-            color: 'var(--text-primary, #111827)',
+            background: 'var(--bg-void, #ffffff)',
+            color: 'var(--text-primary, #000000)',
             transition: 'opacity 0.35s ease, visibility 0.35s ease',
             opacity: fadingOut ? 0 : 1,
             pointerEvents: fadingOut ? 'none' : 'all',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
-            <span style={{ fontFamily: 'var(--mono, monospace)', fontWeight: 700, fontSize: '16px', letterSpacing: '-0.02em', color: 'var(--text-primary, #111827)' }}>
+            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#000000', display: 'inline-block' }} />
+            <span style={{ fontFamily: 'var(--mono, monospace)', fontWeight: 700, fontSize: '16px', letterSpacing: '-0.02em', color: 'var(--text-primary, #000000)' }}>
               Paper5 <span style={{ opacity: 0.6, fontWeight: 400 }}>| SprintOS</span>
             </span>
           </div>
@@ -57,10 +57,10 @@ export default function InitialPreloader({ children }) {
             size="50"
             stroke="4"
             speed="2"
-            color="var(--accent-signal, #10b981)"
+            color="var(--accent-signal, #000000)"
           />
 
-          <span style={{ fontFamily: 'var(--mono, monospace)', fontSize: '11px', color: 'var(--text-tertiary, #6b7280)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '4px' }}>
+          <span style={{ fontFamily: 'var(--mono, monospace)', fontSize: '11px', color: 'var(--text-tertiary, #52525b)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '4px' }}>
             Loading Workspace...
           </span>
         </div>
