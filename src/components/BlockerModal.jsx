@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { setBlocked } from '../lib/deadlines'
 import { createNotification, NOTIFICATION_TYPES } from '../lib/notifications'
@@ -18,6 +18,19 @@ export default function BlockerModal({ deadline, currentUser, onClose }) {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const dropdownRef = useRef(null)
+
+  const myEmail = (currentUser?.email || '').trim().toLowerCase()
+  const myUid = currentUser?.uid || currentUser?.id
+
+  const availableMembers = useMemo(() => {
+    return (members || []).filter(m => {
+      const email = (m.email || '').trim().toLowerCase()
+      const id = m.id || m.userId
+      if (email && myEmail && email === myEmail) return false
+      if (id && myUid && id === myUid) return false
+      return true
+    })
+  }, [members, myEmail, myUid])
 
   useEffect(() => {
     if (!workspaceId) return
@@ -238,12 +251,12 @@ export default function BlockerModal({ deadline, currentUser, onClose }) {
                   padding: '6px'
                 }}
               >
-                {members.length === 0 ? (
+                {availableMembers.length === 0 ? (
                   <div style={{ padding: '10px', fontSize: '12px', color: 'var(--text-tertiary, #64748B)', textAlign: 'center' }}>
-                    No other team members found
+                    No other team members found in workspace
                   </div>
                 ) : (
-                  members.map(m => {
+                  availableMembers.map(m => {
                     const email = (m.email || '').trim().toLowerCase()
                     if (!email) return null
                     const isSelected = selectedHelperEmails.includes(email)
