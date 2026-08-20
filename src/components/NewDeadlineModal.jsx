@@ -21,7 +21,7 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, s
 
   const isSprintOpen = (s) => s && s.status !== 'completed' && s.status !== 'closed' && (s.status === 'active' || s.status === 'planning')
 
-  const [assigneeId, setAssigneeId] = useState(defaultMember?.id || '')
+  const [assigneeId, setAssigneeId] = useState('unassigned')
   const [selectedSprintId, setSelectedSprintId] = useState((activeSprint && isSprintOpen(activeSprint)) ? activeSprint.id : '')
   const [loadedSprints, setLoadedSprints] = useState(Array.isArray(sprints) ? sprints.filter(isSprintOpen) : [])
   const [dueDate, setDueDate] = useState('')
@@ -31,12 +31,6 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, s
   const [submitting, setSubmitting] = useState(false)
   const [emailStatus, setEmailStatus] = useState(null) // null | 'sending' | 'sent' | 'failed' | 'skipped'
   const [error, setError] = useState('')
-
-  useEffect(() => {
-    if (!assigneeId && defaultMember?.id) {
-      setAssigneeId(defaultMember.id)
-    }
-  }, [defaultMember, assigneeId])
 
   useEffect(() => {
     if (sprints && sprints.length > 0) {
