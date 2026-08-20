@@ -237,7 +237,7 @@ export function WorkspaceProvider({ children }) {
     userPermissions,
     loadingWorkspace,
     workspaceError,
-    isAdmin: isAdminOrOwner || canManageSettings,
+    isAdmin: isAdminOrOwner,
     isOwner: workspaceRole === 'owner',
     hasPermission,
     canAddKanbanItems,

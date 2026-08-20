@@ -107,7 +107,7 @@ function WarningIcon() {
 }
 
 export default function Settings() {
-  const { workspaceId, workspace, isAdmin, isOwner } = useWorkspace()
+  const { workspaceId, workspace, isAdmin, isOwner, canManageSettings } = useWorkspace()
   const { user, userData, updateUserData } = useAuth()
   
   const [activeTab, setActiveTab] = useState('general')
@@ -392,7 +392,7 @@ export default function Settings() {
     }
   }, [workspaceId, user?.uid])
 
-  const isAdminOrOwner = isAdmin || isOwner
+  const isAdminOrOwner = isAdmin || isOwner || canManageSettings
 
   useEffect(() => {
     if (activeTab === 'developer' && isAdminOrOwner) {
@@ -429,7 +429,7 @@ export default function Settings() {
     })
   }, [workspaceId, members, invites])
 
-  if (isAdmin === false) {
+  if (!isAdmin && !isOwner && !canManageSettings) {
     return <Navigate to={`/${workspaceId}`} replace />
   }
 

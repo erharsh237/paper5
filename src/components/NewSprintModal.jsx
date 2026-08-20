@@ -3,7 +3,7 @@ import { createSprint, setActiveSprint } from '../lib/sprints'
 import { useWorkspace } from '../lib/WorkspaceContext'
 
 export default function NewSprintModal({ currentUser, existingCount, onClose }) {
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, canAddKanbanItems } = useWorkspace();
   const [number, setNumber] = useState((existingCount || 0) + 1)
   const [goal, setGoal] = useState('')
   const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10))
@@ -19,6 +19,9 @@ export default function NewSprintModal({ currentUser, existingCount, onClose }) 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
+    if (canAddKanbanItems === false) {
+      return setError('Permission Denied: You do not have permission to create sprints in this workspace.')
+    }
     if (!startDate || !endDate) return setError('Both start and end dates must be specified to initialize a sprint.')
     if (new Date(endDate) < new Date(startDate)) return setError('The sprint end date must chronologically follow the start date.')
 

@@ -14,7 +14,7 @@ function LogOutIcon() { return <svg {...iconProps()}><path d="M9 21H5a2 2 0 0 1-
 
 export default function UserMenu() {
   const { user, logout } = useAuth()
-  const { workspaceId, isAdmin } = useWorkspace()
+  const { workspaceId, isAdmin, canManageSettings } = useWorkspace()
   const [open, setOpen] = useState(false)
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
   const wrapRef = useRef(null)
@@ -112,15 +112,16 @@ export default function UserMenu() {
               <ProfileIcon /> Profile
             </NavLink>
 
+            {(isAdmin || canManageSettings) && (
+              <NavLink to={getPath('/settings')} className={({ isActive }) => `nav-more-item${isActive ? ' nav-more-item--active' : ''}`} onClick={() => setOpen(false)}>
+                <SettingsIcon /> Settings
+              </NavLink>
+            )}
+
             {isAdmin && (
-              <>
-                <NavLink to={getPath('/settings')} className={({ isActive }) => `nav-more-item${isActive ? ' nav-more-item--active' : ''}`} onClick={() => setOpen(false)}>
-                  <SettingsIcon /> Settings
-                </NavLink>
-                <NavLink to={getPath('/integrations')} className={({ isActive }) => `nav-more-item${isActive ? ' nav-more-item--active' : ''}`} onClick={() => setOpen(false)}>
-                  <IntegrationsIcon /> Integrations
-                </NavLink>
-              </>
+              <NavLink to={getPath('/integrations')} className={({ isActive }) => `nav-more-item${isActive ? ' nav-more-item--active' : ''}`} onClick={() => setOpen(false)}>
+                <IntegrationsIcon /> Integrations
+              </NavLink>
             )}
 
             {workspaces.length > 1 && (
