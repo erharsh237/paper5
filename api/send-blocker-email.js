@@ -100,9 +100,16 @@ export default async function handler(req, res) {
           body: JSON.stringify({
             from: senderEmail,
             to: [email],
+            reply_to: process.env.REPLY_TO_EMAIL || 'support@paper5.co',
             subject: subject,
             html: htmlBody,
             text: textBody,
+            headers: {
+              'X-Entity-Ref-ID': `blk-${deadlineId}-${Date.now()}`,
+              'List-Unsubscribe': '<mailto:support@paper5.co?subject=unsubscribe>',
+              'X-Auto-Response-Suppress': 'OOF, AutoReply',
+              'X-Mailer': 'SprintOS-Notification-Engine'
+            }
           })
         })
         if (resp.ok) sentCount++

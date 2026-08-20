@@ -25,40 +25,48 @@ export default async function handler(req, res) {
 
   const htmlBody = `
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Workspace Invitation</title>
       <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f9fafb; color: #111827; margin: 0; padding: 24px; }
-        .container { max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 32px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
-        .title { font-size: 20px; font-weight: 700; color: #111827; margin: 0 0 16px 0; }
-        .card { background: #f3f4f6; border-radius: 8px; padding: 16px; margin: 20px 0; border: 1px solid #e5e7eb; }
-        .field { font-size: 13px; color: #4b5563; margin-bottom: 6px; }
-        .value { font-size: 15px; font-weight: 600; color: #111827; font-family: monospace; }
-        .btn { display: inline-block; background: #10b981; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-top: 16px; }
-        .footer { font-size: 12px; color: #9ca3af; margin-top: 32px; border-top: 1px solid #e5e7eb; padding-top: 16px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #0f172a; margin: 0; padding: 24px; }
+        .container { max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 32px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .title { font-size: 20px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0; }
+        .card { background: #f8fafc; border-radius: 8px; padding: 16px; margin: 20px 0; border: 1px solid #e2e8f0; }
+        .field { font-size: 12px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; font-weight: 600; }
+        .value { font-size: 14px; font-weight: 600; color: #0f172a; }
+        .btn { display: inline-block; background: #4f46e5; color: #ffffff !important; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-top: 16px; }
+        .footer { font-size: 12px; color: #94a3b8; margin-top: 32px; border-top: 1px solid #f1f5f9; padding-top: 16px; }
       </style>
     </head>
     <body>
+      <div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">
+        You have been invited to join ${workspaceName || 'a workspace'} on SprintOS. Accept your invitation to collaborate with your team.
+      </div>
       <div class="container">
-        <h2 class="title">Workspace Invitation 🚀</h2>
-        <p>You have been invited to join <strong>${workspaceName || 'Workspace'}</strong> as a <strong>${role || 'Member'}</strong> on SprintOS.</p>
+        <h2 class="title">Workspace Invitation</h2>
+        <p style="font-size: 14px; line-height: 1.5; color: #334155;">
+          You have been invited to join <strong>${workspaceName || 'Workspace'}</strong> as a <strong>${role || 'Member'}</strong> on SprintOS.
+        </p>
         
         <div class="card">
-          <div class="field">Invited Email:</div>
-          <div class="value" style="margin-bottom: 8px;">${cleanEmail}</div>
-          <div class="field">Assigned Role:</div>
+          <div class="field">Invited Email</div>
+          <div class="value" style="margin-bottom: 12px;">${cleanEmail}</div>
+          <div class="field">Assigned Role</div>
           <div class="value">${role || 'Member'}</div>
         </div>
 
-        <p>Click below to verify your email address, set up your password, and join the workspace:</p>
+        <p style="font-size: 14px; line-height: 1.5; color: #334155;">
+          Click below to verify your email address, set up your password, and join the workspace:
+        </p>
 
-        <a href="${targetJoinUrl}" class="btn">Accept Invitation & Join Workspace &rarr;</a>
+        <a href="${targetJoinUrl}" class="btn" style="color: #ffffff;">Accept Invitation & Join Workspace &rarr;</a>
 
         <div class="footer">
           If you did not expect this invitation, you can safely ignore this email.<br>
-          Powered by SprintOS Technologies.
+          SprintOS Technologies · <a href="https://app.paper5.co" style="color: #64748b; text-decoration: underline;">app.paper5.co</a>
         </div>
       </div>
     </body>
@@ -87,13 +95,17 @@ export default async function handler(req, res) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: process.env.SENDER_EMAIL || 'SprintOS <onboarding@resend.dev>',
+          from: process.env.SENDER_EMAIL || 'SprintOS <no-reply@paper5.co>',
           to: [cleanEmail],
+          reply_to: process.env.REPLY_TO_EMAIL || 'support@paper5.co',
           subject: subject,
           html: htmlBody,
           text: textBody,
           headers: {
-            'X-Entity-Ref-ID': `inv-${Date.now()}`
+            'X-Entity-Ref-ID': `inv-${Date.now()}`,
+            'List-Unsubscribe': '<mailto:support@paper5.co?subject=unsubscribe>',
+            'X-Auto-Response-Suppress': 'OOF, AutoReply',
+            'X-Mailer': 'SprintOS-Notification-Engine'
           }
         })
       })
