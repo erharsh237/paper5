@@ -503,8 +503,9 @@ export async function createInvite(workspaceId, email, role, permissions = [], p
   return { ...(insertedData || {}), success: true, emailStatus }
 }
 
-export async function updateMemberPermissions(workspaceId, userId, permissions) {
+export async function updateMemberPermissions(workspaceId, userId, permissions, email = null) {
   const cleanPerms = Array.isArray(permissions) ? permissions : []
+  const cleanEmail = email ? email.trim().toLowerCase() : null
 
   // 1. Direct client update on workspaces settings (instant RLS or authenticated user persistence)
   try {
@@ -512,6 +513,7 @@ export async function updateMemberPermissions(workspaceId, userId, permissions) 
     if (ws?.settings) {
       const currentPermsMap = { ...(ws.settings.member_permissions || {}) }
       currentPermsMap[userId] = cleanPerms
+      if (cleanEmail) currentPermsMap[cleanEmail] = cleanPerms
       await supabase.from('workspaces').update({
         settings: { ...ws.settings, member_permissions: currentPermsMap }
       }).eq('id', workspaceId)
@@ -529,6 +531,7 @@ export async function updateMemberPermissions(workspaceId, userId, permissions) 
         action: 'update_permissions',
         workspaceId,
         memberId: userId,
+        email: cleanEmail,
         permissions: cleanPerms
       })
     })

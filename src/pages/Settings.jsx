@@ -1488,7 +1488,7 @@ export default function Settings() {
                                                 setMembers(prev => prev.map(member => member.id === m.id ? { ...member, permissions: nextPerms } : member))
                                                 
                                                 // Save to serverless API
-                                                await updateMemberPermissions(workspaceId, m.id, nextPerms)
+                                                await updateMemberPermissions(workspaceId, m.id || m.userId, nextPerms, m.email)
                                               }}
                                             />
                                             <span>{ap.label}</span>

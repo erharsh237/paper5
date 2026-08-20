@@ -68,6 +68,7 @@ export default async function handler(req, res) {
 
       if (action === 'update_permissions') {
         const cleanPerms = Array.isArray(permissions) ? permissions : []
+        const memberEmail = body.email ? body.email.trim().toLowerCase() : null
 
         // 1. Persist to workspaces.settings.member_permissions (JSONB)
         try {
@@ -80,6 +81,19 @@ export default async function handler(req, res) {
           const currentSettings = ws?.settings || {}
           const memberPerms = { ...(currentSettings.member_permissions || {}) }
           memberPerms[memberId] = cleanPerms
+          if (memberEmail) {
+            memberPerms[memberEmail] = cleanPerms
+          }
+
+          // Also look up email if not directly provided
+          if (!memberEmail) {
+            try {
+              const { data: uData } = await supabaseAdmin.from('users').select('email').eq('id', memberId).maybeSingle()
+              if (uData?.email) {
+                memberPerms[uData.email.trim().toLowerCase()] = cleanPerms
+              }
+            } catch (_) {}
+          }
 
           await supabaseAdmin
             .from('workspaces')
