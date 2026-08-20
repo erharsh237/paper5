@@ -334,7 +334,7 @@ export default function Meeting() {
         </div>
 
         {activeSprint && (
-          <ReflectionPanel teamId={TEAM_ID} sprint={activeSprint} currentUser={user} members={members} />
+          <ReflectionPanel sprint={activeSprint} currentUser={user} members={members} />
         )}
       </main>
 
