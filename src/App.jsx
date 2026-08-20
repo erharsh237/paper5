@@ -72,16 +72,27 @@ function PageLoading() {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: '16px',
-      background: 'var(--bg-void, #ffffff)',
-      color: 'var(--text-primary, #000000)',
+      gap: '14px',
+      background: '#ffffff',
+      color: '#000000',
     }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#000000', display: 'inline-block' }} />
+        <span style={{ fontFamily: 'var(--mono, "JetBrains Mono", monospace)', fontWeight: 700, fontSize: '15px', letterSpacing: '-0.02em', color: '#000000' }}>
+          Paper5 <span style={{ opacity: 0.6, fontWeight: 400 }}>| SprintOS</span>
+        </span>
+      </div>
+
       <Cardio
-        size="46"
+        size="48"
         stroke="3.5"
-        speed="1.8"
-        color="var(--accent-signal, #000000)"
+        speed="2"
+        color="#d1d5db"
       />
+
+      <span style={{ fontFamily: 'var(--mono, "JetBrains Mono", monospace)', fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.12em', marginTop: '2px' }}>
+        LOADING WORKSPACE...
+      </span>
     </div>
   )
 }
