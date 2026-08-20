@@ -304,7 +304,6 @@ export default function Dashboard() {
     }
   }, [deadlines, timeRange])
 
-  const isAdmin = workspaceRole === 'owner' || workspaceRole === 'admin'
   const activeWf = getWorkflowById(workspace?.settings?.agile_workflow || 'scrum')
 
   const userFirstName = useMemo(() => {
