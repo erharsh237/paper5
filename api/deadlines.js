@@ -68,6 +68,7 @@ export default async function handler(req, res) {
         assignee_id: user?.id || user?.uid || null,
         assignee_name: user?.displayName || user?.name || (user?.email ? user.email.split('@')[0] : 'Member'),
         assignee_email: (user?.email || '').toLowerCase(),
+        status: 'in_progress',
       }
       const { data, error } = await supabaseAdmin
         .from('deadlines')

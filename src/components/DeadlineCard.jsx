@@ -209,6 +209,7 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
                 onClick={async (e) => {
                   e.stopPropagation()
                   setClaiming(true)
+                  setDraftStatus('in_progress')
                   try {
                     await claimDeadline(workspaceId, deadline.id, currentUser)
                     await createNotification(workspaceId, undefined, {
@@ -220,6 +221,7 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
                     })
                   } catch (err) {
                     console.error('Failed to claim task:', err)
+                    setDraftStatus(deadline.status)
                   } finally {
                     setClaiming(false)
                   }
@@ -262,6 +264,7 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
                 onClick={async (e) => {
                   e.stopPropagation()
                   setClaiming(true)
+                  setDraftStatus('in_progress')
                   try {
                     await claimDeadline(workspaceId, deadline.id, currentUser)
                     await createNotification(workspaceId, undefined, {
@@ -273,6 +276,7 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
                     })
                   } catch (err) {
                     console.error('Failed to claim task:', err)
+                    setDraftStatus(deadline.status)
                   } finally {
                     setClaiming(false)
                   }
