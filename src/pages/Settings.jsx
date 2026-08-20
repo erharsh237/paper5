@@ -156,7 +156,7 @@ export default function Settings() {
   const closeConfirm = () => setConfirmModal(prev => ({ ...prev, isOpen: false, onConfirm: null }))
   
   const handleSaveAdvancedSettings = async (e) => {
-    e.preventDefault()
+    if (e?.preventDefault) e.preventDefault()
     setSavingSettings(true)
     try {
       await updateWorkspaceSettings(workspaceId, { settings: wsSettings })
@@ -165,6 +165,45 @@ export default function Settings() {
       setAlertMessage('Failed to save settings.')
     } finally {
       setSavingSettings(false)
+    }
+  }
+
+  const handleToggleSaveData = async (checked) => {
+    const nextSettings = { ...wsSettings, save_data: checked }
+    setWsSettings(nextSettings)
+    try {
+      await updateWorkspaceSettings(workspaceId, { settings: nextSettings })
+      setAlertMessage(checked ? 'Cloud persistence enabled.' : 'Zero-data retention mode activated.')
+    } catch (err) {
+      console.error('Failed to update save_data setting:', err)
+      setWsSettings(prev => ({ ...prev, save_data: !checked }))
+      setAlertMessage('Failed to update persistence setting.')
+    }
+  }
+
+  const handleToggleStrictPasswords = async (checked) => {
+    const nextSettings = { ...wsSettings, strict_passwords: checked }
+    setWsSettings(nextSettings)
+    try {
+      await updateWorkspaceSettings(workspaceId, { settings: nextSettings })
+      setAlertMessage(checked ? 'Strict password complexity enabled.' : 'Standard password policy restored.')
+    } catch (err) {
+      console.error('Failed to update strict_passwords:', err)
+      setWsSettings(prev => ({ ...prev, strict_passwords: !checked }))
+      setAlertMessage('Failed to update password policy.')
+    }
+  }
+
+  const handleToggleStrictAuditing = async (checked) => {
+    const nextSettings = { ...wsSettings, strict_auditing: checked }
+    setWsSettings(nextSettings)
+    try {
+      await updateWorkspaceSettings(workspaceId, { settings: nextSettings })
+      setAlertMessage(checked ? 'Strict audit logging armed.' : 'Audit logging set to standard.')
+    } catch (err) {
+      console.error('Failed to update strict_auditing:', err)
+      setWsSettings(prev => ({ ...prev, strict_auditing: !checked }))
+      setAlertMessage('Failed to update auditing policy.')
     }
   }
   
@@ -290,11 +329,12 @@ export default function Settings() {
     }
   }
   
+  const wsSettingsHash = JSON.stringify(workspace?.settings || {})
   useEffect(() => {
     if (workspace && workspace.settings) {
       setWsSettings(prev => ({ ...prev, ...workspace.settings }))
     }
-  }, [workspace])
+  }, [wsSettingsHash])
 
   
   const [inviteEmail, setInviteEmail] = useState('')
@@ -1070,7 +1110,7 @@ export default function Settings() {
                         </p>
                       </div>
                       <label className="toggle-switch">
-                        <input type="checkbox" checked={wsSettings.save_data !== false} onChange={e => setWsSettings({...wsSettings, save_data: e.target.checked})} />
+                        <input type="checkbox" checked={wsSettings.save_data !== false} onChange={e => handleToggleSaveData(e.target.checked)} />
                         <span className="toggle-slider"></span>
                       </label>
                     </div>
@@ -1097,7 +1137,7 @@ export default function Settings() {
                         <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>Mandate 12+ characters and symbols for all users resetting their passwords.</p>
                       </div>
                       <label className="toggle-switch">
-                        <input type="checkbox" checked={wsSettings.strict_passwords} onChange={e => setWsSettings({...wsSettings, strict_passwords: e.target.checked})} />
+                        <input type="checkbox" checked={!!wsSettings.strict_passwords} onChange={e => handleToggleStrictPasswords(e.target.checked)} />
                         <span className="toggle-slider"></span>
                       </label>
                     </div>
@@ -1110,7 +1150,7 @@ export default function Settings() {
                         <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>Log every read and write action by all members in a tamper-proof audit trail.</p>
                       </div>
                       <label className="toggle-switch">
-                        <input type="checkbox" checked={wsSettings.strict_auditing} onChange={e => setWsSettings({...wsSettings, strict_auditing: e.target.checked})} />
+                        <input type="checkbox" checked={!!wsSettings.strict_auditing} onChange={e => handleToggleStrictAuditing(e.target.checked)} />
                         <span className="toggle-slider"></span>
                       </label>
                     </div>
