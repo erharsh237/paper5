@@ -826,8 +826,6 @@ export default function Settings() {
   const handleSelectPlan = async (newPlanId) => {
     try {
       await updateWorkspaceSettings(workspaceId, { billing_plan_id: newPlanId })
-      setSavedFlash(true)
-      setTimeout(() => setSavedFlash(false), 3000)
       setIsPricingModalOpen(false)
       const planName = newPlanId.charAt(0).toUpperCase() + newPlanId.slice(1)
       setAlertMessage(`Workspace plan successfully updated to ${planName}! All existing data and team members are safely retained in your workspace.`)
