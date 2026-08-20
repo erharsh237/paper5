@@ -17,18 +17,8 @@ import AlertModal from '../components/ui/AlertModal'
 import { ShieldCheck, Plus, Lock, Unlock, Layers, AlertTriangle, CheckCircle, Kanban, Sliders, ArrowRight } from 'lucide-react'
 import './Dashboard.css'
 
-// Roles authorized to maintain board columns and add/modify workflow items
-const AUTHORIZED_ROLES = [
-  'owner',
-  'admin',
-  'scrum_master',
-  'product_owner',
-  'lead_engineer',
-  'project_manager'
-]
-
 export default function WorkflowPage() {
-  const { workspaceId, workspace, workspaceRole } = useWorkspace()
+  const { workspaceId, workspace, workspaceRole, isAdmin, canManageSettings, canAddKanbanItems } = useWorkspace()
   const { user } = useAuth()
   const navigate = useNavigate()
 
@@ -40,11 +30,6 @@ export default function WorkflowPage() {
   
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-
-  const isAuthorized = useMemo(() => {
-    if (!workspaceRole) return false
-    return AUTHORIZED_ROLES.includes(workspaceRole.toLowerCase())
-  }, [workspaceRole])
 
   // Fetch team roster
   useEffect(() => {
@@ -132,62 +117,6 @@ export default function WorkflowPage() {
   }
 
   // Access Restricted View for non-authorized users
-  if (!isAuthorized) {
-    return (
-      <div className="dash-root">
-        <nav className="dash-sticky-nav">
-          <div className="dash-container dash-nav-inner">
-            <Link to={`/${workspaceId}`} className="dash-nav-brand">
-              <span className="dash-logo-name">SprintOS</span>
-              <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
-            </Link>
-
-            <NavTabs />
-
-            <div className="dash-nav-actions">
-              <NotificationBell currentUser={user} />
-              <UserMenu />
-            </div>
-          </div>
-        </nav>
-
-        <main className="dash-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', padding: '32px' }}>
-          <div className="dash-surface-card" style={{
-            padding: '40px',
-            maxWidth: '520px',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '14px',
-              background: 'rgba(209, 67, 67, 0.1)',
-              color: '#D14343',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px auto'
-            }}>
-              <ShieldCheck size={32} />
-            </div>
-            <h2 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 10px 0', color: 'var(--text)' }}>
-              Dedicated Workflow Maintenance Gated
-            </h2>
-            <p style={{ fontSize: '13px', color: 'var(--muted)', lineHeight: 1.6, margin: '0 0 24px 0' }}>
-              Maintaining board columns, editing WIP limits, and modifying workflow list items is reserved for workspace Admins and designated Workflow Leaders.
-            </p>
-
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-              <button className="dash-btn-accent" onClick={() => navigate(`/${workspaceId}`)}>
-                Return to My Tasks
-              </button>
-            </div>
-          </div>
-        </main>
-      </div>
-    )
-  }
-
   return (
     <div className="dash-root">
       <nav className="dash-sticky-nav">
@@ -243,25 +172,27 @@ export default function WorkflowPage() {
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Link 
-              to={`/${workspaceId}/settings`} 
-              className="btn-ghost btn-sm"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                textDecoration: 'none',
-                fontSize: '12px',
-                fontWeight: 600,
-                border: '1px solid var(--border-soft)',
-                padding: '6px 12px',
-                borderRadius: '8px'
-              }}
-            >
-              <Sliders size={14} /> Configure Workflow
-            </Link>
-          </div>
+          {(isAdmin || canManageSettings) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Link 
+                to={`/${workspaceId}/settings`} 
+                className="btn-ghost btn-sm"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  textDecoration: 'none',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  border: '1px solid var(--border-soft)',
+                  padding: '6px 12px',
+                  borderRadius: '8px'
+                }}
+              >
+                <Sliders size={14} /> Configure Workflow
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Maintenance Controls Bar */}
@@ -295,21 +226,23 @@ export default function WorkflowPage() {
           </div>
 
           <div className="dash-controls-right">
-            <button
-              type="button"
-              className="dash-btn-accent"
-              onClick={() => setShowNewModal(true)}
-              style={{
-                padding: '8px 16px',
-                fontSize: '12.5px',
-                borderRadius: '10px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              <Plus size={15} /> New Task
-            </button>
+            {canAddKanbanItems && (
+              <button
+                type="button"
+                className="dash-btn-accent"
+                onClick={() => setShowNewModal(true)}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '12.5px',
+                  borderRadius: '10px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Plus size={15} /> New Task
+              </button>
+            )}
           </div>
         </section>
 
