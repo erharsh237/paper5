@@ -44,23 +44,42 @@ export function subscribeSprints(workspaceId, teamIdOrCallback, maybeCallback) {
     .subscribe()
 
   const onLocalSync = () => fetchList()
-  if (typeof window !== 'undefined') {
-    window.addEventListener('sprintos:sprints-updated', onLocalSync)
-    window.addEventListener('sprintos:data-sync', onLocalSync)
+  const onStorageSync = (e) => {
+    if (e?.key?.startsWith('sprintos:')) {
+      fetchList()
+    }
   }
   const onVisibilityChange = () => {
     if (typeof document !== 'undefined' && document.visibilityState === 'visible') fetchList()
+  }
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('sprintos:sprints-updated', onLocalSync)
+    window.addEventListener('sprintos:data-sync', onLocalSync)
+    window.addEventListener('storage', onStorageSync)
+    window.addEventListener('focus', onVisibilityChange)
+    window.addEventListener('online', onVisibilityChange)
   }
   if (typeof document !== 'undefined') {
     document.addEventListener('visibilitychange', onVisibilityChange)
   }
 
+  const heartbeat = setInterval(() => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      fetchList()
+    }
+  }, 3000)
+
   return () => {
     isSubscribed = false
     supabase.removeChannel(channel)
+    clearInterval(heartbeat)
     if (typeof window !== 'undefined') {
       window.removeEventListener('sprintos:sprints-updated', onLocalSync)
       window.removeEventListener('sprintos:data-sync', onLocalSync)
+      window.removeEventListener('storage', onStorageSync)
+      window.removeEventListener('focus', onVisibilityChange)
+      window.removeEventListener('online', onVisibilityChange)
     }
     if (typeof document !== 'undefined') {
       document.removeEventListener('visibilitychange', onVisibilityChange)

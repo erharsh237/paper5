@@ -164,11 +164,50 @@ export function WorkspaceProvider({ children }) {
       })
       .subscribe()
 
+    const onDataSync = () => fetchAll()
+    const onStorageSync = (e) => {
+      if (e?.key?.startsWith('sprintos:')) {
+        fetchAll()
+      }
+    }
+    const onVisibilityOrFocus = () => {
+      if (typeof document !== 'undefined' && !document.hidden) {
+        fetchAll()
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('sprintos:data-sync', onDataSync)
+      window.addEventListener('sprintos:permissions-updated', onDataSync)
+      window.addEventListener('sprintos:deadlines-updated', onDataSync)
+      window.addEventListener('storage', onStorageSync)
+      window.addEventListener('focus', onVisibilityOrFocus)
+      window.addEventListener('online', onVisibilityOrFocus)
+      document.addEventListener('visibilitychange', onVisibilityOrFocus)
+    }
+
+    // 3-second continuous background sync heartbeat (active while tab is open)
+    const heartbeatTimer = setInterval(() => {
+      if (typeof document !== 'undefined' && !document.hidden) {
+        fetchAll()
+      }
+    }, 3000)
+
     fetchAll()
 
     return () => {
       supabase.removeChannel(channelW)
       supabase.removeChannel(channelM)
+      clearInterval(heartbeatTimer)
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('sprintos:data-sync', onDataSync)
+        window.removeEventListener('sprintos:permissions-updated', onDataSync)
+        window.removeEventListener('sprintos:deadlines-updated', onDataSync)
+        window.removeEventListener('storage', onStorageSync)
+        window.removeEventListener('focus', onVisibilityOrFocus)
+        window.removeEventListener('online', onVisibilityOrFocus)
+        document.removeEventListener('visibilitychange', onVisibilityOrFocus)
+      }
     }
   }, [user, workspaceId]);
 

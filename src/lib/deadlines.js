@@ -97,9 +97,16 @@ export function subscribeDeadlines(workspaceId, teamIdOrCallback, callbackOrPage
     document.addEventListener('visibilitychange', onVisibilityChange)
   }
 
+  const heartbeat = setInterval(() => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      fetchList()
+    }
+  }, 3000)
+
   return () => {
     isSubscribed = false
     supabase.removeChannel(channel)
+    clearInterval(heartbeat)
     if (typeof window !== 'undefined') {
       window.removeEventListener('sprintos:deadlines-updated', onLocalSync)
       window.removeEventListener('sprintos:notifications-updated', onLocalSync)

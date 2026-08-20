@@ -240,9 +240,15 @@ export function subscribeWorkspaceMembers(workspaceId, callback) {
   
   fetchList()
 
-  // Fetch immediately upon tab focus / device wake
+  // Fetch immediately upon tab focus / device wake or custom sync
   const handleVisibilityChange = () => {
     if (typeof document !== 'undefined' && !document.hidden && isSubscribed) {
+      fetchList()
+    }
+  }
+
+  const handleStorageSync = (e) => {
+    if (e?.key?.startsWith('sprintos:') && isSubscribed) {
       fetchList()
     }
   }
@@ -250,14 +256,27 @@ export function subscribeWorkspaceMembers(workspaceId, callback) {
   if (typeof document !== 'undefined') {
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('online', handleVisibilityChange)
+    window.addEventListener('focus', handleVisibilityChange)
+    window.addEventListener('sprintos:data-sync', handleVisibilityChange)
+    window.addEventListener('storage', handleStorageSync)
   }
+
+  const heartbeat = setInterval(() => {
+    if (typeof document !== 'undefined' && !document.hidden && isSubscribed) {
+      fetchList()
+    }
+  }, 3000)
 
   return () => {
     isSubscribed = false
+    clearInterval(heartbeat)
     if (abortController) abortController.abort()
     if (typeof document !== 'undefined') {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('online', handleVisibilityChange)
+      window.removeEventListener('focus', handleVisibilityChange)
+      window.removeEventListener('sprintos:data-sync', handleVisibilityChange)
+      window.removeEventListener('storage', handleStorageSync)
     }
     if (channel) {
       try { supabase.removeChannel(channel) } catch (_) {}
@@ -314,16 +333,35 @@ export function subscribeInvites(workspaceId, callback) {
     }
   }
 
+  const handleStorageSync = (e) => {
+    if (e?.key?.startsWith('sprintos:') && isSubscribed) {
+      fetchList()
+    }
+  }
+
   if (typeof document !== 'undefined') {
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('online', handleVisibilityChange)
+    window.addEventListener('focus', handleVisibilityChange)
+    window.addEventListener('sprintos:data-sync', handleVisibilityChange)
+    window.addEventListener('storage', handleStorageSync)
   }
+
+  const heartbeat = setInterval(() => {
+    if (typeof document !== 'undefined' && !document.hidden && isSubscribed) {
+      fetchList()
+    }
+  }, 3000)
 
   return () => {
     isSubscribed = false
+    clearInterval(heartbeat)
     if (typeof document !== 'undefined') {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('online', handleVisibilityChange)
+      window.removeEventListener('focus', handleVisibilityChange)
+      window.removeEventListener('sprintos:data-sync', handleVisibilityChange)
+      window.removeEventListener('storage', handleStorageSync)
     }
     if (channel) {
       try { supabase.removeChannel(channel) } catch (_) {}

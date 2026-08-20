@@ -117,17 +117,37 @@ export function subscribeEventNotes(workspaceId, teamId, callback) {
     .subscribe()
 
   const onLocalSync = () => fetchList()
+  const onStorageSync = (e) => {
+    if (e?.key?.startsWith('sprintos:')) fetchList()
+  }
+  const onVisibilityOrFocus = () => {
+    if (typeof document !== 'undefined' && !document.hidden) fetchList()
+  }
+
   if (typeof window !== 'undefined') {
     window.addEventListener('sprintos:meetings-updated', onLocalSync)
     window.addEventListener('sprintos:data-sync', onLocalSync)
+    window.addEventListener('storage', onStorageSync)
+    window.addEventListener('focus', onVisibilityOrFocus)
+    window.addEventListener('online', onVisibilityOrFocus)
+    document.addEventListener('visibilitychange', onVisibilityOrFocus)
   }
+
+  const heartbeat = setInterval(() => {
+    if (typeof document !== 'undefined' && !document.hidden) fetchList()
+  }, 3000)
 
   return () => {
     isSubscribed = false
     supabase.removeChannel(channel)
+    clearInterval(heartbeat)
     if (typeof window !== 'undefined') {
       window.removeEventListener('sprintos:meetings-updated', onLocalSync)
       window.removeEventListener('sprintos:data-sync', onLocalSync)
+      window.removeEventListener('storage', onStorageSync)
+      window.removeEventListener('focus', onVisibilityOrFocus)
+      window.removeEventListener('online', onVisibilityOrFocus)
+      document.removeEventListener('visibilitychange', onVisibilityOrFocus)
     }
   }
 }
