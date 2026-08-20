@@ -93,13 +93,81 @@ export default function ReflectionPanel({ sprint, currentUser, members }) {
       {members?.length > 0 && (
         <div className="reflection-status-row">
           {members.map(m => {
-            const done = reflections.some(r => r.memberEmail === m.email?.toLowerCase())
+            const done = reflections.some(r => r.memberEmail === (m.email || '').toLowerCase())
             return (
-              <span key={m.id} className={`reflection-status-pill${done ? ' reflection-status-pill--done' : ''}`}>
-                {m.name} {done ? '✓' : '—'}
+              <span key={m.id || m.userId} className={`reflection-status-pill${done ? ' reflection-status-pill--done' : ''}`}>
+                {m.name || m.email} {done ? '✓' : '—'}
               </span>
             )
           })}
+        </div>
+      )}
+
+      {reflections?.length > 0 && (
+        <div style={{ marginTop: '24px', borderTop: '1px solid var(--border-soft, #EAECF6)', paddingTop: '18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+            <h3 style={{ margin: 0, fontSize: '13.5px', fontWeight: 700, letterSpacing: '-0.01em', color: 'var(--text-primary, #000000)' }}>
+              Team Submissions ({reflections.length}/{members?.length || 0})
+            </h3>
+            <span style={{ fontSize: '11px', color: 'var(--text-tertiary, #6B7280)', fontFamily: 'var(--mono, monospace)' }}>
+              Sprint {sprint.number}
+            </span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+            {reflections.map(r => (
+              <div 
+                key={r.id || r.memberId} 
+                style={{
+                  background: 'var(--bg-layer-2, #F8FAFC)',
+                  border: '1px solid var(--border-soft, #E2E8F0)',
+                  borderRadius: '10px',
+                  padding: '14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary, #0F172A)' }}>
+                    {r.memberName || r.memberEmail}
+                  </span>
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    padding: '2px 8px',
+                    borderRadius: '100px',
+                    background: r.completedTasks ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                    color: r.completedTasks ? '#059669' : '#DC2626',
+                    border: `1px solid ${r.completedTasks ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
+                  }}>
+                    {r.completedTasks ? '✓ Tasks Completed' : '✕ Tasks Incomplete'}
+                  </span>
+                </div>
+
+                {!r.completedTasks && r.whyNot && (
+                  <div style={{ fontSize: '12px' }}>
+                    <div style={{ color: 'var(--text-tertiary, #64748B)', fontWeight: 600, marginBottom: '2px' }}>Why not:</div>
+                    <div style={{ color: 'var(--text-primary, #1E293B)', background: '#FFFFFF', padding: '6px 10px', borderRadius: '6px', border: '1px solid #E2E8F0' }}>{r.whyNot}</div>
+                  </div>
+                )}
+
+                {r.biggestBlocker && (
+                  <div style={{ fontSize: '12px' }}>
+                    <div style={{ color: 'var(--text-tertiary, #64748B)', fontWeight: 600, marginBottom: '2px' }}>Biggest blocker:</div>
+                    <div style={{ color: 'var(--text-primary, #1E293B)', background: '#FFFFFF', padding: '6px 10px', borderRadius: '6px', border: '1px solid #E2E8F0' }}>{r.biggestBlocker}</div>
+                  </div>
+                )}
+
+                {r.improvement && (
+                  <div style={{ fontSize: '12px' }}>
+                    <div style={{ color: 'var(--text-tertiary, #64748B)', fontWeight: 600, marginBottom: '2px' }}>Next sprint improvement:</div>
+                    <div style={{ color: 'var(--text-primary, #1E293B)', background: '#FFFFFF', padding: '6px 10px', borderRadius: '6px', border: '1px solid #E2E8F0' }}>{r.improvement}</div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </section>
