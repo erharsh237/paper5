@@ -41,26 +41,58 @@ export default async function handler(req, res) {
     if (hasElevatedAccess) {
       // --- Elevated path: full insert using service role key ---
 
-      // 1. Fetch pending invites
+      // 1. Fetch pending invites from both invites & workspace_invites tables
       try {
-        const { data: invites } = await supabaseAdmin
-          .from('invites')
-          .select('*')
-          .ilike('email', cleanEmail)
+        const [{ data: inv1 }, { data: inv2 }] = await Promise.all([
+          supabaseAdmin.from('invites').select('*').ilike('email', cleanEmail),
+          supabaseAdmin.from('workspace_invites').select('*').ilike('email', cleanEmail)
+        ])
 
-        for (const inv of (invites || [])) {
+        const allInvites = [...(inv1 || []), ...(inv2 || [])]
+
+        for (const inv of allInvites) {
           if (inv.workspace_id) {
             if (!acceptedWorkspaceId) acceptedWorkspaceId = inv.workspace_id
+            const rawPerms = Array.isArray(inv.permissions) ? inv.permissions : []
+
+            // A. Upsert workspace_members with role AND permissions
             await supabaseAdmin.from('workspace_members').upsert({
               workspace_id: inv.workspace_id,
               user_id: userId,
-              role: inv.role || 'member'
+              role: inv.role || 'member',
+              permissions: rawPerms
             }, { onConflict: 'workspace_id,user_id' })
+
+            // B. Also persist into workspaces.settings.member_permissions
+            if (rawPerms.length > 0) {
+              try {
+                const { data: ws } = await supabaseAdmin
+                  .from('workspaces')
+                  .select('settings')
+                  .eq('id', inv.workspace_id)
+                  .maybeSingle()
+                
+                const currentSettings = ws?.settings || {}
+                const currentPermsMap = { ...(currentSettings.member_permissions || {}) }
+                currentPermsMap[userId] = rawPerms
+                currentPermsMap[cleanEmail] = rawPerms
+
+                await supabaseAdmin
+                  .from('workspaces')
+                  .update({
+                    settings: { ...currentSettings, member_permissions: currentPermsMap }
+                  })
+                  .eq('id', inv.workspace_id)
+              } catch (wsErr) {
+                console.warn('Persist member_permissions into workspace settings error:', wsErr)
+              }
+            }
           }
         }
 
-        if ((invites || []).length > 0) {
-          await supabaseAdmin.from('invites').delete().ilike('email', cleanEmail)
+        if (allInvites.length > 0) {
+          await supabaseAdmin.from('invites').delete().ilike('email', cleanEmail).catch(() => {})
+          await supabaseAdmin.from('workspace_invites').delete().ilike('email', cleanEmail).catch(() => {})
         }
       } catch (e1) {
         console.warn('Invites lookup notice:', e1)

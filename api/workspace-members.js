@@ -295,8 +295,8 @@ export default async function handler(req, res) {
       const u = userDetailsMap.get(m.user_id) || {}
       const email = u.email || m.email || null
       const fullName = u.full_name || m.full_name || null
-      const displayLabel = fullName || email || (email ? email.split('@')[0] : `Member (${(m.user_id || '').slice(0, 6)})`)
-      const perms = memberPermsMap[m.user_id] || (Array.isArray(m.permissions) ? m.permissions : [])
+      const cleanEmail = (email || '').toLowerCase().trim()
+      const perms = memberPermsMap[m.user_id] || (cleanEmail ? memberPermsMap[cleanEmail] : null) || (Array.isArray(m.permissions) ? m.permissions : [])
 
       return {
         id: m.user_id,

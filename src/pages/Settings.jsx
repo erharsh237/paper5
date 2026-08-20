@@ -1473,7 +1473,7 @@ export default function Settings() {
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                       {AVAILABLE_PERMISSIONS.map(ap => {
                                         const currentPerms = m.permissions || []
-                                        const hasPerm = ap.keys.some(k => currentPerms.includes(k))
+                                        const hasPerm = ap.keys.some(k => currentPerms.includes(k)) || currentPerms.includes(ap.id)
                                         return (
                                           <label key={ap.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text, #1C1D2B)', cursor: 'pointer' }}>
                                             <input
@@ -1481,8 +1481,8 @@ export default function Settings() {
                                               checked={hasPerm}
                                               onChange={async (e) => {
                                                 const nextPerms = e.target.checked
-                                                  ? Array.from(new Set([...currentPerms, ...ap.keys]))
-                                                  : currentPerms.filter(p => !ap.keys.includes(p))
+                                                  ? Array.from(new Set([...currentPerms, ...ap.keys, ap.id]))
+                                                  : currentPerms.filter(p => !ap.keys.includes(p) && p !== ap.id)
                                                 
                                                 // Optimistic local update
                                                 setMembers(prev => prev.map(member => member.id === m.id ? { ...member, permissions: nextPerms } : member))

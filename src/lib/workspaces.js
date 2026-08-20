@@ -209,8 +209,9 @@ export function subscribeWorkspaceMembers(workspaceId, callback) {
           const mapped = data.map(row => {
             const usersJoin = row.users
             const email = usersJoin?.email || null
+            const cleanEmail = (email || '').toLowerCase().trim()
             const fullName = usersJoin?.full_name || null
-            const perms = memberPermsMap[row.user_id] || (Array.isArray(row.permissions) ? row.permissions : [])
+            const perms = memberPermsMap[row.user_id] || (cleanEmail ? memberPermsMap[cleanEmail] : null) || (Array.isArray(row.permissions) ? row.permissions : [])
             return {
               id: row.user_id,
               userId: row.user_id,
@@ -516,6 +517,20 @@ export async function createInvite(workspaceId, email, role, permissions = [], p
   if (dbErr) {
     console.error('Database invite insert error:', dbErr)
     throw new Error(dbErr.message || 'Failed to record invite in database')
+  }
+
+  // Pre-seed workspace settings member_permissions with invited email
+  if (Array.isArray(permissions) && permissions.length > 0) {
+    try {
+      const { data: ws } = await supabase.from('workspaces').select('settings').eq('id', workspaceId).maybeSingle()
+      if (ws?.settings) {
+        const currentPermsMap = { ...(ws.settings.member_permissions || {}) }
+        currentPermsMap[cleanEmail] = permissions
+        await supabase.from('workspaces').update({
+          settings: { ...ws.settings, member_permissions: currentPermsMap }
+        }).eq('id', workspaceId)
+      }
+    } catch (_) {}
   }
 
   let emailStatus = null
