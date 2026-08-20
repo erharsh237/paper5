@@ -169,7 +169,7 @@ export default function Settings() {
   }
 
   const handleToggleSaveData = async (checked) => {
-    const nextSettings = { ...wsSettings, save_data: checked }
+    const nextSettings = { ...(workspace?.settings || {}), ...wsSettings, save_data: checked }
     setWsSettings(nextSettings)
     try {
       await updateWorkspaceSettings(workspaceId, { settings: nextSettings })
@@ -182,7 +182,7 @@ export default function Settings() {
   }
 
   const handleToggleStrictPasswords = async (checked) => {
-    const nextSettings = { ...wsSettings, strict_passwords: checked }
+    const nextSettings = { ...(workspace?.settings || {}), ...wsSettings, strict_passwords: checked }
     setWsSettings(nextSettings)
     try {
       await updateWorkspaceSettings(workspaceId, { settings: nextSettings })
@@ -195,7 +195,7 @@ export default function Settings() {
   }
 
   const handleToggleStrictAuditing = async (checked) => {
-    const nextSettings = { ...wsSettings, strict_auditing: checked }
+    const nextSettings = { ...(workspace?.settings || {}), ...wsSettings, strict_auditing: checked }
     setWsSettings(nextSettings)
     try {
       await updateWorkspaceSettings(workspaceId, { settings: nextSettings })
