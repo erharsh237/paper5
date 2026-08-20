@@ -277,7 +277,7 @@ export async function markNotificationRead(workspaceId, id, userEmail) {
   try {
     const { data: existing } = await supabase
       .from('notifications')
-      .select('read_by, readBy')
+      .select('*')
       .eq('id', id)
       .maybeSingle()
       
@@ -289,13 +289,6 @@ export async function markNotificationRead(workspaceId, id, userEmail) {
         await supabase
           .from('notifications')
           .update({ read_by: readBy, is_read: true })
-          .eq('id', id)
-      } catch (_) {}
-
-      try {
-        await supabase
-          .from('notifications')
-          .update({ readBy, read: true })
           .eq('id', id)
       } catch (_) {}
     }
@@ -311,7 +304,7 @@ export async function markAllNotificationsRead(workspaceId, userEmail) {
   const email = (userEmail || '').trim().toLowerCase()
 
   try {
-    const query = supabase.from('notifications').select('id, read_by, readBy')
+    const query = supabase.from('notifications').select('*')
     if (workspaceId) query.eq('workspace_id', workspaceId)
     
     const { data } = await query
@@ -334,12 +327,6 @@ export async function markAllNotificationsRead(workspaceId, userEmail) {
           await supabase
             .from('notifications')
             .update({ read_by: readBy, is_read: true })
-            .eq('id', notif.id)
-        } catch (_) {}
-        try {
-          await supabase
-            .from('notifications')
-            .update({ readBy, read: true })
             .eq('id', notif.id)
         } catch (_) {}
       }
