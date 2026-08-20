@@ -25,13 +25,23 @@ export default async function handler(req, res) {
   // POST: Update Member Role or Permissions
   if (req.method === 'POST') {
     const body = await parseBody(req)
-    const { action, workspaceId, memberId, role, permissions } = body || {}
-    if (!workspaceId || !memberId) {
-      return res.status(400).json({ error: 'Missing workspaceId or memberId', receivedBody: body })
+    const { action, workspaceId, memberId, role, permissions, patch } = body || {}
+    if (!workspaceId) {
+      return res.status(400).json({ error: 'Missing workspaceId', receivedBody: body })
     }
 
     try {
+      if (action === 'update_workspace_settings') {
+        const { error } = await supabaseAdmin
+          .from('workspaces')
+          .update(patch || {})
+          .eq('id', workspaceId)
+        if (error) throw error
+        return res.status(200).json({ success: true })
+      }
+
       if (action === 'force_delete') {
+        if (!memberId) return res.status(400).json({ error: 'Missing memberId' })
         // Temporarily elevate to owner so count(*) > 1
         await supabaseAdmin
           .from('workspace_members')

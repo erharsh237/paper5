@@ -153,14 +153,30 @@ export async function saveEventNote(workspaceId, teamId, eventId, notesObj, curr
 
   const updatedNotes = { ...currentNotes, [eventId]: notesObj }
 
-  // 2. Persist to workspaces settings
+  // 2. Persist via serverless API (uses service key to bypass RLS)
+  try {
+    await fetch('/api/meetings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'save_event_note',
+        workspaceId,
+        eventId,
+        notesObj
+      })
+    })
+  } catch (apiErr) {
+    console.warn('API meetings fallback notice:', apiErr)
+  }
+
+  // 3. Direct client update on workspaces settings
   try {
     await supabase.from('workspaces').update({
       settings: { ...currentWsSettings, eventNotes: updatedNotes }
     }).eq('id', workspaceId)
   } catch (_) {}
 
-  // 3. Persist to teamSettings fallback
+  // 4. Persist to teamSettings fallback
   try {
     await supabase.from('teamSettings').upsert({
       workspace_id: workspaceId,
@@ -170,12 +186,12 @@ export async function saveEventNote(workspaceId, teamId, eventId, notesObj, curr
     })
   } catch (_) {}
 
-  // 4. Cache locally
+  // 5. Cache locally
   try {
     localStorage.setItem(`sprintos:event_notes_${workspaceId}`, JSON.stringify(updatedNotes))
   } catch (_) {}
 
-  // 5. Notify local listeners
+  // 6. Notify local listeners
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('sprintos:meetings-updated'))
     window.dispatchEvent(new CustomEvent('sprintos:data-sync'))
@@ -208,6 +224,21 @@ export async function deleteEventNote(workspaceId, teamId, eventId) {
 
   const updatedNotes = { ...currentNotes }
   delete updatedNotes[eventId]
+
+  // Persist via serverless API
+  try {
+    await fetch('/api/meetings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'delete_event_note',
+        workspaceId,
+        eventId
+      })
+    })
+  } catch (apiErr) {
+    console.warn('API meetings delete fallback notice:', apiErr)
+  }
 
   try {
     await supabase.from('workspaces').update({

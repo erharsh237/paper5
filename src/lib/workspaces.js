@@ -362,11 +362,38 @@ export async function updateWorkspaceSettings(workspaceId, patch) {
     if (patch.billing.status !== undefined) mappedPatch.billing_status = patch.billing.status
   }
   
-  const { error } = await supabase.from('workspaces').update(mappedPatch).eq('id', workspaceId)
-  if (error) throw error
+  try {
+    const { error } = await supabase.from('workspaces').update(mappedPatch).eq('id', workspaceId)
+    if (error) throw error
+  } catch (err) {
+    const res = await fetch('/api/workspace-members', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update_workspace_settings',
+        workspaceId,
+        patch: mappedPatch
+      })
+    })
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error || err.message)
+  }
 }
 
 export async function removeMember(workspaceId, memberUid) {
+  try {
+    const res = await fetch('/api/workspace-members', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'remove_member',
+        workspaceId,
+        memberId: memberUid
+      })
+    })
+    if (res.ok) return
+  } catch (_) {}
+
   const { error } = await supabase.from('workspace_members').delete().eq('workspace_id', workspaceId).eq('user_id', memberUid)
   if (error) throw error
 }

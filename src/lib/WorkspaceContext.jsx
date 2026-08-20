@@ -217,13 +217,15 @@ export function WorkspaceProvider({ children }) {
     if (permission === 'meetings.manage') {
       return perms.includes('meetings.manage')
     }
-    if (permission === 'teamSettings.manage' || permission === 'roles.manage' || permission === 'settings.manage') {
+    if (permission === 'teamSettings.manage' || permission === 'roles.manage' || permission === 'settings.manage' || permission === 'settings_and_roles') {
       return perms.includes('settings_and_roles') || perms.includes('teamSettings.manage') || perms.includes('roles.manage')
     }
     return perms.includes(permission)
   }
 
   const canAddKanbanItems = hasPermission('deadlines.manage') || hasPermission('deadlines.create')
+  const canManageSettings = isAdminOrOwner || hasPermission('settings_and_roles') || hasPermission('teamSettings.manage') || hasPermission('roles.manage')
+  const canManageMeetingNotes = isAdminOrOwner || hasPermission('meetings.manage')
 
   const value = {
     workspaceId,
@@ -232,10 +234,12 @@ export function WorkspaceProvider({ children }) {
     userPermissions,
     loadingWorkspace,
     workspaceError,
-    isAdmin: isAdminOrOwner,
+    isAdmin: isAdminOrOwner || canManageSettings,
     isOwner: workspaceRole === 'owner',
     hasPermission,
     canAddKanbanItems,
+    canManageSettings,
+    canManageMeetingNotes,
     isLocked,
     is2FABlocked: false,
   }

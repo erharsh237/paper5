@@ -607,8 +607,8 @@ export default function Settings() {
   }
 
   const handleRoleChange = async (memberUid, currentRole, newRole) => {
-    if (!isOwner) {
-      setAlertMessage('Access denied: Only the workspace owner can modify member roles.')
+    if (!isAdminOrOwner) {
+      setAlertMessage('Access denied: You do not have permission to modify member roles.')
       return
     }
     if (currentRole === 'owner' || newRole === 'owner') {
@@ -1390,20 +1390,20 @@ export default function Settings() {
                                 👑 Owner
                               </span>
                             ) : (
-                              <select
+                                <select
                                 value={m.role}
                                 onChange={(e) => handleRoleChange(m.id || m.user_id, m.role, e.target.value)}
-                                disabled={!isOwner}
+                                disabled={!isAdminOrOwner}
                                 style={{
                                   background: 'var(--bg-inset)',
                                   color: 'var(--text-primary)',
                                   border: '1px solid var(--border)',
                                   padding: '4px 8px',
                                   borderRadius: '4px',
-                                  cursor: isOwner ? 'pointer' : 'not-allowed',
-                                  opacity: isOwner ? 1 : 0.7
+                                  cursor: isAdminOrOwner ? 'pointer' : 'not-allowed',
+                                  opacity: isAdminOrOwner ? 1 : 0.7
                                 }}
-                                title={isOwner ? 'Change member role' : 'Only workspace owner can change member roles'}
+                                title={isAdminOrOwner ? 'Change member role' : 'You do not have permission to change member roles'}
                               >
                                 <option value="admin">Admin</option>
                                 <option value="member">Member</option>

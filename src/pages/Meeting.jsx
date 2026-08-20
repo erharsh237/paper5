@@ -16,7 +16,7 @@ import './Dashboard.css'
 import './Meeting.css'
 
 export default function Meeting() {
-  const { workspaceId, workspace, isAdmin, isOwner, workspaceRole } = useWorkspace()
+  const { workspaceId, workspace, isAdmin, isOwner, workspaceRole, hasPermission, canManageMeetingNotes } = useWorkspace()
   const { user } = useAuth()
   const [sprints, setSprints] = useState([])
   const [members, setMembers] = useState([])
@@ -35,6 +35,7 @@ export default function Meeting() {
   const [modalError, setModalError] = useState('')
 
   const isAdminOrOwner = isAdmin || isOwner || workspaceRole === 'owner' || workspaceRole === 'admin'
+  const canManageNotes = isAdminOrOwner || canManageMeetingNotes || (hasPermission && hasPermission('meetings.manage'))
 
   useEffect(() => {
     const unsub1 = subscribeSprints(workspaceId, undefined, setSprints)
@@ -169,10 +170,10 @@ export default function Meeting() {
                 </p>
               </div>
 
-              {isAdminOrOwner && (
+              {canManageNotes && (
                 <button 
-                  type="button"
-                  className="dash-btn-accent"
+                  type="button" 
+                  className="dash-btn-accent" 
                   onClick={handleOpenNewNote}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '13px' }}
                 >
@@ -203,7 +204,7 @@ export default function Meeting() {
                           )}
                         </div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          {isAdminOrOwner && (
+                          {canManageNotes && (
                             <>
                               <button 
                                 type="button" 
@@ -239,7 +240,7 @@ export default function Meeting() {
                   <div style={{ padding: '48px 0', textAlign: 'center', background: 'var(--surface-2, #EEF0F9)', borderRadius: '12px', border: '1px dashed var(--border-soft, #EAECF6)' }}>
                     <FileText size={32} style={{ color: 'var(--muted, #6E7091)', margin: '0 auto 12px auto' }} />
                     <p style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 600, color: 'var(--text, #1C1D2B)' }}>No meeting notes added for this event yet.</p>
-                    {isAdminOrOwner && (
+                    {canManageNotes && (
                       <button 
                         type="button" 
                         className="dash-btn-accent" 
@@ -283,7 +284,7 @@ export default function Meeting() {
                           </div>
                         </div>
 
-                        {isAdminOrOwner && (
+                        {canManageNotes && (
                           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--border-soft, #EAECF6)', paddingTop: '10px' }}>
                             <button 
                               type="button" 
@@ -316,7 +317,7 @@ export default function Meeting() {
                   <p style={{ margin: '0 auto 16px auto', fontSize: '13px', color: 'var(--muted, #6E7091)', maxWidth: '420px', lineHeight: 1.5 }}>
                     Keep your team aligned by recording sprint discussions, architectural decisions, and sync action items.
                   </p>
-                  {isAdminOrOwner && (
+                  {canManageNotes && (
                     <button 
                       type="button" 
                       className="dash-btn-accent" 
