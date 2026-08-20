@@ -3,7 +3,7 @@ import { UrgencyBadge, PriorityBadge } from './Badge'
 import { getUrgency, formatWorkspaceDate, STATUSES, EVIDENCE_TYPES } from '../lib/utils'
 import {
   updateDeadlineStatus, addExtraWork, approveReview, rejectReview, clearBlocked,
-  subscribeEvidence, subscribeExtraWork, deleteDeadline
+  subscribeEvidence, subscribeExtraWork, deleteDeadline, claimDeadline
 } from '../lib/deadlines'
 import { createNotification, NOTIFICATION_TYPES } from '../lib/notifications'
 import BlockerModal from './BlockerModal'
@@ -17,6 +17,7 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
   const [expanded, setExpanded] = useState(false)
   const [draftStatus, setDraftStatus] = useState(deadline.status)
   const [saving, setSaving] = useState(false)
+  const [claiming, setClaiming] = useState(false)
   const [showExtraForm, setShowExtraForm] = useState(false)
   const [extraNote, setExtraNote] = useState('')
   const [savingExtra, setSavingExtra] = useState(false)
@@ -31,11 +32,12 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
   const urgency = getUrgency(deadline.dueDate, deadline.status)
   const due = formatWorkspaceDate(deadline.dueDate, workspace?.settings)
   
-  const isAssignee = currentUser?.email &&
+  const isUnassigned = !deadline.assigneeEmail || deadline.assigneeEmail === 'unassigned' || deadline.isUnassigned || deadline.assigneeName === 'Unassigned'
+  const isAssignee = !isUnassigned && currentUser?.email &&
     deadline.assigneeEmail?.toLowerCase() === currentUser.email.toLowerCase()
   const canUpdateStatus = isAssignee
   const isDirty = draftStatus !== deadline.status
-  const canReview = !isAssignee && deadline.status === 'review' && !!currentUser?.email
+  const canReview = !isAssignee && !isUnassigned && deadline.status === 'review' && !!currentUser?.email
   const FREE_STATUSES = STATUSES.filter(s => ['not_started', 'in_progress'].includes(s.key))
 
   useEffect(() => {
@@ -145,6 +147,11 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
         {/* Top Header: Badges & Right Actions */}
         <div className="dcard-top">
           <div className="dcard-badges">
+            {isUnassigned && (
+              <span className="badge" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#D97706', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
+                ⚡ Open for Pickup
+              </span>
+            )}
             {urgency === 'overdue' && deadline.status !== 'done' && (
               <span className="badge badge--overdue">
                 <span className="badge-dot" /> Overdue
@@ -181,17 +188,101 @@ export default function DeadlineCard({ deadline, currentUser, sprintLocked }) {
 
         <h3 className="dcard-title">{deadline.title}</h3>
 
-        <div className="dcard-meta">
-          <span className="dcard-assignee" title={deadline.assigneeEmail || deadline.assigneeName}>
-            <span className="avatar-dot mono">{displayName[0]?.toUpperCase() || '?'}</span>
-            <span className="dcard-assignee-name">{displayName}</span>
-          </span>
-          <span className="dcard-date mono" title={due.full}>{due.short || due.full}</span>
+        <div className="dcard-meta" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+            <span className="dcard-assignee" title={deadline.assigneeEmail || deadline.assigneeName}>
+              <span className="avatar-dot mono" style={{ background: isUnassigned ? '#F59E0B' : undefined, color: isUnassigned ? '#FFFFFF' : undefined }}>
+                {isUnassigned ? '?' : (displayName[0]?.toUpperCase() || '?')}
+              </span>
+              <span className="dcard-assignee-name" style={{ color: isUnassigned ? '#D97706' : undefined, fontWeight: isUnassigned ? 600 : undefined }}>
+                {displayName}
+              </span>
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            {isUnassigned && currentUser?.email && (
+              <button
+                type="button"
+                className="btn-primary btn-sm"
+                disabled={claiming}
+                onClick={async (e) => {
+                  e.stopPropagation()
+                  setClaiming(true)
+                  try {
+                    await claimDeadline(workspaceId, deadline.id, currentUser)
+                    await createNotification(workspaceId, undefined, {
+                      type: NOTIFICATION_TYPES.TASK_ASSIGNED || 'task_assigned',
+                      message: `⚡ ${currentUser?.displayName || currentUser?.email} claimed task "${deadline.title}"`,
+                      deadlineId: deadline.id,
+                      forEmail: null,
+                      createdBy: currentUser?.email,
+                    })
+                  } catch (err) {
+                    console.error('Failed to claim task:', err)
+                  } finally {
+                    setClaiming(false)
+                  }
+                }}
+                style={{
+                  padding: '2px 10px',
+                  fontSize: '11.5px',
+                  borderRadius: '6px',
+                  background: '#4F46E5',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+                title="Assign this task to yourself"
+              >
+                {claiming ? 'Assigning...' : '✋ Assign to Me'}
+              </button>
+            )}
+            <span className="dcard-date mono" title={due.full}>{due.short || due.full}</span>
+          </div>
         </div>
       </div>
 
       {expanded && (
         <div className="dcard-expanded">
+          {isUnassigned && currentUser?.email && (
+            <div style={{ background: 'rgba(79, 70, 229, 0.05)', border: '1px dashed #4F46E5', borderRadius: '8px', padding: '12px 14px', marginBottom: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: '#4F46E5' }}>Task Available for Pickup</div>
+                <div style={{ fontSize: '11.5px', color: 'var(--text-secondary, #6E7091)', marginTop: '2px' }}>Click assign to take ownership of this deadline and lock it for others.</div>
+              </div>
+              <button
+                type="button"
+                className="btn-primary btn-sm"
+                disabled={claiming}
+                onClick={async (e) => {
+                  e.stopPropagation()
+                  setClaiming(true)
+                  try {
+                    await claimDeadline(workspaceId, deadline.id, currentUser)
+                    await createNotification(workspaceId, undefined, {
+                      type: NOTIFICATION_TYPES.TASK_ASSIGNED || 'task_assigned',
+                      message: `⚡ ${currentUser?.displayName || currentUser?.email} claimed task "${deadline.title}"`,
+                      deadlineId: deadline.id,
+                      forEmail: null,
+                      createdBy: currentUser?.email,
+                    })
+                  } catch (err) {
+                    console.error('Failed to claim task:', err)
+                  } finally {
+                    setClaiming(false)
+                  }
+                }}
+                style={{ padding: '6px 14px', fontSize: '12px', borderRadius: '6px', background: '#4F46E5', color: '#FFFFFF', fontWeight: 700, whiteSpace: 'nowrap', border: 'none', cursor: 'pointer' }}
+              >
+                {claiming ? 'Assigning...' : '✋ Assign to Me'}
+              </button>
+            </div>
+          )}
           {deadline.description && <p className="dcard-desc">{deadline.description}</p>}
 
           {/* Required Evidence Box */}

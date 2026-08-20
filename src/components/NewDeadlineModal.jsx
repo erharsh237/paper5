@@ -79,7 +79,8 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, s
       return setError('The provided due date format is invalid. Please select a valid date.')
     }
 
-    if (!assignee) return setError('Please assign a team member.')
+    const isLetUsersPick = assigneeId === 'unassigned' || !assigneeId
+    if (!isLetUsersPick && !assignee) return setError('Please assign a team member or select "Let users pick".')
     if (!currentUser?.email) return setError('Ownership assignment failed: No email address is associated with your account.')
     if (sprintLocked) return setError('The selected sprint is locked. Unlock the sprint to add new items.')
 
@@ -90,9 +91,9 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, s
         description: description.trim(),
         priority,
         dueDate: parsedDate.toISOString(),
-        assigneeId: assignee.id,
-        assigneeName: assignee.name || assignee.fullName || assignee.displayLabel || assignee.email || 'Member',
-        assigneeEmail: assignee.email || '',
+        assigneeId: isLetUsersPick ? null : assignee.id,
+        assigneeName: isLetUsersPick ? 'Unassigned' : (assignee.name || assignee.fullName || assignee.displayLabel || assignee.email || 'Member'),
+        assigneeEmail: isLetUsersPick ? '' : (assignee.email || ''),
         createdBy: currentUser?.email,
         createdByName: currentUser?.displayName || currentUser?.email || 'Someone',
         sprintId: selectedSprintId || null,
@@ -100,13 +101,22 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, s
         requiredEvidence: requiredEvidence.map(type => ({ type, status: 'pending' })),
       })
 
-      // 1. In-App Notification (Notification Bell)
+      // In-App Notification (Notification Bell)
       const myEmail = (currentUser?.email || '').trim().toLowerCase()
       const myId = currentUser?.id || currentUser?.uid
-      const assigneeEmail = (assignee?.email || '').trim().toLowerCase()
-      const isSelf = (assigneeEmail && assigneeEmail === myEmail) || (assignee?.id && (assignee.id === myId || assignee.userId === myId))
+      const assigneeEmail = isLetUsersPick ? null : (assignee?.email || '').trim().toLowerCase()
+      const isSelf = assigneeEmail && (assigneeEmail === myEmail || (assignee?.id && (assignee.id === myId || assignee.userId === myId)))
 
-      if (!isSelf && assigneeEmail) {
+      if (isLetUsersPick) {
+        // Broadcast to all team members that a new unassigned task is available for pickup
+        createNotification(workspaceId, undefined, {
+          type: NOTIFICATION_TYPES.TASK_ASSIGNED || 'task_assigned',
+          message: `✋ New task open for pickup: "${titleInput.trim()}"`,
+          deadlineId: createdItem?.id || null,
+          forEmail: null,
+          createdBy: currentUser?.email,
+        }).catch(e => console.warn('Unassigned broadcast notification error:', e))
+      } else if (!isSelf && assigneeEmail) {
         try {
           await createNotification(workspaceId, undefined, {
             type: NOTIFICATION_TYPES.TASK_ASSIGNED,
@@ -120,7 +130,7 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, s
         }
       }
 
-      if (notifyEmail && !isSelf && assigneeEmail) {
+      if (!isLetUsersPick && notifyEmail && !isSelf && assigneeEmail) {
         setEmailStatus('sending')
         try {
           await sendDeadlineEmail({
@@ -202,7 +212,7 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, s
             <div className="field">
               <label htmlFor="assignee">Assign to</label>
               <select id="assignee" value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)}>
-                {members.length === 0 && <option value="">No team members yet</option>}
+                <option value="unassigned">Let users pick</option>
                 {members.map(m => {
                   const name = m.name || m.fullName || m.displayLabel || (m.email ? m.email.split('@')[0] : `Member (${(m.id || '').slice(0, 6)})`)
                   const email = m.email || ''

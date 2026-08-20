@@ -62,6 +62,23 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, data: data[0] })
     }
 
+    if (action === 'claim_deadline') {
+      const { user } = body || {}
+      const claimPatch = {
+        assignee_id: user?.id || user?.uid || null,
+        assignee_name: user?.displayName || user?.name || (user?.email ? user.email.split('@')[0] : 'Member'),
+        assignee_email: (user?.email || '').toLowerCase(),
+      }
+      const { data, error } = await supabaseAdmin
+        .from('deadlines')
+        .update(claimPatch)
+        .eq('id', id)
+        .eq('workspace_id', workspaceId)
+        .select()
+      if (error) throw error
+      return res.status(200).json({ success: true, data: data?.[0] })
+    }
+
     if (action === 'update_deadline') {
       const { error } = await supabaseAdmin.from('deadlines').update(patch).eq('id', id).eq('workspace_id', workspaceId)
       if (error) throw error

@@ -133,6 +133,12 @@ export async function createDeadline(workspaceId, teamId, data) {
   return res.data
 }
 
+export async function claimDeadline(workspaceId, id, user) {
+  const res = await callDeadlineApi('claim_deadline', { workspaceId, id, user })
+  notifyDeadlineChange()
+  return res.data
+}
+
 export async function updateDeadline(workspaceId, id, patch) {
   await callDeadlineApi('update_deadline', { workspaceId, id, patch })
   notifyDeadlineChange()
