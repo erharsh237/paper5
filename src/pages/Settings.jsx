@@ -316,11 +316,6 @@ export default function Settings() {
       setAlertMessage('Failed to update API Key name')
     }
   }
-      setEditingKeyId(null)
-    } catch (err) {
-      setAlertMessage('Failed to rename API Key')
-    }
-  }
 
   const handleDownloadBackup = () => {
     const data = {
