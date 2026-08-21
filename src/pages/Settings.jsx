@@ -390,16 +390,7 @@ export default function Settings() {
   const [inviteSendEmail, setInviteSendEmail] = useState(true)
 
   const handleEmailChange = (e) => {
-    const val = e.target.value
-    setInviteEmail(val)
-    if (val && !invitePassword) {
-      // SEC-4: Use crypto.getRandomValues for invite passwords
-      const arr = new Uint8Array(12)
-      crypto.getRandomValues(arr)
-      setInvitePassword(Array.from(arr, b => b.toString(16).padStart(2,'0')).join('').slice(0,12) + 'aA1!')
-    } else if (!val) {
-      setInvitePassword('')
-    }
+    setInviteEmail(e.target.value)
   }
   const [inviting, setInviting] = useState(false)
   const [inviteError, setInviteError] = useState('')
@@ -1828,18 +1819,9 @@ export default function Settings() {
                           </div>
                           
                           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                            <div style={{ flex: 1, position: 'relative' }}>
-                              <span style={{ position: 'absolute', top: '-8px', left: '8px', fontSize: '10px', background: 'var(--bg-layer-1)', padding: '0 4px', color: 'var(--text-secondary)' }}>Generated Password</span>
-                              <input
-                                type="text"
-                                value={invitePassword || 'Enter email first...'}
-                                readOnly
-                                style={{ width: '100%', padding: '8px 12px', borderRadius: '4px', border: '1px dashed var(--border)', background: 'rgba(0,0,0,0.05)', color: invitePassword ? 'var(--text-secondary)' : 'var(--text-tertiary)', fontFamily: invitePassword ? 'monospace' : 'inherit', fontStyle: invitePassword ? 'normal' : 'italic' }}
-                              />
-                            </div>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer', color: 'var(--text-secondary)' }}>
                               <input type="checkbox" checked={inviteSendEmail} onChange={e => setInviteSendEmail(e.target.checked)} />
-                              Send login details via email
+                              Send official email invitation link with 1-click workspace join button
                             </label>
                           </div>
 
