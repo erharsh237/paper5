@@ -375,9 +375,39 @@ export default function Settings() {
   const handleConfirmCancelMembership = async () => {
     setCancellingMembership(true)
     try {
+      const now = new Date()
+      const issueDate = now.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+      const expDate = new Date(now)
+      expDate.setMonth(expDate.getMonth() + 1)
+      const expiryDate = expDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+
+      const newInvoice = {
+        id: `INV-STARTER-MONTHLY-${now.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+        invoiceNumber: `INV-${now.getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`,
+        date: issueDate,
+        rawDate: now.toISOString(),
+        expiryDate,
+        cycle: 'Monthly (1 Month)',
+        plan: 'Starter Plan (Free)',
+        planId: 'free',
+        changeType: 'Plan Downgrade / Cancellation',
+        amount: '$0.00',
+        status: 'Paid',
+        workspaceName: workspace?.name || 'Workspace'
+      }
+
+      const existingInvoices = Array.isArray(workspace?.settings?.invoices) ? workspace.settings.invoices : []
+      const updatedInvoices = [newInvoice, ...existingInvoices]
+
+      const updatedSettings = {
+        ...(workspace?.settings || {}),
+        invoices: updatedInvoices
+      }
+
       await updateWorkspaceSettings(workspaceId, {
         billing_plan_id: 'free',
-        billing_status: 'cancelled'
+        billing_status: 'cancelled',
+        settings: updatedSettings
       })
       if (typeof updateUserData === 'function') {
         try {
@@ -387,7 +417,7 @@ export default function Settings() {
         }
       }
       setIsCancelMembershipModalOpen(false)
-      setAlertMessage('Workspace membership has been cancelled. Your workspace has reverted to the free Starter Tier.')
+      setAlertMessage('Workspace membership has been cancelled. Your workspace has reverted to the free Starter Tier, and tax receipt has been generated.')
     } catch (err) {
       console.error('Membership cancellation error:', err)
       setAlertMessage('Failed to cancel membership: ' + (err?.message || 'Please try again.'))
@@ -825,10 +855,63 @@ export default function Settings() {
 
   const handleSelectPlan = async (newPlanId) => {
     try {
-      await updateWorkspaceSettings(workspaceId, { billing_plan_id: newPlanId })
+      const prevPlan = planId || 'free'
+      const cycle = workspace?.billing_interval || 'monthly'
+      const now = new Date()
+      const issueDate = now.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+      const expDate = new Date(now)
+      if (cycle === 'annual') expDate.setFullYear(expDate.getFullYear() + 1)
+      else expDate.setMonth(expDate.getMonth() + 1)
+      const expiryDate = expDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+
+      const getPlanTitle = (id) => {
+        const c = (id || '').toLowerCase()
+        if (c === 'team') return 'Team Plan'
+        if (c === 'scale') return 'Scale Plan'
+        return 'Starter Plan'
+      }
+
+      const getPlanPrice = (id, interval) => {
+        const c = (id || '').toLowerCase()
+        if (c === 'team') return interval === 'annual' ? '$290.00' : '$29.00'
+        if (c === 'scale') return interval === 'annual' ? '$790.00' : '$79.00'
+        return '$0.00'
+      }
+
+      const planName = getPlanTitle(newPlanId)
+      const isUpgrade = (newPlanId === 'scale' && prevPlan !== 'scale') || (newPlanId === 'team' && (prevPlan === 'free' || prevPlan === 'starter'))
+      const changeType = prevPlan === newPlanId ? 'Plan Renewal' : (isUpgrade ? 'Plan Upgrade' : 'Plan Downgrade')
+
+      const newInvoice = {
+        id: `INV-${newPlanId.toUpperCase()}-${cycle.toUpperCase()}-${now.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+        invoiceNumber: `INV-${now.getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`,
+        date: issueDate,
+        rawDate: now.toISOString(),
+        expiryDate,
+        cycle: cycle === 'annual' ? 'Annual (12 Months)' : 'Monthly (1 Month)',
+        plan: `${planName} (${cycle === 'annual' ? 'Annual' : 'Monthly'})`,
+        planId: newPlanId,
+        changeType,
+        amount: getPlanPrice(newPlanId, cycle),
+        status: 'Paid',
+        workspaceName: workspace?.name || 'Workspace'
+      }
+
+      const existingInvoices = Array.isArray(workspace?.settings?.invoices) ? workspace.settings.invoices : []
+      const updatedInvoices = [newInvoice, ...existingInvoices]
+
+      const updatedSettings = {
+        ...(workspace?.settings || {}),
+        invoices: updatedInvoices
+      }
+
+      await updateWorkspaceSettings(workspaceId, { 
+        billing_plan_id: newPlanId,
+        settings: updatedSettings
+      })
+
       setIsPricingModalOpen(false)
-      const planName = newPlanId.charAt(0).toUpperCase() + newPlanId.slice(1)
-      setAlertMessage(`Workspace plan successfully updated to ${planName}! All existing data and team members are safely retained in your workspace.`)
+      setAlertMessage(`Workspace plan successfully updated to ${planName}! Tax Invoice ${newInvoice.id} added to Billing History.`)
     } catch (err) {
       console.error(err)
       setAlertMessage('Failed to update workspace plan. Please try again.')
