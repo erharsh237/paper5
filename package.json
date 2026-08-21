@@ -29,7 +29,6 @@
     "@reticlehq/react": "^2.2.1",
     "@reticlehq/vite-plugin": "^2.2.1",
     "@vitejs/plugin-react": "^6.0.4",
-    "puppeteer": "^25.4.0",
     "vite": "^8.1.5"
   }
 }
