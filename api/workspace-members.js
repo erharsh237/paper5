@@ -75,17 +75,42 @@ export default async function handler(req, res) {
         if (matchedUid) {
           let insertError = null
           try {
-            const { error } = await supabaseAdmin.from('workspace_members').upsert({
+            const { error: insErr } = await supabaseAdmin.from('workspace_members').insert({
               workspace_id: workspaceId,
               user_id: matchedUid,
               role: role || 'member',
               permissions: Array.isArray(permissions) ? permissions : []
-            }, { onConflict: 'workspace_id,user_id' })
-            if (error) insertError = error.message || error
+            })
+            if (insErr) {
+              await supabaseAdmin.from('workspace_members').update({
+                role: role || 'member',
+                permissions: Array.isArray(permissions) ? permissions : []
+              }).eq('workspace_id', workspaceId).eq('user_id', matchedUid)
+            }
           } catch (e) {
             insertError = e.message || e
           }
           
+          // Persist directly into workspace settings.members array
+          try {
+            const { data: wsData } = await supabaseAdmin.from('workspaces').select('settings').eq('id', workspaceId).maybeSingle()
+            const currentSettings = wsData?.settings || {}
+            const existingMembersArr = Array.isArray(currentSettings.members) ? [...currentSettings.members] : []
+            if (!existingMembersArr.some(m => m.id === matchedUid || (m.email && m.email.toLowerCase() === targetEmail))) {
+              existingMembersArr.push({
+                id: matchedUid,
+                userId: matchedUid,
+                email: targetEmail,
+                role: role || 'member',
+                name: matchedName || targetEmail,
+                joinedAt: new Date().toISOString()
+              })
+              await supabaseAdmin.from('workspaces').update({
+                settings: { ...currentSettings, members: existingMembersArr }
+              }).eq('id', workspaceId)
+            }
+          } catch (_) {}
+
           try { await supabaseAdmin.from('invites').delete().eq('workspace_id', workspaceId).eq('email', targetEmail) } catch (_) {}
           try { await supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', workspaceId).eq('email', targetEmail) } catch (_) {}
           
@@ -483,6 +508,28 @@ export default async function handler(req, res) {
       }
     } catch (autoErr) {
       console.warn('Auto convert invite notice:', autoErr)
+    }
+
+    // Merge any members stored in workspace settings
+    if (Array.isArray(wsData?.settings?.members)) {
+      for (const sm of wsData.settings.members) {
+        const smEmail = (sm.email || '').trim().toLowerCase()
+        const smId = sm.id || sm.userId
+        if (smEmail && !enrichedMembers.some(m => (m.email && m.email.toLowerCase() === smEmail) || (smId && m.id === smId))) {
+          enrichedMembers.push({
+            id: smId || smEmail,
+            userId: smId || null,
+            workspaceId,
+            role: sm.role || 'member',
+            permissions: Array.isArray(sm.permissions) ? sm.permissions : [],
+            email: sm.email,
+            name: sm.name || sm.email,
+            displayLabel: sm.name || sm.email.split('@')[0],
+            avatarUrl: sm.avatarUrl || null,
+            joinedAt: sm.joinedAt || new Date().toISOString()
+          })
+        }
+      }
     }
 
     return res.status(200).json({ success: true, members: enrichedMembers })
