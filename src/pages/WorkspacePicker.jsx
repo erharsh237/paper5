@@ -238,7 +238,7 @@ export default function WorkspacePicker() {
 
         <div className="wp-header">
           <div className="wp-brand">
-            <span className="wp-logo-text">SprintOS</span>
+            <span className="wp-logo-text">Paper5 &bull; SprintOS</span>
           </div>
           <h1>Select Workspace</h1>
           <p>Choose a workspace to continue, or create a new one.</p>
@@ -257,17 +257,18 @@ export default function WorkspacePicker() {
                 </div>
                 <div className="wp-info">
                   <h3>{ws.name || 'Untitled Workspace'}</h3>
-                  <span className="wp-role-badge">{ws.role}</span>
+                  <span className="wp-role-badge">{ws.role || 'member'}</span>
                 </div>
               </div>
               <div className="wp-card-footer">
-                <span>Enter Workspace →</span>
+                <span>Enter Workspace &rarr;</span>
               </div>
             </div>
           ))}
 
           {canCreate && (
             <button 
+              type="button"
               className="wp-create-btn"
               onClick={() => {
                 setModalStep(1)
@@ -280,7 +281,7 @@ export default function WorkspacePicker() {
         </div>
 
         <div className="wp-footer">
-          <button className="wp-logout-btn" onClick={logout}>
+          <button type="button" className="wp-logout-btn" onClick={logout}>
             Sign out securely
           </button>
         </div>
