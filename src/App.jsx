@@ -150,9 +150,10 @@ export default function App() {
     return <ForcePasswordReset />
   }
 
-  // If user is logged in but not verified, force them to the verify screen for all protected routes
+  // If user is logged in but not verified or has pending 2FA, force them to login/verify screen
   const requireAuthAndVerification = (children) => {
     if (!user) return <Navigate to="/login" replace />
+    if (isPending2FA) return <Navigate to="/login" replace />
     if (!user.emailVerified) return <Navigate to="/verify" replace />
     return children
   }
@@ -164,14 +165,14 @@ export default function App() {
           {/* Subdomain-aware Root Path */}
           <Route path="/" element={
             isAppSubdomain 
-              ? (!user ? <Navigate to="/login" replace /> : <Navigate to="/workspace" replace />)
+              ? (!user || isPending2FA ? <Navigate to="/login" replace /> : <Navigate to="/workspace" replace />)
               : <Landing />
           } />
 
           <Route path="/auth/action" element={<AuthAction />} />
           <Route path="/reset-password" element={<AuthAction />} />
           <Route path="/workspace" element={
-            !user ? <Navigate to="/login" replace /> :
+            !user || isPending2FA ? <Navigate to="/login" replace /> :
             !user.emailVerified ? <Navigate to="/verify" replace /> :
             <WorkspacePicker />
           } />

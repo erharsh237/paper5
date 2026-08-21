@@ -97,6 +97,14 @@ export default function Login({ accessDenied, denialReason }) {
 
   useEffect(() => {
     clearAuthError()
+    try {
+      const pendingEmail = sessionStorage.getItem('sprintos:2fa_pending_email')
+      if (pendingEmail) {
+        setVerifiedEmail(pendingEmail)
+        setStep(2)
+        setMessage('2FA Verification Required: Password validated. Please enter the 8-digit code sent to your email to sign in.')
+      }
+    } catch (_) {}
   }, [])
 
   const handlePasswordLogin = async () => {
@@ -130,9 +138,6 @@ export default function Login({ accessDenied, denialReason }) {
         return
       }
 
-      // Flag pending 2FA so App.jsx router does NOT unmount Login or navigate away
-      setIsPending2FA(true)
-
       // 1. Verify password (Factor 1)
       const data = await loginWithUsernameOrEmail(identifier, password)
       
@@ -144,6 +149,9 @@ export default function Login({ accessDenied, denialReason }) {
       }
 
       const userEmail = data?.user?.email || data?.email || identifier.trim().toLowerCase()
+
+      // Flag pending 2FA with user email so page reload maintains 2FA enforcement
+      setIsPending2FA(true, userEmail)
 
       // 2. Trigger OTP (Factor 2)
       try {
@@ -384,13 +392,15 @@ export default function Login({ accessDenied, denialReason }) {
                   type="button" 
                   className="auth-submit-btn" 
                   style={{ background: 'transparent', color: '#666', marginTop: '8px', border: '1px solid #eaeaea' }}
-                  onClick={() => {
+                  onClick={async () => {
+                    await logout()
                     setStep(1)
-                    setMessage('')
+                    setOtp('')
+                    setMessage('Signed out. Please enter your credentials to log in.')
                   }}
                   disabled={loading}
                 >
-                  ← Edit Credentials
+                  ← Edit Credentials / Switch Account
                 </button>
               )}
             </div>

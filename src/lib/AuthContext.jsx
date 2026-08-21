@@ -55,7 +55,24 @@ export function AuthProvider({ children }) {
   const [userData, setUserData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [authError, setAuthError] = useState(null)
-  const [isPending2FA, setIsPending2FA] = useState(false)
+  const [isPending2FA, setIsPending2FAState] = useState(() => {
+    try {
+      return !!sessionStorage.getItem('sprintos:2fa_pending_email')
+    } catch (_) {
+      return false
+    }
+  })
+
+  const setIsPending2FA = (val, email = '') => {
+    try {
+      if (val) {
+        if (email) sessionStorage.setItem('sprintos:2fa_pending_email', email)
+      } else {
+        sessionStorage.removeItem('sprintos:2fa_pending_email')
+      }
+    } catch (_) {}
+    setIsPending2FAState(!!val)
+  }
 
   useEffect(() => {
     let authListener = null;
@@ -283,6 +300,7 @@ export function AuthProvider({ children }) {
       try {
         const { data, error } = await supabase.auth.verifyOtp({ email, token, type })
         if (!error && data?.session) {
+          setIsPending2FA(false)
           return data
         }
         if (error) lastError = error
