@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+import { supabase as defaultClient } from '../lib/supabase'
 import './LocalAdminDashboard.css'
 
 // ── Export Helpers ──────────────────────────────────────────────────────────
@@ -39,6 +40,12 @@ export default function LocalAdminDashboard() {
     window.location.hostname === '[::1]'
   )
 
+  const [serviceKey, setServiceKey] = useState(() => {
+    return localStorage.getItem('paper5_service_role_key') || import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || ''
+  })
+  const [showKeyInput, setShowKeyInput] = useState(false)
+  const [tempKey, setTempKey] = useState('')
+
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -48,7 +55,9 @@ export default function LocalAdminDashboard() {
   const [autoRefreshSecs, setAutoRefreshSecs] = useState(10)
   const [lastRefreshed, setLastRefreshed] = useState(null)
 
-  // Direct Supabase Query Function (Works 100% reliably in Vite dev & production)
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://sdbglndhjkqhkphzqmum.supabase.co'
+
+  // Direct Supabase Query Function (Uses Service Role Key if available, or default client)
   const fetchMetrics = async () => {
     if (!isLocalhost) {
       setLoading(false)
@@ -61,40 +70,56 @@ export default function LocalAdminDashboard() {
     const startTime = Date.now()
 
     try {
-      if (!supabase) {
+      const activeClient = (serviceKey && serviceKey.trim()) 
+        ? createClient(supabaseUrl, serviceKey.trim(), { auth: { persistSession: false, autoRefreshToken: false } })
+        : defaultClient
+
+      if (!activeClient) {
         throw new Error('Supabase client is not configured.')
       }
 
-      // 1. Fetch Users
-      const { data: usersData, error: uErr } = await supabase
+      // 1. Fetch Users from auth.admin (if serviceKey provided) and public.users
+      let authUsersList = []
+      if (serviceKey && typeof activeClient.auth?.admin?.listUsers === 'function') {
+        try {
+          const { data: authRes, error: aErr } = await activeClient.auth.admin.listUsers({ perPage: 1000 })
+          if (authRes?.users) {
+            authUsersList = authRes.users
+          }
+        } catch (authErr) {
+          console.warn('Auth admin list note:', authErr.message)
+        }
+      }
+
+      const { data: usersData } = await activeClient
         .from('users')
         .select('*')
         .order('created_at', { ascending: false })
 
       // 2. Fetch Workspaces
-      const { data: wsData, error: wsErr } = await supabase
+      const { data: wsData } = await activeClient
         .from('workspaces')
         .select('*')
         .order('created_at', { ascending: false })
 
       // 3. Fetch Workspace Members
-      const { data: membersData } = await supabase
+      const { data: membersData } = await activeClient
         .from('workspace_members')
         .select('*')
 
       // 4. Fetch Deadlines / Tasks
-      const { data: deadlinesData } = await supabase
+      const { data: deadlinesData } = await activeClient
         .from('deadlines')
         .select('*')
         .order('created_at', { ascending: false })
 
       // 5. Fetch Sprints
-      const { data: sprintsData } = await supabase
+      const { data: sprintsData } = await activeClient
         .from('sprints')
         .select('*')
 
       // 6. Fetch Invites
-      const { data: invitesData } = await supabase
+      const { data: invitesData } = await activeClient
         .from('invites')
         .select('*')
 
@@ -115,18 +140,49 @@ export default function LocalAdminDashboard() {
       }
 
       const userMap = new Map()
-      for (const u of rawUsers) {
-        userMap.set(u.id, {
-          id: u.id,
-          email: u.email || 'N/A',
-          name: u.full_name || u.name || (u.email ? u.email.split('@')[0] : 'User'),
-          created_at: u.created_at,
-          last_sign_in_at: u.last_sign_in_at || u.updated_at,
-          billing_plan: u.billing_plan_id || 'starter',
+
+      // Add all auth users
+      for (const au of authUsersList) {
+        userMap.set(au.id, {
+          id: au.id,
+          email: au.email || 'N/A',
+          name: au.user_metadata?.full_name || au.user_metadata?.name || (au.email ? au.email.split('@')[0] : 'User'),
+          created_at: au.created_at,
+          last_sign_in_at: au.last_sign_in_at,
+          billing_plan: 'starter',
+          provider: au.app_metadata?.provider || 'email',
           workspacesCount: 0,
           workspaces: []
         })
       }
+
+      // Add/merge public users
+      for (const u of rawUsers) {
+        const existing = userMap.get(u.id) || {}
+        userMap.set(u.id, {
+          ...existing,
+          id: u.id,
+          email: u.email || existing.email || 'N/A',
+          name: u.full_name || u.name || existing.name || (u.email ? u.email.split('@')[0] : 'User'),
+          created_at: u.created_at || existing.created_at,
+          last_sign_in_at: u.last_sign_in_at || existing.last_sign_in_at,
+          billing_plan: u.billing_plan_id || existing.billing_plan || 'starter',
+          provider: existing.provider || 'email',
+          workspacesCount: existing.workspacesCount || 0,
+          workspaces: existing.workspaces || []
+        })
+      }
+
+      for (const m of rawMembers) {
+        if (userMap.has(m.user_id)) {
+          const u = userMap.get(m.user_id)
+          u.workspacesCount += 1
+          const wsObj = rawWorkspaces.find(w => w.id === m.workspace_id)
+          if (wsObj) u.workspaces.push({ id: wsObj.id, name: wsObj.name, role: m.role })
+        }
+      }
+
+      const allUsersList = Array.from(userMap.values())
 
       for (const m of rawMembers) {
         if (userMap.has(m.user_id)) {
@@ -322,6 +378,18 @@ export default function LocalAdminDashboard() {
           </div>
 
           <div className="admin-controls">
+            <button 
+              type="button" 
+              className={`admin-btn ${serviceKey ? 'admin-btn-export' : ''}`}
+              onClick={() => {
+                setTempKey(serviceKey)
+                setShowKeyInput(prev => !prev)
+              }}
+              title="Configure Supabase Service Role Key to bypass Row Level Security"
+            >
+              🔑 {serviceKey ? 'Admin Key Active ✓' : 'Set Admin Key'}
+            </button>
+
             {/* Export Menu Buttons */}
             <button 
               type="button" 
@@ -371,6 +439,74 @@ export default function LocalAdminDashboard() {
             </Link>
           </div>
         </header>
+
+        {showKeyInput && (
+          <div style={{ background: '#f8fafc', border: '1px solid #c7d2fe', padding: '16px 20px', borderRadius: '12px', marginBottom: '24px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ flex: 1, minWidth: '280px' }}>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: '#1e1b4b', marginBottom: '4px' }}>Supabase Service Role Key (Admin Bypass)</div>
+              <div style={{ fontSize: '12px', color: '#64748b' }}>
+                Paste your Supabase Service Role Key (from Supabase Dashboard &rarr; Project Settings &rarr; API &rarr; <code>service_role</code> secret). This bypasses Row Level Security (RLS) to read all auth accounts and global workspace records. Stored locally on your device only.
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', width: '100%', maxWidth: '460px' }}>
+              <input
+                type="password"
+                placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                value={tempKey}
+                onChange={(e) => setTempKey(e.target.value)}
+                style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '12px', fontFamily: 'monospace' }}
+              />
+              <button
+                type="button"
+                className="admin-btn admin-btn-primary"
+                onClick={() => {
+                  const k = tempKey.trim()
+                  setServiceKey(k)
+                  if (k) localStorage.setItem('paper5_service_role_key', k)
+                  else localStorage.removeItem('paper5_service_role_key')
+                  setShowKeyInput(false)
+                  setTimeout(() => fetchMetrics(), 50)
+                }}
+              >
+                Save & Unlock
+              </button>
+              {serviceKey && (
+                <button
+                  type="button"
+                  className="admin-btn"
+                  onClick={() => {
+                    setServiceKey('')
+                    setTempKey('')
+                    localStorage.removeItem('paper5_service_role_key')
+                    setShowKeyInput(false)
+                    setTimeout(() => fetchMetrics(), 50)
+                  }}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {!serviceKey && (
+          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', padding: '12px 18px', borderRadius: '10px', marginBottom: '20px', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <span>
+              💡 <strong>Row Level Security Notice:</strong> Supabase RLS protects user accounts from unauthenticated reads. Click <strong>"Set Admin Key"</strong> to paste your Supabase Service Role Key and unlock all global accounts and workspace records.
+            </span>
+            <button
+              type="button"
+              className="admin-btn"
+              style={{ background: '#fef3c7', borderColor: '#fcd34d', color: '#78350f', padding: '4px 10px', fontSize: '12px' }}
+              onClick={() => {
+                setTempKey(serviceKey)
+                setShowKeyInput(true)
+              }}
+            >
+              🔑 Set Key
+            </button>
+          </div>
+        )}
 
         {error && (
           <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '14px 18px', borderRadius: '10px', marginBottom: '24px', fontSize: '14px' }}>
