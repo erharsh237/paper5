@@ -71,7 +71,14 @@ export default function LocalAdminDashboard() {
 
     try {
       const activeClient = (serviceKey && serviceKey.trim()) 
-        ? createClient(supabaseUrl, serviceKey.trim(), { auth: { persistSession: false, autoRefreshToken: false } })
+        ? createClient(supabaseUrl, serviceKey.trim(), {
+            auth: {
+              persistSession: false,
+              autoRefreshToken: false,
+              detectSessionInUrl: false,
+              storageKey: 'paper5_admin_client_session'
+            }
+          })
         : defaultClient
 
       if (!activeClient) {
