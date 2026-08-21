@@ -512,7 +512,7 @@ export default function Settings() {
   const maxMembers = (planId === 'free' || planId === 'starter') ? 3 : planId === 'team' ? 7 : 'unlimited'
 
   const activeMemberEmails = useMemo(() => {
-    return new Set(members.map(m => (m.email || '').trim().toLowerCase()).filter(Boolean))
+    return new Set(members.map(m => (m.email || m.users?.email || m.user?.email || '').trim().toLowerCase()).filter(Boolean))
   }, [members])
 
   const activePendingInvites = useMemo(() => {
@@ -527,8 +527,8 @@ export default function Settings() {
 
   // Automatically clean up stale pending invites for members who have already joined
   useEffect(() => {
-    if (!workspaceId || members.length === 0 || invites.length === 0) return
-    const memberEmails = new Set(members.map(m => (m.email || '').trim().toLowerCase()).filter(Boolean))
+    if (!workspaceId || invites.length === 0) return
+    const memberEmails = new Set(members.map(m => (m.email || m.users?.email || m.user?.email || '').trim().toLowerCase()).filter(Boolean))
     invites.forEach(inv => {
       const invEmail = (inv.email || '').trim().toLowerCase()
       if (invEmail && memberEmails.has(invEmail)) {
