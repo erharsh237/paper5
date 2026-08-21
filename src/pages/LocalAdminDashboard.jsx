@@ -49,11 +49,47 @@ export default function LocalAdminDashboard() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [activeTab, setActiveTab] = useState('overview') // overview | users | workspaces | telemetry
+  const [activeTab, setActiveTab] = useState('overview') // overview | live | users | workspaces
   const [userSearch, setUserSearch] = useState('')
   const [wsSearch, setWsSearch] = useState('')
   const [autoRefreshSecs, setAutoRefreshSecs] = useState(10)
   const [lastRefreshed, setLastRefreshed] = useState(null)
+
+  // Real-time live presence visitors
+  const [liveVisitors, setLiveVisitors] = useState([])
+  const [liveCount, setLiveCount] = useState(0)
+
+  // Real-time Supabase Presence Listener for Live Visitors
+  useEffect(() => {
+    if (!defaultClient || typeof window === 'undefined') return
+
+    const channel = defaultClient.channel('paper5-live-visitors', {
+      config: { presence: { key: 'admin_observer_' + Math.random().toString(36).slice(2, 7) } }
+    })
+
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState()
+        const visitors = []
+        for (const key in state) {
+          const arr = state[key] || []
+          for (const item of arr) {
+            if (item && item.visitorId) {
+              visitors.push(item)
+            }
+          }
+        }
+        setLiveVisitors(visitors)
+        setLiveCount(visitors.length)
+      })
+      .subscribe()
+
+    return () => {
+      try {
+        defaultClient.removeChannel(channel)
+      } catch (_) {}
+    }
+  }, [])
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://sdbglndhjkqhkphzqmum.supabase.co'
 
@@ -511,7 +547,18 @@ export default function LocalAdminDashboard() {
         )}
 
         {/* ── TOP KPI CARDS ── */}
-        <div className="kpi-grid">
+        <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+          <div className="kpi-card" style={{ borderColor: '#86efac', background: '#f0fdf4' }}>
+            <div className="kpi-label" style={{ color: '#15803d' }}>
+              <span>Live Visitors Now</span>
+              <span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 0 3px rgba(34, 197, 94, 0.3)' }} />
+            </div>
+            <div className="kpi-value" style={{ color: '#14532d' }}>{liveCount}</div>
+            <div className="kpi-delta" style={{ color: '#16a34a' }}>
+              <span>🟢 Real-time WebSocket Feed</span>
+            </div>
+          </div>
+
           <div className="kpi-card">
             <div className="kpi-label">
               <span>Total Accounts</span>
@@ -547,12 +594,12 @@ export default function LocalAdminDashboard() {
 
           <div className="kpi-card">
             <div className="kpi-label">
-              <span>Total Tasks & Deadlines</span>
+              <span>Tasks & Deadlines</span>
               <span>📋</span>
             </div>
             <div className="kpi-value">{loading && !data ? '—' : (summary.totalDeadlines ?? 0)}</div>
             <div className="kpi-delta" style={{ color: '#059669' }}>
-              <span>{summary.completedTasks ?? 0} completed ({summary.totalDeadlines ? Math.round((summary.completedTasks / summary.totalDeadlines) * 100) : 0}%)</span>
+              <span>{summary.completedTasks ?? 0} completed</span>
             </div>
           </div>
         </div>
@@ -565,6 +612,14 @@ export default function LocalAdminDashboard() {
             onClick={() => setActiveTab('overview')}
           >
             Overview & Telemetry
+          </button>
+          <button 
+            type="button" 
+            className={`admin-tab-btn ${activeTab === 'live' ? 'active' : ''}`}
+            onClick={() => setActiveTab('live')}
+            style={activeTab === 'live' ? { borderColor: '#86efac', background: '#f0fdf4', color: '#166534' } : {}}
+          >
+            🟢 Live Visitors ({liveCount})
           </button>
           <button 
             type="button" 
@@ -581,6 +636,77 @@ export default function LocalAdminDashboard() {
             Workspaces ({data?.workspaces?.length ?? 0})
           </button>
         </div>
+
+        {/* ── TAB: LIVE VISITORS (REAL-TIME SESSIONS) ── */}
+        {activeTab === 'live' && (
+          <div className="admin-panel">
+            <div className="admin-panel-header">
+              <h3 className="admin-panel-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 0 3px rgba(34, 197, 94, 0.3)' }} />
+                Currently Active Website Visitors ({liveVisitors.length})
+              </h3>
+              <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: 600, background: '#dcfce7', padding: '4px 10px', borderRadius: '6px' }}>
+                Live WebSocket Channel Active
+              </span>
+            </div>
+
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Visitor / User</th>
+                    <th>Current Active Page</th>
+                    <th>Device</th>
+                    <th>Traffic Source / Referrer</th>
+                    <th>Connected At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {liveVisitors.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                        <div style={{ fontSize: '32px', marginBottom: '8px' }}>📡</div>
+                        <div style={{ fontWeight: 600, color: '#0f172a' }}>Waiting for visitors...</div>
+                        <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
+                          Open another tab or device to <a href="http://localhost:5173" target="_blank" rel="noreferrer" style={{ color: '#4f46e5' }}>localhost:5173</a> or <a href="https://paper5.co" target="_blank" rel="noreferrer" style={{ color: '#4f46e5' }}>paper5.co</a> to see live presence updates in real time!
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    liveVisitors.map((v, idx) => (
+                      <tr key={v.visitorId || idx}>
+                        <td>
+                          <div style={{ fontWeight: 700, color: '#0f172a' }}>
+                            {v.email !== 'Anonymous Visitor' ? v.email : `Anonymous Visitor (${v.visitorId})`}
+                          </div>
+                          {v.name && v.name !== 'Visitor' && (
+                            <div style={{ fontSize: '12px', color: '#64748b' }}>{v.name}</div>
+                          )}
+                        </td>
+                        <td>
+                          <code style={{ background: '#eef2ff', color: '#4338ca', padding: '3px 8px', borderRadius: '6px', fontWeight: 600 }}>
+                            {v.page || '/'}
+                          </code>
+                        </td>
+                        <td>
+                          <span className="pill-tag pill-starter">
+                            {v.device || 'Desktop'}
+                          </span>
+                        </td>
+                        <td style={{ color: '#334155', fontWeight: 500 }}>
+                          {v.referrer || 'Direct'}
+                        </td>
+                        <td style={{ color: '#64748b', fontSize: '12.5px' }}>
+                          {v.joinedAt ? new Date(v.joinedAt).toLocaleTimeString() : 'Just now'}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* ── TAB 1: OVERVIEW & TELEMETRY ── */}
         {activeTab === 'overview' && (

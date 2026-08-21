@@ -62,6 +62,7 @@ import {
 
 import { getDomainConfig, getAppUrl, getMainUrl } from './lib/domain'
 import InitialPreloader from './components/InitialPreloader'
+import { useLivePresenceTracker } from './hooks/useLivePresence'
 import { Cardio } from 'ldrs/react'
 import 'ldrs/react/Cardio.css'
 
@@ -201,6 +202,7 @@ function WorkspaceGuard({ children }) {
 }
 
 export default function App() {
+  useLivePresenceTracker()
   const { user, userData, loading, isPending2FA } = useAuth()
   const { isAppSubdomain } = getDomainConfig()
 
