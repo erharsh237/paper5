@@ -29,15 +29,15 @@ export async function createNotification(workspaceId, teamId, { type, message, d
     return null
   }
 
-  // Attempt insert with PostgreSQL snake_case columns
+  // Insert with actual schema column names
   const insertPayload = {
     workspace_id: workspaceId,
     type,
     message,
-    deadline_id: deadlineId || null,
-    for_email: targetEmail,
-    created_by: (createdBy || '').trim().toLowerCase(),
-    read_by: [],
+    deadlineId: deadlineId || null,
+    forEmail: targetEmail,
+    createdBy: (createdBy || '').trim().toLowerCase(),
+    readBy: [],
   }
 
   let { data, error } = await supabase
@@ -46,25 +46,8 @@ export async function createNotification(workspaceId, teamId, { type, message, d
     .select()
     .maybeSingle()
 
-  // Fallback for camelCase schema if database columns are camelCase
   if (error) {
-    try {
-      const fallbackPayload = {
-        workspace_id: workspaceId,
-        type,
-        message,
-        deadlineId: deadlineId || null,
-        forEmail: targetEmail,
-        createdBy: (createdBy || '').trim().toLowerCase(),
-        readBy: [],
-      }
-      const res = await supabase.from('notifications').insert(fallbackPayload).select().maybeSingle()
-      if (!res.error && res.data) {
-        notifyNotificationsChange()
-        return { id: res.data.id }
-      }
-    } catch (_) {}
-    throw error
+    console.warn('createNotification DB notice:', error)
   }
 
   notifyNotificationsChange()
@@ -281,14 +264,14 @@ export async function markNotificationRead(workspaceId, id, userEmail) {
       .eq('id', id)
       .maybeSingle()
       
-    const currentReadBy = Array.isArray(existing?.read_by) ? existing.read_by : (Array.isArray(existing?.readBy) ? existing.readBy : [])
+    const currentReadBy = Array.isArray(existing?.readBy) ? existing.readBy : (Array.isArray(existing?.read_by) ? existing.read_by : [])
     if (!currentReadBy.includes(email)) {
       const readBy = [...currentReadBy, email]
       
       try {
         await supabase
           .from('notifications')
-          .update({ read_by: readBy })
+          .update({ readBy: readBy })
           .eq('id', id)
       } catch (_) {}
     }
@@ -320,13 +303,13 @@ export async function markAllNotificationsRead(workspaceId, userEmail) {
 
     // 2. Persist all to DB
     for (const notif of (data || [])) {
-      const current = Array.isArray(notif.read_by) ? notif.read_by : (Array.isArray(notif.readBy) ? notif.readBy : [])
+      const current = Array.isArray(notif.readBy) ? notif.readBy : (Array.isArray(notif.read_by) ? notif.read_by : [])
       if (!current.includes(email)) {
         const readBy = [...current, email]
         try {
           await supabase
             .from('notifications')
-            .update({ read_by: readBy })
+            .update({ readBy: readBy })
             .eq('id', notif.id)
         } catch (_) {}
       }
