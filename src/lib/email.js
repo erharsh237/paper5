@@ -5,12 +5,39 @@ const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
 const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
 
 /**
- * Sends a deadline-assignment email via EmailJS (routed through your connected Gmail).
- * Requires an EmailJS template with matching variable names below.
+ * Sends a deadline-assignment email via Vercel Serverless Resend API (or EmailJS fallback).
  */
 export async function sendDeadlineEmail({
-  toName, toEmail, title, description, dueDate, priority, assignedBy, appUrl,
+  toName, toEmail, title, description, dueDate, priority, assignedBy, appUrl, workspaceName
 }) {
+  if (!toEmail) return { skipped: true }
+
+  // 1. Try Vercel Serverless Resend API (routed through verified domain on Vercel)
+  try {
+    const res = await fetch('/api/send-deadline-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        toName,
+        toEmail,
+        title,
+        description,
+        dueDate,
+        priority,
+        assignedBy,
+        workspaceName,
+        appUrl: appUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://app.paper5.co')
+      })
+    })
+    const json = await res.json()
+    if (res.ok && json.success) {
+      return { success: true, emailId: json.emailId }
+    }
+  } catch (err) {
+    console.warn('Serverless deadline email dispatch notice:', err)
+  }
+
+  // 2. EmailJS Client-side Fallback
   if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) {
     return { skipped: true }
   }
@@ -21,9 +48,9 @@ export async function sendDeadlineEmail({
     task_title: title,
     task_description: description || 'No additional details provided.',
     due_date: dueDate,
-    priority: priority.toUpperCase(),
+    priority: (priority || 'medium').toUpperCase(),
     assigned_by: assignedBy,
-    app_url: appUrl || window.location.origin,
+    app_url: appUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://app.paper5.co'),
   }
 
   return emailjs.send(SERVICE_ID, TEMPLATE_ID, params, { publicKey: PUBLIC_KEY })
