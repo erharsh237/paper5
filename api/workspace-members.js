@@ -337,17 +337,48 @@ export default async function handler(req, res) {
           let matchedName = null
           let matchedAvatar = null
 
-          const { data: matchedUsers } = await supabaseAdmin
-            .from('users')
-            .select('id, email, name, full_name, avatar_url')
-            .ilike('email', invEmail)
-            .limit(1)
+          // A. Check userDetailsMap (pre-fetched auth/profile details)
+          for (const [uid, u] of userDetailsMap.entries()) {
+            if (u.email && u.email.trim().toLowerCase() === invEmail) {
+              matchedUserId = uid
+              matchedName = u.full_name || u.name
+              matchedAvatar = u.avatar_url
+              break
+            }
+          }
 
-          if (matchedUsers && matchedUsers[0]) {
-            matchedUserId = matchedUsers[0].id
-            matchedName = matchedUsers[0].name || matchedUsers[0].full_name
-            matchedAvatar = matchedUsers[0].avatar_url
-          } else if (serviceKey && typeof supabaseAdmin.auth?.admin?.listUsers === 'function') {
+          // B. Check users table
+          if (!matchedUserId) {
+            const { data: matchedUsers } = await supabaseAdmin
+              .from('users')
+              .select('id, email, name, full_name, avatar_url')
+              .ilike('email', invEmail)
+              .limit(1)
+
+            if (matchedUsers && matchedUsers[0]) {
+              matchedUserId = matchedUsers[0].id
+              matchedName = matchedUsers[0].name || matchedUsers[0].full_name
+              matchedAvatar = matchedUsers[0].avatar_url
+            }
+          }
+
+          // C. Check profiles table
+          if (!matchedUserId) {
+            const { data: matchedProfiles } = await supabaseAdmin
+              .from('profiles')
+              .select('id, email, name, photoURL')
+              .ilike('email', invEmail)
+              .limit(1)
+
+            if (matchedProfiles && matchedProfiles[0]) {
+              matchedUserId = matchedProfiles[0].id
+              matchedName = matchedProfiles[0].name
+              matchedAvatar = matchedProfiles[0].photoURL
+            }
+          }
+
+          // D. Check auth admin listUsers
+          if (!matchedUserId && serviceKey && typeof supabaseAdmin.auth?.admin?.listUsers === 'function') {
             try {
               const { data: listRes } = await supabaseAdmin.auth.admin.listUsers()
               const matchedAuthUser = (listRes?.users || []).find(u => (u.email || '').trim().toLowerCase() === invEmail)
@@ -368,8 +399,10 @@ export default async function handler(req, res) {
               permissions: Array.isArray(inv.permissions) ? inv.permissions : []
             }, { onConflict: 'workspace_id,user_id' }).catch(() => {})
 
-            // Delete pending invite
+            // Delete pending invite by id AND email from all invite tables
             await supabaseAdmin.from('invites').delete().eq('id', inv.id).catch(() => {})
+            await supabaseAdmin.from('invites').delete().eq('workspace_id', workspaceId).eq('email', invEmail).catch(() => {})
+            await supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', workspaceId).eq('email', invEmail).catch(() => {})
 
             // Add to enrichedMembers list if not already present
             if (!enrichedMembers.some(m => m.id === matchedUserId || (m.email && m.email.toLowerCase() === invEmail))) {
