@@ -47,5 +47,5 @@ Under the DPDP Act and global frameworks, you have the right to:
 ## 6. Contact Us / Grievance Officer
 
 If you have questions about this Privacy Policy or wish to exercise your rights, please contact our Grievance Officer at:
-**Email:** support@paper5.com  
+**Email:** support@paper5.co  
 **Address:** Paper5, Ludhiana, Punjab, India

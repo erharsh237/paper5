@@ -59,4 +59,4 @@ These Terms shall be governed by and construed in accordance with the laws of In
 We may modify these Terms at any time. We will provide notice of material changes by prompting you to re-accept the Terms within the application or by sending an email. Your continued use of the Service after the effective date of the revised Terms constitutes your acceptance of the changes.
 
 ## 12. Contact
-If you have any questions about these Terms, please contact us at support@paper5.com.
+If you have any questions about these Terms, please contact us at support@paper5.co.
