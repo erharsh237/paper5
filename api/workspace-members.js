@@ -38,6 +38,57 @@ export default async function handler(req, res) {
     }
 
     try {
+      if (action === 'add_member_by_email') {
+        const targetEmail = (body.email || '').trim().toLowerCase()
+        if (!targetEmail) return res.status(400).json({ error: 'Missing email' })
+        
+        let matchedUid = null
+        let matchedName = null
+        
+        if (serviceKey && typeof supabaseAdmin.auth?.admin?.listUsers === 'function') {
+          try {
+            const { data: listRes } = await supabaseAdmin.auth.admin.listUsers()
+            const foundUser = (listRes?.users || []).find(u => (u.email || '').trim().toLowerCase() === targetEmail)
+            if (foundUser) {
+              matchedUid = foundUser.id
+              matchedName = foundUser.user_metadata?.full_name || foundUser.user_metadata?.name
+            }
+          } catch (_) {}
+        }
+        
+        if (!matchedUid) {
+          const { data: uRows } = await supabaseAdmin.from('users').select('id, name, full_name').ilike('email', targetEmail).limit(1)
+          if (uRows && uRows[0]) {
+            matchedUid = uRows[0].id
+            matchedName = uRows[0].name || uRows[0].full_name
+          }
+        }
+        
+        if (!matchedUid) {
+          const { data: pRows } = await supabaseAdmin.from('profiles').select('id, name').ilike('email', targetEmail).limit(1)
+          if (pRows && pRows[0]) {
+            matchedUid = pRows[0].id
+            matchedName = pRows[0].name
+          }
+        }
+        
+        if (matchedUid) {
+          await supabaseAdmin.from('workspace_members').upsert({
+            workspace_id: workspaceId,
+            user_id: matchedUid,
+            role: role || 'member',
+            permissions: Array.isArray(permissions) ? permissions : []
+          }, { onConflict: 'workspace_id,user_id' })
+          
+          await supabaseAdmin.from('invites').delete().eq('workspace_id', workspaceId).eq('email', targetEmail).catch(() => {})
+          await supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', workspaceId).eq('email', targetEmail).catch(() => {})
+          
+          return res.status(200).json({ success: true, userId: matchedUid, email: targetEmail })
+        }
+        
+        return res.status(404).json({ error: 'User account not found in Auth for email: ' + targetEmail })
+      }
+
       if (action === 'update_workspace_settings') {
         const { error } = await supabaseAdmin
           .from('workspaces')

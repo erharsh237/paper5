@@ -12,11 +12,11 @@ export default async function handler(req, res) {
   }
 
   const { email, userId, workspaceId, fetchWorkspace } = body || {}
-  if (!email || !userId) {
+  if (!email && !userId) {
     return res.status(400).json({ error: 'Missing email or userId parameter' })
   }
 
-  const cleanEmail = email.trim().toLowerCase()
+  const cleanEmail = email ? email.trim().toLowerCase() : ''
   const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://sdbglndhjkqhkphzqmum.supabase.co'
 
   // Try service role key first, fall back to anon key
@@ -37,8 +37,19 @@ export default async function handler(req, res) {
 
   try {
     let acceptedWorkspaceId = workspaceId || null
+    let targetUserId = userId || null
 
-    if (hasElevatedAccess) {
+    if (!targetUserId && cleanEmail && hasElevatedAccess) {
+      try {
+        const { data: listRes } = await supabaseAdmin.auth.admin.listUsers()
+        const matched = (listRes?.users || []).find(u => (u.email || '').trim().toLowerCase() === cleanEmail)
+        if (matched) {
+          targetUserId = matched.id
+        }
+      } catch (_) {}
+    }
+
+    if (hasElevatedAccess && targetUserId) {
       // --- Elevated path: full insert using service role key ---
 
       // 1. Fetch pending invites from both invites & workspace_invites tables
