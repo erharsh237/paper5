@@ -124,11 +124,9 @@ export default function UserMenu() {
               </NavLink>
             )}
 
-            {workspaces.length > 1 && (
-              <a href="/workspace?picker=true" className="nav-more-item" onClick={() => setOpen(false)}>
-                <SwitchIcon /> Switch Workspace
-              </a>
-            )}
+            <a href="/workspace?picker=true" className="nav-more-item" onClick={() => setOpen(false)}>
+              <SwitchIcon /> Switch / Create Workspace
+            </a>
 
             <div style={{ margin: '4px 0', borderTop: '1px solid var(--border-soft)' }} />
 

@@ -1160,10 +1160,13 @@ export default function Settings() {
                   })()}
 
                   {isAdminOrOwner && (
-                    <div style={{ marginTop: '16px' }}>
+                    <div style={{ marginTop: '16px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                       <button type="submit" className="btn-primary" disabled={savingSettings}>
                         {savingSettings ? 'Saving Settings...' : 'Save Workflow & Preferences'}
                       </button>
+                      <a href="/workspace?picker=true" className="btn-ghost" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        🏢 Switch or Create Workspace
+                      </a>
                     </div>
                   )}
                 </form>
