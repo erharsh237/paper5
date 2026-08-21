@@ -3,6 +3,12 @@ import { Link } from 'react-router-dom'
 import './LocalAdminDashboard.css'
 
 export default function LocalAdminDashboard() {
+  const isLocalhost = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname === '[::1]'
+  )
+
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -13,6 +19,11 @@ export default function LocalAdminDashboard() {
   const [lastRefreshed, setLastRefreshed] = useState(null)
 
   const fetchMetrics = async () => {
+    if (!isLocalhost) {
+      setLoading(false)
+      setError('Access Denied: This console runs strictly on your local machine (http://localhost:5173/admin).')
+      return
+    }
     try {
       setError('')
       const res = await fetch('/api/admin-metrics')
@@ -35,16 +46,20 @@ export default function LocalAdminDashboard() {
   }
 
   useEffect(() => {
-    fetchMetrics()
-  }, [])
+    if (isLocalhost) {
+      fetchMetrics()
+    } else {
+      setLoading(false)
+    }
+  }, [isLocalhost])
 
   useEffect(() => {
-    if (autoRefreshSecs <= 0) return
+    if (!isLocalhost || autoRefreshSecs <= 0) return
     const timer = setInterval(() => {
       fetchMetrics()
     }, autoRefreshSecs * 1000)
     return () => clearInterval(timer)
-  }, [autoRefreshSecs])
+  }, [autoRefreshSecs, isLocalhost])
 
   const filteredUsers = useMemo(() => {
     if (!data?.users) return []
@@ -71,6 +86,23 @@ export default function LocalAdminDashboard() {
   const summary = data?.summary || {}
   const plans = data?.planDistribution || { free: 0, starter: 0, team: 0, scale: 0 }
   const telemetry = data?.trafficTelemetry || {}
+
+  if (!isLocalhost) {
+    return (
+      <div className="local-admin-root" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', textAlign: 'center' }}>
+        <div style={{ maxWidth: '480px', background: '#11141f', border: '1px solid rgba(255,255,255,0.1)', padding: '40px 32px', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔒</div>
+          <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#ffffff', margin: '0 0 10px 0' }}>Localhost Server Only</h2>
+          <p style={{ fontSize: '14px', color: '#94a3b8', lineHeight: '1.5', margin: '0 0 24px 0' }}>
+            This operations & telemetry dashboard is restricted to local server execution. To view metrics, run the project locally and visit <code style={{ color: '#818cf8', background: 'rgba(99,102,241,0.15)', padding: '2px 6px', borderRadius: '4px' }}>http://localhost:5173/admin</code>.
+          </p>
+          <Link to="/workspace" className="admin-btn admin-btn-primary" style={{ textDecoration: 'none', display: 'inline-flex', padding: '10px 20px' }}>
+            Return to SprintOS →
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="local-admin-root">

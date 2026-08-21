@@ -10,6 +10,29 @@ export default async function handler(req, res) {
     return res.status(200).end()
   }
 
+  const host = req.headers.host || ''
+  const origin = req.headers.origin || ''
+  const referer = req.headers.referer || ''
+  const adminKey = req.headers['x-admin-key'] || req.query?.adminKey
+
+  const isLocalhostRequest = 
+    host.includes('localhost') || 
+    host.includes('127.0.0.1') || 
+    origin.includes('localhost') || 
+    origin.includes('127.0.0.1') || 
+    referer.includes('localhost') || 
+    referer.includes('127.0.0.1')
+
+  const validSecret = process.env.ADMIN_SECRET_KEY || 'paper5-superadmin-secret'
+  const isAuthorizedSecret = adminKey && adminKey === validSecret
+
+  if (!isLocalhostRequest && !isAuthorizedSecret) {
+    return res.status(403).json({
+      success: false,
+      error: 'Access Denied: Internal telemetry console is restricted strictly to local server execution.'
+    })
+  }
+
   const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://sdbglndhjkqhkphzqmum.supabase.co'
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY
