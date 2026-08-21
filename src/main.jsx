@@ -9,6 +9,13 @@ import * as Sentry from '@sentry/react'
 import './index.css'
 import './pages/Auth.css'
 
+if (typeof window !== 'undefined') {
+  window.addEventListener('vite:preloadError', (event) => {
+    event.preventDefault()
+    window.location.reload()
+  })
+}
+
 if (import.meta.env.VITE_SENTRY_DSN) {
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN,
