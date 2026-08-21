@@ -184,17 +184,6 @@ export default function LocalAdminDashboard() {
 
       const allUsersList = Array.from(userMap.values())
 
-      for (const m of rawMembers) {
-        if (userMap.has(m.user_id)) {
-          const u = userMap.get(m.user_id)
-          u.workspacesCount += 1
-          const wsObj = rawWorkspaces.find(w => w.id === m.workspace_id)
-          if (wsObj) u.workspaces.push({ id: wsObj.id, name: wsObj.name, role: m.role })
-        }
-      }
-
-      const allUsersList = Array.from(userMap.values())
-
       // Time aggregates
       const now = Date.now()
       const oneDayAgo = now - 24 * 60 * 60 * 1000
