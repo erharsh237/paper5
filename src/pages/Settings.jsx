@@ -871,10 +871,7 @@ export default function Settings() {
         return 'Starter Plan'
       }
 
-      const getPlanPrice = (id, interval) => {
-        const c = (id || '').toLowerCase()
-        if (c === 'team') return interval === 'annual' ? '$290.00' : '$29.00'
-        if (c === 'scale') return interval === 'annual' ? '$790.00' : '$79.00'
+      const getPlanPrice = () => {
         return '$0.00'
       }
 

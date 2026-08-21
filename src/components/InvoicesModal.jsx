@@ -19,17 +19,17 @@ export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspac
     return 'Starter Plan'
   }
 
-  const getPlanPrice = (id, cycle = 'monthly') => {
-    const clean = (id || '').toLowerCase()
-    if (clean === 'team') return cycle === 'annual' ? '$290.00' : '$29.00'
-    if (clean === 'scale') return cycle === 'annual' ? '$790.00' : '$79.00'
+  const getPlanPrice = () => {
     return '$0.00'
   }
 
   const activePlanName = getPlanName(currentPlanId)
   
-  // 1. Retrieve stored invoices from workspace settings
-  const storedInvoices = Array.isArray(workspace?.settings?.invoices) ? workspace.settings.invoices : []
+  // 1. Retrieve stored invoices from workspace settings (all plans are $0.00 during launch special)
+  const storedInvoices = (Array.isArray(workspace?.settings?.invoices) ? workspace.settings.invoices : []).map(inv => ({
+    ...inv,
+    amount: '$0.00'
+  }))
 
   // 2. Build baseline fallback invoices if history is missing
   const createdAtDate = workspace?.created_at ? new Date(workspace.created_at) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
