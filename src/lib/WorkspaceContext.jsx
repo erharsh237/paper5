@@ -62,96 +62,107 @@ export function WorkspaceProvider({ children }) {
     setWorkspaceError(null);
 
     const fetchAll = async () => {
-      // Step 1: Accept any pending invites via serverless API (uses service role key to bypass RLS)
-      if (user?.email) {
-        try {
-          await fetch('/api/accept-invite', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: user.email, userId: user.id, workspaceId })
-          })
-        } catch (apiErr) {
-          console.warn('WorkspaceContext accept-invite notice:', apiErr)
-        }
-      }
-
-      // Step 2: Query workspace + membership. Use service bypass API for workspace data
-      const [wsResult, memberResult] = await Promise.all([
-        supabase.from('workspaces').select('*').eq('id', workspaceId).maybeSingle(),
-        supabase.from('workspace_members').select('role').eq('workspace_id', workspaceId).eq('user_id', user.id).maybeSingle()
-      ])
-
-      // Step 3: If workspace still null due to RLS, try fetching it via the service API
-      let wsData = wsResult.data
-      if (!wsData && !wsResult.error) {
-        try {
-          const resp = await fetch('/api/accept-invite', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: user.email, userId: user.id, workspaceId, fetchWorkspace: true })
-          })
-          const json = await resp.json()
-          if (json?.workspace) wsData = json.workspace
-        } catch (_) {}
-      }
-
-      if (wsData) {
-        setWorkspace(wsData)
-        setWorkspaceError(null)
-      } else if (wsResult.error) {
-        setWorkspaceError(wsResult.error.message)
-      } else {
-        setWorkspace(null)
-        setWorkspaceError('Workspace not found')
-      }
-
-      let myRole = memberResult?.data?.role || null
-      let myPerms = []
-
-      // Extract direct permissions from workspace settings
-      if (wsData?.settings?.member_permissions) {
-        if (wsData.settings.member_permissions[user.id] !== undefined) {
-          myPerms = wsData.settings.member_permissions[user.id] || []
-        } else if (user.email && wsData.settings.member_permissions[user.email.toLowerCase()] !== undefined) {
-          myPerms = wsData.settings.member_permissions[user.email.toLowerCase()] || []
-        }
-      }
-
-      // Query serverless API to ensure accurate enriched permissions and verify membership
       try {
-        const memResp = await fetch(`/api/workspace-members?workspaceId=${encodeURIComponent(workspaceId)}`)
-        if (memResp.ok) {
-          const memJson = await memResp.json()
-          const myMember = (memJson?.members || []).find(m => m.id === user.id || m.userId === user.id || (m.email && user.email && m.email.toLowerCase() === user.email.toLowerCase()))
-          if (myMember) {
-            myRole = myMember.role || myRole || 'member'
-            if (Array.isArray(myMember.permissions)) {
-              myPerms = myMember.permissions
-            }
-          } else if (!myRole && wsData && wsData.owner_id !== user.id && wsData.created_by !== user.id) {
-            // Not in workspace members list
-            myRole = null
+        // Step 1: Accept any pending invites via serverless API (uses service role key to bypass RLS)
+        if (user?.email) {
+          try {
+            await fetch('/api/accept-invite', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: user.email, userId: user.id, workspaceId })
+            })
+          } catch (apiErr) {
+            console.warn('WorkspaceContext accept-invite notice:', apiErr)
           }
         }
-      } catch (_) {}
 
-      // If user is workspace owner directly
-      if (!myRole && wsData && (wsData.owner_id === user.id || wsData.created_by === user.id)) {
-        myRole = 'owner'
-      }
+        // Step 2: Query workspace + membership. Use service bypass API for workspace data
+        const [wsResult, memberResult] = await Promise.all([
+          supabase.from('workspaces').select('*').eq('id', workspaceId).maybeSingle(),
+          supabase.from('workspace_members').select('role').eq('workspace_id', workspaceId).eq('user_id', user.id).maybeSingle()
+        ])
 
-      if (myRole) {
-        setWorkspaceRole(myRole)
-        setUserPermissions(myPerms)
-      } else {
-        setWorkspaceRole(null)
-        setUserPermissions([])
-        if (wsData) {
-          setWorkspaceError('Access denied: You are not a member of this workspace.')
+        // Step 3: If workspace still null due to RLS, try fetching it via the service API
+        let wsData = wsResult?.data
+        if (!wsData && !wsResult?.error) {
+          try {
+            const resp = await fetch('/api/accept-invite', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: user.email, userId: user.id, workspaceId, fetchWorkspace: true })
+            })
+            const json = await resp.json()
+            if (json?.workspace) wsData = json.workspace
+          } catch (_) {}
         }
-      }
 
-      setLoadingWorkspace(false)
+        if (wsData) {
+          setWorkspace(wsData)
+          setWorkspaceError(null)
+        } else if (wsResult?.error) {
+          setWorkspaceError(wsResult.error.message)
+        } else {
+          setWorkspace(null)
+          setWorkspaceError('Workspace not found')
+        }
+
+        let myRole = memberResult?.data?.role || null
+        let myPerms = []
+
+        // Extract direct permissions from workspace settings
+        if (wsData?.settings?.member_permissions) {
+          if (wsData.settings.member_permissions[user.id] !== undefined) {
+            myPerms = wsData.settings.member_permissions[user.id] || []
+          } else if (user.email && wsData.settings.member_permissions[user.email.toLowerCase()] !== undefined) {
+            myPerms = wsData.settings.member_permissions[user.email.toLowerCase()] || []
+          }
+        }
+
+        // Query serverless API (POST) to ensure accurate enriched permissions and verify membership
+        try {
+          const memResp = await fetch(`/api/workspace-members?workspaceId=${encodeURIComponent(workspaceId)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'fetch_members', workspaceId })
+          })
+          if (memResp.ok) {
+            const memJson = await memResp.json()
+            const myMember = (memJson?.members || []).find(m => m.id === user.id || m.userId === user.id || (m.email && user.email && m.email.toLowerCase() === user.email.toLowerCase()))
+            if (myMember) {
+              myRole = myMember.role || myRole || 'member'
+              if (Array.isArray(myMember.permissions)) {
+                myPerms = myMember.permissions
+              }
+            }
+          }
+        } catch (_) {}
+
+        // Fallback 1: If user is workspace owner directly
+        if (!myRole && wsData && (wsData.owner_id === user.id || wsData.created_by === user.id)) {
+          myRole = 'owner'
+        }
+
+        // Fallback 2: Default to member if user accepted invite or workspace data was loaded for user
+        if (!myRole && wsData) {
+          myRole = 'member'
+        }
+
+        if (myRole) {
+          setWorkspaceRole(myRole)
+          setUserPermissions(myPerms)
+        } else {
+          setWorkspaceRole(null)
+          setUserPermissions([])
+          if (wsData) {
+            setWorkspaceError('Access denied: You are not a member of this workspace.')
+          }
+        }
+      } catch (err) {
+        console.error('WorkspaceContext fetchAll error:', err)
+        setWorkspaceError(err?.message || 'Error loading workspace')
+      } finally {
+        setLoadingWorkspace(false)
+      }
     }
 
     const channelW = supabase.channel(`public:workspaces:id=eq.${workspaceId}:ws:${Math.random().toString(36).substring(7)}`)
