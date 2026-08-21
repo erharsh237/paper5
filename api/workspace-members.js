@@ -321,6 +321,78 @@ export default async function handler(req, res) {
       }
     })
 
+    // Auto-convert pending invites if their user account now exists
+    try {
+      const { data: pendingInvites } = await supabaseAdmin
+        .from('invites')
+        .select('*')
+        .eq('workspace_id', workspaceId)
+
+      if (Array.isArray(pendingInvites) && pendingInvites.length > 0) {
+        for (const inv of pendingInvites) {
+          const invEmail = (inv.email || '').trim().toLowerCase()
+          if (!invEmail) continue
+
+          let matchedUserId = null
+          let matchedName = null
+          let matchedAvatar = null
+
+          const { data: matchedUsers } = await supabaseAdmin
+            .from('users')
+            .select('id, email, name, full_name, avatar_url')
+            .ilike('email', invEmail)
+            .limit(1)
+
+          if (matchedUsers && matchedUsers[0]) {
+            matchedUserId = matchedUsers[0].id
+            matchedName = matchedUsers[0].name || matchedUsers[0].full_name
+            matchedAvatar = matchedUsers[0].avatar_url
+          } else if (serviceKey && typeof supabaseAdmin.auth?.admin?.listUsers === 'function') {
+            try {
+              const { data: listRes } = await supabaseAdmin.auth.admin.listUsers()
+              const matchedAuthUser = (listRes?.users || []).find(u => (u.email || '').trim().toLowerCase() === invEmail)
+              if (matchedAuthUser) {
+                matchedUserId = matchedAuthUser.id
+                matchedName = matchedAuthUser.user_metadata?.full_name || matchedAuthUser.user_metadata?.name
+                matchedAvatar = matchedAuthUser.user_metadata?.avatar_url
+              }
+            } catch (_) {}
+          }
+
+          if (matchedUserId) {
+            // Upsert workspace_members
+            await supabaseAdmin.from('workspace_members').upsert({
+              workspace_id: workspaceId,
+              user_id: matchedUserId,
+              role: inv.role || 'member',
+              permissions: Array.isArray(inv.permissions) ? inv.permissions : []
+            }, { onConflict: 'workspace_id,user_id' }).catch(() => {})
+
+            // Delete pending invite
+            await supabaseAdmin.from('invites').delete().eq('id', inv.id).catch(() => {})
+
+            // Add to enrichedMembers list if not already present
+            if (!enrichedMembers.some(m => m.id === matchedUserId || (m.email && m.email.toLowerCase() === invEmail))) {
+              enrichedMembers.push({
+                id: matchedUserId,
+                userId: matchedUserId,
+                workspaceId,
+                role: inv.role || 'member',
+                permissions: Array.isArray(inv.permissions) ? inv.permissions : [],
+                email: invEmail,
+                name: matchedName || invEmail,
+                displayLabel: matchedName || invEmail.split('@')[0],
+                avatarUrl: matchedAvatar || null,
+                joinedAt: new Date().toISOString()
+              })
+            }
+          }
+        }
+      }
+    } catch (autoErr) {
+      console.warn('Auto convert invite notice:', autoErr)
+    }
+
     return res.status(200).json({ success: true, members: enrichedMembers })
   } catch (err) {
     console.error('workspace-members API error:', err)

@@ -170,6 +170,9 @@ export function subscribeWorkspaceMembers(workspaceId, callback) {
       // 1. Try serverless API first (uses service role key to get real emails, full names, and permissions)
       try {
         const res = await fetch(`/api/workspace-members?workspaceId=${encodeURIComponent(workspaceId)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'fetch_members', workspaceId }),
           signal: abortController.signal
         })
         if (res.ok) {
