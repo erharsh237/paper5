@@ -14,10 +14,11 @@ export async function sendDeadlineEmail({
 
   // 1. Try Vercel Serverless Resend API (routed through verified domain on Vercel)
   try {
-    const res = await fetch('/api/send-deadline-email', {
+    const res = await fetch('/api/send-invite', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        type: 'deadline',
         toName,
         toEmail,
         title,
@@ -31,7 +32,7 @@ export async function sendDeadlineEmail({
     })
     const json = await res.json()
     if (res.ok && json.success) {
-      return { success: true, emailId: json.emailId }
+      return { success: true, emailId: json.resendDetails?.id || json.emailId }
     }
   } catch (err) {
     console.warn('Serverless deadline email dispatch notice:', err)
@@ -69,20 +70,20 @@ export async function sendBlockerEmail({
   helperEmails,
 }) {
   try {
-    const res = await fetch('/api/send-blocker-email', {
+    const res = await fetch('/api/send-invite', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        type: 'blocker',
         workspaceId,
         workspaceName,
-        deadlineTitle,
+        title: deadlineTitle,
         deadlineId,
-        blockedBy,
-        blockedByName,
-        reason,
+        blockerUser: blockedByName || blockedBy,
+        blockerReason: reason || description,
         category,
-        description,
         helperEmails,
+        toEmail: helperEmails?.[0] || 'support@paper5.co',
         appUrl: typeof window !== 'undefined' ? `${window.location.origin}/${workspaceId}` : `https://app.paper5.co/${workspaceId}`
       })
     })
