@@ -44,6 +44,7 @@ const Profile = safeLazy(() => import('./pages/Profile'))
 const Settings = safeLazy(() => import('./pages/Settings'))
 const Legal = safeLazy(() => import('./pages/Legal'))
 const ForgotPassword = safeLazy(() => import('./pages/ForgotPassword'))
+const LocalAdminDashboard = safeLazy(() => import('./pages/LocalAdminDashboard'))
 import NotFound from './pages/NotFound'
 import ErrorPage from './pages/ErrorPage'
 import LegalConsentModal from './components/LegalConsentModal'
@@ -254,6 +255,8 @@ export default function App() {
           
           <Route path="/legal" element={<Navigate to="/legal/terms" replace />} />
           <Route path="/legal/:docId" element={<Legal />} />
+          <Route path="/admin" element={<LocalAdminDashboard />} />
+          <Route path="/localhost-dashboard" element={<LocalAdminDashboard />} />
           <Route path="/error" element={<ErrorPage />} />
 
           {/* Marketing Pages - Redirect to paper5.com if visited on app.paper5.com */}
