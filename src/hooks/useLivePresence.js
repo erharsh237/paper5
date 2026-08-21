@@ -22,10 +22,6 @@ export function useLivePresenceTracker() {
   useEffect(() => {
     if (!supabase || typeof window === 'undefined') return
 
-    // Don't track localhost operations console visits as regular visitor traffic
-    const isLocalAdmin = window.location.pathname.startsWith('/admin') || window.location.pathname.startsWith('/localhost-dashboard')
-    if (isLocalAdmin) return
-
     const visitorId = visitorIdRef.current
     const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent)
     const refHost = document.referrer ? (new URL(document.referrer, window.location.origin).hostname || 'Direct') : 'Direct'
@@ -35,7 +31,7 @@ export function useLivePresenceTracker() {
       userId: user?.id || null,
       email: user?.email || 'Anonymous Visitor',
       name: user?.displayName || user?.user_metadata?.full_name || (user?.email ? user.email.split('@')[0] : 'Visitor'),
-      page: location.pathname,
+      page: location.pathname || '/',
       referrer: refHost,
       device: isMobile ? 'Mobile' : 'Desktop',
       joinedAt: new Date().toISOString(),
@@ -47,23 +43,21 @@ export function useLivePresenceTracker() {
         config: { presence: { key: visitorId } }
       })
 
-      channel.subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          try {
-            await channel.track(payload)
-          } catch (e) {
-            console.warn('Presence track error:', e)
+      channel
+        .on('presence', { event: 'sync' }, () => {})
+        .subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            try {
+              await channel.track(payload)
+            } catch (e) {
+              console.warn('Presence track error:', e)
+            }
           }
-        }
-      })
+        })
 
       channelRef.current = channel
     } else {
       channelRef.current.track(payload).catch(() => {})
-    }
-
-    return () => {
-      // Channel stays active across in-app route changes; cleaned up on tab close
     }
   }, [location.pathname, user?.id, user?.email])
 

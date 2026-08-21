@@ -63,26 +63,32 @@ export default function LocalAdminDashboard() {
   useEffect(() => {
     if (!defaultClient || typeof window === 'undefined') return
 
-    const channel = defaultClient.channel('paper5-live-visitors', {
-      config: { presence: { key: 'admin_observer_' + Math.random().toString(36).slice(2, 7) } }
-    })
+    const channel = defaultClient.channel('paper5-live-visitors')
 
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState()
-        const visitors = []
-        for (const key in state) {
-          const arr = state[key] || []
-          for (const item of arr) {
-            if (item && item.visitorId) {
-              visitors.push(item)
-            }
+    const updateFromState = () => {
+      const state = channel.presenceState()
+      const visitors = []
+      for (const key in state) {
+        const arr = state[key] || []
+        for (const item of arr) {
+          if (item && (item.visitorId || item.page || item.email)) {
+            visitors.push(item)
           }
         }
-        setLiveVisitors(visitors)
-        setLiveCount(visitors.length)
+      }
+      setLiveVisitors(visitors)
+      setLiveCount(visitors.length)
+    }
+
+    channel
+      .on('presence', { event: 'sync' }, updateFromState)
+      .on('presence', { event: 'join' }, updateFromState)
+      .on('presence', { event: 'leave' }, updateFromState)
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          updateFromState()
+        }
       })
-      .subscribe()
 
     return () => {
       try {
