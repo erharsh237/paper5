@@ -47,9 +47,19 @@ export default function handler(req, res) {
   // ── GET: hydrate session on page load ──────────────────────────────────────
   if (req.method === 'GET') {
     const cookies = parseCookies(req.headers.cookie)
+    const isPending2FA = cookies['sb_2fa_pending'] === 'true'
+    const pendingEmail = cookies['sb_2fa_email'] || ''
     const accessToken  = cookies['sb_access_token']
     const refreshToken = cookies['sb_refresh_token']
     const expiresAt    = cookies['sb_expires_at']
+
+    // If 2FA is pending on server httpOnly cookie, refuse to issue access tokens
+    if (isPending2FA) {
+      return res.status(200).json({
+        isPending2FA: true,
+        email: pendingEmail
+      })
+    }
 
     // No session cookie present — client should treat user as signed out
     if (!accessToken || !refreshToken) {
@@ -57,7 +67,6 @@ export default function handler(req, res) {
     }
 
     // Return tokens to the client so it can call supabase.auth.setSession()
-    // Note: this is same-origin only (app.paper5.co → app.paper5.co/api)
     return res.status(200).json({
       access_token:  accessToken,
       refresh_token: refreshToken,
@@ -65,9 +74,22 @@ export default function handler(req, res) {
     })
   }
 
-  // ── POST: store new session tokens (sign-in or token refresh) ─────────────
+  // ── POST: store new session tokens or set 2FA pending state ─────────────
   if (req.method === 'POST') {
-    const { access_token, refresh_token, expires_at } = req.body ?? {}
+    const { pending_2fa, email, access_token, refresh_token, expires_at } = req.body ?? {}
+
+    // Flag 2FA pending on httpOnly cookie and clear access tokens
+    if (pending_2fa) {
+      const cleanEmail = (email || '').trim().toLowerCase()
+      res.setHeader('Set-Cookie', [
+        `sb_2fa_pending=true; ${COOKIE_DEFAULTS}; Max-Age=600`,
+        `sb_2fa_email=${cleanEmail}; ${COOKIE_DEFAULTS}; Max-Age=600`,
+        `sb_access_token=; ${COOKIE_DEFAULTS}; Max-Age=0`,
+        `sb_refresh_token=; ${COOKIE_DEFAULTS}; Max-Age=0`,
+        `sb_expires_at=; Secure; SameSite=Strict; Path=/; Max-Age=0`,
+      ])
+      return res.status(200).json({ ok: true, pending_2fa: true })
+    }
 
     if (!access_token || typeof access_token !== 'string') {
       return res.status(400).json({ error: 'access_token is required' })
@@ -79,14 +101,14 @@ export default function handler(req, res) {
     // Access token lives until its own expiry; refresh token gets the full 30 days
     const accessMaxAge = expires_at
       ? Math.max(0, Math.floor(Number(expires_at) - Date.now() / 1000))
-      : 60 * 60 // fallback: 1 hour
+      : 60 * 60
 
     res.setHeader('Set-Cookie', [
       `sb_access_token=${access_token}; ${COOKIE_DEFAULTS}; Max-Age=${accessMaxAge}`,
       `sb_refresh_token=${refresh_token}; ${COOKIE_DEFAULTS}; Max-Age=${REFRESH_TOKEN_MAX_AGE}`,
-      // sb_expires_at is NOT httpOnly so the client JS can read it to decide
-      // whether to proactively refresh without waiting for an API round-trip.
       `sb_expires_at=${expires_at ?? ''}; Secure; SameSite=Strict; Path=/; Max-Age=${accessMaxAge}`,
+      `sb_2fa_pending=; ${COOKIE_DEFAULTS}; Max-Age=0`,
+      `sb_2fa_email=; ${COOKIE_DEFAULTS}; Max-Age=0`,
     ])
 
     return res.status(200).json({ ok: true })
@@ -98,6 +120,8 @@ export default function handler(req, res) {
       `sb_access_token=; ${COOKIE_DEFAULTS}; Max-Age=0`,
       `sb_refresh_token=; ${COOKIE_DEFAULTS}; Max-Age=0`,
       `sb_expires_at=; Secure; SameSite=Strict; Path=/; Max-Age=0`,
+      `sb_2fa_pending=; ${COOKIE_DEFAULTS}; Max-Age=0`,
+      `sb_2fa_email=; ${COOKIE_DEFAULTS}; Max-Age=0`,
     ])
     return res.status(200).json({ ok: true })
   }

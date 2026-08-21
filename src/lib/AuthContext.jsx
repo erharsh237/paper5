@@ -12,10 +12,21 @@ const sessionCookieApi = {
       const res = await fetch('/api/auth/session', { credentials: 'same-origin' })
       if (res.status === 204) return null // no session cookie
       if (!res.ok) return null
-      return await res.json() // { access_token, refresh_token, expires_at }
+      return await res.json() // { access_token, refresh_token, expires_at } or { isPending2FA: true, email }
     } catch {
       return null // network error — treat as no session
     }
+  },
+  /** Flag 2FA pending state on httpOnly server cookies and clear access tokens. */
+  async setPending2FA(email) {
+    try {
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pending_2fa: true, email }),
+      })
+    } catch (_) {}
   },
   /** Persist a new/refreshed session to httpOnly cookies. */
   async set(session) {
@@ -67,6 +78,8 @@ export function AuthProvider({ children }) {
     try {
       if (val) {
         if (email) sessionStorage.setItem('sprintos:2fa_pending_email', email)
+        sessionCookieApi.setPending2FA(email)
+        supabase.auth.signOut().catch(() => {})
       } else {
         sessionStorage.removeItem('sprintos:2fa_pending_email')
       }
@@ -164,6 +177,15 @@ export function AuthProvider({ children }) {
     const hydrateFromCookie = async () => {
       try {
         const stored = await sessionCookieApi.get()
+        if (stored?.isPending2FA) {
+          setUser(null)
+          setUserData(null)
+          setIsPending2FA(true, stored.email || '')
+          supabase.auth.signOut().catch(() => {})
+          setLoading(false)
+          isHydrated = true
+          return
+        }
         if (stored?.access_token && stored?.refresh_token) {
           const { data: { session }, error } = await supabase.auth.setSession({
             access_token:  stored.access_token,
