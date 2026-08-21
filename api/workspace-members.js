@@ -73,19 +73,23 @@ export default async function handler(req, res) {
         }
         
         if (matchedUid) {
+          let insertError = null
           try {
-            await supabaseAdmin.from('workspace_members').upsert({
+            const { error } = await supabaseAdmin.from('workspace_members').upsert({
               workspace_id: workspaceId,
               user_id: matchedUid,
               role: role || 'member',
               permissions: Array.isArray(permissions) ? permissions : []
             }, { onConflict: 'workspace_id,user_id' })
-          } catch (_) {}
+            if (error) insertError = error.message || error
+          } catch (e) {
+            insertError = e.message || e
+          }
           
           try { await supabaseAdmin.from('invites').delete().eq('workspace_id', workspaceId).eq('email', targetEmail) } catch (_) {}
           try { await supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', workspaceId).eq('email', targetEmail) } catch (_) {}
           
-          return res.status(200).json({ success: true, userId: matchedUid, email: targetEmail })
+          return res.status(200).json({ success: true, userId: matchedUid, email: targetEmail, insertError })
         }
         
         return res.status(404).json({ error: 'User account not found in Auth for email: ' + targetEmail })
