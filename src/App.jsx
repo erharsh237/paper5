@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './lib/AuthContext'
 import { WorkspaceProvider, useWorkspace } from './lib/WorkspaceContext'
 import LockedOverlay from './components/LockedOverlay'
@@ -110,7 +110,9 @@ function CrossDomainRedirect({ toApp = false, path = '' }) {
 }
 
 function WorkspaceGuard({ children }) {
-  const { isLocked, is2FABlocked, loadingWorkspace, workspace, workspaceRole, workspaceError } = useWorkspace()
+  const { isLocked, isCapacityFrozen, capacityDetails, is2FABlocked, loadingWorkspace, workspace, workspaceRole, workspaceError, isAdmin, isOwner } = useWorkspace()
+  const location = useLocation()
+
   if (loadingWorkspace) return <PageLoading />
   
   if (workspaceError || !workspace || !workspaceRole) {
@@ -128,6 +130,66 @@ function WorkspaceGuard({ children }) {
             This workspace enforces Two-Factor Authentication. Please enable 2FA in your Account Settings to access this workspace.
           </p>
           <a href="/workspace" className="btn-primary" style={{ display: 'inline-block', textDecoration: 'none' }}>Return to Pick Workspace</a>
+        </div>
+      </div>
+    )
+  }
+
+  // Strict Workspace Capacity Freeze Enforcement
+  if (isCapacityFrozen) {
+    const isSettingsPage = location.pathname.endsWith('/settings') || location.pathname.includes('/settings')
+    
+    // Admins and owners are locked out of all activity pages (Dashboard, Workflow, Meeting, etc.) and directed to Settings to remove excess users or upgrade
+    if (isAdmin || isOwner) {
+      if (!isSettingsPage) {
+        return <Navigate to={`/${workspace.id}/settings`} replace />
+      }
+      return children
+    }
+    
+    // Regular members are completely blocked from workspace activities
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: '#ffffff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px',
+        textAlign: 'center'
+      }}>
+        <div style={{
+          maxWidth: '480px',
+          background: '#ffffff',
+          padding: '36px 32px',
+          borderRadius: '16px',
+          border: '1px solid #fee2e2',
+          boxShadow: '0 20px 40px rgba(239, 68, 68, 0.08)'
+        }}>
+          <div style={{
+            width: '54px',
+            height: '54px',
+            background: 'rgba(239, 68, 68, 0.1)',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 20px',
+            fontSize: '24px'
+          }}>
+            🚨
+          </div>
+          <h2 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 12px', color: '#111827' }}>
+            WORKSPACE ACCESS FROZEN
+          </h2>
+          <p style={{ fontSize: '14px', color: '#4b5563', lineHeight: '1.6', margin: '0 0 24px' }}>
+            This workspace has exceeded its <strong>{capacityDetails?.planId || 'STARTER'} Plan</strong> capacity ({capacityDetails?.totalSeatsUsed || 0} / {capacityDetails?.maxAllowedMembers || 3} members).
+            <br /><br />
+            Workspace activities are strictly frozen. The Workspace Admin must delete/remove excess members or upgrade the plan to restore workspace access.
+          </p>
+          <a href="/workspace" className="btn-primary" style={{ display: 'inline-flex', padding: '10px 20px', textDecoration: 'none', justifyContent: 'center' }}>
+            Return to My Workspaces
+          </a>
         </div>
       </div>
     )

@@ -15,6 +15,8 @@ export function WorkspaceProvider({ children }) {
   const [workspaceError, setWorkspaceError] = useState(null);
   const [ownerBilling, setOwnerBilling] = useState(null);
   const [aalLevel, setAalLevel] = useState('aal1');
+  const [totalSeatsUsed, setTotalSeatsUsed] = useState(0);
+  const [maxAllowedMembers, setMaxAllowedMembers] = useState(3);
   
   useEffect(() => {
     supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data }) => {
@@ -119,6 +121,7 @@ export function WorkspaceProvider({ children }) {
         }
 
         // Query serverless API (POST) to ensure accurate enriched permissions and verify membership
+        let seatCount = 0
         try {
           const memResp = await fetch(`/api/workspace-members?workspaceId=${encodeURIComponent(workspaceId)}`, {
             method: 'POST',
@@ -127,7 +130,9 @@ export function WorkspaceProvider({ children }) {
           })
           if (memResp.ok) {
             const memJson = await memResp.json()
-            const myMember = (memJson?.members || []).find(m => m.id === user.id || m.userId === user.id || (m.email && user.email && m.email.toLowerCase() === user.email.toLowerCase()))
+            const memberList = memJson?.members || []
+            seatCount = memberList.length
+            const myMember = memberList.find(m => m.id === user.id || m.userId === user.id || (m.email && user.email && m.email.toLowerCase() === user.email.toLowerCase()))
             if (myMember) {
               myRole = myMember.role || myRole || 'member'
               if (Array.isArray(myMember.permissions)) {
@@ -136,6 +141,17 @@ export function WorkspaceProvider({ children }) {
             }
           }
         } catch (_) {}
+
+        // Fetch pending invites to add to total seats count
+        try {
+          const { data: invList } = await supabase.from('invites').select('id').eq('workspace_id', workspaceId)
+          seatCount += (invList || []).length
+        } catch (_) {}
+
+        setTotalSeatsUsed(seatCount)
+        const currentPlan = wsData?.billing_plan_id || wsData?.billing?.planId || 'free'
+        const limit = (currentPlan === 'free' || currentPlan === 'starter') ? 3 : currentPlan === 'team' ? 7 : Infinity
+        setMaxAllowedMembers(limit)
 
         // Fallback 1: If user is workspace owner directly
         if (!myRole && wsData && (wsData.owner_id === user.id || wsData.created_by === user.id)) {
@@ -258,9 +274,19 @@ export function WorkspaceProvider({ children }) {
     }
   }
 
+  const planId = workspace?.billing_plan_id || workspace?.billing?.planId || 'free'
+  const isCapacityFrozen = typeof maxAllowedMembers === 'number' && maxAllowedMembers !== Infinity && totalSeatsUsed > maxAllowedMembers
+  const capacityDetails = {
+    totalSeatsUsed,
+    maxAllowedMembers,
+    excessCount: Math.max(0, totalSeatsUsed - (typeof maxAllowedMembers === 'number' ? maxAllowedMembers : 0)),
+    planId: planId.toUpperCase()
+  }
+
   const isAdminOrOwner = workspaceRole === 'admin' || workspaceRole === 'owner'
 
   const hasPermission = (permission) => {
+    if (isCapacityFrozen) return false // When capacity is exceeded, permissions are frozen
     if (isAdminOrOwner) return true
     if (!permission) return true
     const perms = Array.isArray(userPermissions) ? userPermissions : []
@@ -276,9 +302,9 @@ export function WorkspaceProvider({ children }) {
     return perms.includes(permission)
   }
 
-  const canAddKanbanItems = hasPermission('deadlines.manage') || hasPermission('deadlines.create')
+  const canAddKanbanItems = !isCapacityFrozen && (hasPermission('deadlines.manage') || hasPermission('deadlines.create'))
   const canManageSettings = isAdminOrOwner || hasPermission('settings_and_roles') || hasPermission('teamSettings.manage') || hasPermission('roles.manage')
-  const canManageMeetingNotes = isAdminOrOwner || hasPermission('meetings.manage')
+  const canManageMeetingNotes = !isCapacityFrozen && (isAdminOrOwner || hasPermission('meetings.manage'))
 
   const value = {
     workspaceId,
@@ -294,6 +320,8 @@ export function WorkspaceProvider({ children }) {
     canManageSettings,
     canManageMeetingNotes,
     isLocked,
+    isCapacityFrozen,
+    capacityDetails,
     is2FABlocked: false,
   }
 
