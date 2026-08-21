@@ -64,10 +64,14 @@ export default async function handler(req, res) {
 
     const idsList = Array.from(targetUserIds)
 
-    // 2. Remove user from workspaces.settings.members, member_permissions, deletion_requests across all workspaces
+    // 2. Clean workspace settings (members array, permissions, deletion requests)
     try {
-      const { data: allWs } = await supabaseAdmin.from('workspaces').select('id, settings')
-      for (const w of (allWs || [])) {
+      let query = supabaseAdmin.from('workspaces').select('id, settings')
+      if (workspaceId) {
+        query = query.eq('id', workspaceId)
+      }
+      const { data: wsList } = await query
+      for (const w of (wsList || [])) {
         if (!w.id) continue
         let settingsChanged = false
         const currentSettings = { ...(w.settings || {}) }
@@ -122,38 +126,62 @@ export default async function handler(req, res) {
     }
 
     // 3. Delete from workspace_members table
-    for (const id of idsList) {
-      try {
-        await supabaseAdmin.from('workspace_members').delete().eq('user_id', id)
-      } catch (_) {}
-    }
     if (workspaceId) {
       for (const id of idsList) {
         try {
           await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', workspaceId).eq('user_id', id)
         } catch (_) {}
       }
+    } else {
+      for (const id of idsList) {
+        try {
+          await supabaseAdmin.from('workspace_members').delete().eq('user_id', id)
+        } catch (_) {}
+      }
     }
 
-    // 4. Delete invites and workspace_invites
-    if (cleanEmail) {
-      try { await supabaseAdmin.from('invites').delete().ilike('email', cleanEmail) } catch (_) {}
-      try { await supabaseAdmin.from('workspace_invites').delete().ilike('email', cleanEmail) } catch (_) {}
-    }
-    for (const id of idsList) {
-      try { await supabaseAdmin.from('invites').delete().eq('user_id', id) } catch (_) {}
-      try { await supabaseAdmin.from('workspace_invites').delete().eq('user_id', id) } catch (_) {}
+    // 4. Delete workspace-specific invites
+    if (workspaceId) {
+      if (cleanEmail) {
+        try { await supabaseAdmin.from('invites').delete().eq('workspace_id', workspaceId).ilike('email', cleanEmail) } catch (_) {}
+        try { await supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', workspaceId).ilike('email', cleanEmail) } catch (_) {}
+      }
+    } else {
+      if (cleanEmail) {
+        try { await supabaseAdmin.from('invites').delete().ilike('email', cleanEmail) } catch (_) {}
+        try { await supabaseAdmin.from('workspace_invites').delete().ilike('email', cleanEmail) } catch (_) {}
+      }
     }
 
-    // 5. Delete notifications
+    // 5. Check if user is still an active member of ANY OTHER workspace
+    let isMemberOfOtherWorkspaces = false
+    try {
+      const { data: otherMems } = await supabaseAdmin
+        .from('workspace_members')
+        .select('workspace_id')
+        .in('user_id', idsList.length > 0 ? idsList : [targetId].filter(Boolean))
+      if (otherMems && otherMems.length > 0) {
+        isMemberOfOtherWorkspaces = true
+      }
+    } catch (_) {}
+
+    // If user is STILL a member in other workspaces (e.g. test2), PRESERVE their global Auth and profile!
+    if (isMemberOfOtherWorkspaces) {
+      return res.status(200).json({
+        success: true,
+        message: 'User removed from workspace; global account preserved for remaining workspaces',
+        removedFromWorkspace: true,
+        retainedForOtherWorkspaces: true,
+        deletedUserIds: idsList
+      })
+    }
+
+    // 6. If user belongs to 0 other workspaces, clean notifications, profiles, users, and Auth
     if (cleanEmail) {
       try { await supabaseAdmin.from('notifications').delete().ilike('forEmail', cleanEmail) } catch (_) {}
       try { await supabaseAdmin.from('notifications').delete().ilike('for_email', cleanEmail) } catch (_) {}
-      try { await supabaseAdmin.from('notifications').delete().ilike('createdBy', cleanEmail) } catch (_) {}
-      try { await supabaseAdmin.from('notifications').delete().ilike('created_by', cleanEmail) } catch (_) {}
     }
 
-    // 6. Delete profiles and users records
     for (const id of idsList) {
       try { await supabaseAdmin.from('profiles').delete().eq('id', id) } catch (_) {}
       try { await supabaseAdmin.from('users').delete().eq('id', id) } catch (_) {}
@@ -170,11 +198,8 @@ export default async function handler(req, res) {
       for (const id of idsList) {
         try {
           const { error: aErr } = await supabaseAdmin.auth.admin.deleteUser(id)
-          if (aErr) {
-            authError = aErr.message
-          } else {
-            authDeleted = true
-          }
+          if (aErr) authError = aErr.message
+          else authDeleted = true
         } catch (authCatchErr) {
           authError = authCatchErr.message
         }

@@ -302,32 +302,49 @@ export default async function handler(req, res) {
         }
         for (const id of idsList) {
           try { await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', workspaceId).eq('user_id', id) } catch (_) {}
-        }
+        // 3. Check if user is still a member in any other workspace
+        let isMemberOfOtherWorkspaces = false
+        try {
+          const { data: otherMems } = await supabaseAdmin
+            .from('workspace_members')
+            .select('workspace_id')
+            .in('user_id', idsList.length > 0 ? idsList : [memberId].filter(Boolean))
+          if (otherMems && otherMems.length > 0) {
+            isMemberOfOtherWorkspaces = true
+          }
+        } catch (_) {}
 
-        // 3. Delete from profiles & users tables
-        for (const id of idsList) {
-          try { await supabaseAdmin.from('profiles').delete().eq('id', id) } catch (_) {}
-          try { await supabaseAdmin.from('users').delete().eq('id', id) } catch (_) {}
-        }
-        if (cleanEmail) {
-          try { await supabaseAdmin.from('profiles').delete().ilike('email', cleanEmail) } catch (_) {}
-          try { await supabaseAdmin.from('users').delete().ilike('email', cleanEmail) } catch (_) {}
-          try { await supabaseAdmin.from('invites').delete().ilike('email', cleanEmail) } catch (_) {}
-          try { await supabaseAdmin.from('workspace_invites').delete().ilike('email', cleanEmail) } catch (_) {}
-          try { await supabaseAdmin.from('notifications').delete().ilike('forEmail', cleanEmail) } catch (_) {}
-        }
-
-        // 4. Delete from Supabase Auth
-        if (serviceKey) {
+        // If user belongs to NO other workspaces, purge global user records and Auth account
+        if (!isMemberOfOtherWorkspaces) {
           for (const id of idsList) {
-            try { await supabaseAdmin.auth.admin.deleteUser(id) } catch (aErr) { console.warn('Auth delete notice:', aErr.message) }
+            try { await supabaseAdmin.from('profiles').delete().eq('id', id) } catch (_) {}
+            try { await supabaseAdmin.from('users').delete().eq('id', id) } catch (_) {}
           }
-          if (memberId && !idsList.includes(memberId) && !memberId.includes('@')) {
-            try { await supabaseAdmin.auth.admin.deleteUser(memberId) } catch (_) {}
+          if (cleanEmail) {
+            try { await supabaseAdmin.from('profiles').delete().ilike('email', cleanEmail) } catch (_) {}
+            try { await supabaseAdmin.from('users').delete().ilike('email', cleanEmail) } catch (_) {}
+            try { await supabaseAdmin.from('invites').delete().ilike('email', cleanEmail) } catch (_) {}
+            try { await supabaseAdmin.from('workspace_invites').delete().ilike('email', cleanEmail) } catch (_) {}
+            try { await supabaseAdmin.from('notifications').delete().ilike('forEmail', cleanEmail) } catch (_) {}
+          }
+
+          if (serviceKey) {
+            for (const id of idsList) {
+              try { await supabaseAdmin.auth.admin.deleteUser(id) } catch (aErr) { console.warn('Auth delete notice:', aErr.message) }
+            }
+            if (memberId && !idsList.includes(memberId) && !memberId.includes('@')) {
+              try { await supabaseAdmin.auth.admin.deleteUser(memberId) } catch (_) {}
+            }
           }
         }
 
-        return res.status(200).json({ success: true, deleted: true, memberId, deletedUserIds: idsList })
+        return res.status(200).json({
+          success: true,
+          deleted: true,
+          memberId,
+          deletedUserIds: idsList,
+          retainedForOtherWorkspaces: isMemberOfOtherWorkspaces
+        })
       }
 
       if (action === 'update_role') {
