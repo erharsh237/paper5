@@ -72,6 +72,7 @@ export default async function handler(req, res) {
           }
         }
         
+        if (matchedUid) {
           try {
             await supabaseAdmin.from('workspace_members').upsert({
               workspace_id: workspaceId,
