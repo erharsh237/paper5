@@ -293,6 +293,9 @@ export default function Settings() {
       }).catch(() => {})
 
       setApiKeys(prev => prev.filter(k => k.id !== id))
+      setNewApiKey(null)
+      setShowNewApiKey(false)
+      setAlertMessage('API Key revoked successfully.')
     } catch (err) {
       setAlertMessage('Failed to revoke API Key: ' + err.message)
     }
@@ -1296,9 +1299,17 @@ export default function Settings() {
                 </p>
 
                 {newApiKey && (
-                  <div style={{ padding: '16px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '8px', marginBottom: '24px' }}>
+                  <div style={{ position: 'relative', padding: '16px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '8px', marginBottom: '24px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setNewApiKey(null)}
+                      style={{ position: 'absolute', top: '12px', right: '12px', background: 'transparent', border: 'none', fontSize: '18px', cursor: 'pointer', color: 'var(--text-secondary, #6b7280)', lineHeight: 1 }}
+                      title="Dismiss"
+                    >
+                      &times;
+                    </button>
                     <h4 style={{ margin: '0 0 8px 0', color: 'var(--accent-signal)' }}>API Key Generated</h4>
-                    <p style={{ margin: '0 0 12px 0', fontSize: '12px' }}>Please copy this key now. For security reasons, you will not be able to see it again.</p>
+                    <p style={{ margin: '0 0 12px 0', fontSize: '12px' }}>Please copy this key now. For security reasons, you will not be able to see it again after leaving or dismissing.</p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <code style={{ flex: 1, padding: '12px', background: 'var(--bg-panel)', borderRadius: '4px', border: '1px dashed var(--accent-signal)', color: 'var(--text-primary)', fontFamily: 'monospace', fontWeight: 600, fontSize: '13px', wordBreak: 'break-all' }}>
                         {showNewApiKey ? newApiKey : 'sk_live_' + '•'.repeat(Math.max(20, newApiKey.length - 8))}
