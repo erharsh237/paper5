@@ -72,16 +72,17 @@ export default async function handler(req, res) {
           }
         }
         
-        if (matchedUid) {
-          await supabaseAdmin.from('workspace_members').upsert({
-            workspace_id: workspaceId,
-            user_id: matchedUid,
-            role: role || 'member',
-            permissions: Array.isArray(permissions) ? permissions : []
-          }, { onConflict: 'workspace_id,user_id' })
+          try {
+            await supabaseAdmin.from('workspace_members').upsert({
+              workspace_id: workspaceId,
+              user_id: matchedUid,
+              role: role || 'member',
+              permissions: Array.isArray(permissions) ? permissions : []
+            }, { onConflict: 'workspace_id,user_id' })
+          } catch (_) {}
           
-          await supabaseAdmin.from('invites').delete().eq('workspace_id', workspaceId).eq('email', targetEmail).catch(() => {})
-          await supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', workspaceId).eq('email', targetEmail).catch(() => {})
+          try { await supabaseAdmin.from('invites').delete().eq('workspace_id', workspaceId).eq('email', targetEmail) } catch (_) {}
+          try { await supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', workspaceId).eq('email', targetEmail) } catch (_) {}
           
           return res.status(200).json({ success: true, userId: matchedUid, email: targetEmail })
         }
@@ -443,17 +444,19 @@ export default async function handler(req, res) {
 
           if (matchedUserId) {
             // Upsert workspace_members
-            await supabaseAdmin.from('workspace_members').upsert({
-              workspace_id: workspaceId,
-              user_id: matchedUserId,
-              role: inv.role || 'member',
-              permissions: Array.isArray(inv.permissions) ? inv.permissions : []
-            }, { onConflict: 'workspace_id,user_id' }).catch(() => {})
+            try {
+              await supabaseAdmin.from('workspace_members').upsert({
+                workspace_id: workspaceId,
+                user_id: matchedUserId,
+                role: inv.role || 'member',
+                permissions: Array.isArray(inv.permissions) ? inv.permissions : []
+              }, { onConflict: 'workspace_id,user_id' })
+            } catch (_) {}
 
             // Delete pending invite by id AND email from all invite tables
-            await supabaseAdmin.from('invites').delete().eq('id', inv.id).catch(() => {})
-            await supabaseAdmin.from('invites').delete().eq('workspace_id', workspaceId).eq('email', invEmail).catch(() => {})
-            await supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', workspaceId).eq('email', invEmail).catch(() => {})
+            try { await supabaseAdmin.from('invites').delete().eq('id', inv.id) } catch (_) {}
+            try { await supabaseAdmin.from('invites').delete().eq('workspace_id', workspaceId).eq('email', invEmail) } catch (_) {}
+            try { await supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', workspaceId).eq('email', invEmail) } catch (_) {}
 
             // Add to enrichedMembers list if not already present
             if (!enrichedMembers.some(m => m.id === matchedUserId || (m.email && m.email.toLowerCase() === invEmail))) {

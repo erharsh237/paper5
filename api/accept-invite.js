@@ -102,23 +102,23 @@ export default async function handler(req, res) {
         }
 
         if (allInvites.length > 0) {
-          await supabaseAdmin.from('invites').delete().ilike('email', cleanEmail).catch(() => {})
-          await supabaseAdmin.from('workspace_invites').delete().ilike('email', cleanEmail).catch(() => {})
+          try { await supabaseAdmin.from('invites').delete().ilike('email', cleanEmail) } catch (_) {}
+          try { await supabaseAdmin.from('workspace_invites').delete().ilike('email', cleanEmail) } catch (_) {}
         }
       } catch (e1) {
         console.warn('Invites lookup notice:', e1)
       }
 
       // 2. If workspaceId was passed, ensure workspace_members row exists for this user
-      if (workspaceId && userId) {
+      if (workspaceId && targetUserId) {
         if (!acceptedWorkspaceId) acceptedWorkspaceId = workspaceId
         try {
           await supabaseAdmin.from('workspace_members').upsert({
             workspace_id: workspaceId,
-            user_id: userId,
+            user_id: targetUserId,
             role: 'member',
             permissions: []
-          }, { onConflict: 'workspace_id,user_id' }).catch(() => {})
+          }, { onConflict: 'workspace_id,user_id' })
         } catch (_) {}
       }
     }
