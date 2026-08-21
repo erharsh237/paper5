@@ -1,12 +1,12 @@
 /* ==========================================================================
-   LOCAL ADMIN / TELEMETRY DASHBOARD STYLES
+   LOCAL ADMIN / TELEMETRY DASHBOARD - LIGHT THEME
    ========================================================================== */
 
 .local-admin-root {
   min-height: 100vh;
-  background: #090a0f;
-  color: #f1f5f9;
-  font-family: var(--sans, 'Inter', -apple-system, sans-serif);
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: var(--sans, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
   padding: 32px 24px 60px;
   box-sizing: border-box;
 }
@@ -25,14 +25,14 @@
   gap: 16px;
   margin-bottom: 28px;
   padding-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .admin-title-area h1 {
   font-size: 24px;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: #ffffff;
+  color: #0f172a;
   margin: 0 0 6px 0;
   display: flex;
   align-items: center;
@@ -42,32 +42,33 @@
 .admin-badge-local {
   font-size: 11px;
   font-weight: 700;
-  background: rgba(99, 102, 241, 0.2);
-  color: #818cf8;
-  border: 1px solid rgba(99, 102, 241, 0.4);
+  background: #eef2ff;
+  color: #4f46e5;
+  border: 1px solid #c7d2fe;
   padding: 3px 8px;
   border-radius: 6px;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
 }
 
 .admin-subtitle {
-  font-size: 13px;
-  color: #94a3b8;
+  font-size: 13.5px;
+  color: #64748b;
   margin: 0;
 }
 
 .admin-controls {
   display: flex;
   align-items: center;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .admin-btn {
-  background: #1e293b;
-  color: #f8fafc;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 8px 16px;
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  padding: 8px 14px;
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
@@ -75,21 +76,38 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   transition: all 0.15s ease;
 }
 
 .admin-btn:hover:not(:disabled) {
-  background: #334155;
-  border-color: rgba(255, 255, 255, 0.25);
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
 }
 
 .admin-btn-primary {
   background: #4f46e5;
-  border-color: #6366f1;
+  border-color: #4338ca;
+  color: #ffffff;
 }
 
 .admin-btn-primary:hover:not(:disabled) {
   background: #4338ca;
+  border-color: #3730a3;
+  color: #ffffff;
+}
+
+.admin-btn-export {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+.admin-btn-export:hover:not(:disabled) {
+  background: #d1fae5;
+  border-color: #6ee7b7;
+  color: #065f46;
 }
 
 /* KPI Cards Grid */
@@ -101,11 +119,11 @@
 }
 
 .kpi-card {
-  background: #11141f;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 14px;
   padding: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   position: relative;
   overflow: hidden;
 }
@@ -116,16 +134,16 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, #6366f1, #3b82f6);
+  height: 3px;
+  background: linear-gradient(90deg, #4f46e5, #06b6d4);
 }
 
 .kpi-label {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #94a3b8;
+  color: #64748b;
   margin-bottom: 8px;
   display: flex;
   align-items: center;
@@ -136,14 +154,14 @@
   font-size: 32px;
   font-weight: 800;
   letter-spacing: -0.03em;
-  color: #ffffff;
+  color: #0f172a;
   line-height: 1.1;
   margin-bottom: 6px;
 }
 
 .kpi-delta {
-  font-size: 12px;
-  color: #10b981;
+  font-size: 12.5px;
+  color: #059669;
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -155,14 +173,14 @@
   display: flex;
   gap: 8px;
   margin-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid #e2e8f0;
   padding-bottom: 4px;
 }
 
 .admin-tab-btn {
   background: none;
   border: none;
-  color: #94a3b8;
+  color: #64748b;
   font-size: 14px;
   font-weight: 600;
   padding: 8px 16px;
@@ -172,54 +190,58 @@
 }
 
 .admin-tab-btn:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.04);
+  color: #0f172a;
+  background: #f1f5f9;
 }
 
 .admin-tab-btn.active {
-  color: #ffffff;
-  background: #1e293b;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #4f46e5;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
 }
 
 /* Surface Panel */
 .admin-panel {
-  background: #11141f;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 14px;
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .admin-panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 18px;
 }
 
 .admin-panel-title {
   font-size: 16px;
   font-weight: 700;
-  color: #ffffff;
+  color: #0f172a;
   margin: 0;
 }
 
 /* Search Bar */
 .admin-search-input {
-  background: #181d2d;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
   border-radius: 8px;
   padding: 8px 14px;
-  color: #ffffff;
+  color: #0f172a;
   font-size: 13px;
   outline: none;
   width: 260px;
 }
 
 .admin-search-input:focus {
-  border-color: #6366f1;
+  border-color: #4f46e5;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
 /* Data Tables */
@@ -235,24 +257,24 @@
 }
 
 .admin-table th {
-  background: #181d2d;
-  color: #94a3b8;
-  font-weight: 600;
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 700;
   text-transform: uppercase;
   font-size: 11px;
   letter-spacing: 0.05em;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .admin-table td {
   padding: 14px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  color: #cbd5e1;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
 }
 
 .admin-table tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
+  background: #f8fafc;
 }
 
 /* Telemetry Widgets Grid */
@@ -272,8 +294,8 @@
   display: flex;
   justify-content: space-between;
   padding: 12px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  font-size: 13px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13.5px;
 }
 
 .telemetry-item:last-child {
@@ -281,11 +303,12 @@
 }
 
 .telemetry-label {
-  color: #94a3b8;
+  color: #64748b;
+  font-weight: 500;
 }
 
 .telemetry-value {
-  color: #ffffff;
+  color: #0f172a;
   font-weight: 600;
   font-family: var(--mono, monospace);
 }
@@ -299,7 +322,7 @@
   text-transform: uppercase;
 }
 
-.pill-starter { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
-.pill-team { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
-.pill-scale { background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); }
-.pill-free { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); }
+.pill-starter { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+.pill-team { background: #faf5ff; color: #9333ea; border: 1px solid #e9d5ff; }
+.pill-scale { background: #fefce8; color: #ca8a04; border: 1px solid #fef08a; }
+.pill-free { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
