@@ -491,35 +491,50 @@ export async function createInvite(workspaceId, email, role, permissions = [], p
   const inviterId = authData?.user?.id
   const cleanEmail = email.trim().toLowerCase()
 
-  // 1. Check if user is already an active workspace member
-  const { data: existingMembers } = await supabase
-    .from('workspace_members')
-    .select('user_id, users(email)')
-    .eq('workspace_id', workspaceId)
-
-  const isAlreadyMember = (existingMembers || []).some(m => (m.users?.email || '').trim().toLowerCase() === cleanEmail)
-  if (isAlreadyMember) {
-    throw new Error(`${cleanEmail} is already an active member of this workspace.`)
+  // 1. Try serverless API first (uses admin service key to create invite or add existing member directly)
+  let apiRes = null
+  try {
+    const res = await fetch('/api/workspace-members', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'create_invite',
+        workspaceId,
+        email: cleanEmail,
+        role: role || 'member',
+        permissions: Array.isArray(permissions) ? permissions : []
+      })
+    })
+    if (res.ok) {
+      apiRes = await res.json()
+    }
+  } catch (apiErr) {
+    console.warn('Serverless create_invite warning:', apiErr)
   }
 
-  try {
-    await supabase.from('invites').delete().eq('workspace_id', workspaceId).eq('email', cleanEmail)
-  } catch (e) {}
+  // 2. Client-side fallback insert into invites table if serverless didn't add as member
+  let insertedData = apiRes?.invite || null
+  if (!apiRes?.addedAsMember && !insertedData) {
+    try {
+      await supabase.from('invites').delete().eq('workspace_id', workspaceId).eq('email', cleanEmail)
+    } catch (e) {}
 
-  const { error: dbErr, data: insertedData } = await supabase.from('invites').insert({
-    workspace_id: workspaceId,
-    email: cleanEmail,
-    role,
-    permissions,
-    invited_by: inviterId,
-    password_hint: password || null,
-    sent_count: sendEmail ? 1 : 0,
-    created_at: new Date().toISOString()
-  }).select().single()
+    const { error: dbErr, data } = await supabase.from('invites').insert({
+      workspace_id: workspaceId,
+      email: cleanEmail,
+      role: role || 'member',
+      permissions: Array.isArray(permissions) ? permissions : [],
+      invited_by: inviterId,
+      password_hint: password || null,
+      sent_count: sendEmail ? 1 : 0,
+      created_at: new Date().toISOString()
+    }).select().maybeSingle()
 
-  if (dbErr) {
-    console.error('Database invite insert error:', dbErr)
-    throw new Error(dbErr.message || 'Failed to record invite in database')
+    insertedData = data
+    if (dbErr && !apiRes?.success) {
+      console.error('Database invite insert error:', dbErr)
+      throw new Error(dbErr.message || 'Failed to record invite in database')
+    }
   }
 
   // Pre-seed workspace settings member_permissions with invited email
@@ -558,7 +573,11 @@ export async function createInvite(workspaceId, email, role, permissions = [], p
     }
   }
 
-  return { ...(insertedData || {}), success: true, emailStatus }
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('sprintos:data-sync'))
+  }
+
+  return { ...(insertedData || {}), success: true, emailStatus, addedAsMember: !!apiRes?.addedAsMember }
 }
 
 export async function updateMemberPermissions(workspaceId, userId, permissions, email = null) {

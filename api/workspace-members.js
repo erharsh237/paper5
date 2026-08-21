@@ -38,7 +38,7 @@ export default async function handler(req, res) {
     }
 
     try {
-      if (action === 'add_member_by_email') {
+      if (action === 'create_invite' || action === 'add_member_by_email') {
         const targetEmail = (body.email || '').trim().toLowerCase()
         if (!targetEmail) return res.status(400).json({ error: 'Missing email' })
         
@@ -72,6 +72,7 @@ export default async function handler(req, res) {
           }
         }
         
+        // If user already exists in the system, add directly as member!
         if (matchedUid) {
           let insertError = null
           try {
@@ -114,10 +115,33 @@ export default async function handler(req, res) {
           try { await supabaseAdmin.from('invites').delete().eq('workspace_id', workspaceId).eq('email', targetEmail) } catch (_) {}
           try { await supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', workspaceId).eq('email', targetEmail) } catch (_) {}
           
-          return res.status(200).json({ success: true, userId: matchedUid, email: targetEmail, insertError })
+          return res.status(200).json({ success: true, addedAsMember: true, userId: matchedUid, email: targetEmail, insertError })
         }
         
-        return res.status(404).json({ error: 'User account not found in Auth for email: ' + targetEmail })
+        // If user does not exist yet, save as a Pending Invite
+        try {
+          await supabaseAdmin.from('invites').delete().eq('workspace_id', workspaceId).eq('email', targetEmail)
+        } catch (_) {}
+
+        const { data: inviteRow, error: invErr } = await supabaseAdmin.from('invites').insert({
+          workspace_id: workspaceId,
+          email: targetEmail,
+          role: role || 'member',
+          permissions: Array.isArray(permissions) ? permissions : [],
+          sent_count: 1,
+          created_at: new Date().toISOString()
+        }).select().maybeSingle()
+
+        try {
+          await supabaseAdmin.from('workspace_invites').insert({
+            workspace_id: workspaceId,
+            email: targetEmail,
+            role: role || 'member',
+            created_at: new Date().toISOString()
+          })
+        } catch (_) {}
+
+        return res.status(200).json({ success: true, pendingInvite: true, invite: inviteRow || { email: targetEmail, role: role || 'member' } })
       }
 
       if (action === 'update_workspace_settings') {
