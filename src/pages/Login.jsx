@@ -154,16 +154,29 @@ export default function Login({ accessDenied, denialReason }) {
       setIsPending2FA(true, userEmail)
 
       // 2. Trigger OTP (Factor 2)
+      let isRateLimited = false
+      let rateLimitSecs = 60
       try {
         await sendLoginOtp(userEmail)
       } catch (otpErr) {
         console.warn('OTP dispatch notice:', otpErr)
+        const msg = otpErr?.message || (typeof otpErr === 'string' ? otpErr : '')
+        const match = msg.match(/after (\d+) seconds/)
+        if (match) {
+          isRateLimited = true
+          rateLimitSecs = parseInt(match[1], 10)
+        }
       }
       
       setVerifiedEmail(userEmail)
-      setMessage('Password validated successfully. Please check your email for the 8-digit verification code.')
+      if (isRateLimited) {
+        setMessage(`Password validated. An OTP was already sent recently — please check your email inbox or wait ${rateLimitSecs}s to resend.`)
+        setCooldown(rateLimitSecs)
+      } else {
+        setMessage('Password validated successfully. Please check your email for the 8-digit verification code.')
+        setCooldown(60)
+      }
       setStep(2)
-      setCooldown(60)
       setFailedAttempts(0)
       resetSecurityState(identifier)
     } catch (err) {

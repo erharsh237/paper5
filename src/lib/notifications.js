@@ -288,7 +288,7 @@ export async function markNotificationRead(workspaceId, id, userEmail) {
       try {
         await supabase
           .from('notifications')
-          .update({ read_by: readBy, is_read: true })
+          .update({ read_by: readBy })
           .eq('id', id)
       } catch (_) {}
     }
@@ -326,7 +326,7 @@ export async function markAllNotificationsRead(workspaceId, userEmail) {
         try {
           await supabase
             .from('notifications')
-            .update({ read_by: readBy, is_read: true })
+            .update({ read_by: readBy })
             .eq('id', notif.id)
         } catch (_) {}
       }
