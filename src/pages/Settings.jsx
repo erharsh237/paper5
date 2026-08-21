@@ -518,9 +518,12 @@ export default function Settings() {
   const activePendingInvites = useMemo(() => {
     return invites.filter(i => {
       const email = (i.email || '').trim().toLowerCase()
-      return email && !activeMemberEmails.has(email)
+      if (!email) return false
+      if (activeMemberEmails.has(email)) return false
+      if (user?.email && user.email.toLowerCase() === email) return false
+      return true
     })
-  }, [invites, activeMemberEmails])
+  }, [invites, activeMemberEmails, user?.email])
 
   const usedSeats = members.length + activePendingInvites.length
   const isSeatLimitReached = typeof maxMembers === 'number' && usedSeats >= maxMembers
