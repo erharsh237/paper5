@@ -20,15 +20,15 @@ export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspac
   }
 
   const getPlanPrice = () => {
-    return '$0.00'
+    return '₹0'
   }
 
   const activePlanName = getPlanName(currentPlanId)
   
-  // 1. Retrieve stored invoices from workspace settings (all plans are $0.00 during launch special)
+  // 1. Retrieve stored invoices from workspace settings (all plans are ₹0 during launch special)
   const storedInvoices = (Array.isArray(workspace?.settings?.invoices) ? workspace.settings.invoices : []).map(inv => ({
     ...inv,
-    amount: '$0.00'
+    amount: '₹0'
   }))
 
   // 2. Build baseline fallback invoices if history is missing
@@ -68,7 +68,7 @@ export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspac
     plan: 'Starter Plan (Monthly)',
     planId: 'free',
     changeType: 'Initial Workspace Setup',
-    amount: '$0.00',
+    amount: '₹0',
     status: 'Paid'
   }
 
@@ -96,7 +96,7 @@ export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspac
       const issueDate = inv.date || formattedToday
       const expDate = inv.expiryDate || formattedExpiryDate
       const planTitle = inv.plan || `${getPlanName(inv.planId || currentPlanId)} (${inv.cycle || 'Monthly'})`
-      const price = inv.amount || '$0.00'
+      const price = (inv.amount || '₹0').replace(/^\$/, '₹')
       const changeType = inv.changeType || 'Subscription'
 
       const htmlContent = `
@@ -188,11 +188,11 @@ export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspac
               </tr>
               <tr>
                 <td>Launch Discount (100%):</td>
-                <td class="text-right">-$0.00</td>
+                <td class="text-right">-₹0</td>
               </tr>
               <tr>
                 <td>Tax (GST / VAT 0%):</td>
-                <td class="text-right">$0.00</td>
+                <td class="text-right">₹0</td>
               </tr>
               <tr class="grand-total">
                 <td>Total Paid:</td>
@@ -326,7 +326,7 @@ export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspac
                       {inv.expiryDate || formattedExpiryDate}
                     </span>
                   </td>
-                  <td><strong>{inv.amount || '$0.00'}</strong></td>
+                  <td><strong>{(inv.amount || '₹0').replace(/^\$/, '₹')}</strong></td>
                   <td>
                     <span className="invoice-status-paid" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', padding: '4px 10px', borderRadius: '100px', fontSize: '12px', fontWeight: 700, border: '1px solid rgba(16, 185, 129, 0.25)' }}>
                       {inv.status || 'Paid'}

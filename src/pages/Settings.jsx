@@ -872,7 +872,7 @@ export default function Settings() {
       }
 
       const getPlanPrice = () => {
-        return '$0.00'
+        return '₹0'
       }
 
       const planName = getPlanTitle(newPlanId)
