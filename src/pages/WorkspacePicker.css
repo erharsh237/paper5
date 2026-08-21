@@ -229,15 +229,19 @@
 
 .wp-modal-card {
   width: 100%;
-  max-width: 520px;
+  max-width: 600px;
+  max-height: min(92vh, 680px);
   background: #ffffff;
-  border-radius: 18px;
+  border-radius: 20px;
   border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.16);
-  padding: 32px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+  padding: 28px 28px 20px;
   position: relative;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   animation: wpModalIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
 }
 
 @keyframes wpModalIn {
@@ -253,20 +257,21 @@
 
 .wp-modal-close {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 18px;
+  right: 18px;
   background: #f3f4f6;
   border: none;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  font-size: 14px;
+  font-size: 13px;
   color: #6b7280;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.15s ease;
+  z-index: 10;
 }
 
 .wp-modal-close:hover {
@@ -275,7 +280,8 @@
 }
 
 .wp-modal-header {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .wp-modal-header h2 {
@@ -283,7 +289,7 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   color: #111827;
-  margin: 0 0 6px 0;
+  margin: 0 0 4px 0;
 }
 
 .wp-modal-header p {
@@ -292,19 +298,37 @@
   margin: 0;
 }
 
+.wp-modal-body-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
+  margin-right: -6px;
+  flex: 1;
+  min-height: 0;
+}
+
+.wp-modal-body-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.wp-modal-body-scroll::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+}
+
 .wp-error-banner {
-  padding: 12px 14px;
+  padding: 10px 14px;
   background: #fef2f2;
   border: 1px solid #fee2e2;
   color: #b91c1c;
   font-size: 13px;
   border-radius: 8px;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
   line-height: 1.4;
 }
 
 .wp-form-group {
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 
 .wp-form-group label {
@@ -312,13 +336,13 @@
   font-size: 13px;
   font-weight: 600;
   color: #374151;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
 }
 
 .wp-input,
 .wp-select {
   width: 100%;
-  padding: 11px 14px;
+  padding: 10px 12px;
   background: #ffffff;
   border: 1px solid #d1d5db;
   border-radius: 10px;
@@ -337,28 +361,37 @@
 
 .workflow-options-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 10px;
-  margin-top: 6px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+
+@media (max-width: 520px) {
+  .workflow-options-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .workflow-card-option {
-  padding: 12px;
-  border: 1px solid #e5e7eb;
+  padding: 10px 12px;
+  border: 1.5px solid #e5e7eb;
   border-radius: 10px;
   background: #ffffff;
   cursor: pointer;
   transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .workflow-card-option:hover:not(.locked) {
   border-color: #000000;
-  background: #f9fafb;
+  background: #fafafa;
 }
 
 .workflow-card-option.selected {
   border-color: #000000;
-  background: #f3f4f6;
+  background: #f8fafc;
   box-shadow: 0 0 0 1px #000000;
 }
 
@@ -366,19 +399,23 @@
   opacity: 0.55;
   cursor: not-allowed;
   background: #f9fafb;
+  border-color: #f3f4f6;
 }
 
 .wf-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
+  gap: 6px;
 }
 
 .wf-name {
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
   color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .wf-lock-badge {
@@ -386,8 +423,9 @@
   font-weight: 600;
   background: #f3f4f6;
   color: #6b7280;
-  padding: 2px 5px;
+  padding: 2px 6px;
   border-radius: 4px;
+  flex-shrink: 0;
 }
 
 .wf-desc {
@@ -395,6 +433,10 @@
   color: #6b7280;
   margin: 0;
   line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .wp-consent-box {
@@ -402,7 +444,7 @@
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   padding: 14px;
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 
 .wp-consent-label {
@@ -437,5 +479,8 @@
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 24px;
+  padding-top: 16px;
+  margin-top: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
 }

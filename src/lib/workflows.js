@@ -204,8 +204,7 @@ export const TEAM_SIZE_OPTIONS = [
 
 export function getRecommendedWorkflow(teamSizeValue) {
   const option = TEAM_SIZE_OPTIONS.find(o => o.value === teamSizeValue)
-  const workflowId = option ? option.defaultWorkflow : 'scrum'
-  return WORKFLOWS.find(w => w.id === workflowId) || WORKFLOWS[5]
+  return option ? option.defaultWorkflow : 'kanban'
 }
 
 export function getUnlockedWorkflowsForPlan(planId) {

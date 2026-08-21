@@ -296,76 +296,78 @@ export default function WorkspacePicker() {
             </button>
 
             {modalStep === 1 ? (
-              <form onSubmit={handleNextStep}>
+              <form onSubmit={handleNextStep} style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
                 <div className="wp-modal-header">
                   <h2>Create Workspace</h2>
                   <p>Configure your workspace name and preferences</p>
                 </div>
 
-                {createError && <div className="wp-error-banner">{createError}</div>}
+                <div className="wp-modal-body-scroll">
+                  {createError && <div className="wp-error-banner">{createError}</div>}
 
-                <div className="wp-form-group">
-                  <label htmlFor="ws-name">Workspace Name</label>
-                  <input
-                    id="ws-name"
-                    type="text"
-                    className="wp-input"
-                    placeholder="e.g. Acme Engineering"
-                    value={newName}
-                    onChange={e => setNewName(e.target.value)}
-                    required
-                    autoFocus
-                    disabled={isCreating}
-                  />
-                </div>
+                  <div className="wp-form-group">
+                    <label htmlFor="ws-name">Workspace Name</label>
+                    <input
+                      id="ws-name"
+                      type="text"
+                      className="wp-input"
+                      placeholder="e.g. Acme Engineering"
+                      value={newName}
+                      onChange={e => setNewName(e.target.value)}
+                      required
+                      autoFocus
+                      disabled={isCreating}
+                    />
+                  </div>
 
-                <div className="wp-form-group">
-                  <label htmlFor="ws-teamsize">Team Size</label>
-                  <select
-                    id="ws-teamsize"
-                    className="wp-select"
-                    value={teamSize}
-                    onChange={e => {
-                      setTeamSize(e.target.value)
-                      setSelectedWorkflow(getRecommendedWorkflow(e.target.value))
-                    }}
-                    disabled={isCreating}
-                  >
-                    {TEAM_SIZE_OPTIONS.map(opt => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  <div className="wp-form-group">
+                    <label htmlFor="ws-teamsize">Team Size</label>
+                    <select
+                      id="ws-teamsize"
+                      className="wp-select"
+                      value={teamSize}
+                      onChange={e => {
+                        setTeamSize(e.target.value)
+                        setSelectedWorkflow(getRecommendedWorkflow(e.target.value))
+                      }}
+                      disabled={isCreating}
+                    >
+                      {TEAM_SIZE_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div className="wp-form-group">
-                  <label>Workflow Mode</label>
-                  <div className="workflow-options-grid">
-                    {Object.entries(WORKFLOWS).map(([key, wf]) => {
-                      const isUnlocked = isWorkflowUnlocked(key, userPlan)
-                      const isSelected = selectedWorkflow === key
+                  <div className="wp-form-group" style={{ marginBottom: 0 }}>
+                    <label>Workflow Mode</label>
+                    <div className="workflow-options-grid">
+                      {WORKFLOWS.map((wf) => {
+                        const isUnlocked = isWorkflowUnlocked(wf.id, userPlan)
+                        const isSelected = selectedWorkflow === wf.id
 
-                      return (
-                        <div
-                          key={key}
-                          className={`workflow-card-option ${isSelected ? 'selected' : ''} ${!isUnlocked ? 'locked' : ''}`}
-                          onClick={() => {
-                            if (isUnlocked) setSelectedWorkflow(key)
-                          }}
-                        >
-                          <div className="wf-card-header">
-                            <span className="wf-name">{wf.name}</span>
-                            {!isUnlocked && (
-                              <span className="wf-lock-badge">
-                                🔒 {wf.requiredPlan ? wf.requiredPlan.charAt(0).toUpperCase() + wf.requiredPlan.slice(1) : 'Pro'}
-                              </span>
-                            )}
+                        return (
+                          <div
+                            key={wf.id}
+                            className={`workflow-card-option ${isSelected ? 'selected' : ''} ${!isUnlocked ? 'locked' : ''}`}
+                            onClick={() => {
+                              if (isUnlocked) setSelectedWorkflow(wf.id)
+                            }}
+                          >
+                            <div className="wf-card-header">
+                              <span className="wf-name">{wf.name}</span>
+                              {!isUnlocked && (
+                                <span className="wf-lock-badge">
+                                  🔒 {wf.plans.includes('team') ? 'Team' : 'Scale'}
+                                </span>
+                              )}
+                            </div>
+                            <p className="wf-desc">{wf.description}</p>
                           </div>
-                          <p className="wf-desc">{wf.description}</p>
-                        </div>
-                      )
-                    })}
+                        )
+                      })}
+                    </div>
                   </div>
                 </div>
 
@@ -388,29 +390,31 @@ export default function WorkspacePicker() {
                 </div>
               </form>
             ) : (
-              <form onSubmit={handleCreate}>
+              <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
                 <div className="wp-modal-header">
                   <h2>Data Storage Consent</h2>
                   <p>Choose whether SprintOS may store workspace state</p>
                 </div>
 
-                {createError && <div className="wp-error-banner">{createError}</div>}
+                <div className="wp-modal-body-scroll">
+                  {createError && <div className="wp-error-banner">{createError}</div>}
 
-                <div className="wp-consent-box">
-                  <label className="wp-consent-label">
-                    <input
-                      type="checkbox"
-                      checked={saveData}
-                      onChange={e => setSaveData(e.target.checked)}
-                      disabled={isCreating}
-                    />
-                    <span>
-                      <strong>Allow SprintOS to persist workspace data</strong>
-                      <small>
-                        Enables saving tasks, deadlines, meeting notes, and team configuration across sessions.
-                      </small>
-                    </span>
-                  </label>
+                  <div className="wp-consent-box">
+                    <label className="wp-consent-label">
+                      <input
+                        type="checkbox"
+                        checked={saveData}
+                        onChange={e => setSaveData(e.target.checked)}
+                        disabled={isCreating}
+                      />
+                      <span>
+                        <strong>Allow SprintOS to persist workspace data</strong>
+                        <small>
+                          Enables saving tasks, deadlines, meeting notes, and team configuration across sessions.
+                        </small>
+                      </span>
+                    </label>
+                  </div>
                 </div>
 
                 <div className="wp-modal-actions">
