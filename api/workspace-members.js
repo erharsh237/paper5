@@ -368,12 +368,14 @@ export default async function handler(req, res) {
 
     // Fetch workspace settings to retrieve member_permissions map
     let memberPermsMap = {}
+    let wsData = null
     try {
-      const { data: wsData } = await supabaseAdmin
+      const { data } = await supabaseAdmin
         .from('workspaces')
         .select('settings')
         .eq('id', workspaceId)
         .maybeSingle()
+      wsData = data
       if (wsData?.settings?.member_permissions) {
         memberPermsMap = wsData.settings.member_permissions
       }
