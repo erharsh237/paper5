@@ -95,17 +95,17 @@ export default async function handler(req, res) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: process.env.SENDER_EMAIL || 'SprintOS <no-reply@paper5.co>',
+          from: process.env.SENDER_EMAIL || 'SprintOS Workspace <no-reply@paper5.co>',
           to: [cleanEmail],
           reply_to: process.env.REPLY_TO_EMAIL || 'support@paper5.co',
           subject: subject,
           html: htmlBody,
           text: textBody,
           headers: {
-            'X-Entity-Ref-ID': `inv-${Date.now()}`,
-            'List-Unsubscribe': '<mailto:support@paper5.co?subject=unsubscribe>',
+            'X-Entity-Ref-ID': `inv-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+            'List-Unsubscribe': '<https://app.paper5.co/settings>',
             'X-Auto-Response-Suppress': 'OOF, AutoReply',
-            'X-Mailer': 'SprintOS-Notification-Engine'
+            'X-Mailer': 'SprintOS Notification Engine v2.0'
           }
         })
       })
