@@ -43,6 +43,54 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
         <div className="pricing-modal-header">
           <h2>Launch Special: 100% Free Access</h2>
           <p>All features, integrations, and workspaces are completely unlocked during our early access period.</p>
+
+          {/* Billing Cycle Switcher */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '18px' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', background: 'var(--surface-2, #EEF0F9)', padding: '4px', borderRadius: '10px', border: '1px solid var(--border-soft, #EAECF6)' }}>
+              <button
+                type="button"
+                onClick={() => setIsAnnual(false)}
+                style={{
+                  border: 'none',
+                  padding: '6px 16px',
+                  borderRadius: '7px',
+                  fontSize: '12.5px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  background: !isAnnual ? '#FFFFFF' : 'transparent',
+                  color: !isAnnual ? 'var(--accent, #4F46E5)' : 'var(--muted, #6E7091)',
+                  boxShadow: !isAnnual ? '0 1px 4px rgba(30, 32, 80, 0.12)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                Monthly Billing
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAnnual(true)}
+                style={{
+                  border: 'none',
+                  padding: '6px 16px',
+                  borderRadius: '7px',
+                  fontSize: '12.5px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  background: isAnnual ? '#FFFFFF' : 'transparent',
+                  color: isAnnual ? 'var(--accent, #4F46E5)' : 'var(--muted, #6E7091)',
+                  boxShadow: isAnnual ? '0 1px 4px rgba(30, 32, 80, 0.12)' : 'none',
+                  transition: 'all 0.15s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <span>Annual Billing</span>
+                <span style={{ fontSize: '10px', background: 'rgba(16, 185, 129, 0.12)', color: '#059669', padding: '2px 6px', borderRadius: '100px', fontWeight: 800 }}>
+                  2 Months Free (Save 20%)
+                </span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="pricing-modal-grid">
@@ -85,7 +133,7 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
             <div className="tier-price">
               <span className="currency">₹</span>
               <span className="amount">0</span>
-              <span className="period">/mo</span>
+              <span className="period">{isAnnual ? '/year' : '/mo'}</span>
             </div>
             <p className="tier-desc">For growing startups that need to collaborate and integrate their stack.</p>
             
@@ -107,7 +155,7 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
               <li>Up to 5 Workspaces</li>
               <li>Up to 7 Team Members</li>
               <li>⚡ 6 Agile Workflows (Kanban, Scrum, XP, Lean, Scrumban)</li>
-              <li>GitHub & Google Calendar Integrations</li>
+              <li>GitHub &amp; Google Calendar Integrations</li>
               <li>Locked Sprint Scope Control</li>
               <li>Proof of Work Peer Verification</li>
               <li>Sunday Sync Meeting Broadcasts</li>
@@ -120,7 +168,7 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
             <div className="tier-price">
               <span className="currency">₹</span>
               <span className="amount">0</span>
-              <span className="period">/mo</span>
+              <span className="period">{isAnnual ? '/year' : '/mo'}</span>
             </div>
             <p className="tier-desc">For mature teams requiring advanced reporting, automation, and support.</p>
             
@@ -141,11 +189,11 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
             <ul className="tier-features">
               <li>Up to 10 Workspaces</li>
               <li>Unlimited Team Members</li>
-              <li>⚡ All 8 Agile Workflows (Spotify Model & SAFe Enterprise)</li>
+              <li>⚡ All 8 Agile Workflows (Spotify Model &amp; SAFe Enterprise)</li>
               <li>All Stack Integrations (Slack, Discord, Vercel, GitHub, Google Calendar)</li>
-              <li>Advanced Velocity & Risk Analytics</li>
-              <li>Strict Auditing Mode & CSV Export</li>
-              <li>⚡ 1-Click API Webhook & REST Sync Studio</li>
+              <li>Advanced Velocity &amp; Risk Analytics</li>
+              <li>Strict Auditing Mode &amp; CSV Export</li>
+              <li>⚡ 1-Click API Webhook &amp; REST Sync Studio</li>
             </ul>
           </div>
         </div>
