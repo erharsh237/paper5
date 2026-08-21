@@ -205,42 +205,105 @@ export default async function handler(req, res) {
       }
 
       if (action === 'delete_member' || action === 'remove_member') {
-        // Temporarily elevate to owner so count(*) > 1 before delete
-        await supabaseAdmin
-          .from('workspace_members')
-          .update({ role: 'owner' })
-          .eq('workspace_id', workspaceId)
-          .eq('user_id', memberId)
+        const cleanEmail = body.email ? body.email.trim().toLowerCase() : ''
+        const targetUserIds = new Set()
+        if (memberId && !memberId.includes('@')) targetUserIds.add(memberId)
 
-        const { error: delErr } = await supabaseAdmin
-          .from('workspace_members')
-          .delete()
-          .eq('workspace_id', workspaceId)
-          .eq('user_id', memberId)
-
-        if (delErr) console.warn('Delete member notice:', delErr.message)
-
-        await supabaseAdmin.from('profiles').delete().eq('id', memberId)
-        await supabaseAdmin.from('users').delete().eq('id', memberId)
-
-        try {
-          const { data: ws } = await supabaseAdmin.from('workspaces').select('settings').eq('id', workspaceId).maybeSingle()
-          if (ws?.settings?.deletion_requests) {
-            const reqs = { ...ws.settings.deletion_requests }
-            delete reqs[memberId]
-            await supabaseAdmin.from('workspaces').update({ settings: { ...ws.settings, deletion_requests: reqs } }).eq('id', workspaceId)
-          }
-        } catch (_) {}
-
-        if (serviceKey) {
+        // Resolve auth/profile user IDs
+        if (cleanEmail) {
           try {
-            await supabaseAdmin.auth.admin.deleteUser(memberId)
-          } catch (aErr) {
-            console.warn('Auth delete notice:', aErr.message)
+            const { data: uData } = await supabaseAdmin.from('users').select('id').ilike('email', cleanEmail)
+            for (const u of (uData || [])) { if (u.id) targetUserIds.add(u.id) }
+          } catch (_) {}
+          try {
+            const { data: pData } = await supabaseAdmin.from('profiles').select('id').ilike('email', cleanEmail)
+            for (const p of (pData || [])) { if (p.id) targetUserIds.add(p.id) }
+          } catch (_) {}
+          if (serviceKey) {
+            try {
+              const { data: authList } = await supabaseAdmin.auth.admin.listUsers()
+              for (const au of (authList?.users || [])) {
+                if (au.email?.toLowerCase() === cleanEmail) targetUserIds.add(au.id)
+              }
+            } catch (_) {}
           }
         }
 
-        return res.status(200).json({ success: true, deleted: true, memberId })
+        const idsList = Array.from(targetUserIds)
+
+        // 1. Clean up workspaces.settings.members, member_permissions, deletion_requests
+        try {
+          const { data: ws } = await supabaseAdmin.from('workspaces').select('settings').eq('id', workspaceId).maybeSingle()
+          const currentSettings = { ...(ws?.settings || {}) }
+          let settingsChanged = false
+
+          if (Array.isArray(currentSettings.members)) {
+            const filtered = currentSettings.members.filter(m => {
+              const mId = m.id || m.userId
+              const mEmail = (m.email || '').trim().toLowerCase()
+              if (mId && (idsList.includes(mId) || mId === memberId)) return false
+              if (mEmail && cleanEmail && mEmail === cleanEmail) return false
+              return true
+            })
+            if (filtered.length !== currentSettings.members.length) {
+              currentSettings.members = filtered
+              settingsChanged = true
+            }
+          }
+
+          if (currentSettings.member_permissions) {
+            const perms = { ...currentSettings.member_permissions }
+            for (const id of idsList) { if (perms[id]) { delete perms[id]; settingsChanged = true } }
+            if (memberId && perms[memberId]) { delete perms[memberId]; settingsChanged = true }
+            if (cleanEmail && perms[cleanEmail]) { delete perms[cleanEmail]; settingsChanged = true }
+            currentSettings.member_permissions = perms
+          }
+
+          if (currentSettings.deletion_requests) {
+            const reqs = { ...currentSettings.deletion_requests }
+            for (const id of idsList) { if (reqs[id]) { delete reqs[id]; settingsChanged = true } }
+            if (memberId && reqs[memberId]) { delete reqs[memberId]; settingsChanged = true }
+            if (cleanEmail && reqs[cleanEmail]) { delete reqs[cleanEmail]; settingsChanged = true }
+            currentSettings.deletion_requests = reqs
+          }
+
+          if (settingsChanged) {
+            await supabaseAdmin.from('workspaces').update({ settings: currentSettings }).eq('id', workspaceId)
+          }
+        } catch (_) {}
+
+        // 2. Delete from workspace_members table
+        if (memberId) {
+          try { await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', workspaceId).eq('user_id', memberId) } catch (_) {}
+        }
+        for (const id of idsList) {
+          try { await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', workspaceId).eq('user_id', id) } catch (_) {}
+        }
+
+        // 3. Delete from profiles & users tables
+        for (const id of idsList) {
+          try { await supabaseAdmin.from('profiles').delete().eq('id', id) } catch (_) {}
+          try { await supabaseAdmin.from('users').delete().eq('id', id) } catch (_) {}
+        }
+        if (cleanEmail) {
+          try { await supabaseAdmin.from('profiles').delete().ilike('email', cleanEmail) } catch (_) {}
+          try { await supabaseAdmin.from('users').delete().ilike('email', cleanEmail) } catch (_) {}
+          try { await supabaseAdmin.from('invites').delete().ilike('email', cleanEmail) } catch (_) {}
+          try { await supabaseAdmin.from('workspace_invites').delete().ilike('email', cleanEmail) } catch (_) {}
+          try { await supabaseAdmin.from('notifications').delete().ilike('forEmail', cleanEmail) } catch (_) {}
+        }
+
+        // 4. Delete from Supabase Auth
+        if (serviceKey) {
+          for (const id of idsList) {
+            try { await supabaseAdmin.auth.admin.deleteUser(id) } catch (aErr) { console.warn('Auth delete notice:', aErr.message) }
+          }
+          if (memberId && !idsList.includes(memberId) && !memberId.includes('@')) {
+            try { await supabaseAdmin.auth.admin.deleteUser(memberId) } catch (_) {}
+          }
+        }
+
+        return res.status(200).json({ success: true, deleted: true, memberId, deletedUserIds: idsList })
       }
 
       if (action === 'update_role') {

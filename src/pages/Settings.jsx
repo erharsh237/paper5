@@ -747,33 +747,58 @@ export default function Settings() {
     }
     openConfirm({
       title: 'Remove Member',
-      message: 'Are you sure you want to remove this member from the workspace? If this is their only workspace, their account will be deactivated until added back or a plan is purchased.',
+      message: `Are you sure you want to remove ${memberEmail || 'this member'}? Their account and access will be completely deleted from the workspace.`,
       confirmText: 'Remove Member',
       variant: 'danger',
       onConfirm: async () => {
         closeConfirm()
+        const targetCleanEmail = (memberEmail || '').trim().toLowerCase()
         try {
           const resp = await fetch('/api/delete-user', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: memberUid, email: memberEmail, workspaceId, fullDelete: false })
+            body: JSON.stringify({ userId: memberUid, memberId: memberUid, email: targetCleanEmail, workspaceId, fullDelete: true })
           })
           const json = await resp.json()
           if (!resp.ok) throw new Error(json.error || 'Failed to remove member')
           
-          setAlertMessage(json.accountPurged 
-            ? `Member removed. Because they had no other workspaces, their account has been deactivated.`
-            : `Member removed from workspace.`
-          )
-          setMembers(prev => prev.filter(x => x.id !== memberUid && x.user_id !== memberUid))
-        } catch (err) {
-          console.warn('Remove member fallback:', err)
-          try {
-            await removeMember(workspaceId, memberUid)
-            setMembers(prev => prev.filter(x => x.id !== memberUid && x.user_id !== memberUid))
-          } catch (_) {
-            setAlertMessage('Unable to process member removal. Please try again.')
+          setAlertMessage(`Member ${targetCleanEmail || ''} removed successfully.`)
+          setMembers(prev => prev.filter(x => {
+            const xId = x.id || x.userId || x.user_id
+            const xEmail = (x.email || x.users?.email || x.user?.email || '').trim().toLowerCase()
+            if (xId && (xId === memberUid || (memberUid && xId.includes(memberUid)))) return false
+            if (targetCleanEmail && xEmail === targetCleanEmail) return false
+            return true
+          }))
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('sprintos:data-sync'))
+            localStorage.setItem('sprintos:sync_members', Date.now().toString())
           }
+        } catch (err) {
+          console.warn('Remove member fallback to workspace-members API:', err)
+          try {
+            const fbResp = await fetch(`/api/workspace-members?workspaceId=${encodeURIComponent(workspaceId)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'delete_member', memberId: memberUid, email: targetCleanEmail, workspaceId })
+            })
+            if (fbResp.ok) {
+              setAlertMessage(`Member ${targetCleanEmail || ''} removed successfully.`)
+              setMembers(prev => prev.filter(x => {
+                const xId = x.id || x.userId || x.user_id
+                const xEmail = (x.email || x.users?.email || x.user?.email || '').trim().toLowerCase()
+                if (xId && xId === memberUid) return false
+                if (targetCleanEmail && xEmail === targetCleanEmail) return false
+                return true
+              }))
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('sprintos:data-sync'))
+                localStorage.setItem('sprintos:sync_members', Date.now().toString())
+              }
+              return
+            }
+          } catch (_) {}
+          setAlertMessage('Unable to process member removal. Please try again.')
         }
       }
     })
