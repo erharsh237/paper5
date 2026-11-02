@@ -302,6 +302,8 @@ export default async function handler(req, res) {
         }
         for (const id of idsList) {
           try { await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', workspaceId).eq('user_id', id) } catch (_) {}
+        }
+
         // 3. Check if user is still a member in any other workspace
         let isMemberOfOtherWorkspaces = false
         try {
