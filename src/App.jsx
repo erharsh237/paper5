@@ -262,6 +262,7 @@ export default function App() {
           <Route path="/error" element={<ErrorPage />} />
 
           {/* Marketing Pages - Redirect to paper5.com if visited on app.paper5.com */}
+          <Route path="/pricing" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} path="/#pricing" /> : <Landing />} />
           <Route path="/features" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <Features />} />
           <Route path="/about" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <AboutUs />} />
           <Route path="/product-integrations" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <ProductIntegrations />} />

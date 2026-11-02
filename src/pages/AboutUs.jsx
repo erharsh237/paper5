@@ -144,7 +144,7 @@ export default function AboutUs() {
             Enterprise Security & Compliance
           </h2>
           <p style={{ fontSize: '15px', color: 'var(--text-secondary)', maxWidth: '680px', margin: '0 auto 24px auto', lineHeight: 1.6 }}>
-            Security is built into the foundation of SprintOS™. Powered by SOC2 Type II certified infrastructure with native GDPR and DPDP compliance, enforced email verification, and role-based access control (RBAC).
+            Security is built into the foundation of Paper5. Powered by TLS 1.3 transit encryption, AES-256 data protection at rest, strict PostgreSQL Row-Level Security (RLS) tenant isolation, enforced email verification, and optional Multi-Factor Authentication (2FA).
           </p>
           <button className="btn-primary" style={{ padding: '10px 24px' }} onClick={() => navigate('/signup')}>
             🚀 Start Free Workspace

@@ -47,13 +47,16 @@ export function ApiReference() {
 
 export function Security() {
   return (
-    <MarketingContentPage title="Security & Compliance" lastUpdated="Oct 15, 2026">
-      <h2>Enterprise-Grade Security</h2>
-      <p>Security is not an afterthought at Paper5. It is built into the foundation of our architecture.</p>
+    <MarketingContentPage title="Security & Data Protection" lastUpdated="Nov 02, 2026">
+      <h2>Built with Security & Privacy by Design</h2>
+      <p>Security is fundamental to Paper5. We employ modern defensive engineering, tenant isolation, and strict encryption protocols to safeguard your team's workspace data.</p>
       <ul>
-        <li><strong>Data Isolation:</strong> Cryptographically isolated workspace environments.</li>
-        <li><strong>Compliance:</strong> Powered by SOC2 Type II certified infrastructure with native GDPR and DPDP compliance.</li>
-        <li><strong>Authentication:</strong> Enforced email verification and optional Multi-Factor Authentication.</li>
+        <li><strong>Tenant Isolation:</strong> Every workspace operates under strict PostgreSQL Row-Level Security (RLS) policies, guaranteeing tenant data cannot be queried across workspace boundaries.</li>
+        <li><strong>Encryption in Transit & at Rest:</strong> All web traffic is encrypted with TLS 1.3 in transit. Underlying database volumes and backups are encrypted at rest with AES-256.</li>
+        <li><strong>Cloud Infrastructure:</strong> Built on top of enterprise AWS cloud infrastructure via Supabase, with automatic failover, daily automated backups, and high availability.</li>
+        <li><strong>Access Control & Authentication:</strong> Enforced email verification, cryptographically signed HTTP-only session tokens, and optional Two-Factor Authentication (2FA) via authenticator apps.</li>
+        <li><strong>Full Data Portability:</strong> You maintain complete ownership of your team's project records with one-click full vector PDF reports and CSV data export.</li>
+
       </ul>
     </MarketingContentPage>
   )
