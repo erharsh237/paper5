@@ -224,18 +224,18 @@ export default function Login({ accessDenied, denialReason }) {
 
   return (
     <div className="auth-layout">
-      <a href={getMainUrl('/')} style={{ position: 'absolute', top: '32px', left: '32px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#666', textDecoration: 'none', fontWeight: 500 }}>
+      <a href={getMainUrl('/')} className="auth-back-to-website">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         Back to website
       </a>
       
       <div className="auth-form-side">
         <div className="auth-form-container">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '24px', color: '#111', fontWeight: 600, fontSize: '18px' }}>
-            <div style={{ width: '24px', height: '24px', background: '#111', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#fff' }} />
+          <div className="auth-brand-header">
+            <div className="auth-brand-icon">
+              <span className="auth-brand-dot" />
             </div>
-            SprintOS
+            <span className="auth-brand-text">SprintOS</span>
           </div>
           <h1>Welcome back</h1>
           <p className="auth-subtitle">Login to your account</p>
@@ -288,7 +288,7 @@ export default function Login({ accessDenied, denialReason }) {
             <div className="auth-input-group">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <label htmlFor="password" style={{ marginBottom: 0 }}>Password</label>
-                <Link to="/forgot-password" style={{ fontSize: '13px', color: '#111', textDecoration: 'none', fontWeight: 500 }}>
+                <Link to="/forgot-password" className="auth-forgot-link">
                   Forgot your password?
                 </Link>
               </div>
@@ -356,7 +356,7 @@ export default function Login({ accessDenied, denialReason }) {
             {/* 6-Digit OTP Input Boxes section */}
             <div className="auth-input-group" style={{ opacity: step < 2 ? 0.7 : 1 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label htmlFor="otp" style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>2FA Verification Code (6 Digits)</label>
+                <label htmlFor="otp" className="auth-otp-label">2FA Verification Code (6 Digits)</label>
                 {step === 2 ? (
                   <button 
                     type="button" 

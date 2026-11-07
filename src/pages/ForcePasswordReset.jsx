@@ -185,11 +185,11 @@ export default function ForcePasswordReset() {
         maxWidth: '440px',
         width: '100%'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', color: 'var(--text-primary, #111)' }}>
-          <div style={{ width: '24px', height: '24px', background: 'var(--text-primary, #111)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#fff' }} />
+        <div className="auth-brand-header" style={{ justifyContent: 'flex-start', marginBottom: '20px' }}>
+          <div className="auth-brand-icon">
+            <span className="auth-brand-dot" />
           </div>
-          <span style={{ fontWeight: 600, fontSize: '16px' }}>SprintOS</span>
+          <span className="auth-brand-text" style={{ fontSize: '16px' }}>SprintOS</span>
         </div>
 
         <h2 style={{ margin: '0 0 8px 0', fontSize: '22px', fontWeight: 700, color: 'var(--text-primary, #111)' }}>Welcome to SprintOS!</h2>

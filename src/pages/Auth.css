@@ -356,3 +356,137 @@
 [data-theme="dark"] .auth-divider::after {
   border-color: rgba(255, 255, 255, 0.1);
 }
+
+/* ── Auth Branding Header & Controls (High Contrast Dark/Light Theme) ── */
+.auth-brand-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  color: #09090b;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+
+.auth-brand-icon {
+  width: 24px;
+  height: 24px;
+  background: #09090b;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+}
+
+.auth-brand-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ffffff;
+  display: block;
+}
+
+.auth-brand-text {
+  color: #09090b;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+[data-theme="dark"] .auth-brand-header {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .auth-brand-icon {
+  background: #27272a !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+}
+
+[data-theme="dark"] .auth-brand-dot {
+  background: #ffffff !important;
+}
+
+[data-theme="dark"] .auth-brand-text {
+  color: #ffffff !important;
+}
+
+.auth-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 18px;
+  color: #09090b;
+}
+
+.auth-logo-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  display: inline-block;
+}
+
+[data-theme="dark"] .auth-logo {
+  color: #ffffff !important;
+}
+
+.auth-forgot-link {
+  font-size: 13px;
+  color: #09090b;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.auth-forgot-link:hover {
+  color: #10b981;
+  text-decoration: underline;
+}
+
+[data-theme="dark"] .auth-forgot-link {
+  color: #f4f4f5 !important;
+}
+
+[data-theme="dark"] .auth-forgot-link:hover {
+  color: #34d399 !important;
+}
+
+.auth-otp-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+[data-theme="dark"] .auth-otp-label {
+  color: #f4f4f5 !important;
+}
+
+.auth-back-to-website {
+  position: absolute;
+  top: 32px;
+  left: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #666;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.auth-back-to-website:hover {
+  color: #10b981;
+}
+
+[data-theme="dark"] .auth-back-to-website {
+  color: #a1a1aa !important;
+}
+
+[data-theme="dark"] .auth-back-to-website:hover {
+  color: #ffffff !important;
+}

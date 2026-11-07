@@ -257,18 +257,18 @@ export default function Signup() {
 
   return (
     <div className="auth-layout">
-      <a href={getMainUrl('/')} style={{ position: 'absolute', top: '32px', left: '32px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#666', textDecoration: 'none', fontWeight: 500 }}>
+      <a href={getMainUrl('/')} className="auth-back-to-website">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         Back to website
       </a>
 
       <div className="auth-form-side" style={{ padding: 0 }}>
         <div className="auth-form-container">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '24px', color: '#111', fontWeight: 600, fontSize: '18px' }}>
-            <div style={{ width: '24px', height: '24px', background: '#111', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#fff' }} />
+          <div className="auth-brand-header">
+            <div className="auth-brand-icon">
+              <span className="auth-brand-dot" />
             </div>
-            SprintOS
+            <span className="auth-brand-text">SprintOS</span>
           </div>
           <h1>Create your account</h1>
           <p className="auth-subtitle">Enter your email below to create your account</p>
