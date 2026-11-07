@@ -1,3 +1,5 @@
+/vercel.json    / 404
+/.vercel/*    / 404
 /.dev.vars    / 404
 /wrangler.toml    / 404
 /wrangler.json    / 404

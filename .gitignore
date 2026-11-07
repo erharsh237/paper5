@@ -64,3 +64,8 @@ scratch/
 wrangler.toml
 wrangler.json
 wrangler.jsonc
+
+# Vercel CLI local configuration & private directory
+.vercel
+.vercel/project.json
+.private/

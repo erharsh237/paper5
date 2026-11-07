@@ -1,0 +1,4 @@
+# Vercel deployment ignore rules
+.vercel
+.vercel/project.json
+.private

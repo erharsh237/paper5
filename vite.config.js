@@ -13,8 +13,8 @@ export default defineConfig({
       configureServer(server) {
         server.middlewares.use((req, res, next) => {
           const url = req.url ? req.url.split('?')[0].toLowerCase() : ''
-          const blocked = ['/.dev.vars', '/wrangler.toml', '/wrangler.json', '/wrangler.jsonc']
-          if (blocked.includes(url) || url.startsWith('/.dev.vars')) {
+          const blocked = ['/.dev.vars', '/wrangler.toml', '/wrangler.json', '/wrangler.jsonc', '/vercel.json']
+          if (blocked.includes(url) || url.startsWith('/.dev.vars') || url.startsWith('/.vercel')) {
             res.statusCode = 404
             res.setHeader('Content-Type', 'text/plain')
             res.end('404 Not Found')
@@ -26,8 +26,8 @@ export default defineConfig({
       configurePreviewServer(server) {
         server.middlewares.use((req, res, next) => {
           const url = req.url ? req.url.split('?')[0].toLowerCase() : ''
-          const blocked = ['/.dev.vars', '/wrangler.toml', '/wrangler.json', '/wrangler.jsonc']
-          if (blocked.includes(url) || url.startsWith('/.dev.vars')) {
+          const blocked = ['/.dev.vars', '/wrangler.toml', '/wrangler.json', '/wrangler.jsonc', '/vercel.json']
+          if (blocked.includes(url) || url.startsWith('/.dev.vars') || url.startsWith('/.vercel')) {
             res.statusCode = 404
             res.setHeader('Content-Type', 'text/plain')
             res.end('404 Not Found')
