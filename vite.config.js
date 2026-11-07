@@ -12,7 +12,17 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  server: { port: 5173 },
+  server: {
+    port: 5173,
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+    },
+  },
+  preview: {
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+    },
+  },
   build: {
     // Automatic chunking in Vite 8 / Rolldown
   },
