@@ -21,15 +21,17 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
   
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://sdbglndhjkqhkphzqmum.supabase.co'
+  const rawUrl = process.env.VITE_SUPABASE_URL || 'https://sdbglndhjkqhkphzqmum.supabase.co'
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY
-  const activeKey = serviceKey || anonKey
+  const rawKey = serviceKey || anonKey
 
-  if (!activeKey) {
+  if (!rawKey) {
     return res.status(500).json({ error: 'Supabase credentials missing' })
   }
 
+  const supabaseUrl = rawUrl.replace(/["']/g, '').trim()
+  const activeKey = rawKey.replace(/["']/g, '').trim()
   const supabaseAdmin = createClient(supabaseUrl, activeKey)
 
   try {
@@ -55,7 +57,6 @@ export default async function handler(req, res) {
         if (body.billing_status) updateData.billing_status = body.billing_status
         if (body.legal_accepted_version) updateData.legal_accepted_version = body.legal_accepted_version
         if (body.legal_accepted_at) updateData.legal_accepted_at = body.legal_accepted_at
-        updateData.updated_at = new Date().toISOString()
         
         await supabaseAdmin.from('users').update(updateData).eq('id', targetUid)
       }
@@ -75,8 +76,7 @@ export default async function handler(req, res) {
       billing_plan_id: body.billing_plan_id || 'unselected',
       billing_status: body.billing_status || 'active',
       legal_accepted_version: body.legal_accepted_version || '1.0.0',
-      legal_accepted_at: body.legal_accepted_at || new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      legal_accepted_at: body.legal_accepted_at || new Date().toISOString()
     }
 
     let { data: inserted, error: insertErr } = await supabaseAdmin
@@ -97,11 +97,13 @@ export default async function handler(req, res) {
     }
 
     if (insertErr) {
+      console.error('api/ensure-user insert error:', insertErr)
       return res.status(500).json({ error: insertErr.message, code: insertErr.code })
     }
 
     return res.status(200).json({ success: true, user: inserted })
   } catch (err) {
+    console.error('api/ensure-user handler exception:', err)
     return res.status(500).json({ error: err.message || 'Server error' })
   }
 }

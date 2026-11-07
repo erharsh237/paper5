@@ -220,8 +220,7 @@ export default function OnboardingWizardModal() {
           billing_plan_id: selectedTier,
           billing_status: 'active',
           legal_accepted_version: '1.0.0',
-          legal_accepted_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          legal_accepted_at: new Date().toISOString()
         })
         .eq('id', user.id)
 

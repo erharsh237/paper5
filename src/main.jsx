@@ -108,21 +108,14 @@ if (typeof window !== 'undefined') {
     )
 
     if (rootElement.hasChildNodes()) {
-      ReactDOM.hydrateRoot(rootElement, appTree)
+      try {
+        ReactDOM.hydrateRoot(rootElement, appTree)
+      } catch (hydrateErr) {
+        console.warn('Hydration warning, falling back to client render:', hydrateErr)
+        ReactDOM.createRoot(rootElement).render(appTree)
+      }
     } else {
-      const html = ReactDOMServer.renderToString(
-        <React.StrictMode>
-          <ErrorBoundary>
-            <MemoryRouter initialEntries={[window.location.pathname]}>
-              <AuthProvider>
-                <App />
-              </AuthProvider>
-            </MemoryRouter>
-          </ErrorBoundary>
-        </React.StrictMode>
-      )
-      rootElement.innerHTML = html
-      ReactDOM.hydrateRoot(rootElement, appTree)
+      ReactDOM.createRoot(rootElement).render(appTree)
     }
   }
 }

@@ -88,8 +88,7 @@ export default function AccountTierModal() {
         .from('users')
         .update({ 
           billing_plan_id: selectedTier,
-          billing_status: 'active',
-          updated_at: new Date().toISOString()
+          billing_status: 'active'
         })
         .eq('id', user.id)
 

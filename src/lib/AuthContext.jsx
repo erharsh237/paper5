@@ -389,8 +389,7 @@ export function AuthProvider({ children }) {
         id: data.user.id, 
         email: data.user.email,
         username: cleanUsername,
-        billing_plan_id: 'unselected',
-        updated_at: new Date().toISOString() 
+        billing_plan_id: 'unselected'
       })
 
       // Refetch updated user profile into AuthContext state so route guards see username immediately

@@ -403,8 +403,7 @@ export async function ensureUserRecordExists(uid, email, metadata = {}) {
       billing_plan_id: metadata.billing_plan_id || 'unselected',
       billing_status: metadata.billing_status || 'active',
       legal_accepted_version: metadata.legal_accepted_version || '1.0.0',
-      legal_accepted_at: metadata.legal_accepted_at || new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      legal_accepted_at: metadata.legal_accepted_at || new Date().toISOString()
     }
 
     // 3. Upsert directly from client

@@ -120,8 +120,7 @@ export default function ForcePasswordReset() {
           id: data.user.id,
           email: cleanEmail,
           username: uniqueUsername,
-          requires_password_reset: false,
-          updated_at: new Date().toISOString()
+          requires_password_reset: false
         })
         
         // 3. Accept pending invites via serverless API (bypasses RLS 403 errors)
