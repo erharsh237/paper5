@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MarketingLayout from '../components/MarketingLayout'
 import SEOHead from '../components/SEOHead'
+import { Zap, FolderGit2, Rocket, MessageSquare, Megaphone, Calendar } from 'lucide-react'
 import './ProductIntegrationsPage.css'
 
 export default function ProductIntegrationsPage() {
