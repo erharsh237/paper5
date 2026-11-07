@@ -2458,6 +2458,38 @@
   color: #d4d4d8 !important;
 }
 
+[data-theme="dark"] .visual-doc-title {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .visual-doc-bullets,
+[data-theme="dark"] .visual-doc-bullets .bullet-item {
+  color: #a1a1aa !important;
+}
+
+[data-theme="dark"] .tool-status-item {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #e4e4e7 !important;
+}
+
+[data-theme="dark"] .pill-tag-doc {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: #93c5fd !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+}
+
+[data-theme="dark"] .pill-tag-verified {
+  background: rgba(16, 185, 129, 0.2) !important;
+  color: #6ee7b7 !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+[data-theme="dark"] .pill-tag-active {
+  background: rgba(245, 158, 11, 0.2) !important;
+  color: #fcd34d !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+
 /* ── 8. SECTION 5: CONNECTED WORKSPACE ── */
 [data-theme="dark"] .connected-workspace-section {
   background: #09090b !important;
@@ -2695,6 +2727,7 @@
 }
 
 [data-theme="dark"] .footer-bottom {
+  background: #09090b !important;
   border-top-color: rgba(255, 255, 255, 0.08) !important;
   color: #71717a !important;
 }

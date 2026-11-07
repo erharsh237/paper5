@@ -333,3 +333,145 @@
   .workflow-detail-box { grid-template-columns: 1fr; gap: 24px; }
   .linear-feature-row { flex-direction: column; align-items: flex-start; gap: 16px; }
 }
+
+
+/* ═════════════════════════════════════════════════════════
+   DARK MODE STYLES FOR FEATURES PAGE
+   ═════════════════════════════════════════════════════════ */
+[data-theme="dark"] .features-title {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .features-subtitle {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .features-linear-section {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .section-label {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .section-head h2 {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .section-head p {
+  color: #a1a1aa;
+}
+
+/* Workflow Tabs */
+[data-theme="dark"] .workflow-tabs-bar {
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .workflow-tab-btn {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .workflow-tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .workflow-tab-btn.active {
+  background: #ffffff;
+  color: #09090b;
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+}
+
+/* Workflow Detail Box */
+[data-theme="dark"] .workflow-detail-box {
+  background: #121217;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .wf-tag {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .wf-title {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .wf-size-pill {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f4f4f5;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .wf-desc {
+  color: #d4d4d8;
+}
+
+[data-theme="dark"] .practice-row {
+  color: #e4e4e7;
+}
+
+[data-theme="dark"] .workflow-columns-preview {
+  background: #18181f;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .col-flow-item {
+  background: #20202a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #f4f4f5;
+}
+
+[data-theme="dark"] .col-idx {
+  background: #ffffff;
+  color: #09090b;
+}
+
+/* Linear Feature Rows */
+[data-theme="dark"] .linear-feature-row {
+  background: #121217;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .linear-feature-row:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: #16161d;
+}
+
+[data-theme="dark"] .linear-icon {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .linear-feature-info h3 {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .linear-feature-info p {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .linear-feature-badge {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f4f4f5;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Feature Capability Matrix Table */
+[data-theme="dark"] .feature-table-wrapper {
+  background: #121217;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .feature-table th {
+  background: #18181f;
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .feature-table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #d4d4d8;
+}

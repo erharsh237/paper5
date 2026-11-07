@@ -201,3 +201,106 @@
   .steps-grid { grid-template-columns: 1fr; }
   .showcase-card { grid-column: span 12 !important; }
 }
+
+
+/* ═════════════════════════════════════════════════════════
+   DARK MODE STYLES FOR PRODUCT INTEGRATIONS PAGE
+   ═════════════════════════════════════════════════════════ */
+[data-theme="dark"] .integrations-title {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .integrations-subtitle {
+  color: #a1a1aa;
+}
+
+/* Category Filter Pills */
+[data-theme="dark"] .filter-pill {
+  background: #18181b;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .filter-pill:hover,
+[data-theme="dark"] .filter-pill.active {
+  background: #ffffff;
+  color: #09090b;
+  border-color: #ffffff;
+}
+
+/* Showcase Cards */
+[data-theme="dark"] .showcase-card {
+  background: #121217;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .showcase-card:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.6);
+  background: #16161d;
+}
+
+[data-theme="dark"] .card-brand-icon {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .card-status-badge {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f4f4f5;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+[data-theme="dark"] .card-title {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .card-desc {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .card-feature-list li {
+  color: #d4d4d8;
+}
+
+[data-theme="dark"] .card-feature-list li::before {
+  color: #10b981;
+}
+
+/* 3-Step Integration Flow Section */
+[data-theme="dark"] .integration-steps-section {
+  background: #121217;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .integration-steps-section .section-label {
+  color: #10b981;
+}
+
+[data-theme="dark"] .integration-steps-section h2 {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .integration-steps-section p {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .step-card {
+  background: #18181f;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .step-card h3 {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .step-card p {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .step-number {
+  background: #ffffff;
+  color: #09090b;
+}

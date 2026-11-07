@@ -96,11 +96,6 @@ export default function Landing() {
         <AnimatedGridBackgroundSection>
           <section className="hero-section">
             <div className="hero-content">
-              {/* Eyebrow */}
-              <div className="hero-eyebrow">
-                <span className="pulse-dot" />
-                <span>THE PROJECT WORKSPACE FOR SMALL TEAMS</span>
-              </div>
 
               {/* Main Headline */}
               <h1 className="hero-headline">
