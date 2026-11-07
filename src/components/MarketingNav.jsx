@@ -38,22 +38,41 @@ export default function MarketingNav() {
 
   const handleHomeClick = (e) => {
     if (location.pathname === '/' || location.pathname === '') {
-      e.preventDefault()
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      if (e) e.preventDefault()
+      if (window.__lenis) {
+        window.__lenis.scrollTo(0, {
+          duration: 1.25,
+          easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
+        })
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
       if (window.location.hash) {
         window.history.pushState('', document.title, window.location.pathname)
       }
     } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      if (window.__lenis) {
+        window.__lenis.scrollTo(0, { duration: 1.25 })
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
     }
   }
 
   const handlePricingClick = (e) => {
     if (location.pathname === '/' || location.pathname === '') {
-      e.preventDefault()
+      if (e) e.preventDefault()
       const el = document.getElementById('pricing')
       if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        if (window.__lenis) {
+          window.__lenis.scrollTo(el, {
+            offset: -84,
+            duration: 1.35,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
+          })
+        } else {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
       }
     }
   }

@@ -71,7 +71,11 @@ export default function Landing() {
       const timer = setTimeout(() => {
         const el = document.getElementById('pricing')
         if (el) {
+          if (window.__lenis) {
+          window.__lenis.scrollTo(el, { offset: -84, duration: 1.35, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) })
+        } else {
           el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
         }
       }, 150)
       return () => clearTimeout(timer)
@@ -120,7 +124,18 @@ export default function Landing() {
                   <ArrowRight size={18} />
                 </button>
                 <a 
-                  href="#problem" 
+                  href="#problem"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const el = document.getElementById('problem');
+                    if (el) {
+                      if (window.__lenis) {
+                        window.__lenis.scrollTo(el, { offset: -84, duration: 1.25, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+                      } else {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }
+                  }}
                   className="btn-ghost btn-lg"
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}
                 >
