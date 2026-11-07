@@ -3,6 +3,8 @@ import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import ContactModal from './ContactModal'
 import { ArrowRight, Menu, X, ChevronDown, User, LogOut } from 'lucide-react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faHouse, faLayerGroup, faPlug, faTag, faBookOpen, faCircleInfo, faEnvelope } from '@fortawesome/free-solid-svg-icons'
 import logo from '../assets/logo.png'
 import '../pages/Landing.css'
 import { getAppUrl } from '../lib/domain'
@@ -84,7 +86,7 @@ export default function MarketingNav() {
             </span>
           </Link>
 
-          {/* Desktop Text-Based Navigation */}
+          {/* Desktop Icon Navigation with Tooltips */}
           <div className="nav-links desktop-only">
             {navLinks.map((item) => (
               item.isAnchor ? (
@@ -92,17 +94,21 @@ export default function MarketingNav() {
                   key={item.label}
                   href={item.path}
                   onClick={handlePricingClick}
-                  className={`nav-link ${isLinkActive(item) ? 'active' : ''}`}
+                  className={`nav-link-icon-wrap ${isLinkActive(item) ? "active" : ""}`}
+                  aria-label={item.label}
                 >
-                  {item.label}
+                  <FontAwesomeIcon icon={item.icon} className="nav-fa-icon" />
+                  <span className="nav-tooltip" role="tooltip">{item.label}</span>
                 </a>
               ) : (
                 <Link
                   key={item.label}
                   to={item.path}
-                  className={`nav-link ${isLinkActive(item) ? 'active' : ''}`}
+                  className={`nav-link-icon-wrap ${isLinkActive(item) ? "active" : ""}`}
+                  aria-label={item.label}
                 >
-                  {item.label}
+                  <FontAwesomeIcon icon={item.icon} className="nav-fa-icon" />
+                  <span className="nav-tooltip" role="tooltip">{item.label}</span>
                 </Link>
               )
             ))}
