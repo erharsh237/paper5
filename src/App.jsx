@@ -46,6 +46,8 @@ const Integrations = safeLazy(() => import('./pages/Integrations'))
 const Profile = safeLazy(() => import('./pages/Profile'))
 const Settings = safeLazy(() => import('./pages/Settings'))
 const Legal = safeLazy(() => import('./pages/Legal'))
+const Privacy = safeLazy(() => import('./pages/Privacy'))
+const Contact = safeLazy(() => import('./pages/Contact'))
 const ForgotPassword = safeLazy(() => import('./pages/ForgotPassword'))
 const LocalAdminDashboard = safeLazy(() => import('./pages/LocalAdminDashboard'))
 import NotFound from './pages/NotFound'
@@ -283,8 +285,9 @@ export default function App() {
           
           <Route path="/legal" element={<Navigate to="/legal/terms" replace />} />
           <Route path="/legal/:docId" element={<Legal />} />
-          <Route path="/privacy" element={<Navigate to="/legal/privacy" replace />} />
-          <Route path="/contact" element={<Navigate to="/about" replace />} />
+          <Route path="/privacy" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <Privacy />} />
+          <Route path="/contact" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <Contact />} />
+          <Route path="/about-us" element={<Navigate to="/about" replace />} />
           <Route path="/admin" element={<LocalAdminDashboard />} />
           <Route path="/localhost-dashboard" element={<LocalAdminDashboard />} />
           <Route path="/error" element={<ErrorPage />} />

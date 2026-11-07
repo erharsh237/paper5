@@ -99,7 +99,7 @@ export default function MarketingFooter({ hideCTA = false }) {
           <div className="footer-column">
             <h3>Company</h3>
             <a href="/about">About</a>
-            <a href="/contact" onClick={(e) => { if (!e.ctrlKey && !e.metaKey && !e.shiftKey) { e.preventDefault(); setIsContactOpen(true); } }}>Contact</a>
+            <a href="/contact">Contact</a>
             <button className="text-link-btn" onClick={() => setIsFeedbackOpen(true)}>Give Feedback</button>
             <button className="text-link-btn" onClick={() => setIsContactOpen(true)}>Contact Support</button>
           </div>

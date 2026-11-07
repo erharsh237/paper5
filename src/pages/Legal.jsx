@@ -19,9 +19,10 @@ const DOCS = {
   'subprocessors': { title: 'Subprocessors', content: subprocessorsMd },
 }
 
-export default function Legal() {
-  const { docId } = useParams()
+export default function Legal({ defaultDocId }) {
+  const { docId: paramDocId } = useParams()
   const { pathname } = useLocation()
+  const docId = paramDocId || defaultDocId || (pathname === '/privacy' ? 'privacy' : 'terms')
   const doc = DOCS[docId] || DOCS['terms']
 
   // Scroll to top when switching docs
@@ -34,7 +35,7 @@ export default function Legal() {
       <SEOHead 
         title={`${doc.title} | Paper5 Legal`} 
         description={`Read the official Paper5 ${doc.title}. Compliance, data privacy, and service terms.`}
-        canonicalUrl={`https://paper5.com/legal/${docId || 'terms'}`}
+        canonicalUrl={pathname === '/privacy' ? 'https://paper5.co/privacy' : `https://paper5.co/legal/${docId || 'terms'}`}
       />
       <MarketingNav />
 
@@ -45,7 +46,7 @@ export default function Legal() {
             {Object.entries(DOCS).map(([id, d]) => (
               <Link 
                 key={id} 
-                to={`/legal/${id}`}
+                to={id === 'privacy' ? '/privacy' : `/legal/${id}`}
                 className={`legal-nav-link ${docId === id ? 'active' : ''}`}
               >
                 {d.title}
