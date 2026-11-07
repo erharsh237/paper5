@@ -1,3 +1,4 @@
+import { useScrollReveal } from '../hooks/useScrollReveal'
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
@@ -37,6 +38,7 @@ import {
 import './Landing.css'
 
 export default function Landing() {
+  useScrollReveal()
   const [alertMessage, setAlertMessage] = useState(null)
   const [activePreviewTab, setActivePreviewTab] = useState('workflow') // 'workflow' | 'knowledge' | 'visibility'
   const { user } = useAuth()
@@ -460,13 +462,13 @@ export default function Landing() {
         </AnimatedGridBackgroundSection>
 
         {/* ── 2. TRUST / VALUE STRIP ── */}
-        <section className="value-strip-section">
+        <section className="value-strip-section reveal-on-scroll">
           <div className="value-strip-container">
             <h2 className="value-strip-title">
               Everything connected. Everyone on the same page.
             </h2>
 
-            <div className="value-strip-grid">
+            <div className="value-strip-grid reveal-stagger">
               <div className="value-strip-item">
                 <div className="value-strip-icon-box">
                   <Layers size={20} />
@@ -523,7 +525,7 @@ export default function Landing() {
               </p>
             </div>
 
-            <div className="problem-cards-grid">
+            <div className="problem-cards-grid reveal-stagger">
               {/* Problem 1 */}
               <div className="problem-card">
                 <div className="problem-card-icon">
@@ -586,7 +588,7 @@ export default function Landing() {
 
             <div className="capability-groups-stack">
               {/* Group 01: Project Execution */}
-              <div className="capability-group-card">
+              <div className="capability-group-card reveal-on-scroll">
                 <div className="capability-group-info">
                   <div className="group-number">01</div>
                   <h3 className="group-title">Project Execution</h3>
@@ -645,7 +647,7 @@ export default function Landing() {
               </div>
 
               {/* Group 02: Project Knowledge */}
-              <div className="capability-group-card reverse">
+              <div className="capability-group-card reverse reveal-on-scroll">
                 <div className="capability-group-info">
                   <div className="group-number">02</div>
                   <h3 className="group-title">Project Knowledge</h3>
@@ -693,7 +695,7 @@ export default function Landing() {
               </div>
 
               {/* Group 03: Team & Development Visibility */}
-              <div className="capability-group-card">
+              <div className="capability-group-card reveal-on-scroll">
                 <div className="capability-group-info">
                   <div className="group-number">03</div>
                   <h3 className="group-title">Team & Development Visibility</h3>
@@ -763,7 +765,7 @@ export default function Landing() {
               </p>
             </div>
 
-            <div className="integrations-card-grid">
+            <div className="integrations-card-grid reveal-stagger">
               {/* GitHub */}
               <div className="integration-box">
                 <div className="integration-box-head">
@@ -864,7 +866,7 @@ export default function Landing() {
               </p>
             </div>
 
-            <div className="how-it-works-steps-grid">
+            <div className="how-it-works-steps-grid reveal-stagger">
               {/* Step 1 */}
               <div className="step-card">
                 <span className="step-index">01</span>
@@ -916,7 +918,7 @@ export default function Landing() {
               </p>
             </div>
 
-            <div className="audience-cards-grid">
+            <div className="audience-cards-grid reveal-stagger">
               {/* Audience 1 */}
               <div className="audience-card">
                 <div className="audience-icon-wrap">
@@ -974,7 +976,7 @@ export default function Landing() {
               </p>
             </div>
 
-            <div className="pricing-grid">
+            <div className="pricing-grid reveal-stagger">
               {/* Starter Tier */}
               <div className="pricing-card">
                 <div className="tier-header">

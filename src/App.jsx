@@ -1,3 +1,5 @@
+import { useLenis } from './hooks/useLenis'
+import ScrollToTop from './components/ScrollToTop'
 import { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './lib/AuthContext'
@@ -203,6 +205,7 @@ function WorkspaceGuard({ children }) {
 
 export default function App() {
   useLivePresenceTracker()
+  useLenis()
   const { user, userData, loading, isPending2FA } = useAuth()
   const { isAppSubdomain } = getDomainConfig()
 
@@ -225,6 +228,7 @@ export default function App() {
 
   return (
     <InitialPreloader>
+      <ScrollToTop />
       <Suspense fallback={<PageLoading />}>
         <Routes>
           {/* Subdomain-aware Root Path */}
