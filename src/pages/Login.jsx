@@ -378,7 +378,7 @@ export default function Login({ accessDenied, denialReason }) {
               <OtpInput 
                 value={otp} 
                 onChange={setOtp} 
-                length={8} 
+                length={6} 
                 disabled={step < 2} 
                 showOtp={showOtp}
                 autoFocus={step === 2}
