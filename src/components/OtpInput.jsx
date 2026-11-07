@@ -3,7 +3,7 @@ import { useRef, useEffect, useState } from 'react'
 export default function OtpInput({ 
   value = '', 
   onChange, 
-  length = 8, 
+  length = 6, 
   disabled = false, 
   showOtp = false,
   autoFocus = true 

@@ -102,7 +102,7 @@ export default function Login({ accessDenied, denialReason }) {
       if (pendingEmail) {
         setVerifiedEmail(pendingEmail)
         setStep(2)
-        setMessage('2FA Verification Required: Password validated. Please enter the 8-digit code sent to your email to sign in.')
+        setMessage('2FA Verification Required: Password validated. Please enter the 6-digit code sent to your email to sign in.')
       }
     } catch (_) {}
   }, [])
@@ -173,7 +173,7 @@ export default function Login({ accessDenied, denialReason }) {
         setMessage(`Password validated. An OTP was already sent recently — please check your email inbox or wait ${rateLimitSecs}s to resend.`)
         setCooldown(rateLimitSecs)
       } else {
-        setMessage('Password validated successfully. Please check your email for the 8-digit verification code.')
+        setMessage('Password validated successfully. Please check your email for the 6-digit verification code.')
         setCooldown(60)
       }
       setStep(2)
@@ -202,7 +202,7 @@ export default function Login({ accessDenied, denialReason }) {
     clearAuthError()
     
     try {
-      if (otp.length < 6) {
+      if (otp.length !== 6) {
         setMessage('Please enter a valid code.')
         setLoading(false)
         return
@@ -348,10 +348,10 @@ export default function Login({ accessDenied, denialReason }) {
               </button>
             </div>
 
-            {/* 8-Digit OTP Input Boxes section */}
+            {/* 6-Digit OTP Input Boxes section */}
             <div className="auth-input-group" style={{ opacity: step < 2 ? 0.7 : 1 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label htmlFor="otp" style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>2FA Verification Code (8 Digits)</label>
+                <label htmlFor="otp" style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>2FA Verification Code (6 Digits)</label>
                 {step === 2 ? (
                   <button 
                     type="button" 
@@ -391,7 +391,7 @@ export default function Login({ accessDenied, denialReason }) {
                 type="submit" 
                 className="auth-submit-btn" 
                 onClick={handleOtpVerification}
-                disabled={loading || step < 2 || otp.length < 6}
+                disabled={loading || step < 2 || otp.length !== 6}
                 style={{
                   background: step < 2 ? '#9ca3af' : '#09090b',
                   cursor: step < 2 ? 'not-allowed' : 'pointer'

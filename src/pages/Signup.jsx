@@ -181,7 +181,7 @@ export default function Signup() {
       
       await sendSignupOtp(email)
       
-      setMessage('An 8-digit verification code has been sent to your email address.')
+      setMessage('A 6-digit verification code has been sent to your email address.')
       setStep(2)
       setCooldown(60)
       setFailedAttempts(0)
@@ -203,7 +203,7 @@ export default function Signup() {
     clearAuthError()
     
     try {
-      if (otp.length < 6) {
+      if (otp.length !== 6) {
         setMessage('Please enter a valid code.')
         setLoading(false)
         return
@@ -280,7 +280,7 @@ export default function Signup() {
               const isSuccess = (
                 activeMsg.toLowerCase().includes('success') || 
                 activeMsg.toLowerCase().includes('verified') || 
-                activeMsg.toLowerCase().includes('an 8-digit')
+                activeMsg.toLowerCase().includes('6-digit')
               ) && 
               !activeMsg.toLowerCase().includes('invalid') && 
               !activeMsg.toLowerCase().includes('error') && 
@@ -349,7 +349,7 @@ export default function Signup() {
               </>
             )}
 
-            {/* Step 2: 8-Digit Verification Code */}
+            {/* Step 2: 6-Digit Verification Code */}
             {step === 2 && (
               <>
                 <div className="auth-input-group" style={{ marginBottom: '16px', padding: '12px', background: 'var(--bg-layer-2, #f9fafb)', borderRadius: '8px', border: '1px solid var(--border-subtle, #e5e7eb)' }}>
@@ -404,14 +404,14 @@ export default function Signup() {
                     <OtpInput 
                       value={otp} 
                       onChange={setOtp} 
-                      length={8} 
+                      length={6} 
                       showOtp={showOtp}
                     />
                   </div>
                 </div>
 
                 <div style={{ marginTop: '24px' }}>
-                  <button type="button" className="auth-submit-btn" onClick={handleVerifyOtp} disabled={loading || otp.length < 6}>
+                  <button type="button" className="auth-submit-btn" onClick={handleVerifyOtp} disabled={loading || otp.length !== 6}>
                     {loading ? 'Verifying...' : 'Confirm Verification Code'}
                   </button>
                 </div>
