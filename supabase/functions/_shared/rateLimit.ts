@@ -47,6 +47,7 @@
  */
 
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { getCorsHeaders } from './cors.ts'
 
 export interface RateLimitOptions {
   /** Maximum number of requests allowed within the window. */
@@ -123,7 +124,8 @@ export async function checkRateLimit(
  * @param retryAfterSeconds  How long the client should wait before retrying.
  *                           Defaults to 60 seconds.
  */
-export function rateLimitResponse(retryAfterSeconds = 60): Response {
+export function rateLimitResponse(retryAfterSeconds = 60, req?: Request): Response {
+  const corsHeaders = getCorsHeaders(req)
   return new Response(
     JSON.stringify({
       error: 'Too many requests. Please wait before trying again.',
@@ -132,9 +134,9 @@ export function rateLimitResponse(retryAfterSeconds = 60): Response {
     {
       status: 429,
       headers: {
+        ...corsHeaders,
         'Content-Type': 'application/json',
         'Retry-After': String(retryAfterSeconds),
-        'Access-Control-Allow-Origin': '*',
       },
     },
   )

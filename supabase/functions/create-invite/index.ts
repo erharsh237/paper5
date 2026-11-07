@@ -2,14 +2,11 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3"
 import * as crypto from "https://deno.land/std@0.177.0/crypto/mod.ts"
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts"
+import { getCorsHeaders } from "../_shared/cors.ts"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-region, x-supabase-client-platform',
-  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-}
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req)
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -37,7 +34,7 @@ serve(async (req) => {
       maxRequests: 10,
       windowSeconds: 60,
     })
-    if (isLimited) return rateLimitResponse(60)
+    if (isLimited) return rateLimitResponse(60, req)
     // ─────────────────────────────────────────────────────────────────────
 
     const { workspaceId, email, role, permissions = [], password, sendEmail = false } = await req.json()

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { setCorsHeaders } from './_cors.js'
 
 function parseBody(req) {
   if (req.body && typeof req.body === 'object') return req.body
@@ -9,9 +10,7 @@ function parseBody(req) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key')
+  setCorsHeaders(req, res)
   res.setHeader('Content-Type', 'application/json')
   
   if (req.method === 'OPTIONS') {
