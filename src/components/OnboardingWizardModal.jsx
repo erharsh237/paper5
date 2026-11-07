@@ -74,9 +74,9 @@ export default function OnboardingWizardModal() {
   const [step, setStep] = useState(1)
   const [selectedTier, setSelectedTier] = useState('team')
 
-  // Step 2: Legal Consent State
-  const [termsAccepted, setTermsAccepted] = useState(true)
-  const [dpaAccepted, setDpaAccepted] = useState(true)
+  // Step 2: Legal Consent State (Default unchecked)
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [dpaAccepted, setDpaAccepted] = useState(false)
 
   // Step 3: Workspace Creation Form State
   const [wsName, setWsName] = useState('')
@@ -494,10 +494,12 @@ export default function OnboardingWizardModal() {
                   fontWeight: 700,
                   border: 'none',
                   cursor: (!termsAccepted || !dpaAccepted) ? 'not-allowed' : 'pointer',
+                  opacity: (!termsAccepted || !dpaAccepted) ? 0.55 : 1,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '8px'
+                  gap: '8px',
+                  transition: 'all 0.2s ease'
                 }}
               >
                 <span>Accept & Continue to Workspace</span>
