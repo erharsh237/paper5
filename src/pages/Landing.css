@@ -1936,6 +1936,26 @@
   background: #fafaf9;
 }
 
+.footer-bottom-links {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.footer-bottom-links a {
+  color: #71717a;
+  text-decoration: none;
+  font-size: 13px;
+  transition: color 0.15s ease;
+}
+
+.footer-bottom-links a:hover {
+  color: #000000;
+}
+
 .footer-bottom-content {
   max-width: 1200px;
   margin: 0 auto;

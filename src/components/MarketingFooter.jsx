@@ -98,14 +98,15 @@ export default function MarketingFooter({ hideCTA = false }) {
           </div>
           <div className="footer-column">
             <h3>Company</h3>
-            <FooterLink to="/about">About Us</FooterLink>
+            <a href="/about">About</a>
+            <a href="/contact" onClick={(e) => { if (!e.ctrlKey && !e.metaKey && !e.shiftKey) { e.preventDefault(); setIsContactOpen(true); } }}>Contact</a>
             <button className="text-link-btn" onClick={() => setIsFeedbackOpen(true)}>Give Feedback</button>
             <button className="text-link-btn" onClick={() => setIsContactOpen(true)}>Contact Support</button>
           </div>
           <div className="footer-column">
             <h3>Legal</h3>
             <FooterLink to="/legal/terms">Terms of Service</FooterLink>
-            <FooterLink to="/legal/privacy">Privacy Policy</FooterLink>
+            <a href="/privacy">Privacy Policy</a>
             <FooterLink to="/security">Security & Data</FooterLink>
           </div>
         </div>
@@ -113,6 +114,11 @@ export default function MarketingFooter({ hideCTA = false }) {
       
       <div className="footer-bottom">
         <div className="footer-bottom-content">
+          <div className="footer-bottom-links">
+            <a href="/about">About</a>
+            <a href="/contact">Contact</a>
+            <a href="/privacy">Privacy Policy</a>
+          </div>
           <span>&copy; {new Date().getFullYear()} Paper5™. The connected project workspace. All rights reserved.</span>
         </div>
       </div>

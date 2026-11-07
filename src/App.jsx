@@ -218,6 +218,8 @@ export default function App() {
     location.pathname === '/pricing' ||
     location.pathname === '/features' ||
     location.pathname === '/about' ||
+    location.pathname === '/contact' ||
+    location.pathname === '/privacy' ||
     location.pathname === '/product-integrations' ||
     location.pathname === '/changelog' ||
     location.pathname === '/docs' ||
@@ -281,6 +283,8 @@ export default function App() {
           
           <Route path="/legal" element={<Navigate to="/legal/terms" replace />} />
           <Route path="/legal/:docId" element={<Legal />} />
+          <Route path="/privacy" element={<Navigate to="/legal/privacy" replace />} />
+          <Route path="/contact" element={<Navigate to="/about" replace />} />
           <Route path="/admin" element={<LocalAdminDashboard />} />
           <Route path="/localhost-dashboard" element={<LocalAdminDashboard />} />
           <Route path="/error" element={<ErrorPage />} />
