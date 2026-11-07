@@ -17,6 +17,8 @@
  *   - Path=/:      Scoped to the entire application
  */
 
+import { checkRateLimit } from '../_rateLimit.js'
+
 function getCookieDomainAttr(req) {
   const host = (req.headers['x-forwarded-host'] || req.headers.host || '').split(':')[0].toLowerCase()
   if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.localhost') || host.endsWith('.lvh.me')) {
@@ -48,6 +50,8 @@ function parseCookies(cookieHeader = '') {
 }
 
 export default function handler(req, res) {
+  if (checkRateLimit(req, res, { max: 120, windowMs: 60000 })) return
+
   // Only accept known methods
   if (!['GET', 'POST', 'DELETE'].includes(req.method)) {
     res.setHeader('Allow', 'GET, POST, DELETE')
