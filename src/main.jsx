@@ -6,6 +6,7 @@ import { AuthProvider } from './lib/AuthContext.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import ConnectionStatus from './components/ConnectionStatus.jsx'
 import { safeRedirect } from './lib/safeRedirect.js'
+import { isSafeUrl } from './utils/security.js'
 import * as Sentry from '@sentry/react'
 import './index.css'
 import './pages/Auth.css'
@@ -21,10 +22,16 @@ if (typeof window !== 'undefined') {
   const originalReplaceState = window.history.replaceState.bind(window.history)
 
   const validateRouterTarget = (target) => {
-    if (typeof target === 'string' && (target.startsWith('http://') || target.startsWith('https://'))) {
-      const parsed = new URL(target, window.location.origin)
-      if (parsed.origin !== window.location.origin) {
-        throw new Error(`Security Violation: Router rejected absolute external URL: ${target}`)
+    if (typeof target === 'string') {
+      if (target.startsWith('javascript:')) {
+        console.warn('Unsafe URL blocked:', target)
+        throw new Error(`Security Violation: Router rejected javascript URL: ${target}`)
+      }
+      if (target.startsWith('http://') || target.startsWith('https://')) {
+        if (!isSafeUrl(target)) {
+          console.warn('Unsafe URL blocked:', target)
+          throw new Error(`Security Violation: Router rejected absolute external URL: ${target}`)
+        }
       }
     }
   }
