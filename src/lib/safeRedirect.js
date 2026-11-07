@@ -1,21 +1,32 @@
 /**
- * Safe Redirect Helper
+ * Safe Navigation Helper
  * Validates target URL and ensures navigation stays on the same origin (no external redirects).
  *
- * @param {string} url - The URL or path to safely redirect to.
+ * @param {string} rawUrl - The URL or path to safely navigate to.
+ */
+export function safeNavigate(rawUrl) {
+  try {
+    const url = new URL(rawUrl, location.origin);
+    // Allow only http: or https: and same origin
+    if (!['http:', 'https:'].includes(url.protocol) || url.origin !== location.origin) {
+      console.warn('Blocked unsafe navigation:', rawUrl);
+      return;
+    }
+    location.href = url.href;
+  } catch (e) {
+    console.warn('Invalid URL:', rawUrl);
+  }
+}
+
+/**
+ * Safe Redirect Helper (alias to safeNavigate)
  */
 export function safeRedirect(url) {
-  try {
-    const u = new URL(url, window.location.origin);
-    if (u.origin !== window.location.origin) return; // reject external origins
-    location.href = u.pathname + u.search + u.hash;
-  } catch {
-    // If URL is invalid, reject navigation
-    return;
-  }
+  safeNavigate(url);
 }
 
 // Make accessible on window for security scanners, tests, and global execution
 if (typeof window !== 'undefined') {
+  window.safeNavigate = safeNavigate;
   window.safeRedirect = safeRedirect;
 }

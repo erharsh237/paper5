@@ -1,7 +1,16 @@
-function safeRedirect(url) {
-  const u = new URL(url, window.location.origin);
-  if (u.origin !== window.location.origin) return; // reject external origins
-  location.href = u.pathname + u.search + u.hash;
+// Inside assets/index-Cpc01hb9.js
+function safeNavigate(rawUrl) {
+  try {
+    const url = new URL(rawUrl, location.origin);
+    // Allow only http: or https: and same origin
+    if (!['http:', 'https:'].includes(url.protocol) || url.origin !== location.origin) {
+      console.warn('Blocked unsafe navigation:', rawUrl);
+      return;
+    }
+    location.href = url.href;
+  } catch (e) {
+    console.warn('Invalid URL:', rawUrl);
+  }
 }
 
 const getAccessToken = () => {
@@ -15,9 +24,10 @@ const getRefreshToken = () => {
 };
 
 function navigateTo(userControlledValue) {
-  safeRedirect(userControlledValue);
+  safeNavigate(userControlledValue);
 }
 
-safeRedirect(location.href);
+const userControlledValue = typeof location !== 'undefined' ? location.href : '';
+safeNavigate(userControlledValue);
 
-export { getAccessToken, getRefreshToken, safeRedirect, navigateTo };
+export { getAccessToken, getRefreshToken, safeNavigate, navigateTo };
