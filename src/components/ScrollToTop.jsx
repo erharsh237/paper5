@@ -7,9 +7,9 @@ export default function ScrollToTop() {
   useEffect(() => {
     if (!hash) {
       if (window.__lenis) {
-        window.__lenis.scrollTo(0, { immediate: false })
+        window.__lenis.scrollTo(0, { immediate: true })
       } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' })
+        window.scrollTo({ top: 0, behavior: 'instant' })
       }
     }
   }, [pathname, hash])
