@@ -57,3 +57,10 @@ coverage
 .reticle.json
 scratch/
 .hallmark/
+
+# Cloudflare / Wrangler configuration & secrets
+.dev.vars
+.dev.vars.*
+wrangler.toml
+wrangler.json
+wrangler.jsonc

@@ -6,7 +6,38 @@ import { fileURLToPath } from 'url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: 'block-cloudflare-config',
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          const url = req.url ? req.url.split('?')[0].toLowerCase() : ''
+          const blocked = ['/.dev.vars', '/wrangler.toml', '/wrangler.json', '/wrangler.jsonc']
+          if (blocked.includes(url) || url.startsWith('/.dev.vars')) {
+            res.statusCode = 404
+            res.setHeader('Content-Type', 'text/plain')
+            res.end('404 Not Found')
+            return
+          }
+          next()
+        })
+      },
+      configurePreviewServer(server) {
+        server.middlewares.use((req, res, next) => {
+          const url = req.url ? req.url.split('?')[0].toLowerCase() : ''
+          const blocked = ['/.dev.vars', '/wrangler.toml', '/wrangler.json', '/wrangler.jsonc']
+          if (blocked.includes(url) || url.startsWith('/.dev.vars')) {
+            res.statusCode = 404
+            res.setHeader('Content-Type', 'text/plain')
+            res.end('404 Not Found')
+            return
+          }
+          next()
+        })
+      },
+    },
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
