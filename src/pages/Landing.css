@@ -284,14 +284,31 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+  caret-color: transparent;
 }
 
 .hero-eyebrow {
-  display: block;
-  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
   font-weight: 600;
+  letter-spacing: 0.05em;
   color: #71717a;
-  margin-bottom: 18px;
+  margin-bottom: 22px;
+  padding: 6px 16px;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 9999px;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+  caret-color: transparent;
+  pointer-events: none;
 }
 
 .pulse-dot {
@@ -318,6 +335,11 @@
   color: #09090b;
   margin: 0 0 20px 0;
   text-align: center;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+  caret-color: transparent;
+  pointer-events: none;
 }
 
 @media (max-width: 768px) {
@@ -334,6 +356,11 @@
   max-width: 720px;
   margin: 0 0 32px 0;
   text-align: center;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+  caret-color: transparent;
+  pointer-events: none;
 }
 
 @media (max-width: 768px) {
@@ -349,6 +376,13 @@
   justify-content: center;
   flex-wrap: wrap;
   margin-bottom: 20px;
+  pointer-events: auto !important;
+}
+
+.hero-cta-group button,
+.hero-cta-group a {
+  pointer-events: auto !important;
+  cursor: pointer;
 }
 
 .hero-microcopy {
@@ -2008,6 +2042,7 @@
   background: rgba(255, 255, 255, 0.06) !important;
   border: 1px solid rgba(255, 255, 255, 0.14) !important;
   color: #f4f4f5 !important;
+  border-radius: 9999px !important;
 }
 
 [data-theme="dark"] .hero-subtext {

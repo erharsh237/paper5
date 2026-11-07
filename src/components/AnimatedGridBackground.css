@@ -1,13 +1,24 @@
+:root {
+  --agb-grid-border: rgba(0, 0, 0, 0.07);
+  --agb-tile-hover: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] {
+  --agb-grid-border: rgba(255, 255, 255, 0.09);
+  --agb-tile-hover: rgba(255, 255, 255, 0.08);
+}
+
 .agb-wrapper {
   width: 100vw;
-  height: 100%;
-  min-height: 400px;
   position: relative;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: calc(50% - 50vw);
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
 }
 
 .agb-content {
@@ -20,21 +31,63 @@
   pointer-events: none;
 }
 
+/* Ensure interactive controls inside hero are fully clickable */
+.agb-content button,
+.agb-content a,
+.agb-content input,
+.agb-content [role="button"],
+.agb-content .hero-cta-group,
+.agb-content .hero-preview-container,
+.agb-content .preview-window,
+.agb-content .preview-tabs,
+.agb-content .preview-tab-btn {
+  pointer-events: auto !important;
+}
+
+/* Text inside hero cannot be clicked to show carets or text I-beam cursors */
+.agb-content .hero-content,
+.agb-content .hero-headline,
+.agb-content .hero-subtext,
+.agb-content .hero-eyebrow,
+.agb-content .hero-microcopy {
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+  caret-color: transparent;
+  pointer-events: none; /* Let hover light up tiles behind text, and clicks never show a text caret! */
+}
+
 .agb-bg-layer {
   position: absolute;
   top: 0;
   left: 0;
-  height: 100%;
+  right: 0;
+  bottom: 0;
   width: 100%;
+  height: 100%;
   z-index: 0;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  /* Smooth edge fade on all 4 sides */
+  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 36%, #000000 35%, transparent 88%);
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 36%, #000000 35%, transparent 88%);
 }
 
 .agb-mask {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, transparent 30%, var(--bg-void) 90%);
   pointer-events: none;
   z-index: 1;
+}
+
+:root .agb-mask,
+[data-theme="light"] .agb-mask {
+  background: radial-gradient(ellipse 90% 70% at 50% 36%, transparent 35%, rgba(255, 255, 255, 0.8) 75%, #ffffff 95%);
+}
+
+[data-theme="dark"] .agb-mask {
+  background: radial-gradient(ellipse 90% 70% at 50% 36%, transparent 35%, rgba(9, 9, 11, 0.8) 75%, #09090b 95%);
 }
 
 .agb-tiles-container {
@@ -42,26 +95,40 @@
   width: 100%;
   height: 100%;
   justify-content: center;
+  align-items: flex-start;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
 }
 
 .agb-row {
   display: flex;
   flex-direction: column;
   position: relative;
-  border-left: 1px solid var(--border);
+  border-left: 1px solid var(--agb-grid-border);
+}
+
+.agb-row:last-child {
+  border-right: 1px solid var(--agb-grid-border);
 }
 
 .agb-col {
   width: 36px;
   height: 36px;
-  border-right: 1px solid var(--border);
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--agb-grid-border);
   position: relative;
   transition: background-color 0.8s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+.agb-col:last-child {
+  border-bottom: 1px solid var(--agb-grid-border);
 }
 
 .agb-col:hover {
-  background-color: var(--tile, rgba(255, 255, 255, 0.08));
+  background-color: var(--agb-tile-hover);
   transition: background-color 0s;
 }
 
