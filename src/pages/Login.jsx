@@ -5,6 +5,7 @@ import './Auth.css'
 import { InlineError, InlineSuccess } from '../components/states'
 import Turnstile from '../components/Turnstile'
 import OtpInput from '../components/OtpInput'
+import { triggerSpamNotice } from '../components/FloatingNotice'
 
 const maskEmail = (email) => {
   if (!email || !email.includes('@')) return email;
@@ -158,6 +159,7 @@ export default function Login({ accessDenied, denialReason }) {
       let rateLimitSecs = 60
       try {
         await sendLoginOtp(userEmail)
+        triggerSpamNotice()
       } catch (otpErr) {
         console.warn('OTP dispatch notice:', otpErr)
         const msg = otpErr?.message || (typeof otpErr === 'string' ? otpErr : '')
@@ -336,7 +338,10 @@ export default function Login({ accessDenied, denialReason }) {
               <button 
                 type="button" 
                 className="auth-submit-btn" 
-                onClick={handlePasswordLogin} 
+                onClick={() => {
+                  triggerSpamNotice()
+                  handlePasswordLogin()
+                }} 
                 disabled={loading || !identifier || !password || step === 2}
                 style={step === 2 ? { background: '#10b981', color: '#fff', cursor: 'default', opacity: 0.9 } : {}}
               >
@@ -356,6 +361,7 @@ export default function Login({ accessDenied, denialReason }) {
                   <button 
                     type="button" 
                     onClick={() => {
+                      triggerSpamNotice()
                       setCooldown(60)
                       sendLoginOtp(verifiedEmail)
                     }} 

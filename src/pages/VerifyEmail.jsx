@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
+import { triggerSpamNotice } from '../components/FloatingNotice'
 import './Auth.css'
 
 export default function VerifyEmail() {
@@ -16,6 +17,7 @@ export default function VerifyEmail() {
     if (!pendingEmail) return
     setLoading(true)
     try {
+      triggerSpamNotice()
       await resendVerification(pendingEmail)
       setMessage('Verification email sent! Check your inbox.')
     } catch (err) {

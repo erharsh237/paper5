@@ -1,6 +1,7 @@
 import { ThemeProvider } from './lib/ThemeContext'
 import { useLenis } from './hooks/useLenis'
 import ScrollToTop from './components/ScrollToTop'
+import FloatingNotice from './components/FloatingNotice'
 import { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './lib/AuthContext'
@@ -252,6 +253,7 @@ export default function App() {
     <ThemeProvider>
       <InitialPreloader>
       <ScrollToTop />
+      <FloatingNotice />
       <Suspense fallback={<PageLoading />}>
         <Routes>
           {/* Subdomain-aware Root Path */}

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from './supabase'
+import { triggerSpamNotice } from '../components/FloatingNotice'
 
 /**
  * Thin client for the /api/auth/session Vercel serverless function.
@@ -306,6 +307,7 @@ export function AuthProvider({ children }) {
   }
 
   const sendSignupOtp = async (email) => {
+    triggerSpamNotice()
     setAuthError(null)
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -460,6 +462,7 @@ export function AuthProvider({ children }) {
   }
 
   const sendLoginOtp = async (identifier) => {
+    triggerSpamNotice()
     setAuthError(null)
     try {
       const email = await resolveEmailFromUsername(identifier)

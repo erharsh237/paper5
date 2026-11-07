@@ -6,6 +6,7 @@ import './Auth.css'
 import { InlineError, InlineSuccess } from '../components/states'
 import Turnstile from '../components/Turnstile'
 import OtpInput from '../components/OtpInput'
+import { triggerSpamNotice } from '../components/FloatingNotice'
 
 const maskEmail = (email) => {
   if (!email || !email.includes('@')) return email;
@@ -181,6 +182,7 @@ export default function Signup() {
       }
       
       await sendSignupOtp(email)
+      triggerSpamNotice()
       
       setMessage('A 6-digit verification code has been sent to your email address.')
       setStep(2)
@@ -336,7 +338,10 @@ export default function Signup() {
                   <button 
                     type="button" 
                     className="auth-submit-btn" 
-                    onClick={handleSendOtp} 
+                    onClick={() => {
+                      triggerSpamNotice()
+                      handleSendOtp()
+                    }} 
                     disabled={loading || !username || !email || lockoutTimer > 0}
                     style={lockoutTimer > 0 ? { opacity: 0.5, cursor: 'not-allowed', background: '#9ca3af', borderColor: '#9ca3af' } : {}}
                   >
@@ -363,7 +368,10 @@ export default function Signup() {
                     <label htmlFor="otp">Verification Code</label>
                     <button 
                       type="button" 
-                      onClick={handleSendOtp} 
+                      onClick={() => {
+                      triggerSpamNotice()
+                      handleSendOtp()
+                    }} 
                       disabled={loading || cooldown > 0}
                       style={{ background: 'none', border: 'none', color: cooldown > 0 ? '#999' : 'var(--accent-primary, #10b981)', fontSize: '12px', cursor: cooldown > 0 ? 'not-allowed' : 'pointer', padding: 0, fontWeight: 600 }}
                     >
