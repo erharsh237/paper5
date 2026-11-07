@@ -66,7 +66,7 @@ export default function Landing() {
   }
 
   useEffect(() => {
-    document.title = "Paper5 | The Connected Project Workspace for Small Teams"
+    document.title = "Paper5 | Connected Project Workspace for Small Teams"
 
     if (location.pathname === '/pricing' || location.hash === '#pricing' || window.location.hash === '#pricing') {
       const timer = setTimeout(() => {
@@ -86,8 +86,8 @@ export default function Landing() {
   return (
     <div className="landing-page">
       <SEOHead 
-        title="Paper5 | The Connected Project Workspace for Small Teams & Startups" 
-        description="Paper5 brings your team's projects, tasks, deadlines, documents and development activity together in one connected workspace, so everyone knows what's happening and what needs attention."
+        title="Paper5 | Connected Project Workspace for Small Teams" 
+        description="Paper5 is the operating workspace for small teams and startups. Bring your team's projects, tasks, deadlines, documents"
         canonicalUrl="https://paper5.co"
       />
       <MarketingNav />

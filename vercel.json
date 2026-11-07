@@ -1,4 +1,17 @@
 {
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.paper5.co"
+        }
+      ],
+      "destination": "https://paper5.co/:path*",
+      "statusCode": 301
+    }
+  ],
   "rewrites": [
     { "source": "/((?!api/|assets/|logo\\.png|favicon\\.ico|robots\\.txt|sitemap\\.xml|\\.dev\\.vars|wrangler\\.(?:toml|json|jsonc)|vercel\\.json|\\.vercel(?:/.*)?).*)", "destination": "/index.html" }
   ],

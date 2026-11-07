@@ -1,9 +1,9 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import ReactDOMServer from 'react-dom/server'
-import { BrowserRouter } from 'react-router-dom'
+import { BrowserRouter, MemoryRouter } from 'react-router-dom'
 import App from './App.jsx'
-import { title, description, ogImage } from './seo.js'
+import { title, description, ogImage, canonicalUrl } from './seo.js'
 import { AuthProvider } from './lib/AuthContext.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import ConnectionStatus from './components/ConnectionStatus.jsx'
@@ -18,9 +18,11 @@ export function render(url = '/') {
   const html = ReactDOMServer.renderToString(
     <React.StrictMode>
       <ErrorBoundary>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <MemoryRouter initialEntries={[url]}>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </MemoryRouter>
       </ErrorBoundary>
     </React.StrictMode>
   )
@@ -29,6 +31,7 @@ export function render(url = '/') {
 <html lang="en">
 <head>
   <title>${title}</title>
+  <link rel="canonical" href="${canonicalUrl}">
   <meta name="description" content="${description}">
   <meta property="og:image" content="${ogImage}">
 </head>
@@ -107,7 +110,19 @@ if (typeof window !== 'undefined') {
     if (rootElement.hasChildNodes()) {
       ReactDOM.hydrateRoot(rootElement, appTree)
     } else {
-      ReactDOM.createRoot(rootElement).render(appTree)
+      const html = ReactDOMServer.renderToString(
+        <React.StrictMode>
+          <ErrorBoundary>
+            <MemoryRouter initialEntries={[window.location.pathname]}>
+              <AuthProvider>
+                <App />
+              </AuthProvider>
+            </MemoryRouter>
+          </ErrorBoundary>
+        </React.StrictMode>
+      )
+      rootElement.innerHTML = html
+      ReactDOM.hydrateRoot(rootElement, appTree)
     }
   }
 }
