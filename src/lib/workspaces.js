@@ -375,18 +375,142 @@ export function subscribeInvites(workspaceId, callback) {
   }
 }
 
-export async function createWorkspace(uid, email, name) {
+export async function ensureUserRecordExists(uid, email, metadata = {}) {
+  if (!uid) return null
+
+  const force = Boolean(metadata?.force)
+  const cleanEmail = (email || '').trim().toLowerCase()
+
+  try {
+    // 1. Check if user already exists in public.users
+    if (!force) {
+      const { data: existing, error: fetchErr } = await supabase
+        .from('users')
+        .select('id, email, username')
+        .eq('id', uid)
+        .maybeSingle()
+      if (existing && existing.id) return existing
+    }
+
+    // 2. Prepare payload
+    let username = metadata.username || (cleanEmail ? cleanEmail.split('@')[0].replace(/[^a-z0-9_]/g, '') : `user_${uid.slice(0, 6)}`)
+    if (!username || username.length < 3) username = `user_${uid.slice(0, 6)}`
+
+    const payload = {
+      id: uid,
+      email: cleanEmail,
+      username,
+      billing_plan_id: metadata.billing_plan_id || 'unselected',
+      billing_status: metadata.billing_status || 'active',
+      legal_accepted_version: metadata.legal_accepted_version || '1.0.0',
+      legal_accepted_at: metadata.legal_accepted_at || new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+
+    // 3. Upsert directly from client
+    let { data: upserted, error: upsertErr } = await supabase
+      .from('users')
+      .upsert(payload, { onConflict: 'id' })
+      .select('*')
+      .maybeSingle()
+
+    // Handle username collision
+    if (upsertErr && (upsertErr.code === '23505' || upsertErr.message?.includes('unique') || upsertErr.message?.includes('username'))) {
+      payload.username = `${username.slice(0, 14)}_${uid.slice(0, 5)}`
+      const retry = await supabase
+        .from('users')
+        .upsert(payload, { onConflict: 'id' })
+        .select('*')
+        .maybeSingle()
+      upserted = retry.data
+      upsertErr = retry.error
+    }
+
+    if (!upsertErr && upserted) {
+      return upserted
+    }
+
+    // 4. Serverless admin fallback if client upsert failed or force requested
+    if (upsertErr || force || metadata.fallbackToApi) {
+      try {
+        const res = await fetch('/api/ensure-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: uid,
+            email: cleanEmail,
+            ...metadata
+          })
+        })
+        const json = await res.json()
+        if (json.success && json.user) return json.user
+      } catch (apiErr) {
+        try {
+          const res2 = await fetch('/api/workspace-members', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'ensure_user',
+              userId: uid,
+              email: cleanEmail,
+              ...metadata
+            })
+          })
+          const json2 = await res2.json()
+          if (json2.success && json2.user) return json2.user
+        } catch (_) {}
+      }
+    }
+
+    return upserted || null
+  } catch (err) {
+    console.warn('ensureUserRecordExists error:', err)
+    return null
+  }
+}
+
+export async function createWorkspace(uid, email, name, teamSize, agileWorkflow, saveData) {
+  // 1. Pre-flight: ensure user exists in public.users to satisfy foreign key constraint workspaces_created_by_fkey
+  await ensureUserRecordExists(uid, email)
+
   const newWorkspaceId = crypto.randomUUID()
 
-  const { error } = await supabase.rpc('create_new_workspace', {
+  let { error } = await supabase.rpc('create_new_workspace', {
     workspace_name: name,
     creator_id: uid,
     new_workspace_id: newWorkspaceId
   })
   
+  // 2. If foreign key constraint failed (Postgres 23503), recover via serverless admin upsert and retry once
+  if (error && (error.code === '23503' || error.message?.includes('workspaces_created_by_fkey') || error.message?.includes('not present in table "users"'))) {
+    console.warn('Foreign key violation in create_new_workspace. Syncing user record via admin API and retrying...', error)
+    await ensureUserRecordExists(uid, email, { force: true, fallbackToApi: true })
+    const retryRes = await supabase.rpc('create_new_workspace', {
+      workspace_name: name,
+      creator_id: uid,
+      new_workspace_id: newWorkspaceId
+    })
+    error = retryRes.error
+  }
+
   if (error) {
     console.error('RPC Error:', error)
     throw error
+  }
+
+  // 3. Save initial workspace settings if provided
+  if (teamSize !== undefined || agileWorkflow !== undefined || saveData !== undefined) {
+    try {
+      await updateWorkspaceSettings(newWorkspaceId, {
+        settings: {
+          team_size: teamSize,
+          agile_workflow: agileWorkflow,
+          save_data: saveData
+        }
+      })
+    } catch (settErr) {
+      console.warn('Initial workspace settings sync notice:', settErr)
+    }
   }
 
   return newWorkspaceId

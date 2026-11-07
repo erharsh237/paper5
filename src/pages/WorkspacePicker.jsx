@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
-import { createWorkspace } from '../lib/workspaces'
+import { createWorkspace, ensureUserRecordExists } from '../lib/workspaces'
 import { TEAM_SIZE_OPTIONS, WORKFLOWS, getRecommendedWorkflow, isWorkflowUnlocked } from '../lib/workflows'
 import { supabase } from '../lib/supabase'
 import PricingModal from '../components/PricingModal'
@@ -116,6 +116,7 @@ export default function WorkspacePicker() {
 
   const handleSelectPlan = async (planId) => {
     try {
+      await ensureUserRecordExists(userId, user?.email, { billing_plan_id: planId, billing_status: 'active' })
       await supabase.from('users').update({ billing_plan_id: planId, billing_status: 'active' }).eq('id', userId)
       setShowPricingModal(false)
       setShowCreateModal(true)

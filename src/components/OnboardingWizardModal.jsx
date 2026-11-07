@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
-import { createWorkspace } from '../lib/workspaces'
+import { createWorkspace, ensureUserRecordExists } from '../lib/workspaces'
 import { supabase } from '../lib/supabase'
 import logo from '../assets/logo.png'
 import { Check, ArrowRight, Database, ShieldAlert, Sparkles, Building2, Users, Layers, ShieldCheck } from 'lucide-react'
@@ -150,6 +150,10 @@ export default function OnboardingWizardModal() {
             // User is an invited team member — NOT primary workspace creator!
             if (isMounted) setIsPrimaryAdmin(false)
             if (!userData?.billing_plan_id || userData.billing_plan_id === 'unselected' || userData.billing_plan_id === 'none') {
+              await ensureUserRecordExists(user.id, user.email, {
+                billing_plan_id: 'member',
+                legal_accepted_at: new Date().toISOString()
+              })
               await supabase.from('users').update({ 
                 billing_plan_id: 'member', 
                 legal_accepted_at: new Date().toISOString() 
@@ -201,18 +205,27 @@ export default function OnboardingWizardModal() {
     setError('')
 
     try {
-      // 1. Update Supabase users table with selected Account Tier & Legal Consent
+      // 1. Ensure user record exists & update Supabase users table with selected Account Tier & Legal Consent
+      await ensureUserRecordExists(user.id, user.email, {
+        username: userData?.username,
+        billing_plan_id: selectedTier,
+        billing_status: 'active',
+        legal_accepted_version: '1.0.0',
+        legal_accepted_at: new Date().toISOString()
+      })
+
       const { error: dbError } = await supabase
         .from('users')
         .update({ 
           billing_plan_id: selectedTier,
           billing_status: 'active',
           legal_accepted_version: '1.0.0',
-          legal_accepted_at: new Date().toISOString()
+          legal_accepted_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .eq('id', user.id)
 
-      if (dbError) throw dbError
+      if (dbError) console.warn('Users table update notice:', dbError)
 
       // 2. Create Initial Workspace with Save Data Preference & Workflow
       const newWs = await createWorkspace(

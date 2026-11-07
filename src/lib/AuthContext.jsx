@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from './supabase'
+import { ensureUserRecordExists } from './workspaces'
 import { triggerSpamNotice } from '../components/FloatingNotice'
 
 /**
@@ -119,7 +120,11 @@ export function AuthProvider({ children }) {
         let { data, error } = await supabase.from('users').select('*').eq('id', u.id).maybeSingle()
         if (!data) {
           const cleanEmail = u.email ? u.email.trim().toLowerCase() : ''
-          const defaultUsername = u.user_metadata?.username || (cleanEmail ? cleanEmail.split('@')[0].replace(/[^a-z0-9_]/g, '') : 'user')
+          let defaultUsername = u.user_metadata?.username || (cleanEmail ? cleanEmail.split('@')[0].replace(/[^a-z0-9_]/g, '') : `user_${u.id.slice(0, 6)}`)
+          if (!defaultUsername || defaultUsername.length < 3) {
+            defaultUsername = `user_${u.id.slice(0, 6)}`
+          }
+
           data = {
             id: u.id,
             email: cleanEmail,
@@ -129,6 +134,14 @@ export function AuthProvider({ children }) {
             requires_password_reset: !!u.user_metadata?.must_change_password,
             requiresPasswordReset: !!u.user_metadata?.must_change_password
           }
+
+          try {
+            const synced = await ensureUserRecordExists(u.id, cleanEmail, {
+              username: defaultUsername,
+              billing_plan_id: 'unselected'
+            })
+            if (synced) data = { ...data, ...synced }
+          } catch (_) {}
         }
         if (data) {
           data.legalAcceptedVersion = data.legal_accepted_version
