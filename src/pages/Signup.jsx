@@ -541,7 +541,7 @@ export default function Signup() {
           </form>
 
           <div className="auth-footer">
-            Already have an account? <Link to="/login" style={{ textDecoration: 'underline' }}>Sign in</Link>
+            Already have an account? <Link to="/login">Sign in</Link>
           </div>
 
           <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle, #f0f0f0)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-tertiary, #888)', fontFamily: 'var(--mono)' }}>

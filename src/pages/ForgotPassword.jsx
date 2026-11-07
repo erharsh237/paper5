@@ -123,7 +123,7 @@ export default function ForgotPassword() {
           )}
 
           <div style={{ marginTop: '24px', textAlign: 'center', borderTop: '1px solid var(--border-subtle, #eee)', paddingTop: '20px' }}>
-            <Link to="/login" style={{ fontSize: '13px', color: 'var(--text-secondary, #555)', textDecoration: 'none', fontWeight: 500 }}>
+            <Link to="/login" className="auth-back-link">
               ← Back to Sign In
             </Link>
           </div>

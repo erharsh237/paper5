@@ -392,10 +392,6 @@ export default function Login({ accessDenied, denialReason }) {
                 className="auth-submit-btn" 
                 onClick={handleOtpVerification}
                 disabled={loading || step < 2 || otp.length !== 6}
-                style={{
-                  background: step < 2 ? '#9ca3af' : '#09090b',
-                  cursor: step < 2 ? 'not-allowed' : 'pointer'
-                }}
               >
                 {loading && step === 2 ? 'Verifying OTP...' : 'Verify OTP & Sign In'}
               </button>
@@ -422,7 +418,7 @@ export default function Login({ accessDenied, denialReason }) {
           </form>
 
           <div className="auth-footer">
-            Don't have an account? <Link to="/signup" style={{ textDecoration: 'underline' }}>Sign up</Link>
+            Don't have an account? <Link to="/signup">Sign up</Link>
           </div>
           
           <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle, #f0f0f0)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-tertiary, #888)', fontFamily: 'var(--mono)' }}>

@@ -644,6 +644,22 @@ a {
   stroke: #000000 !important;
 }
 
+[data-theme="dark"] .auth-submit-btn:disabled,
+[data-theme="dark"] .auth-submit-btn:disabled:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: rgba(255, 255, 255, 0.35) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  cursor: not-allowed !important;
+  opacity: 1 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+[data-theme="dark"] .auth-submit-btn:disabled *,
+[data-theme="dark"] .auth-submit-btn:disabled:hover * {
+  color: rgba(255, 255, 255, 0.35) !important;
+}
+
 [data-theme="dark"] .btn-ghost,
 [data-theme="dark"] a.btn-ghost {
   background: transparent !important;

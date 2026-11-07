@@ -178,14 +178,32 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 6px;
-  transition: all 0.15s ease;
+  padding: 8px 14px;
+  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .nav-btn-link:hover {
-  color: #000000;
-  background: rgba(0, 0, 0, 0.04);
+  color: #09090b;
+  background: rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+.nav-btn-signup {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.nav-btn-signup:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35) !important;
+}
+
+.nav-btn-signup .nav-arrow-icon {
+  transition: transform 0.2s ease;
+}
+
+.nav-btn-signup:hover .nav-arrow-icon {
+  transform: translateX(3px);
 }
 
 .desktop-only {
@@ -2026,7 +2044,8 @@
 
 [data-theme="dark"] .nav-btn-link:hover {
   color: #ffffff !important;
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  transform: translateY(-1px);
 }
 
 /* ── 2. HERO SECTION ── */

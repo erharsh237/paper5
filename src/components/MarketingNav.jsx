@@ -283,12 +283,12 @@ export default function MarketingNav() {
                   Sign In
                 </button>
                 <button 
-                  className="btn-primary btn-sm"
+                  className="btn-primary btn-sm nav-btn-signup"
                   onClick={handleGetStarted}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 18px', fontSize: '13.5px' }}
                 >
                   <span>Get Started</span>
-                  <ArrowRight size={14} />
+                  <ArrowRight size={14} className="nav-arrow-icon" />
                 </button>
               </div>
             )}
