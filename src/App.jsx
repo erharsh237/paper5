@@ -64,6 +64,7 @@ import {
 } from './pages/MarketingPages'
 
 import { getDomainConfig, getAppUrl, getMainUrl } from './lib/domain'
+import { safeRedirect } from './lib/safeRedirect'
 import InitialPreloader from './components/InitialPreloader'
 import { useLivePresenceTracker } from './hooks/useLivePresence'
 import { Cardio } from 'ldrs/react'
@@ -108,7 +109,7 @@ function CrossDomainRedirect({ toApp = false, path = '' }) {
     : getMainUrl(path || window.location.pathname + window.location.search)
   
   if (target.startsWith('http')) {
-    window.location.href = target
+    safeRedirect(target)
     return <PageLoading />
   }
   return <Navigate to={target} replace />

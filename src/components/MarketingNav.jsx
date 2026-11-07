@@ -9,6 +9,7 @@ import { faHouse, faLayerGroup, faPlug, faTag, faBookOpen } from '@fortawesome/f
 import logo from '../assets/logo.png'
 import '../pages/Landing.css'
 import { getDomainConfig, getAppUrl, getMainUrl } from '../lib/domain'
+import { safeRedirect } from '../lib/safeRedirect'
 
 export default function MarketingNav() {
   const { user, logout } = useAuth()
@@ -22,7 +23,7 @@ export default function MarketingNav() {
   const handleSignIn = () => {
     const target = getAppUrl('/login')
     if (target.startsWith('http')) {
-      window.location.href = target
+      safeRedirect(target)
     } else {
       navigate(target)
     }
@@ -31,7 +32,7 @@ export default function MarketingNav() {
   const handleGetStarted = () => {
     const target = getAppUrl('/signup')
     if (target.startsWith('http')) {
-      window.location.href = target
+      safeRedirect(target)
     } else {
       navigate(target)
     }

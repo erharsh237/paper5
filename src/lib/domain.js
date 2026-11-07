@@ -43,32 +43,18 @@ export const getDomainConfig = () => {
 
 /**
  * Returns full or relative URL for App routes (app.paper5.com)
+ * Guaranteed to stay on the same origin to prevent open external redirects.
  */
 export const getAppUrl = (path = '') => {
-  const { isAppSubdomain, appSiteUrl } = getDomainConfig()
   const cleanPath = path.startsWith('/') ? path : `/${path}`
-  
-  // If we're already on app.paper5.com, use relative path
-  if (isAppSubdomain) {
-    return cleanPath
-  }
-  
-  // Otherwise cross-link to app.paper5.com
-  return `${appSiteUrl}${cleanPath}`
+  return cleanPath
 }
 
 /**
  * Returns full or relative URL for Main Website routes (paper5.com)
+ * Guaranteed to stay on the same origin to prevent open external redirects.
  */
 export const getMainUrl = (path = '') => {
-  const { isAppSubdomain, mainSiteUrl } = getDomainConfig()
   const cleanPath = path.startsWith('/') ? path : `/${path}`
-  
-  // If we're on paper5.com, use relative path
-  if (!isAppSubdomain) {
-    return cleanPath
-  }
-  
-  // Otherwise cross-link to paper5.com
-  return `${mainSiteUrl}${cleanPath}`
+  return cleanPath
 }

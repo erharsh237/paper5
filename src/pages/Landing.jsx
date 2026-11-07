@@ -9,6 +9,7 @@ import SEOHead from '../components/SEOHead'
 import AlertModal from '../components/ui/AlertModal'
 import { encryptPlanParam } from '../lib/urlSecurity'
 import { getAppUrl } from '../lib/domain'
+import { safeRedirect } from '../lib/safeRedirect'
 import { 
   ArrowRight, 
   Check, 
@@ -53,7 +54,7 @@ export default function Landing() {
     } else {
       const target = getAppUrl(`/signup?p=${encryptedToken}`)
       if (target.startsWith('http')) {
-        window.location.href = target
+        safeRedirect(target)
       } else {
         navigate(target)
       }

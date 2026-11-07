@@ -5,6 +5,7 @@ import FeedbackModal from './FeedbackModal'
 import logo from '../assets/logo.png'
 import '../pages/Landing.css'
 import { getDomainConfig, getAppUrl, getMainUrl } from '../lib/domain'
+import { safeRedirect } from '../lib/safeRedirect'
 import { ArrowRight, MessageSquare } from 'lucide-react'
 
 export default function MarketingFooter({ hideCTA = false }) {
@@ -21,7 +22,7 @@ export default function MarketingFooter({ hideCTA = false }) {
   const handleGetStarted = () => {
     const target = getAppUrl('/signup')
     if (target.startsWith('http')) {
-      window.location.href = target
+      safeRedirect(target)
     } else {
       navigate(target)
     }
