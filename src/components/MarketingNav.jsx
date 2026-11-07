@@ -5,7 +5,7 @@ import { useAuth } from '../lib/AuthContext'
 import ContactModal from './ContactModal'
 import { ArrowRight, Menu, X, ChevronDown, User, LogOut } from 'lucide-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faHouse, faLayerGroup, faPlug, faTag, faBookOpen } from '@fortawesome/free-solid-svg-icons'
+import { faHouse, faLayerGroup, faPlug, faTag, faBookOpen, faCircleInfo, faEnvelope, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
 import logo from '../assets/logo.png'
 import '../pages/Landing.css'
 import { getDomainConfig, getAppUrl, getMainUrl } from '../lib/domain'
@@ -95,7 +95,10 @@ export default function MarketingNav() {
     { label: 'Features', path: '/features', icon: faLayerGroup },
     { label: 'Integrations', path: '/product-integrations', icon: faPlug },
     { label: 'Pricing', path: '/#pricing', isAnchor: true, icon: faTag },
-    { label: 'Documentation', path: '/docs', icon: faBookOpen }
+    { label: 'Documentation', path: '/docs', icon: faBookOpen },
+    { label: 'About', path: '/about', icon: faCircleInfo },
+    { label: 'Contact', path: '/contact', icon: faEnvelope },
+    { label: 'Privacy', path: '/privacy', icon: faShieldHalved }
   ]
 
   const isLinkActive = (item) => {
@@ -418,6 +421,42 @@ export default function MarketingNav() {
                 className={`mobile-drawer-link ${location.pathname === '/about' ? 'active' : ''}`}
               >
                 <span>About Us</span>
+              </Link>
+            )}
+
+            {isAppSubdomain ? (
+              <a 
+                href={getMainUrl('/contact')} 
+                onClick={() => setIsMobileMenuOpen(false)} 
+                className={`mobile-drawer-link ${location.pathname === '/contact' ? 'active' : ''}`}
+              >
+                <span>Contact</span>
+              </a>
+            ) : (
+              <Link 
+                to="/contact" 
+                onClick={() => setIsMobileMenuOpen(false)} 
+                className={`mobile-drawer-link ${location.pathname === '/contact' ? 'active' : ''}`}
+              >
+                <span>Contact</span>
+              </Link>
+            )}
+
+            {isAppSubdomain ? (
+              <a 
+                href={getMainUrl('/privacy')} 
+                onClick={() => setIsMobileMenuOpen(false)} 
+                className={`mobile-drawer-link ${location.pathname === '/privacy' ? 'active' : ''}`}
+              >
+                <span>Privacy Policy</span>
+              </a>
+            ) : (
+              <Link 
+                to="/privacy" 
+                onClick={() => setIsMobileMenuOpen(false)} 
+                className={`mobile-drawer-link ${location.pathname === '/privacy' ? 'active' : ''}`}
+              >
+                <span>Privacy Policy</span>
               </Link>
             )}
 
