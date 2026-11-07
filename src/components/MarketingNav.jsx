@@ -1,3 +1,4 @@
+import ThemeToggle from './ThemeToggle'
 import { useState, useEffect } from 'react'
 import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
@@ -127,8 +128,12 @@ export default function MarketingNav() {
             ))}
           </div>
 
-          {/* Right Action CTA Buttons */}
+          {/* Mobile Theme Toggle */}
+          <div className="mobile-only-toggle mobile-only">
+            <ThemeToggle />
+          </div>
           <div className="nav-actions desktop-only">
+            <ThemeToggle />
             {user ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <Link 
@@ -264,6 +269,10 @@ export default function MarketingNav() {
       {isMobileMenuOpen && (
         <div className="mobile-drawer" style={{ paddingTop: '80px' }}>
           <div className="mobile-drawer-links">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px 16px 16px", borderBottom: "1px solid var(--border)" }}>
+              <span style={{ fontSize: "14px", fontWeight: 600 }}>Theme Mode</span>
+              <ThemeToggle />
+            </div>
             <Link 
               to="/" 
               onClick={(e) => {

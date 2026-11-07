@@ -1,3 +1,4 @@
+import { ThemeProvider } from './lib/ThemeContext'
 import { useLenis } from './hooks/useLenis'
 import ScrollToTop from './components/ScrollToTop'
 import { Suspense, lazy } from 'react'
@@ -227,7 +228,8 @@ export default function App() {
   }
 
   return (
-    <InitialPreloader>
+    <ThemeProvider>
+      <InitialPreloader>
       <ScrollToTop />
       <Suspense fallback={<PageLoading />}>
         <Routes>
@@ -307,5 +309,6 @@ export default function App() {
       )}
       <VercelAnalytics />
     </InitialPreloader>
+    </ThemeProvider>
   )
 }
