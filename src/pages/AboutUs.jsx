@@ -147,7 +147,7 @@ export default function AboutUs() {
             Security is built into the foundation of Paper5. Powered by TLS 1.3 transit encryption, AES-256 data protection at rest, strict PostgreSQL Row-Level Security (RLS) tenant isolation, enforced email verification, and optional Multi-Factor Authentication (2FA).
           </p>
           <button className="btn-primary" style={{ padding: '10px 24px' }} onClick={() => navigate('/signup')}>
-            🚀 Start Free Workspace
+            Start Free Workspace
           </button>
         </section>
       </div>

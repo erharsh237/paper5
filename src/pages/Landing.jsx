@@ -22,14 +22,17 @@ import {
   ShieldCheck, 
   ExternalLink,
   MessageSquare,
-  Sparkles,
   Zap,
   CheckCircle2,
   Lock,
   ChevronRight,
   FolderX,
   ClockAlert,
-  MessagesSquare
+  MessagesSquare,
+  FolderGit2,
+  Rocket,
+  Compass,
+  AlertCircle
 } from 'lucide-react'
 import './Landing.css'
 
@@ -424,7 +427,7 @@ export default function Landing() {
                         </div>
                         <div className="tool-feed">
                           <div className="tool-feed-item">
-                            <span style={{ fontSize: '12px' }}>🚨</span>
+                            <AlertCircle size={14} color="#dc2626" />
                             <span>Blocker notification broadcasted for "Domain DNS SSL verification"</span>
                           </div>
                         </div>
@@ -511,7 +514,6 @@ export default function Landing() {
         <section id="problem" className="problem-section">
           <div className="section-container">
             <div className="section-header">
-              <span className="section-eyebrow">THE CHALLENGE</span>
               <h2 className="section-title">
                 Running a startup is hard enough.<br />
                 Managing the work shouldn't be.
@@ -574,7 +576,6 @@ export default function Landing() {
         <section id="capabilities" className="capabilities-section">
           <div className="section-container">
             <div className="section-header">
-              <span className="section-eyebrow">BUILT FOR EXECUTION</span>
               <h2 className="section-title">
                 Everything your team needs to move projects forward.
               </h2>
@@ -731,15 +732,15 @@ export default function Landing() {
                     </div>
                     <div className="visual-tool-status-row">
                       <div className="tool-status-item">
-                        <span className="tool-badge-pill">🐙 GitHub</span>
+                        <span className="tool-badge-pill"><FolderGit2 size={13} color="#2563eb" /> GitHub</span>
                         <span>PR #42 (Merged)</span>
                       </div>
                       <div className="tool-status-item">
-                        <span className="tool-badge-pill">💬 Slack</span>
+                        <span className="tool-badge-pill"><MessageSquare size={13} color="#059669" /> Slack</span>
                         <span>#team-alerts (Digest Sent)</span>
                       </div>
                       <div className="tool-status-item">
-                        <span className="tool-badge-pill">📅 Calendar</span>
+                        <span className="tool-badge-pill"><Calendar size={13} color="#d97706" /> Calendar</span>
                         <span>Sunday Sync (Synced)</span>
                       </div>
                     </div>
@@ -754,7 +755,6 @@ export default function Landing() {
         <section className="connected-workspace-section">
           <div className="section-container">
             <div className="section-header">
-              <span className="section-eyebrow">INTEGRATIONS</span>
               <h2 className="section-title">
                 Keep your existing tools. Bring your project together.
               </h2>
@@ -767,7 +767,7 @@ export default function Landing() {
               {/* GitHub */}
               <div className="integration-box">
                 <div className="integration-box-head">
-                  <div className="integration-icon-wrap">🐙</div>
+                  <div className="integration-icon-wrap"><FolderGit2 size={24} color="#0f172a" /></div>
                   <span className="integration-status live">Live & Native</span>
                 </div>
                 <h3>GitHub</h3>
@@ -780,7 +780,7 @@ export default function Landing() {
               {/* Slack */}
               <div className="integration-box">
                 <div className="integration-box-head">
-                  <div className="integration-icon-wrap">💬</div>
+                  <div className="integration-icon-wrap"><MessageSquare size={24} color="#0f172a" /></div>
                   <span className="integration-status live">Live Webhook</span>
                 </div>
                 <h3>Slack</h3>
@@ -793,7 +793,7 @@ export default function Landing() {
               {/* Discord */}
               <div className="integration-box">
                 <div className="integration-box-head">
-                  <div className="integration-icon-wrap">🎮</div>
+                  <div className="integration-icon-wrap"><MessagesSquare size={24} color="#0f172a" /></div>
                   <span className="integration-status live">Live Webhook</span>
                 </div>
                 <h3>Discord</h3>
@@ -806,7 +806,7 @@ export default function Landing() {
               {/* Google Calendar */}
               <div className="integration-box">
                 <div className="integration-box-head">
-                  <div className="integration-icon-wrap">📅</div>
+                  <div className="integration-icon-wrap"><Calendar size={24} color="#0f172a" /></div>
                   <span className="integration-status live">Live & Native</span>
                 </div>
                 <h3>Google Calendar</h3>
@@ -819,7 +819,7 @@ export default function Landing() {
               {/* 1-Click REST API */}
               <div className="integration-box">
                 <div className="integration-box-head">
-                  <div className="integration-icon-wrap">⚡</div>
+                  <div className="integration-icon-wrap"><Zap size={24} color="#0f172a" /></div>
                   <span className="integration-status live">Live & Native</span>
                 </div>
                 <h3>1-Click REST API Studio</h3>
@@ -832,7 +832,7 @@ export default function Landing() {
               {/* Roadmap Integrations */}
               <div className="integration-box planned">
                 <div className="integration-box-head">
-                  <div className="integration-icon-wrap">🚀</div>
+                  <div className="integration-icon-wrap"><Rocket size={24} color="#0f172a" /></div>
                   <span className="integration-status roadmap">On Roadmap</span>
                 </div>
                 <h3>Figma & Linear</h3>
@@ -856,7 +856,6 @@ export default function Landing() {
         <section className="how-it-works-section">
           <div className="section-container">
             <div className="section-header">
-              <span className="section-eyebrow">SIMPLE ONBOARDING</span>
               <h2 className="section-title">
                 Get your team organised in minutes.
               </h2>
@@ -868,7 +867,7 @@ export default function Landing() {
             <div className="how-it-works-steps-grid">
               {/* Step 1 */}
               <div className="step-card">
-                <div className="step-badge">Step 1</div>
+                <span className="step-index">01</span>
                 <h3>Create your workspace</h3>
                 <p>
                   Set up your team, choose your workflow methodology (Kanban, Scrum, or Lean), and create your first project.
@@ -877,7 +876,7 @@ export default function Landing() {
 
               {/* Step 2 */}
               <div className="step-card">
-                <div className="step-badge">Step 2</div>
+                <span className="step-index">02</span>
                 <h3>Organise your work</h3>
                 <p>
                   Bring together tasks, deadlines, responsibilities and project information in structured, transparent boards.
@@ -886,7 +885,7 @@ export default function Landing() {
 
               {/* Step 3 */}
               <div className="step-card">
-                <div className="step-badge">Step 3</div>
+                <span className="step-index">03</span>
                 <h3>Connect your tools</h3>
                 <p>
                   Connect supported integrations like GitHub, Slack, or Google Calendar to bring relevant information into your workspace.
@@ -895,7 +894,7 @@ export default function Landing() {
 
               {/* Step 4 */}
               <div className="step-card">
-                <div className="step-badge">Step 4</div>
+                <span className="step-index">04</span>
                 <h3>Move projects forward</h3>
                 <p>
                   Keep your team aligned, resolve blockers as soon as they arise, and always understand what needs attention next.
@@ -909,7 +908,6 @@ export default function Landing() {
         <section className="audience-section">
           <div className="section-container">
             <div className="section-header">
-              <span className="section-eyebrow">TARGET AUDIENCE</span>
               <h2 className="section-title">
                 Built for teams that build things together.
               </h2>
@@ -922,7 +920,7 @@ export default function Landing() {
               {/* Audience 1 */}
               <div className="audience-card">
                 <div className="audience-icon-wrap">
-                  <Sparkles size={24} />
+                  <Compass size={24} />
                 </div>
                 <h3>Early-stage startups</h3>
                 <p>
@@ -968,7 +966,6 @@ export default function Landing() {
         <section id="pricing" className="pricing-section">
           <div className="section-container">
             <div className="section-header">
-              <span className="section-eyebrow">LAUNCH OFFER</span>
               <h2 className="section-title">
                 Simple, transparent pricing. 100% free during launch.
               </h2>
@@ -1057,7 +1054,7 @@ export default function Landing() {
                   <li><strong>Unlimited</strong> Team Members</li>
                   <li>All <strong>8</strong> Agile Workflows (Spotify Model & SAFe Enterprise)</li>
                   <li>All Stack Integrations (GitHub, Slack, Discord, Calendar, Vercel)</li>
-                  <li>⚡ 1-Click REST API Studio (`sp_live_...`)</li>
+                  <li>1-Click REST API Studio (`sp_live_...`)</li>
                   <li>Vector Printable PDF Workspace Reports & CSV Audit Trail</li>
                   <li>Advanced Team Velocity & Risk Analytics</li>
                   <li>Priority Developer Support</li>

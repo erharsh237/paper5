@@ -26,9 +26,6 @@ export default function MarketingFooter({ hideCTA = false }) {
       {!hideCTA && (
         <div className="footer-cta-banner">
           <div className="footer-cta-container">
-            <span className="hero-eyebrow" style={{ marginBottom: '16px', display: 'inline-block' }}>
-              GET STARTED IN MINUTES
-            </span>
             <h2>Give your team one place to move forward.</h2>
             <p>
               Organise your projects, bring your information together and spend less time chasing updates.

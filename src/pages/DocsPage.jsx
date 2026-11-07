@@ -16,11 +16,11 @@ export default function DocsPage() {
   }
 
   const sections = [
-    { id: 'getting-started', title: '🚀 Getting Started', group: 'Overview' },
-    { id: 'agile-workflows', title: '⚡ Agile Workflow Engine', group: 'Overview' },
-    { id: 'integrations', title: '🔌 Stack Webhooks & Integrations', group: 'Developer Guide' },
-    { id: 'api-reference', title: '🛠️ 1-Click REST API Reference', group: 'Developer Guide' },
-    { id: 'data-export', title: '📄 PDF Data Export & Compliance', group: 'Enterprise' }
+    { id: 'getting-started', title: 'Getting Started', group: 'Overview' },
+    { id: 'agile-workflows', title: 'Agile Workflow Engine', group: 'Overview' },
+    { id: 'integrations', title: 'Stack Webhooks & Integrations', group: 'Developer Guide' },
+    { id: 'api-reference', title: '1-Click REST API Reference', group: 'Developer Guide' },
+    { id: 'data-export', title: 'PDF Data Export & Compliance', group: 'Enterprise' }
   ]
 
   const filteredSections = sections.filter(s => 
@@ -116,7 +116,7 @@ export default function DocsPage() {
             {(activeSection === 'getting-started' || searchQuery) && (
               <article className="docs-article-section" id="getting-started">
                 <h2 className="docs-article-title">
-                  <BookOpen size={24} color="#10b981" /> 🚀 Getting Started with SprintOS™
+                  <BookOpen size={24} color="#10b981" /> Getting Started with SprintOS™
                 </h2>
                 <p className="docs-article-text">
                   SprintOS™ by Paper5™ is a high-velocity sprint management platform engineered to eliminate administrative friction. Sprints are time-boxed iterations where tasks automatically transition or roll over upon deadline expiration.
@@ -136,7 +136,7 @@ export default function DocsPage() {
             {(activeSection === 'agile-workflows' || searchQuery) && (
               <article className="docs-article-section" id="agile-workflows">
                 <h2 className="docs-article-title">
-                  <Layers size={24} color="#10b981" /> ⚡ 8-Tier Agile Methodology Engine
+                  <Layers size={24} color="#10b981" /> 8-Tier Agile Methodology Engine
                 </h2>
                 <p className="docs-article-text">
                   SprintOS™ dynamically configures board columns based on team size and methodology selection. Workflows adapt dynamically without losing task state.
@@ -200,7 +200,7 @@ export default function DocsPage() {
             {(activeSection === 'integrations' || searchQuery) && (
               <article className="docs-article-section" id="integrations">
                 <h2 className="docs-article-title">
-                  <GitPullRequest size={24} color="#10b981" /> 🔌 Stack Webhooks & Integrations
+                  <GitPullRequest size={24} color="#10b981" /> Stack Webhooks & Integrations
                 </h2>
                 <p className="docs-article-text">
                   Connect GitHub repositories, Vercel deployments, Discord alerts, and Slack standup broadcasts directly into your workspace.
@@ -239,7 +239,7 @@ export default function DocsPage() {
             {(activeSection === 'api-reference' || searchQuery) && (
               <article className="docs-article-section" id="api-reference">
                 <h2 className="docs-article-title">
-                  <Terminal size={24} color="#10b981" /> 🛠️ 1-Click REST API Reference
+                  <Terminal size={24} color="#10b981" /> 1-Click REST API Reference
                 </h2>
                 <p className="docs-article-text">
                   All API requests require a Bearer token in the `Authorization` header (`Authorization: Bearer sp_live_...`). Provision API keys from Settings ➔ Integrations.
@@ -332,7 +332,7 @@ export default function DocsPage() {
             {(activeSection === 'data-export' || searchQuery) && (
               <article className="docs-article-section" id="data-export">
                 <h2 className="docs-article-title">
-                  <FileText size={24} color="#10b981" /> 📄 PDF Data Export & Compliance
+                  <FileText size={24} color="#10b981" /> PDF Data Export & Compliance
                 </h2>
                 <p className="docs-article-text">
                   SprintOS™ guarantees complete data portability. Workspace admins can export printable vector PDF reports or CSV security audit trails at any time.

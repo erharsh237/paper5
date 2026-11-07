@@ -30,10 +30,10 @@ export default function Features() {
         </p>
         <div className="features-hero-actions">
           <button className="btn-primary" style={{ padding: '12px 28px', fontSize: '15px' }} onClick={() => navigate('/#pricing')}>
-            🚀 Start Free Workspace
+            Start Free Workspace
           </button>
           <button className="btn-ghost" style={{ padding: '12px 28px', fontSize: '15px' }} onClick={() => navigate('/product-integrations')}>
-            ⚡ Explore Integrations
+            Explore Integrations
           </button>
         </div>
       </section>
@@ -244,7 +244,7 @@ export default function Features() {
                   <td><strong>Agile Workflows</strong></td>
                   <td>2 Workflows (Ad-hoc, Kanban)</td>
                   <td>6 Workflows (Kanban, Scrum, XP, Lean, Scrumban)</td>
-                  <td>⚡ All 8 Workflows (SAFe Enterprise)</td>
+                  <td>All 8 Workflows (SAFe Enterprise)</td>
                 </tr>
                 <tr>
                   <td><strong>Max Workspaces</strong></td>
@@ -268,13 +268,13 @@ export default function Features() {
                   <td><strong>1-Click API REST Studio</strong></td>
                   <td>Read-only API</td>
                   <td>Full API & Webhooks</td>
-                  <td>⚡ Full API, Webhooks & Simulator</td>
+                  <td>Full API, Webhooks & Simulator</td>
                 </tr>
                 <tr>
                   <td><strong>Printable PDF Export</strong></td>
                   <td>Standard PDF</td>
                   <td>Custom PDF Sections</td>
-                  <td>⚡ Vector PDF & CSV Security Audit Trail</td>
+                  <td>Vector PDF & CSV Security Audit Trail</td>
                 </tr>
               </tbody>
             </table>

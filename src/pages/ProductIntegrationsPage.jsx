@@ -66,7 +66,7 @@ export default function ProductIntegrationsPage() {
             <div className="showcase-card card-api" style={{ gridColumn: 'span 12' }}>
               <div>
                 <div className="card-header-row">
-                  <div className="card-brand-icon" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>⚡</div>
+                  <div className="card-brand-icon" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}><Zap size={20} /></div>
                   <span className="card-status-badge">1-Click Live Webhook Sync</span>
                 </div>
                 <h2 className="card-title">1-Click API Webhook & REST Sync Studio</h2>
@@ -82,7 +82,7 @@ export default function ProductIntegrationsPage() {
               </div>
               <div>
                 <button className="btn-primary" style={{ width: 'fit-content' }} onClick={() => navigate('/signup')}>
-                  ⚡ Provision 1-Click API Key
+                  Provision 1-Click API Key
                 </button>
               </div>
             </div>
@@ -93,7 +93,7 @@ export default function ProductIntegrationsPage() {
             <div className="showcase-card card-github" style={{ gridColumn: 'span 6' }}>
               <div>
                 <div className="card-header-row">
-                  <div className="card-brand-icon">🐙</div>
+                  <div className="card-brand-icon"><FolderGit2 size={20} /></div>
                   <span className="card-status-badge">Version Control</span>
                 </div>
                 <h2 className="card-title">GitHub Repository & PR Sync</h2>
@@ -114,7 +114,7 @@ export default function ProductIntegrationsPage() {
             <div className="showcase-card card-vercel" style={{ gridColumn: 'span 6' }}>
               <div>
                 <div className="card-header-row">
-                  <div className="card-brand-icon">🚀</div>
+                  <div className="card-brand-icon"><Rocket size={20} /></div>
                   <span className="card-status-badge">CI/CD Deployments</span>
                 </div>
                 <h2 className="card-title">Vercel Deployment Tracker</h2>
@@ -135,7 +135,7 @@ export default function ProductIntegrationsPage() {
             <div className="showcase-card card-discord" style={{ gridColumn: 'span 4' }}>
               <div>
                 <div className="card-header-row">
-                  <div className="card-brand-icon">💬</div>
+                  <div className="card-brand-icon"><MessageSquare size={20} /></div>
                   <span className="card-status-badge">Chat Webhook</span>
                 </div>
                 <h2 className="card-title">Discord Channel Alerts</h2>
@@ -156,7 +156,7 @@ export default function ProductIntegrationsPage() {
             <div className="showcase-card card-slack" style={{ gridColumn: 'span 4' }}>
               <div>
                 <div className="card-header-row">
-                  <div className="card-brand-icon">📣</div>
+                  <div className="card-brand-icon"><Megaphone size={20} /></div>
                   <span className="card-status-badge">Team Notification</span>
                 </div>
                 <h2 className="card-title">Slack Channel Sync</h2>
@@ -177,7 +177,7 @@ export default function ProductIntegrationsPage() {
             <div className="showcase-card card-google" style={{ gridColumn: 'span 4' }}>
               <div>
                 <div className="card-header-row">
-                  <div className="card-brand-icon">📅</div>
+                  <div className="card-brand-icon"><Calendar size={20} /></div>
                   <span className="card-status-badge">Calendar Agenda</span>
                 </div>
                 <h2 className="card-title">Google Calendar Sync</h2>
@@ -211,7 +211,7 @@ export default function ProductIntegrationsPage() {
             <div className="step-card">
               <span className="step-number">Step 01</span>
               <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>
-                🔑 Provision Key or OAuth
+                Provision Key or OAuth
               </h3>
               <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
                 Generate a 1-Click API secret key or connect your personal access token in Settings ➔ Integrations.
@@ -221,7 +221,7 @@ export default function ProductIntegrationsPage() {
             <div className="step-card">
               <span className="step-number">Step 02</span>
               <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>
-                🎯 Target Repository or Webhook
+                Target Repository or Webhook
               </h3>
               <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
                 Paste your GitHub repo owner, Slack/Discord webhook URL, or Vercel project ID into the shared workspace config.
@@ -231,7 +231,7 @@ export default function ProductIntegrationsPage() {
             <div className="step-card">
               <span className="step-number">Step 03</span>
               <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>
-                ⚡ Automated Real-Time Sync
+                Automated Real-Time Sync
               </h3>
               <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
                 Test your connection instantly. Code commits, PR merges, and webhook triggers sync automatically across your sprint board.
