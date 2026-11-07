@@ -35,6 +35,18 @@ export default function MarketingNav() {
     }
   }
 
+  const handleHomeClick = (e) => {
+    if (location.pathname === '/' || location.pathname === '') {
+      e.preventDefault()
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      if (window.location.hash) {
+        window.history.pushState('', document.title, window.location.pathname)
+      }
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
   const handlePricingClick = (e) => {
     if (location.pathname === '/' || location.pathname === '') {
       e.preventDefault()
@@ -75,7 +87,7 @@ export default function MarketingNav() {
       <nav className="landing-nav" role="navigation" aria-label="Main Navigation">
         <div className="nav-container">
           {/* Logo & Brand */}
-          <Link to="/" className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+          <Link to="/" onClick={handleHomeClick} className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
             <img 
               src={logo} 
               alt="Paper5 Logo" 
@@ -104,6 +116,7 @@ export default function MarketingNav() {
                 <Link
                   key={item.label}
                   to={item.path}
+                  onClick={item.path === '/' ? handleHomeClick : undefined}
                   className={`nav-link-icon-wrap ${isLinkActive(item) ? "active" : ""}`}
                   aria-label={item.label}
                 >
@@ -253,7 +266,10 @@ export default function MarketingNav() {
           <div className="mobile-drawer-links">
             <Link 
               to="/" 
-              onClick={() => setIsMobileMenuOpen(false)} 
+              onClick={(e) => {
+                handleHomeClick(e);
+                setIsMobileMenuOpen(false);
+              }} 
               className={`mobile-drawer-link ${location.pathname === '/' && !location.hash ? 'active' : ''}`}
             >
               <span>Home</span>
