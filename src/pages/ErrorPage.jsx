@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { safeRedirect } from '../lib/safeRedirect'
 import logo from '../assets/logo.png'
 import './NotFound.css'
 
@@ -17,7 +18,7 @@ export default function ErrorPage({ error, errorInfo, resetError }) {
 
   const handleReturnHome = () => {
     if (resetError) resetError()
-    window.location.href = '/'
+    safeRedirect('/')
   }
 
   const handleReload = () => {

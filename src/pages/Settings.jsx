@@ -17,6 +17,7 @@ import {
 } from '../lib/workspaces'
 
 import Breadcrumbs from '../components/Breadcrumbs'
+import { safeRedirect } from '../lib/safeRedirect'
 import NavTabs from '../components/NavTabs'
 import UserMenu from '../components/UserMenu'
 import PricingModal from '../components/PricingModal'
@@ -911,7 +912,7 @@ export default function Settings() {
     setDeleting(true)
     try {
       await deleteWorkspace(workspaceId)
-      window.location.href = '/workspace'
+      safeRedirect('/workspace')
     } catch (err) {
       console.error('Workspace deletion error:', err)
       setAlertMessage(`Unable to delete workspace: ${err?.message || 'Database foreign key constraint or permission error'}`)

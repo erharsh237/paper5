@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { safeRedirect } from '../lib/safeRedirect'
 import { useAuth } from '../lib/AuthContext'
 import './Auth.css'
 import { InlineError, InlineSuccess } from '../components/states'
@@ -238,7 +239,7 @@ export default function Signup() {
       await finalizeSignup(password, username)
       setMessage('Account created successfully! Redirecting to onboarding...')
       setTimeout(() => {
-        window.location.href = '/workspace'
+        safeRedirect('/workspace')
       }, 500)
     } catch (err) {
       console.error(err)

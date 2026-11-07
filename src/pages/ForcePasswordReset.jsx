@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 import { validatePassword } from '../lib/validation'
+import { safeRedirect } from '../lib/safeRedirect'
 import './Auth.css'
 
 export default function ForcePasswordReset() {
@@ -158,7 +159,7 @@ export default function ForcePasswordReset() {
       }
       
       // Navigate cleanly to workspace picker
-      window.location.href = '/workspace'
+      safeRedirect('/workspace')
     } catch (err) {
       setError(err.message || 'Unable to update security credentials. Please try again.')
     } finally {

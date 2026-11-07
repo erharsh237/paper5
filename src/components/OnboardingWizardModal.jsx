@@ -8,6 +8,7 @@ import { Check, ArrowRight, Database, ShieldAlert, Sparkles, Building2, Users, L
 import { TEAM_SIZE_OPTIONS, WORKFLOWS, getRecommendedWorkflow } from '../lib/workflows'
 
 import { decryptPlanParam } from '../lib/urlSecurity'
+import { safeRedirect } from '../lib/safeRedirect'
 
 const TIERS = [
   {
@@ -232,9 +233,9 @@ export default function OnboardingWizardModal() {
 
       // 4. Navigate directly into the newly created workspace
       if (targetWsId) {
-        window.location.href = `/${targetWsId}`
+        safeRedirect(`/${targetWsId}`)
       } else {
-        window.location.href = '/workspace'
+        safeRedirect('/workspace')
       }
     } catch (err) {
       console.error('Failed to complete onboarding:', err)

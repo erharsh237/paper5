@@ -1,10 +1,7 @@
-function isSafeUrl(url) {
-  try {
-    const u = new URL(url, location.origin);
-    return u.origin === location.origin && (u.protocol === 'http:' || u.protocol === 'https:');
-  } catch {
-    return false;
-  }
+function safeRedirect(url) {
+  const u = new URL(url, window.location.origin);
+  if (u.origin !== window.location.origin) return; // reject external origins
+  location.href = u.pathname + u.search + u.hash;
 }
 
 const getAccessToken = () => {
@@ -18,12 +15,9 @@ const getRefreshToken = () => {
 };
 
 function navigateTo(userControlledValue) {
-  if (isSafeUrl(userControlledValue)) {
-    location.href = userControlledValue;
-  } else {
-    // optional: fallback to a safe page or ignore
-    console.warn('Unsafe URL blocked:', userControlledValue);
-  }
+  safeRedirect(userControlledValue);
 }
 
-export { getAccessToken, getRefreshToken, isSafeUrl, navigateTo };
+safeRedirect(location.href);
+
+export { getAccessToken, getRefreshToken, safeRedirect, navigateTo };
