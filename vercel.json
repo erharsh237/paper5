@@ -13,7 +13,7 @@
     }
   ],
   "rewrites": [
-    { "source": "/((?!api/|assets/|logo\\.png|favicon\\.ico|robots\\.txt|sitemap\\.xml|\\.dev\\.vars|wrangler\\.(?:toml|json|jsonc)|vercel\\.json|\\.vercel(?:/.*)?|\\.env(?:\\..*)?|\\.git(?:/.*)?).*)", "destination": "/index.html" }
+    { "source": "/((?!api/|assets/|logo\\.png|favicon\\.ico|robots\\.txt|sitemap\\.xml|\\.well-known(?:/.*)?|\\.dev\\.vars|wrangler\\.(?:toml|json|jsonc)|vercel\\.json|\\.vercel(?:/.*)?|\\.env(?:\\..*)?|\\.git(?:/.*)?).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
@@ -50,6 +50,19 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/.well-known/mta-sts.txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
         }
       ]
     },
