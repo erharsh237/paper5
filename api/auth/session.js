@@ -17,7 +17,17 @@
  *   - Path=/:      Scoped to the entire application
  */
 
-const COOKIE_DEFAULTS = 'HttpOnly; Secure; SameSite=Strict; Path=/'
+function getCookieDomainAttr(req) {
+  const host = (req.headers['x-forwarded-host'] || req.headers.host || '').split(':')[0].toLowerCase()
+  if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.localhost') || host.endsWith('.lvh.me')) {
+    return ''
+  }
+  if (host.endsWith('paper5.co')) {
+    return '; Domain=.paper5.co'
+  }
+  return ''
+}
+
 const REFRESH_TOKEN_MAX_AGE = 60 * 60 * 24 * 30 // 30 days (matches Supabase default)
 
 /**
@@ -74,6 +84,10 @@ export default function handler(req, res) {
     })
   }
 
+  const domainAttr = getCookieDomainAttr(req)
+  const cookieDefaults = `HttpOnly; Secure; SameSite=Lax; Path=/${domainAttr}`
+  const clientCookieDefaults = `Secure; SameSite=Lax; Path=/${domainAttr}`
+
   // ── POST: store new session tokens or set 2FA pending state ─────────────
   if (req.method === 'POST') {
     const { pending_2fa, email, access_token, refresh_token, expires_at } = req.body ?? {}
@@ -82,11 +96,11 @@ export default function handler(req, res) {
     if (pending_2fa) {
       const cleanEmail = (email || '').trim().toLowerCase()
       res.setHeader('Set-Cookie', [
-        `sb_2fa_pending=true; ${COOKIE_DEFAULTS}; Max-Age=600`,
-        `sb_2fa_email=${cleanEmail}; ${COOKIE_DEFAULTS}; Max-Age=600`,
-        `sb_access_token=; ${COOKIE_DEFAULTS}; Max-Age=0`,
-        `sb_refresh_token=; ${COOKIE_DEFAULTS}; Max-Age=0`,
-        `sb_expires_at=; Secure; SameSite=Strict; Path=/; Max-Age=0`,
+        `sb_2fa_pending=true; ${cookieDefaults}; Max-Age=600`,
+        `sb_2fa_email=${cleanEmail}; ${cookieDefaults}; Max-Age=600`,
+        `sb_access_token=; ${cookieDefaults}; Max-Age=0`,
+        `sb_refresh_token=; ${cookieDefaults}; Max-Age=0`,
+        `sb_expires_at=; ${clientCookieDefaults}; Max-Age=0`,
       ])
       return res.status(200).json({ ok: true, pending_2fa: true })
     }
@@ -104,11 +118,11 @@ export default function handler(req, res) {
       : 60 * 60
 
     res.setHeader('Set-Cookie', [
-      `sb_access_token=${access_token}; ${COOKIE_DEFAULTS}; Max-Age=${accessMaxAge}`,
-      `sb_refresh_token=${refresh_token}; ${COOKIE_DEFAULTS}; Max-Age=${REFRESH_TOKEN_MAX_AGE}`,
-      `sb_expires_at=${expires_at ?? ''}; Secure; SameSite=Strict; Path=/; Max-Age=${accessMaxAge}`,
-      `sb_2fa_pending=; ${COOKIE_DEFAULTS}; Max-Age=0`,
-      `sb_2fa_email=; ${COOKIE_DEFAULTS}; Max-Age=0`,
+      `sb_access_token=${access_token}; ${cookieDefaults}; Max-Age=${accessMaxAge}`,
+      `sb_refresh_token=${refresh_token}; ${cookieDefaults}; Max-Age=${REFRESH_TOKEN_MAX_AGE}`,
+      `sb_expires_at=${expires_at ?? ''}; ${clientCookieDefaults}; Max-Age=${accessMaxAge}`,
+      `sb_2fa_pending=; ${cookieDefaults}; Max-Age=0`,
+      `sb_2fa_email=; ${cookieDefaults}; Max-Age=0`,
     ])
 
     return res.status(200).json({ ok: true })
@@ -117,11 +131,11 @@ export default function handler(req, res) {
   // ── DELETE: clear session (sign-out) ──────────────────────────────────────
   if (req.method === 'DELETE') {
     res.setHeader('Set-Cookie', [
-      `sb_access_token=; ${COOKIE_DEFAULTS}; Max-Age=0`,
-      `sb_refresh_token=; ${COOKIE_DEFAULTS}; Max-Age=0`,
-      `sb_expires_at=; Secure; SameSite=Strict; Path=/; Max-Age=0`,
-      `sb_2fa_pending=; ${COOKIE_DEFAULTS}; Max-Age=0`,
-      `sb_2fa_email=; ${COOKIE_DEFAULTS}; Max-Age=0`,
+      `sb_access_token=; ${cookieDefaults}; Max-Age=0`,
+      `sb_refresh_token=; ${cookieDefaults}; Max-Age=0`,
+      `sb_expires_at=; ${clientCookieDefaults}; Max-Age=0`,
+      `sb_2fa_pending=; ${cookieDefaults}; Max-Age=0`,
+      `sb_2fa_email=; ${cookieDefaults}; Max-Age=0`,
     ])
     return res.status(200).json({ ok: true })
   }

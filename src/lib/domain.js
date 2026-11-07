@@ -23,12 +23,13 @@ export const getDomainConfig = () => {
 
   if (!mainSiteUrl || !appSiteUrl) {
     if (IS_PRODUCTION) {
-      const rootDomain = hostname.replace(/^app\./, '') || 'paper5.co'
+      const rootDomain = hostname.replace(/^(app\.|www\.)+/, '') || 'paper5.co'
       mainSiteUrl = `${protocol}//${rootDomain}`
       appSiteUrl = `${protocol}//app.${rootDomain}`
     } else {
-      mainSiteUrl = `${protocol}//${hostname.replace(/^app\./, '')}${port}`
-      appSiteUrl = `${protocol}//${hostname.startsWith('app.') ? hostname : 'app.' + hostname}${port}`
+      const cleanDevHost = hostname.replace(/^app\./, '')
+      mainSiteUrl = `${protocol}//${cleanDevHost}${port}`
+      appSiteUrl = `${protocol}//app.${cleanDevHost}${port}`
     }
   }
 

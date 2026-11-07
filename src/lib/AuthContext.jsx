@@ -9,12 +9,18 @@ const sessionCookieApi = {
   /** Restore a persisted session from httpOnly cookies on page load. */
   async get() {
     try {
-      const res = await fetch('/api/auth/session', { credentials: 'same-origin' })
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 4000)
+      const res = await fetch('/api/auth/session', { 
+        credentials: 'same-origin',
+        signal: controller.signal 
+      })
+      clearTimeout(timeoutId)
       if (res.status === 204) return null // no session cookie
       if (!res.ok) return null
       return await res.json() // { access_token, refresh_token, expires_at } or { isPending2FA: true, email }
     } catch {
-      return null // network error — treat as no session
+      return null // network error or timeout — treat as no session
     }
   },
   /** Flag 2FA pending state on httpOnly server cookies and clear access tokens. */

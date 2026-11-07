@@ -1,26 +1,34 @@
 import { useState, useEffect } from 'react'
 import { Cardio } from 'ldrs/react'
 import 'ldrs/react/Cardio.css'
+import { getDomainConfig } from '../lib/domain'
 
 export default function InitialPreloader({ children }) {
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => {
+    if (typeof window === 'undefined') return false
+    const { isAppSubdomain } = getDomainConfig()
+    // Never show full-screen "LOADING WORKSPACE..." on public marketing site
+    if (!isAppSubdomain) return false
+    // On app subdomain, only show on very first session load
+    if (sessionStorage.getItem('p5_app_preloaded')) return false
+    return true
+  })
   const [fadingOut, setFadingOut] = useState(false)
 
   useEffect(() => {
-    // Check if running under automated Lighthouse audit or crawler bot
-    const isBot = typeof navigator !== 'undefined' && /Lighthouse|Googlebot|PageSpeed/i.test(navigator.userAgent)
-    const initialDelay = isBot ? 0 : 150
+    if (!loading) return
 
+    sessionStorage.setItem('p5_app_preloaded', 'true')
     const timer = setTimeout(() => {
       setFadingOut(true)
       const removeTimer = setTimeout(() => {
         setLoading(false)
-      }, 200)
+      }, 150)
       return () => clearTimeout(removeTimer)
-    }, initialDelay)
+    }, 100)
 
     return () => clearTimeout(timer)
-  }, [])
+  }, [loading])
 
   return (
     <>
@@ -41,7 +49,7 @@ export default function InitialPreloader({ children }) {
             gap: '16px',
             background: '#ffffff',
             color: '#000000',
-            transition: 'opacity 0.35s ease, visibility 0.35s ease',
+            transition: 'opacity 0.25s ease, visibility 0.25s ease',
             opacity: fadingOut ? 0 : 1,
             pointerEvents: fadingOut ? 'none' : 'all',
           }}

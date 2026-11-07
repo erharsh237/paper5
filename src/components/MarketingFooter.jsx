@@ -4,13 +4,19 @@ import ContactModal from './ContactModal'
 import FeedbackModal from './FeedbackModal'
 import logo from '../assets/logo.png'
 import '../pages/Landing.css'
-import { getAppUrl } from '../lib/domain'
+import { getDomainConfig, getAppUrl, getMainUrl } from '../lib/domain'
 import { ArrowRight, MessageSquare } from 'lucide-react'
 
 export default function MarketingFooter({ hideCTA = false }) {
   const [isContactOpen, setIsContactOpen] = useState(false)
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
   const navigate = useNavigate()
+  const { isAppSubdomain } = getDomainConfig()
+
+  const FooterLink = ({ to, children }) => {
+    if (isAppSubdomain) return <a href={getMainUrl(to)}>{children}</a>
+    return <Link to={to}>{children}</Link>
+  }
 
   const handleGetStarted = () => {
     const target = getAppUrl('/signup')
@@ -54,10 +60,18 @@ export default function MarketingFooter({ hideCTA = false }) {
 
       <div className="footer-content">
         <div className="footer-brand-col">
-          <Link to="/" className="landing-brand" style={{ display: 'flex', alignItems: 'center', marginBottom: '14px', textDecoration: 'none' }}>
-            <img src={logo} alt="Paper5 Logo" style={{ width: '32px', height: '32px', marginRight: '10px', objectFit: 'contain' }} />
-            <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>PAPER5</span>
-          </Link>
+          {isAppSubdomain ? (
+            <a href={getMainUrl('/')} className="landing-brand" style={{ display: 'flex', alignItems: 'center', marginBottom: '14px', textDecoration: 'none' }}>
+              <img src={logo} alt="Paper5 Logo" style={{ width: '32px', height: '32px', marginRight: '10px', objectFit: 'contain' }} />
+              <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>PAPER5</span>
+            </a>
+          ) : (
+            <Link to="/" className="landing-brand" style={{ display: 'flex', alignItems: 'center', marginBottom: '14px', textDecoration: 'none' }}>
+              <img src={logo} alt="Paper5 Logo" style={{ width: '32px', height: '32px', marginRight: '10px', objectFit: 'contain' }} />
+              <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>PAPER5</span>
+            </Link>
+          )}
+
           <p className="footer-tagline">
             The operating workspace for small teams and startups. Connect your projects, tasks, documents and development in one place.
           </p>
@@ -71,27 +85,27 @@ export default function MarketingFooter({ hideCTA = false }) {
         <div className="footer-links-grid">
           <div className="footer-column">
             <h3>Product</h3>
-            <Link to="/features">Features</Link>
-            <a href="/#pricing">Pricing</a>
-            <Link to="/product-integrations">Integrations</Link>
-            <Link to="/changelog">Changelog</Link>
+            <FooterLink to="/features">Features</FooterLink>
+            <a href={isAppSubdomain ? getMainUrl('/#pricing') : '/#pricing'}>Pricing</a>
+            <FooterLink to="/product-integrations">Integrations</FooterLink>
+            <FooterLink to="/changelog">Changelog</FooterLink>
           </div>
           <div className="footer-column">
             <h3>Resources</h3>
-            <Link to="/docs">Documentation</Link>
-            <Link to="/docs/api">API Reference</Link>
+            <FooterLink to="/docs">Documentation</FooterLink>
+            <FooterLink to="/docs/api">API Reference</FooterLink>
           </div>
           <div className="footer-column">
             <h3>Company</h3>
-            <Link to="/about">About Us</Link>
+            <FooterLink to="/about">About Us</FooterLink>
             <button className="text-link-btn" onClick={() => setIsFeedbackOpen(true)}>Give Feedback</button>
             <button className="text-link-btn" onClick={() => setIsContactOpen(true)}>Contact Support</button>
           </div>
           <div className="footer-column">
             <h3>Legal</h3>
-            <Link to="/legal/terms">Terms of Service</Link>
-            <Link to="/legal/privacy">Privacy Policy</Link>
-            <Link to="/security">Security & Data</Link>
+            <FooterLink to="/legal/terms">Terms of Service</FooterLink>
+            <FooterLink to="/legal/privacy">Privacy Policy</FooterLink>
+            <FooterLink to="/security">Security & Data</FooterLink>
           </div>
         </div>
       </div>

@@ -55,10 +55,10 @@ import OnboardingWizardModal from './components/OnboardingWizardModal'
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react'
 
 // Marketing Pages
-const Features = safeLazy(() => import('./pages/Features'))
-const AboutUs = safeLazy(() => import('./pages/AboutUs'))
-const ProductIntegrations = safeLazy(() => import('./pages/ProductIntegrationsPage'))
-const DocsPage = safeLazy(() => import('./pages/DocsPage'))
+import Features from './pages/Features'
+import AboutUs from './pages/AboutUs'
+import ProductIntegrations from './pages/ProductIntegrationsPage'
+import DocsPage from './pages/DocsPage'
 import { 
   Changelog, Security 
 } from './pages/MarketingPages'
@@ -207,10 +207,25 @@ function WorkspaceGuard({ children }) {
 export default function App() {
   useLivePresenceTracker()
   useLenis()
+  const location = useLocation()
   const { user, userData, loading, isPending2FA } = useAuth()
   const { isAppSubdomain } = getDomainConfig()
 
-  if (loading) {
+  // Public marketing pages and legal docs should NEVER be blocked by Auth loading
+  const isPublicMarketingRoute = !isAppSubdomain && (
+    location.pathname === '/' ||
+    location.pathname === '/pricing' ||
+    location.pathname === '/features' ||
+    location.pathname === '/about' ||
+    location.pathname === '/product-integrations' ||
+    location.pathname === '/changelog' ||
+    location.pathname === '/docs' ||
+    location.pathname.startsWith('/docs/') ||
+    location.pathname === '/security' ||
+    location.pathname.startsWith('/legal')
+  )
+
+  if (loading && !isPublicMarketingRoute) {
     return <PageLoading />
   }
 
@@ -221,6 +236,7 @@ export default function App() {
 
   // If user is logged in but not verified or has pending 2FA, force them to login/verify screen
   const requireAuthAndVerification = (children) => {
+    if (loading) return <PageLoading />
     if (!user) return <Navigate to="/login" replace />
     if (isPending2FA) return <Navigate to="/login" replace />
     if (!user.emailVerified) return <Navigate to="/verify" replace />
@@ -236,13 +252,14 @@ export default function App() {
           {/* Subdomain-aware Root Path */}
           <Route path="/" element={
             isAppSubdomain 
-              ? (!user || isPending2FA ? <Navigate to="/login" replace /> : <Navigate to="/workspace" replace />)
+              ? (loading ? <PageLoading /> : (!user || isPending2FA ? <Navigate to="/login" replace /> : <Navigate to="/workspace" replace />))
               : <Landing />
           } />
 
           <Route path="/auth/action" element={<AuthAction />} />
           <Route path="/reset-password" element={<AuthAction />} />
           <Route path="/workspace" element={
+            loading ? <PageLoading /> :
             !user || isPending2FA ? <Navigate to="/login" replace /> :
             !user.emailVerified ? <Navigate to="/verify" replace /> :
             <WorkspacePicker />
