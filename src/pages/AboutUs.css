@@ -1,7 +1,7 @@
-/* About Us Page Stylesheet - SprintOS by Paper5 (Strict Black, White & Gray Theme) */
+/* About Us Page Stylesheet - SprintOS by Paper5 */
 
 .about-hero {
-  padding: 100px 24px 50px 24px;
+  padding: 80px 24px 40px 24px;
   text-align: center;
   max-width: 900px;
   margin: 0 auto;
@@ -19,7 +19,7 @@
 
 .about-subtitle {
   font-size: 19px;
-  color: #27272a;
+  color: #52525b;
   line-height: 1.6;
   margin-bottom: 40px;
   max-width: 780px;
@@ -33,7 +33,7 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 20px;
   max-width: 1100px;
-  margin: 0 auto 70px auto;
+  margin: 0 auto 60px auto;
   padding: 0 24px;
 }
 
@@ -44,6 +44,12 @@
   padding: 24px 20px;
   text-align: center;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 0, 0, 0.16);
 }
 
 .metric-val {
@@ -57,7 +63,7 @@
 .metric-label {
   font-size: 13px;
   font-weight: 600;
-  color: #27272a;
+  color: #52525b;
 }
 
 /* Container & Sections */
@@ -87,7 +93,7 @@
 
 .about-section-text {
   font-size: 16px;
-  color: #27272a;
+  color: #52525b;
   line-height: 1.7;
   margin: 0 0 32px 0;
 }
@@ -128,7 +134,7 @@
 
 .pillar-desc {
   font-size: 14px;
-  color: #27272a;
+  color: #52525b;
   line-height: 1.55;
   margin: 0;
 }
@@ -157,11 +163,165 @@
   white-space: nowrap;
 }
 
+.timeline-heading {
+  margin: 0 0 4px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #000000;
+}
+
+.timeline-desc {
+  margin: 0;
+  font-size: 13px;
+  color: #52525b;
+  line-height: 1.5;
+}
+
+/* Security Commitment Section */
+.about-security-section {
+  text-align: center;
+}
+
+.security-icon-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #000000;
+  color: #ffffff;
+  margin-bottom: 16px;
+}
+
+.security-title {
+  font-family: var(--display, sans-serif);
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0 0 12px 0;
+  color: #000000;
+}
+
+.security-desc {
+  font-size: 15px;
+  color: #52525b;
+  max-width: 680px;
+  margin: 0 auto 24px auto;
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   DARK MODE OVERRIDES ([data-theme="dark"])
+   ========================================================================== */
+
+[data-theme="dark"] .about-title {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .about-subtitle {
+  color: #a1a1aa !important;
+}
+
+[data-theme="dark"] .metric-card {
+  background: #121215 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] .metric-card:hover {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme="dark"] .metric-val {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .metric-label {
+  color: #a1a1aa !important;
+}
+
+[data-theme="dark"] .about-section {
+  background: #121215 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] .about-section-title {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .about-section-text {
+  color: #a1a1aa !important;
+}
+
+[data-theme="dark"] .pillar-item {
+  background: #18181b !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] .pillar-icon {
+  background: #27272a !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .pillar-title {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .pillar-desc {
+  color: #a1a1aa !important;
+}
+
+[data-theme="dark"] .timeline-badge {
+  background: #27272a !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme="dark"] .timeline-heading {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .timeline-desc {
+  color: #a1a1aa !important;
+}
+
+[data-theme="dark"] .security-icon-box {
+  background: #27272a !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .security-title {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .security-desc {
+  color: #a1a1aa !important;
+}
+
 /* Responsive Rules */
-@media (max-width: 900px) {
-  .about-title { font-size: 38px; }
-  .about-subtitle { font-size: 16px; }
-  .about-metrics-strip { grid-template-columns: repeat(2, 1fr); }
-  .pillars-grid { grid-template-columns: 1fr; }
-  .about-section { padding: 32px 24px; }
+@media (max-width: 860px) {
+  .about-title {
+    font-size: 36px;
+  }
+  .about-metrics-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .pillars-grid {
+    grid-template-columns: 1fr;
+  }
+  .about-section {
+    padding: 32px 24px;
+  }
+}
+
+@media (max-width: 540px) {
+  .about-metrics-strip {
+    grid-template-columns: 1fr;
+  }
+  .about-hero {
+    padding: 60px 16px 30px 16px;
+  }
 }

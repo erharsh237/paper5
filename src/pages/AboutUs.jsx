@@ -2,7 +2,7 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import MarketingLayout from '../components/MarketingLayout'
 import SEOHead from '../components/SEOHead'
-import { ShieldCheck, Zap, Code2, LineChart, Layers, Database, Lock } from 'lucide-react'
+import { ShieldCheck, Zap, Code2, LineChart, Lock } from 'lucide-react'
 import './AboutUs.css'
 
 export default function AboutUs() {
@@ -100,10 +100,10 @@ export default function AboutUs() {
             <div className="timeline-item">
               <span className="timeline-badge">SprintOS 1.0</span>
               <div>
-                <h4 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                <h4 className="timeline-heading">
                   8-Tier Agile Methodology Engine & Board Alignment
                 </h4>
-                <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                <p className="timeline-desc">
                   Introduced team-size adaptive workflows from 1 Solo Developer up to 500+ SAFe Enterprise tribes.
                 </p>
               </div>
@@ -112,10 +112,10 @@ export default function AboutUs() {
             <div className="timeline-item">
               <span className="timeline-badge">Live Webhooks</span>
               <div>
-                <h4 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                <h4 className="timeline-heading">
                   GitHub Auto-Close & Chat Notifications
                 </h4>
-                <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                <p className="timeline-desc">
                   Real-time synchronization between git commits, pull requests, Slack standups, and Discord blocker alerts.
                 </p>
               </div>
@@ -124,10 +124,10 @@ export default function AboutUs() {
             <div className="timeline-item">
               <span className="timeline-badge">API & PDF Studio</span>
               <div>
-                <h4 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                <h4 className="timeline-heading">
                   1-Click REST API Studio & Vector PDF Data Export
                 </h4>
-                <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                <p className="timeline-desc">
                   Interactive API simulator, cURL/Node/Python code snippets, and selective printable PDF workspace reports.
                 </p>
               </div>
@@ -136,14 +136,14 @@ export default function AboutUs() {
         </section>
 
         {/* Security Commitment */}
-        <section className="about-section" style={{ textAlign: 'center', background: '#ffffff' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', borderRadius: '12px', background: '#000000', color: '#ffffff', marginBottom: '16px' }}>
+        <section className="about-section about-security-section">
+          <div className="security-icon-box">
             <ShieldCheck size={26} />
           </div>
-          <h2 style={{ fontSize: '26px', fontWeight: 800, margin: '0 0 12px 0', color: 'var(--text-primary)' }}>
+          <h2 className="security-title">
             Enterprise Security & Compliance
           </h2>
-          <p style={{ fontSize: '15px', color: 'var(--text-secondary)', maxWidth: '680px', margin: '0 auto 24px auto', lineHeight: 1.6 }}>
+          <p className="security-desc">
             Security is built into the foundation of Paper5. Powered by TLS 1.3 transit encryption, AES-256 data protection at rest, strict PostgreSQL Row-Level Security (RLS) tenant isolation, enforced email verification, and optional Multi-Factor Authentication (2FA).
           </p>
           <button className="btn-primary" style={{ padding: '10px 24px' }} onClick={() => navigate('/signup')}>

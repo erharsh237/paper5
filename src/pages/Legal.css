@@ -2,8 +2,13 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  background: var(--bg-void, #ffffff);
+  color: var(--text-primary, #09090b);
+}
+
+[data-theme="dark"] .legal-page {
+  background: #09090b !important;
+  color: #f4f4f5 !important;
 }
 
 .legal-container {
