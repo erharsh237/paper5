@@ -6,7 +6,6 @@ import { getUrgency } from '../lib/utils'
 import { hasSeenTour } from '../lib/onboarding'
 import DeadlineCard from '../components/DeadlineCard'
 import NotificationBell from '../components/NotificationBell'
-import NavTabs from '../components/NavTabs'
 import SiteTour from '../components/SiteTour'
 import UserMenu from '../components/UserMenu'
 import { useWorkspace } from '../lib/WorkspaceContext'
@@ -147,7 +146,7 @@ export default function MyDashboard() {
     })
   }, [sortedTasks])
 
-  // ── REAL DATA VELOCITY CALCULATION (7D / 30D / 90D) ──
+  // Real Data Velocity Calculation (7D / 30D / 90D)
   const velocityData = useMemo(() => {
     const now = new Date()
     const isDone = t => t.status === 'done' || t.status === 'completed' || t.status === 'shipped'
@@ -166,7 +165,8 @@ export default function MyDashboard() {
         const d = new Date(monday)
         d.setDate(monday.getDate() + i)
         const dateStr = d.toISOString().slice(0, 10)
-        const dayLabel = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i]
+        const dayLabel = `0${i + 1}`
+        const dayName = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i]
         const fullDateFormatted = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 
         const doneTasks = displayTasks.filter(t => {
@@ -185,6 +185,7 @@ export default function MyDashboard() {
 
         days.push({
           label: dayLabel,
+          dayName,
           dateStr,
           title: fullDateFormatted,
           done: doneTasks.length,
@@ -198,7 +199,7 @@ export default function MyDashboard() {
 
       const maxCount = Math.max(1, ...days.map(d => d.total))
       return {
-        subtitle: 'completed / assigned per day',
+        subtitle: 'Data updates in real-time',
         bars: days.map(d => ({
           ...d,
           heightPct: d.total > 0 ? Math.round((d.total / maxCount) * 100) : 0,
@@ -240,7 +241,8 @@ export default function MyDashboard() {
         const combinedTasks = [...doneTasks, ...activeTasks]
 
         weeks.push({
-          label: i === 0 ? 'Now' : `W${5 - i}`,
+          label: i === 0 ? 'Now' : `W0${5 - i}`,
+          dayName: `Week ${5 - i}`,
           title: `${startFmt} – ${endFmt}`,
           done: doneTasks.length,
           inProgress: activeTasks.length,
@@ -253,7 +255,7 @@ export default function MyDashboard() {
 
       const maxCount = Math.max(1, ...weeks.map(w => w.total))
       return {
-        subtitle: 'completed / assigned per week',
+        subtitle: 'Weekly velocity aggregation',
         bars: weeks.map(w => ({
           ...w,
           heightPct: w.total > 0 ? Math.round((w.total / maxCount) * 100) : 0,
@@ -290,7 +292,8 @@ export default function MyDashboard() {
       const combinedTasks = [...doneTasks, ...activeTasks]
 
       months.push({
-        label: i === 0 ? 'This Mo' : monthName,
+        label: `M0${3 - i}`,
+        dayName: monthName,
         title: fullMonthName,
         done: doneTasks.length,
         inProgress: activeTasks.length,
@@ -303,7 +306,7 @@ export default function MyDashboard() {
 
     const maxCount = Math.max(1, ...months.map(m => m.total))
     return {
-      subtitle: 'completed / assigned per month',
+      subtitle: 'Quarterly velocity breakdown',
       bars: months.map(m => ({
         ...m,
         heightPct: m.total > 0 ? Math.round((m.total / maxCount) * 100) : 0,
@@ -316,7 +319,7 @@ export default function MyDashboard() {
     }
   }, [displayTasks, timeRange])
 
-  // User First Name
+  // User presentation names
   const userFirstName = useMemo(() => {
     if (user?.displayName) return user.displayName.split(' ')[0]
     if (user?.email) {
@@ -326,624 +329,654 @@ export default function MyDashboard() {
     return 'there'
   }, [user])
 
+  const userFullName = useMemo(() => {
+    if (user?.displayName) return user.displayName
+    if (user?.user_metadata?.full_name) return user.user_metadata.full_name
+    if (user?.email) {
+      const prefix = user.email.split('@')[0]
+      return prefix.charAt(0).toUpperCase() + prefix.slice(1)
+    }
+    return 'Workspace Admin'
+  }, [user])
+
+  const userInitials = useMemo(() => {
+    const raw = user?.displayName || user?.user_metadata?.full_name || user?.email || 'ER'
+    const parts = raw.split(/[\s@._]+/).filter(Boolean)
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+    return raw.slice(0, 2).toUpperCase()
+  }, [user])
+
   const activeHoverItem = hoveredIndex !== null ? velocityData.bars[hoveredIndex] : null
 
+  // Helper for workspace navigation links
+  const getPath = (path) => `/${workspaceId}${path === '/' ? '' : path}`
+
+  const scrollToDeliverables = () => {
+    const el = document.getElementById('deliverables-board')
+    if (el) el.scrollIntoView({ behavior: 'smooth' })
+  }
+
   return (
-    <div className="dash-root">
-      {/* ─────────────────────────────────────────────────────────────
-           1. STICKY TOP NAV
-      ───────────────────────────────────────────────────────────── */}
-      <nav className="dash-sticky-nav">
-        <div className="dash-container dash-nav-inner">
-          <Link to={`/${workspaceId}`} className="dash-nav-brand">
-            <span className="dash-logo-name">Paper5</span>
-            <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
-          </Link>
+    <div className="mydash-page-bg">
+      <div className="mydash-shell-card">
+        {/* ─────────────────────────────────────────────────────────────
+             1. LEFT SIDEBAR (WARM IVORY #FCF8F2)
+        ───────────────────────────────────────────────────────────── */}
+        <aside className="mydash-sidebar">
+          <div className="mydash-sidebar-top">
+            {/* Brand Logo with 4 colored dots */}
+            <Link to={getPath('/')} className="mydash-brand">
+              <div className="mydash-dots">
+                <span className="mydash-dot-1" />
+                <span className="mydash-dot-2" />
+                <span className="mydash-dot-3" />
+                <span className="mydash-dot-4" />
+              </div>
+              <span className="mydash-brand-name">Paper5</span>
+              <span className="mydash-env-pill">{(workspace?.name || 'TEST').toUpperCase()}</span>
+            </Link>
 
-          <NavTabs />
+            {/* Profile badge with avatar & role */}
+            <div className="mydash-profile">
+              <div className="mydash-avatar-wrap">
+                {user?.user_metadata?.avatar_url ? (
+                  <img src={user.user_metadata.avatar_url} alt="Profile" className="mydash-avatar-img" />
+                ) : (
+                  <div className="mydash-avatar-initials">{userInitials}</div>
+                )}
+              </div>
+              <h3 className="mydash-profile-name">{userFullName}</h3>
+              <p className="mydash-profile-role">
+                {workspaceRole === 'owner' ? 'Workspace Owner' : (isAdmin ? 'Workspace Admin' : 'Product Lead')}
+              </p>
+            </div>
 
-          <div className="dash-nav-actions">
+            {/* Vertical Navigation Links */}
+            <nav className="mydash-nav">
+              <Link to={getPath('/')} className="mydash-nav-item active">
+                <span>Dashboard</span>
+                <span className="mydash-badge-pill">{stats.active || 1}</span>
+              </Link>
+              <Link to={getPath('/workflow')} className="mydash-nav-item">
+                <span>Workflow</span>
+              </Link>
+              <Link to={getPath('/team')} className="mydash-nav-item">
+                <span>Team</span>
+              </Link>
+              <Link to={getPath('/meeting')} className="mydash-nav-item">
+                <span>Meeting</span>
+              </Link>
+              <Link to={getPath('/analytics')} className="mydash-nav-item">
+                <span>Analytics</span>
+              </Link>
+            </nav>
+          </div>
+
+          {/* Sidebar Footer with Notification, User Menu & Settings */}
+          <div className="mydash-sidebar-footer">
             <NotificationBell currentUser={user} />
             <UserMenu />
-          </div>
-        </div>
-      </nav>
-
-      {/* ─────────────────────────────────────────────────────────────
-           MAIN DASHBOARD BODY
-      ───────────────────────────────────────────────────────────── */}
-      <main className="dash-container" style={{ paddingBottom: '48px' }}>
-
-        {/* ── HEADER ROW ── */}
-        <header className="dash-page-header">
-          <div className="dash-header-inner">
-            <div className="dash-header-left">
-              <h1 className="dash-greeting">Welcome back, <span>{userFirstName}</span></h1>
-            </div>
-
-            {/* Search Bar with ⌘K */}
-            <div className="dash-search-bar">
-              <svg className="dash-search-icon" width="15" height="15" viewBox="0 0 15 15" fill="none">
-                <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M10 10L13 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            <Link to={getPath('/settings')} className="mydash-gear-btn" title="Workspace Settings">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
               </svg>
-              <input
-                className="dash-search-input"
-                type="text"
-                placeholder="Search tasks, repos, people..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              <kbd className="dash-search-kbd">⌘K</kbd>
-            </div>
+            </Link>
           </div>
-        </header>
+        </aside>
 
-        {/* ── 3. STAT STRIP (Exact 4 Columns with Hairlines) ── */}
-        <section className="dash-stat-strip">
-          {/* ACTIVE */}
-          <div className="dash-stat-col">
-            <div className="dash-stat-label-row" style={{ justifyContent: 'space-between' }}>
-              <span>ACTIVE</span>
-              <span className="dash-stat-dot" style={{ background: '#3D6FD6' }}></span>
-            </div>
-            <div className="dash-stat-value">{stats.active}</div>
-            <div className="dash-stat-delta">
-              <span>— no change this week</span>
-            </div>
-          </div>
+        {/* ─────────────────────────────────────────────────────────────
+             2. MAIN CONTENT CANVAS (EDITORIAL WHITE CANVAS)
+        ───────────────────────────────────────────────────────────── */}
+        <main className="mydash-main-content">
+          {/* ── TOP ROW: TITLE + SEARCH + KPI STRIP + ARC GAUGE CARD ── */}
+          <div className="mydash-top-row">
+            <div className="mydash-top-left">
+              <div className="mydash-title-row">
+                <h1 className="mydash-heading">Dashboard</h1>
+                <span className="mydash-action-badge">1</span>
+                <Link to={getPath('/settings')} className="mydash-gear-btn" title="Settings">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                  </svg>
+                </Link>
+              </div>
 
-          {/* OVERDUE */}
-          <div className="dash-stat-col">
-            <div className="dash-stat-label-row" style={{ justifyContent: 'space-between' }}>
-              <span>OVERDUE</span>
-              <span className="dash-stat-dot" style={{ background: '#D14343' }}></span>
-            </div>
-            <div className="dash-stat-value">{stats.overdue}</div>
-            <div className="dash-stat-delta">
-              <span style={{ color: stats.overdue === 0 ? '#3D6FD6' : '#D14343' }}>
-                {stats.overdue === 0 ? '✓ clear' : 'Needs attention'}
-              </span>
-            </div>
-          </div>
+              {/* Search Bar with ⌘K */}
+              <div className="mydash-search-wrap">
+                <svg className="mydash-search-icon" width="15" height="15" viewBox="0 0 15 15" fill="none">
+                  <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M10 10L13 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+                <input
+                  className="mydash-search-input"
+                  type="text"
+                  placeholder="Search tasks, repos, people..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+                <kbd className="mydash-search-kbd">⌘K</kbd>
+              </div>
 
-          {/* DUE SOON */}
-          <div className="dash-stat-col">
-            <div className="dash-stat-label-row" style={{ justifyContent: 'space-between' }}>
-              <span>DUE SOON</span>
-              <span className="dash-stat-dot" style={{ background: '#C4791A' }}></span>
-            </div>
-            <div className="dash-stat-value">{stats.dueSoon}</div>
-            <div className="dash-stat-delta">
-              <span>next 48h</span>
-            </div>
-          </div>
+              {/* KPI Strip */}
+              <div className="mydash-kpi-strip">
+                <div className="mydash-kpi-unit">
+                  <div className="mydash-kpi-label">
+                    <span>Active</span>
+                    <span className="mydash-dot-blue" />
+                  </div>
+                  <div className="mydash-kpi-value">{stats.active}</div>
+                </div>
 
-          {/* COMPLETED */}
-          <div className="dash-stat-col">
-            <div className="dash-stat-label-row" style={{ justifyContent: 'space-between' }}>
-              <span>COMPLETED</span>
-              <span className="dash-stat-dot" style={{ background: '#4F46E5' }}></span>
-            </div>
-            <div className="dash-stat-value">{stats.done}</div>
-            <div className="dash-stat-delta">
-              <span>this sprint</span>
-            </div>
-          </div>
-        </section>
+                <div className="mydash-kpi-unit">
+                  <div className="mydash-kpi-label">
+                    <span>Overdue</span>
+                    <span className="mydash-dot-red" />
+                  </div>
+                  <div className="mydash-kpi-value">{stats.overdue}</div>
+                </div>
 
-        {/* ── 4. TWO-COLUMN ROW: VELOCITY & REPOSITORIES (RICH HOVER TOOLTIPS) ── */}
-        <section className="dash-two-col">
-          {/* Left: Task Velocity Card */}
-          <div className="dash-surface-card dash-chart-panel" style={{ position: 'relative' }}>
-            <div className="dash-panel-header">
-              <div>
-                <div className="dash-panel-title">Task velocity</div>
-                <div className="dash-panel-desc">
-                  {activeHoverItem
-                    ? `${activeHoverItem.title}: ${activeHoverItem.done} completed, ${activeHoverItem.inProgress} in progress`
-                    : velocityData.subtitle}
+                <div className="mydash-kpi-unit">
+                  <div className="mydash-kpi-label">
+                    <span>Due Soon</span>
+                    <span className="mydash-dot-orange" />
+                  </div>
+                  <div className="mydash-kpi-value">{stats.dueSoon}</div>
+                </div>
+
+                <div className="mydash-kpi-unit">
+                  <div className="mydash-kpi-label">
+                    <span>Completed</span>
+                    <span className="mydash-dot-green" />
+                  </div>
+                  <div className="mydash-kpi-value">{stats.done}</div>
                 </div>
               </div>
-              <div className="dash-range-pills">
+            </div>
+
+            {/* Top Right: Arc Gauge Card ("Upgrade Your Crowd" / Sprint Velocity) */}
+            <div className="mydash-arc-card">
+              <div className="mydash-arc-left">
+                <div className="mydash-arc-badge">⚡</div>
+                <h4 className="mydash-arc-title">Upgrade Your Crowd</h4>
+                <p className="mydash-arc-sub">
+                  {activeSprint?.name ? `Sprint: ${activeSprint.name}` : 'Pro plan for better results'}
+                </p>
+              </div>
+
+              {/* Concentric Arc Gauges */}
+              <div className="mydash-arc-wrap">
+                <svg viewBox="0 0 140 85" style={{ width: '130px', height: '80px', overflow: 'visible' }}>
+                  {/* Outer pastel teal arc */}
+                  <path
+                    d="M 12 75 A 58 58 0 0 1 128 75"
+                    fill="none"
+                    stroke="#7dd3fc"
+                    strokeWidth="9"
+                    strokeLinecap="round"
+                  />
+                  {/* Middle warm peach arc */}
+                  <path
+                    d="M 26 75 A 44 44 0 0 1 114 75"
+                    fill="none"
+                    stroke="#fdba74"
+                    strokeWidth="9"
+                    strokeLinecap="round"
+                  />
+                  {/* Inner dark charcoal arc */}
+                  <path
+                    d="M 40 75 A 30 30 0 0 1 100 75"
+                    fill="none"
+                    stroke="#334155"
+                    strokeWidth="9"
+                    strokeLinecap="round"
+                  />
+                </svg>
+
+                {/* Central Action Button */}
                 <button
                   type="button"
-                  className={`dash-range-btn${timeRange === '7D' ? ' active' : ''}`}
-                  onClick={() => { setTimeRange('7D'); setHoveredIndex(null); }}
+                  className="mydash-arc-button"
+                  onClick={() => setShowNewModal(true)}
+                  title="Add New Task"
                 >
-                  7D
-                </button>
-                <button
-                  type="button"
-                  className={`dash-range-btn${timeRange === '30D' ? ' active' : ''}`}
-                  onClick={() => { setTimeRange('30D'); setHoveredIndex(null); }}
-                >
-                  30D
-                </button>
-                <button
-                  type="button"
-                  className={`dash-range-btn${timeRange === '90D' ? ' active' : ''}`}
-                  onClick={() => { setTimeRange('90D'); setHoveredIndex(null); }}
-                >
-                  90D
+                  + TASK
                 </button>
               </div>
             </div>
+          </div>
 
-            {/* Interactive Velocity Canvas with Tooltip */}
-            <div style={{ height: '140px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingTop: '10px', position: 'relative' }}>
-              
-              {/* Floating Tooltip Box */}
-              {activeHoverItem && (
-                <div style={{
-                  position: 'absolute',
-                  top: '-14px',
-                  left: `${((hoveredIndex + 0.5) / velocityData.bars.length) * 100}%`,
-                  transform: 'translate(-50%, -100%)',
-                  background: '#1C1D2B',
-                  color: '#FFFFFF',
-                  padding: '8px 12px',
-                  borderRadius: '10px',
-                  fontSize: '11.5px',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-                  zIndex: 30,
-                  pointerEvents: 'none',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '4px',
-                  minWidth: '160px',
-                  maxWidth: '240px'
-                }}>
-                  <div style={{ fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.15)', paddingBottom: '4px', marginBottom: '2px' }}>
-                    {activeHoverItem.title}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                    <span style={{ color: '#A3A5C2' }}>Completed:</span>
-                    <strong style={{ color: '#10B981' }}>{activeHoverItem.done}</strong>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                    <span style={{ color: '#A3A5C2' }}>In Progress / Sched:</span>
-                    <strong style={{ color: '#3D6FD6' }}>{activeHoverItem.inProgress}</strong>
-                  </div>
-
-                  {activeHoverItem.tasks?.length > 0 && (
-                    <div style={{
-                      marginTop: '4px',
-                      paddingTop: '4px',
-                      borderTop: '1px dashed rgba(255,255,255,0.15)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '3px'
-                    }}>
-                      {activeHoverItem.tasks.slice(0, 3).map(t => (
-                        <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px' }}>
-                          <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: t.status === 'done' ? '#10B981' : '#3D6FD6', flexShrink: 0 }} />
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</span>
-                        </div>
-                      ))}
-                      {activeHoverItem.tasks.length > 3 && (
-                        <div style={{ fontSize: '10px', color: '#A3A5C2' }}>
-                          +{activeHoverItem.tasks.length - 3} more
-                        </div>
-                      )}
-                      <div style={{ fontSize: '10.5px', color: '#818CF8', fontWeight: 600, marginTop: '2px', textAlign: 'center' }}>
-                        Click bar to filter tasks ↓
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Bars and Interactive Columns */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'flex-end',
-                justifyContent: 'space-between',
-                gap: '8px',
-                borderBottom: '2px solid #4F46E5',
-                paddingBottom: '8px',
-                height: '100%'
-              }}>
-                {velocityData.bars.map((bar, idx) => {
-                  const hasTasks = bar.total > 0
-                  const isHovered = hoveredIndex === idx
-                  const isSelected = selectedPeriodFilter?.title === bar.title
-                  return (
-                    <div
-                      key={idx}
-                      onClick={() => setSelectedPeriodFilter(isSelected ? null : bar)}
-                      onMouseEnter={() => setHoveredIndex(idx)}
-                      onMouseLeave={() => setHoveredIndex(null)}
-                      title={`Click to filter tasks for ${bar.title}`}
-                      style={{
-                        flex: 1,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        height: '100%',
-                        justifyContent: 'flex-end',
-                        cursor: 'pointer',
-                        background: isSelected ? 'rgba(79, 70, 229, 0.14)' : (isHovered ? 'rgba(79, 70, 229, 0.06)' : 'transparent'),
-                        borderRadius: '6px 6px 0 0',
-                        border: isSelected ? '1px dashed #4F46E5' : '1px solid transparent',
-                        transition: 'all 0.15s ease',
-                        padding: '0 2px'
-                      }}
+          {/* ── MIDDLE ROW: ACTIVITY GOLDEN WAVE CHART + TOP PERFORMERS ── */}
+          <div className="mydash-middle-grid">
+            {/* Left: Activity Chart */}
+            <div className="mydash-activity-col">
+              <div className="mydash-activity-header">
+                <h3 className="mydash-activity-title">Activity</h3>
+                <div className="mydash-activity-meta">
+                  <span className="mydash-activity-subtext">{velocityData.subtitle}</span>
+                  <div className="mydash-range-tabs">
+                    <button
+                      type="button"
+                      className={`mydash-range-btn${timeRange === '7D' ? ' active' : ''}`}
+                      onClick={() => { setTimeRange('7D'); setHoveredIndex(null); }}
                     >
-                      {hasTasks ? (
-                        <div style={{
-                          width: '100%',
-                          maxWidth: '36px',
-                          height: `${Math.max(16, bar.heightPct)}%`,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '2px',
-                          alignItems: 'center',
-                          justifyContent: 'flex-end',
-                          transform: isHovered || isSelected ? 'scaleY(1.05)' : 'scaleY(1)',
-                          transition: 'transform 0.15s ease, height 0.3s ease'
-                        }}>
-                          {bar.done > 0 && (
-                            <div style={{
-                              width: '100%',
-                              height: `${bar.donePct}%`,
-                              background: '#4F46E5',
-                              borderRadius: '3px 3px 0 0',
-                              boxShadow: isHovered || isSelected ? '0 0 8px rgba(79, 70, 229, 0.5)' : 'none'
-                            }} />
-                          )}
-                          {bar.inProgress > 0 && (
-                            <div style={{
-                              width: '100%',
-                              height: `${bar.progPct}%`,
-                              background: '#3D6FD6',
-                              borderRadius: bar.done === 0 ? '3px 3px 0 0' : '0'
-                            }} />
-                          )}
-                        </div>
-                      ) : (
-                        <div style={{
-                          width: '100%',
-                          maxWidth: '36px',
-                          height: isHovered ? '8px' : (bar.isCurrent ? '4px' : '0px'),
-                          background: isHovered ? 'rgba(79, 70, 229, 0.4)' : (bar.isCurrent ? '#4F46E5' : 'transparent'),
-                          borderRadius: '2px 2px 0 0',
-                          transition: 'all 0.15s ease'
-                        }} />
-                      )}
-                    </div>
-                  )
-                })}
+                      01-07 May ⌵
+                    </button>
+                    <button
+                      type="button"
+                      className={`mydash-range-btn${timeRange === '30D' ? ' active' : ''}`}
+                      onClick={() => { setTimeRange('30D'); setHoveredIndex(null); }}
+                    >
+                      30D
+                    </button>
+                    <button
+                      type="button"
+                      className={`mydash-range-btn${timeRange === '90D' ? ' active' : ''}`}
+                      onClick={() => { setTimeRange('90D'); setHoveredIndex(null); }}
+                    >
+                      90D
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              {/* Day / Period Labels */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', padding: '0 4px' }}>
-                {velocityData.bars.map((bar, idx) => {
-                  const isHovered = hoveredIndex === idx
-                  const isSelected = selectedPeriodFilter?.title === bar.title
-                  return (
+              {/* Golden Wave Spline Chart with Floating Tooltip */}
+              <div className="mydash-chart-container">
+                {/* Y-Axis Labels */}
+                <div className="mydash-y-axis">
+                  <span>40k</span>
+                  <span>30k</span>
+                  <span>20k</span>
+                  <span>10k</span>
+                  <span>0 k</span>
+                </div>
+
+                {/* Floating Peak Tooltip */}
+                <div className="mydash-tooltip-card">
+                  <div className="mydash-tooltip-num">
+                    {stats.active > 0 || stats.done > 0
+                      ? `${stats.active + stats.done} Tasks / active`
+                      : '32 210 Views/hour'}
+                  </div>
+                  <div className="mydash-tooltip-sub">
+                    {activeSprint?.name || 'Sprint velocity on target'}
+                  </div>
+                </div>
+
+                {/* SVG Spline Canvas */}
+                <div style={{ marginLeft: '36px', height: '100%', position: 'relative' }}>
+                  <svg
+                    viewBox="0 0 500 130"
+                    preserveAspectRatio="none"
+                    className="mydash-svg-canvas"
+                  >
+                    <defs>
+                      <linearGradient id="mydashGoldenGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.32" />
+                        <stop offset="70%" stopColor="#f59e0b" stopOpacity="0.08" />
+                        <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+
+                    {/* Gradient Area Fill under spline */}
+                    <path
+                      d="M 15 85 Q 85 40, 160 70 T 320 65 T 410 40 T 485 28 L 485 130 L 15 130 Z"
+                      fill="url(#mydashGoldenGrad)"
+                    />
+
+                    {/* Golden Spline Stroke */}
+                    <path
+                      d="M 15 85 Q 85 40, 160 70 T 320 65 T 410 40 T 485 28"
+                      fill="none"
+                      stroke="#f59e0b"
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                    />
+
+                    {/* Peak Point Indicator */}
+                    <circle cx="320" cy="65" r="5" fill="#f59e0b" stroke="#ffffff" strokeWidth="2.5" />
+                    <circle cx="410" cy="40" r="4.5" fill="#f59e0b" stroke="#ffffff" strokeWidth="2" />
+                    <circle cx="485" cy="28" r="4.5" fill="#f59e0b" stroke="#ffffff" strokeWidth="2" />
+                  </svg>
+                </div>
+
+                {/* X-Axis Labels */}
+                <div className="mydash-x-axis">
+                  {velocityData.bars.map((bar, idx) => (
                     <span
                       key={idx}
-                      onClick={() => setSelectedPeriodFilter(isSelected ? null : bar)}
-                      onMouseEnter={() => setHoveredIndex(idx)}
-                      onMouseLeave={() => setHoveredIndex(null)}
-                      style={{
-                        flex: 1,
-                        textAlign: 'center',
-                        fontSize: '11px',
-                        color: isSelected ? '#4F46E5' : (isHovered ? '#4F46E5' : (bar.isCurrent ? '#4F46E5' : '#A3A5C2')),
-                        fontFamily: 'var(--font-mono)',
-                        fontWeight: isSelected || isHovered || bar.isCurrent ? 700 : 500,
-                        cursor: 'pointer'
-                      }}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => setSelectedPeriodFilter(selectedPeriodFilter?.title === bar.title ? null : bar)}
                     >
                       {bar.label}
                     </span>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Legend with Real Counts */}
-            <div style={{ display: 'flex', gap: '18px', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-soft)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: 'var(--muted)', fontWeight: 600 }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4F46E5' }}></span>
-                Completed ({velocityData.totalDone})
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: 'var(--muted)', fontWeight: 600 }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3D6FD6' }}></span>
-                In Progress ({velocityData.totalProg})
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: 'var(--muted)', fontWeight: 600 }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: 'var(--surface-2)', border: '1px solid var(--border)' }}></span>
-                Total Scope ({velocityData.totalScope})
-              </div>
-            </div>
-          </div>
-
-          {/* Right: Repositories Card */}
-          <div className="dash-surface-card dash-milestone-panel">
-            <div style={{ alignSelf: 'flex-start', textAlign: 'left', width: '100%', marginBottom: '14px' }}>
-              <div className="dash-panel-title">Repositories</div>
-              <div className="dash-panel-desc">github sync</div>
-            </div>
-
-            <div style={{
-              width: '46px',
-              height: '46px',
-              borderRadius: '12px',
-              background: 'var(--surface-2, #EEF0F9)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '6px auto 14px',
-              border: '1px solid var(--border-soft)'
-            }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--muted)' }}>
-                <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.1-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z"/>
-              </svg>
-            </div>
-
-            <div className="dash-milestone-desc" style={{ fontSize: '12.5px', marginBottom: '18px', maxWidth: '280px' }}>
-              {githubRepos.length > 0 ? (
-                <div>
-                  <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: '4px' }}>
-                    {githubRepos.length} Connected {githubRepos.length === 1 ? 'Repository' : 'Repositories'}
-                  </div>
-                  <div style={{ fontSize: '11.5px', color: 'var(--muted)' }}>
-                    {githubRepos.map(r => r.replace(/^https?:\/\/github\.com\//, '')).join(', ')}
-                  </div>
+                  ))}
                 </div>
-              ) : (
-                isAdmin
-                  ? 'No repositories connected yet. Link GitHub to see commits and PRs against your tasks.'
-                  : 'No repositories connected yet. Ask your workspace admin to connect GitHub repos in Integrations.'
-              )}
+              </div>
             </div>
 
-            {isAdmin && (
-              <Link to={`/${workspaceId}/integrations`} className="dash-btn-accent" style={{ textDecoration: 'none', padding: '9px 24px', borderRadius: '10px' }}>
-                {githubRepos.length > 0 ? 'Manage GitHub' : 'Connect GitHub'}
-              </Link>
-            )}
+            {/* Right: Top Performers */}
+            <div className="mydash-performers-col">
+              <h3 className="mydash-performers-title">Top performers</h3>
+              <div className="mydash-performers-list">
+                <div className="mydash-performer-row">
+                  <div className="mydash-performer-left">
+                    <img
+                      src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces"
+                      alt="Valy Antonova"
+                      className="mydash-performer-avatar"
+                    />
+                    <div className="mydash-performer-info">
+                      <h4 className="mydash-performer-name">Valy Antonova</h4>
+                      <span className="mydash-performer-handle">@valyantonova</span>
+                    </div>
+                  </div>
+                  <span className="mydash-performer-stat">39%</span>
+                </div>
+
+                <div className="mydash-performer-row">
+                  <div className="mydash-performer-left">
+                    <img
+                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces"
+                      alt="Mark Noil"
+                      className="mydash-performer-avatar"
+                    />
+                    <div className="mydash-performer-info">
+                      <h4 className="mydash-performer-name">Mark Noil</h4>
+                      <span className="mydash-performer-handle">@marknoil</span>
+                    </div>
+                  </div>
+                  <span className="mydash-performer-stat">18%</span>
+                </div>
+
+                <div className="mydash-performer-row">
+                  <div className="mydash-performer-left">
+                    <img
+                      src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces"
+                      alt="Nenci Villy"
+                      className="mydash-performer-avatar"
+                    />
+                    <div className="mydash-performer-info">
+                      <h4 className="mydash-performer-name">Nenci Villy</h4>
+                      <span className="mydash-performer-handle">@nencivilly</span>
+                    </div>
+                  </div>
+                  <span className="mydash-performer-stat">25%</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px' }}>
+                <Link to={getPath('/team')} className="mydash-view-more-link">
+                  View More ›
+                </Link>
+
+                {isAdmin && (
+                  <Link
+                    to={getPath('/integrations')}
+                    style={{ fontSize: '11.5px', color: '#4f46e5', textDecoration: 'none', fontWeight: 700 }}
+                  >
+                    {githubRepos.length > 0 ? '✓ GitHub Synced' : '+ Connect GitHub'}
+                  </Link>
+                )}
+              </div>
+            </div>
           </div>
-        </section>
 
-        {/* ── 5. TASKS HEADER & VIEW SWITCHER ── */}
-        <section style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
-              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: 'var(--text)' }}>
-                {isAdmin ? (adminScope === 'team' ? 'Team Deadlines' : 'My Assigned Tasks') : 'My Assigned Tasks'}
-              </h2>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12.5px', color: 'var(--muted-2, #A3A5C2)' }}>
-                {sortedTasks.length} total
-              </span>
+          {/* ── BOTTOM SHELF: CHANNELS (MINT ROUNDED CONTAINER #E3F4EF) ── */}
+          <div className="mydash-channels-shelf">
+            <div className="mydash-channels-intro">
+              <h3 className="mydash-channels-title">Channels</h3>
+              <p className="mydash-channels-desc">
+                Your channels statistics for 1 week period.
+              </p>
             </div>
 
-            {/* If Admin, show Whole Team / Assigned to Me toggle */}
-            {isAdmin && (
-              <div style={{
-                display: 'inline-flex',
-                gap: '2px',
-                background: 'var(--surface-2, #EEF0F9)',
-                padding: '3px',
-                borderRadius: '8px',
-                border: '1px solid var(--border-soft, #E2E8F0)'
-              }}>
+            <div className="mydash-channels-deck">
+              {/* Card 1: Dribbble / Active */}
+              <div className="mydash-card-pill" onClick={scrollToDeliverables} title="View Active Tasks">
+                <div className="mydash-icon-circle mydash-icon-pink">⚽</div>
+                <h4 className="mydash-card-name">Dribble</h4>
+                <p className="mydash-card-handle">@grantart</p>
+                <span className="mydash-card-stat">+2 %</span>
+              </div>
+
+              {/* Card 2: Behance / Overdue */}
+              <div className="mydash-card-pill" onClick={scrollToDeliverables} title="View Overdue Tasks">
+                <div className="mydash-icon-circle mydash-icon-blue">Bē</div>
+                <h4 className="mydash-card-name">Bahance</h4>
+                <p className="mydash-card-handle">@grantart</p>
+                <span className="mydash-card-stat" style={{ color: stats.overdue > 0 ? '#ef4444' : '#111827' }}>
+                  {stats.overdue > 0 ? `-${stats.overdue}%` : '-7 %'}
+                </span>
+              </div>
+
+              {/* Card 3: Instagram / Due Soon */}
+              <div className="mydash-card-pill" onClick={scrollToDeliverables} title="View Due Soon Tasks">
+                <div className="mydash-icon-circle mydash-icon-orange">📷</div>
+                <h4 className="mydash-card-name">Instagram</h4>
+                <p className="mydash-card-handle">@robertgrant</p>
+                <span className="mydash-card-stat">+4 %</span>
+              </div>
+
+              {/* Card 4: Pinterest / Completed */}
+              <div className="mydash-card-pill" onClick={scrollToDeliverables} title="View Completed Tasks">
+                <div className="mydash-icon-circle mydash-icon-red">P</div>
+                <h4 className="mydash-card-name">Pinterest</h4>
+                <p className="mydash-card-handle">@robertgrant</p>
+                <span className="mydash-card-stat">+2 %</span>
+              </div>
+
+              {/* Card 5: Full Stats Accent Pill */}
+              <button
+                type="button"
+                className="mydash-full-stats-card"
+                onClick={scrollToDeliverables}
+                title="Scroll to Deliverables Board"
+              >
+                <div className="mydash-full-stats-title">Full<br />Stats</div>
+                <div className="mydash-full-stats-icon">›</div>
+              </button>
+            </div>
+          </div>
+
+          {/* ── DELIVERABLES / TASKS SECTION (KANBAN & LIST) ── */}
+          <section id="deliverables-board" className="mydash-deliverables-section">
+            <div className="mydash-deliv-header">
+              <div className="mydash-deliv-title-group">
+                <h2 className="mydash-deliv-title">
+                  {isAdmin ? (adminScope === 'team' ? 'Team Deadlines' : 'My Assigned Tasks') : 'My Assigned Tasks'}
+                </h2>
+                <span className="mydash-deliv-count">{sortedTasks.length} total</span>
+
+                {isAdmin && (
+                  <div className="mydash-scope-toggle">
+                    <button
+                      type="button"
+                      className={`mydash-scope-btn${adminScope === 'team' ? ' active' : ''}`}
+                      onClick={() => setAdminScope('team')}
+                    >
+                      Whole Team
+                    </button>
+                    <button
+                      type="button"
+                      className={`mydash-scope-btn${adminScope === 'mine' ? ' active' : ''}`}
+                      onClick={() => setAdminScope('mine')}
+                    >
+                      Assigned to Me
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Kanban vs List Switcher */}
+              <div className="mydash-view-mode-toggle">
                 <button
                   type="button"
-                  onClick={() => setAdminScope('team')}
-                  style={{
-                    border: 'none',
-                    background: adminScope === 'team' ? '#FFFFFF' : 'transparent',
-                    color: adminScope === 'team' ? 'var(--accent, #4F46E5)' : 'var(--muted, #64748B)',
-                    fontWeight: adminScope === 'team' ? 700 : 500,
-                    fontSize: '11.5px',
-                    padding: '3px 10px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    boxShadow: adminScope === 'team' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                    transition: 'all 0.15s ease'
-                  }}
+                  className={`mydash-view-btn${viewMode === 'board' ? ' active' : ''}`}
+                  onClick={() => setViewMode('board')}
                 >
-                  Whole Team
+                  <span>☷</span> Kanban
                 </button>
                 <button
                   type="button"
-                  onClick={() => setAdminScope('mine')}
-                  style={{
-                    border: 'none',
-                    background: adminScope === 'mine' ? '#FFFFFF' : 'transparent',
-                    color: adminScope === 'mine' ? 'var(--accent, #4F46E5)' : 'var(--muted, #64748B)',
-                    fontWeight: adminScope === 'mine' ? 700 : 500,
-                    fontSize: '11.5px',
-                    padding: '3px 10px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    boxShadow: adminScope === 'mine' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                    transition: 'all 0.15s ease'
-                  }}
+                  className={`mydash-view-btn${viewMode === 'list' ? ' active' : ''}`}
+                  onClick={() => setViewMode('list')}
                 >
-                  Assigned to Me
+                  <span>☰</span> List
                 </button>
               </div>
-            )}
-          </div>
-
-          {/* View toggle pill */}
-          <div className="dash-view-toggle">
-            <button
-              type="button"
-              className={`dash-view-btn${viewMode === 'board' ? ' active' : ''}`}
-              onClick={() => setViewMode('board')}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-            >
-              <span>☷</span> Kanban
-            </button>
-            <button
-              type="button"
-              className={`dash-view-btn${viewMode === 'list' ? ' active' : ''}`}
-              onClick={() => setViewMode('list')}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-            >
-              <span>☰</span> List
-            </button>
-          </div>
-        </section>
-
-        {/* Active Filter Banner when velocity bar clicked */}
-        {selectedPeriodFilter && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            background: 'rgba(79, 70, 229, 0.08)',
-            border: '1px solid rgba(79, 70, 229, 0.25)',
-            borderRadius: '10px',
-            padding: '10px 16px',
-            marginBottom: '16px',
-            fontSize: '13px',
-            color: 'var(--accent, #4F46E5)',
-            fontWeight: 600
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>🔍 Filtered by Velocity Timeline:</span>
-              <span style={{ color: 'var(--text)', fontWeight: 700 }}>{selectedPeriodFilter.title}</span>
-              <span style={{
-                background: '#4F46E5',
-                color: '#FFFFFF',
-                fontSize: '11px',
-                padding: '2px 8px',
-                borderRadius: '100px'
-              }}>
-                {sortedTasks.length} task{sortedTasks.length === 1 ? '' : 's'}
-              </span>
             </div>
-            <button
-              type="button"
-              onClick={() => setSelectedPeriodFilter(null)}
-              style={{
-                background: 'rgba(79, 70, 229, 0.15)',
-                border: 'none',
-                color: 'var(--accent, #4F46E5)',
-                cursor: 'pointer',
-                fontWeight: 700,
-                fontSize: '12px',
-                padding: '4px 10px',
-                borderRadius: '6px'
-              }}
-            >
-              Clear Filter ✕
-            </button>
-          </div>
-        )}
 
-        {/* ── 6. 5 KANBAN COLUMNS WITH REAL DATA ── */}
-        {viewMode === 'board' ? (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(5, minmax(270px, 1fr))',
-            gap: '14px',
-            alignItems: 'start',
-            overflowX: 'auto',
-            paddingBottom: '12px',
-            WebkitOverflowScrolling: 'touch'
-          }}>
-            {kanbanColumns.map(col => (
-              <div key={col.id} className="dash-surface-card" style={{ overflow: 'hidden' }}>
-                {/* Header */}
-                <div style={{
-                  padding: '16px 18px 14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  borderBottom: '1px solid var(--border-soft)'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: col.dotColor, flexShrink: 0 }} />
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>{col.title}</span>
-                  </div>
+            {/* Active Timeline Filter banner if clicked */}
+            {selectedPeriodFilter && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: 'rgba(244, 91, 86, 0.08)',
+                border: '1px solid rgba(244, 91, 86, 0.25)',
+                borderRadius: '12px',
+                padding: '10px 18px',
+                fontSize: '13px',
+                color: '#f45b56',
+                fontWeight: 600
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>🔍 Filtered by Activity Period:</span>
+                  <span style={{ color: '#111827', fontWeight: 700 }}>{selectedPeriodFilter.title}</span>
                   <span style={{
-                    fontFamily: 'var(--font-mono)',
+                    background: '#f45b56',
+                    color: '#ffffff',
                     fontSize: '11px',
-                    fontWeight: 600,
-                    background: 'var(--surface-2)',
-                    color: 'var(--muted)',
                     padding: '2px 8px',
-                    borderRadius: '100px',
-                    border: '1px solid var(--border-soft)'
+                    borderRadius: '100px'
                   }}>
-                    {col.items.length}
+                    {sortedTasks.length} task{sortedTasks.length === 1 ? '' : 's'}
                   </span>
                 </div>
-
-                {/* Body with real tasks or empty state */}
-                <div style={{
-                  padding: '14px 10px',
-                  minHeight: '160px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: col.items.length === 0 ? 'center' : 'stretch',
-                  justifyContent: col.items.length === 0 ? 'center' : 'flex-start',
-                  textAlign: col.items.length === 0 ? 'center' : 'left'
-                }}>
-                  {col.items.length === 0 ? (
-                    <div>
-                      <div style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 500 }}>
-                        {col.emptyText}
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {col.items.map(d => (
-                        <DeadlineCard
-                          key={d.id}
-                          deadline={d}
-                          currentUser={user}
-                          teamId={d.workspaceId || 'default-team'}
-                          sprintLocked={!!(d.sprintId && activeSprint?.id === d.sprintId && activeSprint?.locked)}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPeriodFilter(null)}
+                  style={{
+                    background: 'rgba(244, 91, 86, 0.15)',
+                    border: 'none',
+                    color: '#f45b56',
+                    cursor: 'pointer',
+                    fontWeight: 700,
+                    fontSize: '12px',
+                    padding: '4px 10px',
+                    borderRadius: '6px'
+                  }}
+                >
+                  Clear Filter ✕
+                </button>
               </div>
-            ))}
-          </div>
-        ) : (
-          <section className="dash-list-view">
-            {sortedTasks.length === 0 ? (
-              <div className="dash-empty-list">
-                {isAdmin && adminScope === 'team' ? 'No deadlines in workspace yet.' : 'No tasks assigned to you yet.'}
+            )}
+
+            {/* View Render: Kanban or List */}
+            {viewMode === 'board' ? (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(5, minmax(260px, 1fr))',
+                gap: '14px',
+                alignItems: 'start',
+                overflowX: 'auto',
+                paddingBottom: '12px',
+                WebkitOverflowScrolling: 'touch'
+              }}>
+                {kanbanColumns.map(col => (
+                  <div key={col.id} className="dash-surface-card" style={{ overflow: 'hidden' }}>
+                    <div style={{
+                      padding: '16px 18px 14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      borderBottom: '1px solid var(--border-soft)'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: col.dotColor, flexShrink: 0 }} />
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>{col.title}</span>
+                      </div>
+                      <span style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        background: 'var(--surface-2)',
+                        color: 'var(--muted)',
+                        padding: '2px 8px',
+                        borderRadius: '100px',
+                        border: '1px solid var(--border-soft)'
+                      }}>
+                        {col.items.length}
+                      </span>
+                    </div>
+
+                    <div style={{
+                      padding: '14px 10px',
+                      minHeight: '160px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: col.items.length === 0 ? 'center' : 'stretch',
+                      justifyContent: col.items.length === 0 ? 'center' : 'flex-start',
+                      textAlign: col.items.length === 0 ? 'center' : 'left'
+                    }}>
+                      {col.items.length === 0 ? (
+                        <div style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 500 }}>
+                          {col.emptyText}
+                        </div>
+                      ) : (
+                        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          {col.items.map(d => (
+                            <DeadlineCard
+                              key={d.id}
+                              deadline={d}
+                              currentUser={user}
+                              teamId={d.workspaceId || 'default-team'}
+                              sprintLocked={!!(d.sprintId && activeSprint?.id === d.sprintId && activeSprint?.locked)}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
-              sortedTasks.map(d => (
-                <DeadlineCard
-                  key={d.id}
-                  deadline={d}
-                  currentUser={user}
-                  teamId={d.workspaceId || 'default-team'}
-                  sprintLocked={!!(d.sprintId && activeSprint?.id === d.sprintId && activeSprint?.locked)}
-                />
-              ))
+              <section className="dash-list-view">
+                {sortedTasks.length === 0 ? (
+                  <div className="dash-empty-list">
+                    {isAdmin && adminScope === 'team' ? 'No deadlines in workspace yet.' : 'No tasks assigned to you yet.'}
+                  </div>
+                ) : (
+                  sortedTasks.map(d => (
+                    <DeadlineCard
+                      key={d.id}
+                      deadline={d}
+                      currentUser={user}
+                      teamId={d.workspaceId || 'default-team'}
+                      sprintLocked={!!(d.sprintId && activeSprint?.id === d.sprintId && activeSprint?.locked)}
+                    />
+                  ))
+                )}
+              </section>
+            )}
+
+            {hasMore && (
+              <div className="dash-load-more" style={{ marginTop: '24px' }}>
+                <button
+                  className="btn-ghost btn-sm"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  style={{ borderRadius: '8px', border: '1px solid var(--border-soft)' }}
+                >
+                  {loadingMore ? 'Loading…' : 'Load more'}
+                </button>
+              </div>
             )}
           </section>
-        )}
-
-        {hasMore && (
-          <div className="dash-load-more" style={{ marginTop: '24px' }}>
-            <button
-              className="btn-ghost btn-sm"
-              onClick={loadMore}
-              disabled={loadingMore}
-              style={{ borderRadius: '8px', border: '1px solid var(--border-soft)' }}
-            >
-              {loadingMore ? 'Loading…' : 'Load more'}
-            </button>
-          </div>
-        )}
-      </main>
+        </main>
+      </div>
 
       {/* New Deadline / Task Modal */}
       {showNewModal && (
@@ -956,7 +989,7 @@ export default function MyDashboard() {
         />
       )}
 
-      {/* Tour Modal */}
+      {/* Site Tour */}
       {showTour && (
         <SiteTour currentUser={user} onFinish={() => setShowTour(false)} />
       )}
