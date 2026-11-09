@@ -4,6 +4,7 @@ import { useAuth } from '../lib/AuthContext'
 import { useWorkspace } from '../lib/WorkspaceContext'
 import { subscribeUserWorkspaces } from '../lib/workspaces'
 import FeedbackModal from './FeedbackModal'
+import './NavTabs.css'
 
 function iconProps(extra) { return { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', ...extra } }
 function SettingsIcon() { return <svg {...iconProps()}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg> }
@@ -77,6 +78,7 @@ export default function UserMenu() {
       <div className="nav-more-wrap" ref={wrapRef} style={{ position: 'relative' }}>
         <button
           type="button"
+          className="user-avatar-btn"
           style={{
             padding: 0,
             borderRadius: '50%',
@@ -85,14 +87,15 @@ export default function UserMenu() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'var(--accent, #4F46E5)',
+            background: '#4F46E5',
             color: '#FFFFFF',
             border: 'none',
             fontSize: '11.5px',
             fontWeight: 700,
             cursor: 'pointer',
-            boxShadow: '0 0 0 2px var(--surface), 0 0 0 4px rgba(79, 70, 229, 0.2)',
-            transition: 'box-shadow 0.2s'
+            boxShadow: '0 0 0 2px #FFFFFF, 0 0 0 4px rgba(79, 70, 229, 0.2)',
+            transition: 'box-shadow 0.2s',
+            flexShrink: 0
           }}
           onClick={() => setOpen(o => !o)}
           aria-expanded={open}
@@ -102,10 +105,10 @@ export default function UserMenu() {
         </button>
 
         {open && (
-          <div className="nav-more-menu" role="menu" style={{ right: 0, minWidth: '200px', zIndex: 50, background: 'var(--surface, #FFFFFF)', borderRadius: '12px', border: '1px solid var(--border-soft)', boxShadow: '0 8px 24px rgba(30, 32, 80, 0.12)', padding: '6px' }}>
-            <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-soft)', marginBottom: '4px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text, #1C1D2B)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.displayName || 'User'}</div>
-              <div style={{ fontSize: '11px', color: 'var(--muted, #6E7091)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</div>
+          <div className="nav-more-menu" role="menu" style={{ right: 0, minWidth: '210px', zIndex: 50, background: '#FFFFFF', borderRadius: '12px', border: '1px solid #EAECF6', boxShadow: '0 8px 24px rgba(30, 32, 80, 0.12)', padding: '6px' }}>
+            <div style={{ padding: '8px 12px', borderBottom: '1px solid #EAECF6', marginBottom: '4px' }}>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: '#1C1D2B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.displayName || 'User'}</div>
+              <div style={{ fontSize: '11px', color: '#6E7091', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</div>
             </div>
             
             <NavLink to={getPath('/profile')} className={({ isActive }) => `nav-more-item${isActive ? ' nav-more-item--active' : ''}`} onClick={() => setOpen(false)}>
@@ -128,12 +131,12 @@ export default function UserMenu() {
               <SwitchIcon /> Switch / Create Workspace
             </a>
 
-            <div style={{ margin: '4px 0', borderTop: '1px solid var(--border-soft)' }} />
+            <div style={{ margin: '4px 0', borderTop: '1px solid #EAECF6' }} />
 
             <button 
-              className="nav-more-item" 
+              className="nav-more-item nav-more-item--danger" 
               onClick={() => { setOpen(false); logout(); }}
-              style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--red, #D14343)' }}
+              style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
             >
               <LogOutIcon /> Sign out
             </button>
