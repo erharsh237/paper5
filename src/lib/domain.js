@@ -41,13 +41,14 @@ export const getDomainConfig = () => {
   }
 }
 
+export const APP_BASE_URL = 'https://app.paper5.co'
+
 /**
- * Returns full or relative URL for App routes (app.paper5.com)
- * Guaranteed to stay on the same origin to prevent open external redirects.
+ * Returns full URL for App routes (app.paper5.co)
  */
 export const getAppUrl = (path = '') => {
   const cleanPath = path.startsWith('/') ? path : `/${path}`
-  return cleanPath
+  return `${APP_BASE_URL}${cleanPath}`
 }
 
 /**

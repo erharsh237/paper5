@@ -104,17 +104,11 @@ export default function Landing() {
 
   const handleGetStarted = (planId = 'team') => {
     const encryptedToken = encryptPlanParam(planId)
-    localStorage.setItem('sprintos_selected_plan', planId)
-    if (user) {
-      navigate('/workspace')
-    } else {
-      const target = getAppUrl(`/signup?p=${encryptedToken}`)
-      if (target.startsWith('http')) {
-        safeRedirect(target)
-      } else {
-        navigate(target)
-      }
-    }
+    try {
+      localStorage.setItem('sprintos_selected_plan', planId)
+    } catch (_) {}
+    const target = getAppUrl(`/signup?p=${encryptedToken}`)
+    window.open(target, '_blank', 'noopener,noreferrer')
   }
 
   const handlePlanClick = (planId) => {

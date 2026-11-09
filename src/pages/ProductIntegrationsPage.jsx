@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getAppUrl } from '../lib/domain'
 import MarketingLayout from '../components/MarketingLayout'
 import SEOHead from '../components/SEOHead'
 import { Zap, FolderGit2, Rocket, MessageSquare, Megaphone, Calendar } from 'lucide-react'
@@ -82,7 +83,7 @@ export default function ProductIntegrationsPage() {
                 </ul>
               </div>
               <div>
-                <button className="btn-primary" style={{ width: 'fit-content' }} onClick={() => navigate('/signup')}>
+                <button className="btn-primary" style={{ width: 'fit-content' }} onClick={() => window.open(getAppUrl('/signup'), '_blank', 'noopener,noreferrer')}>
                   Provision 1-Click API Key
                 </button>
               </div>

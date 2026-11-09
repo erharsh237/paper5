@@ -73,6 +73,33 @@ import { useLivePresenceTracker } from './hooks/useLivePresence'
 import { Cardio } from 'ldrs/react'
 import 'ldrs/react/Cardio.css'
 
+function WorkspaceSubpageLoader() {
+  return (
+    <div style={{
+      minHeight: '60vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '10px',
+      color: '#64748b',
+      fontFamily: 'sans-serif',
+      fontSize: '13px',
+      fontWeight: 600
+    }}>
+      <div style={{
+        width: '24px',
+        height: '24px',
+        border: '2.5px solid #e2e8f0',
+        borderTopColor: '#4f46e5',
+        borderRadius: '50%',
+        animation: 'spin 0.6s linear infinite'
+      }} />
+      <span>Loading...</span>
+      <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+    </div>
+  )
+}
+
 function PageLoading() {
   return (
     <div style={{
@@ -316,17 +343,19 @@ export default function App() {
             requireAuthAndVerification(
               <WorkspaceProvider>
                 <WorkspaceGuard>
-                  <Routes>
-                    <Route path="" element={<MyDashboard />} />
-                    <Route path="workflow" element={<WorkflowPage />} />
-                    <Route path="team" element={<Dashboard />} />
-                    <Route path="meeting" element={<Meeting />} />
-                    <Route path="analytics" element={<Analytics />} />
-                    <Route path="integrations" element={<Integrations />} />
-                    <Route path="settings" element={<Settings />} />
-                    <Route path="profile" element={<Profile />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
+                  <Suspense fallback={<WorkspaceSubpageLoader />}>
+                    <Routes>
+                      <Route path="" element={<MyDashboard />} />
+                      <Route path="workflow" element={<WorkflowPage />} />
+                      <Route path="team" element={<Dashboard />} />
+                      <Route path="meeting" element={<Meeting />} />
+                      <Route path="analytics" element={<Analytics />} />
+                      <Route path="integrations" element={<Integrations />} />
+                      <Route path="settings" element={<Settings />} />
+                      <Route path="profile" element={<Profile />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Suspense>
                 </WorkspaceGuard>
               </WorkspaceProvider>
             )

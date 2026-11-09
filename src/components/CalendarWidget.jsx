@@ -26,11 +26,14 @@ export default function CalendarWidget({ user, onSelectEvent, selectedEventId })
   const [calendarError, setCalendarError] = useState('')
 
   useEffect(() => {
-    loadGis().catch(() => {})
+    // Only load GIS script if Google Calendar is actually configured with a valid token
+    if (googleCalendar.isConfigured(config) && googleCalendar.actions.hasValidToken()) {
+      loadGis().catch(() => {})
+    }
     const unsub1 = subscribeIntegrationConfig(workspaceId, setConfig)
-    const unsub2 = subscribeIntegrationCredentials(workspaceId, user?.uid, setCredentials)
+    const unsub2 = subscribeIntegrationCredentials(workspaceId, user?.id || user?.uid, setCredentials)
     return () => { unsub1(); unsub2() }
-  }, [workspaceId, user?.uid])
+  }, [workspaceId, user?.id, user?.uid, config])
 
   useEffect(() => {
     if (googleCalendar.isConfigured(config) && googleCalendar.actions.hasValidToken() && calendarEvents.length === 0 && !fetchingEvents) {
@@ -42,8 +45,8 @@ export default function CalendarWidget({ user, onSelectEvent, selectedEventId })
     setFetchingEvents(true)
     setCalendarError('')
     try {
+      await loadGis().catch(() => {})
       if (!googleCalendar.isConfigured(config)) {
-        await new Promise(r => setTimeout(r, 1000))
         setCalendarEvents([
           { id: 'mock-1', summary: 'Sprint Planning', start: { dateTime: new Date(Date.now() + 2 * 3600000).toISOString() }, end: { dateTime: new Date(Date.now() + 3 * 3600000).toISOString() } },
           { id: 'mock-2', summary: 'Weekly Engineering Sync', start: { dateTime: new Date(Date.now() + 26 * 3600000).toISOString() }, end: { dateTime: new Date(Date.now() + 27 * 3600000).toISOString() } },

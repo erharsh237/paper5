@@ -17,11 +17,30 @@ const PRIMARY = [
   { to: '/analytics', label: 'Analytics', icon: AnalyticsIcon },
 ]
 
+// Preload route chunks into browser memory
+const prefetchRoute = (to) => {
+  if (to === '/meeting') import('../pages/Meeting')
+  else if (to === '/analytics') import('../pages/Analytics')
+  else if (to === '/workflow') import('../pages/WorkflowPage')
+  else if (to === '/team') import('../pages/Dashboard')
+}
+
 export default function NavTabs() {
   const { workspaceId } = useWorkspace()
   const location = useLocation()
   
   const getPath = (path) => `/${workspaceId}${path === '/' ? '' : path}`
+
+  useEffect(() => {
+    // Eagerly prefetch workspace subpages in background so opening Meeting or Analytics is instantaneous
+    const timer = setTimeout(() => {
+      import('../pages/Meeting')
+      import('../pages/Analytics')
+      import('../pages/WorkflowPage')
+      import('../pages/Dashboard')
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [])
 
   return (
     <nav className="nav-tabs">
@@ -30,6 +49,8 @@ export default function NavTabs() {
           key={item.to}
           to={getPath(item.to)}
           end={item.end}
+          onMouseEnter={() => prefetchRoute(item.to)}
+          onTouchStart={() => prefetchRoute(item.to)}
           className={({ isActive }) => `nav-tab${isActive ? ' nav-tab--active' : ''}`}
         >
           <item.icon />

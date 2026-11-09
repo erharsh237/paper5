@@ -20,12 +20,7 @@ export default function MarketingFooter({ hideCTA = false }) {
   }
 
   const handleGetStarted = () => {
-    const target = getAppUrl('/signup')
-    if (target.startsWith('http')) {
-      safeRedirect(target)
-    } else {
-      navigate(target)
-    }
+    window.open(getAppUrl('/signup'), '_blank', 'noopener,noreferrer')
   }
 
   return (

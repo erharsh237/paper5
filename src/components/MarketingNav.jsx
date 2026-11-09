@@ -21,21 +21,11 @@ export default function MarketingNav() {
   const location = useLocation()
 
   const handleSignIn = () => {
-    const target = getAppUrl('/login')
-    if (target.startsWith('http')) {
-      safeRedirect(target)
-    } else {
-      navigate(target)
-    }
+    window.open(getAppUrl('/login'), '_blank', 'noopener,noreferrer')
   }
 
   const handleGetStarted = () => {
-    const target = getAppUrl('/signup')
-    if (target.startsWith('http')) {
-      safeRedirect(target)
-    } else {
-      navigate(target)
-    }
+    window.open(getAppUrl('/signup'), '_blank', 'noopener,noreferrer')
   }
 
   const handleHomeClick = (e) => {

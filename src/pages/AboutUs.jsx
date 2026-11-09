@@ -1,5 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getAppUrl } from '../lib/domain'
 import MarketingLayout from '../components/MarketingLayout'
 import SEOHead from '../components/SEOHead'
 import { ShieldCheck, Zap, Code2, LineChart, Lock } from 'lucide-react'
@@ -146,7 +147,7 @@ export default function AboutUs() {
           <p className="security-desc">
             Security is built into the foundation of Paper5. Powered by TLS 1.3 transit encryption, AES-256 data protection at rest, strict PostgreSQL Row-Level Security (RLS) tenant isolation, enforced email verification, and optional Multi-Factor Authentication (2FA).
           </p>
-          <button className="btn-primary" style={{ padding: '12px 28px', fontSize: '15px' }} onClick={() => navigate('/signup')}>
+          <button className="btn-primary" style={{ padding: '12px 28px', fontSize: '15px' }} onClick={() => window.open(getAppUrl('/signup'), '_blank', 'noopener,noreferrer')}>
             Start Free Workspace
           </button>
         </section>
