@@ -69,3 +69,11 @@ wrangler.jsonc
 .vercel
 .vercel/project.json
 .private/
+
+# BLA Hardening Artifacts & Logs
+.bla-hardened/
+.blarc
+bla.config.json
+*.bla.log
+bla-*.json
+

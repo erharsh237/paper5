@@ -1,4 +1,5 @@
 {
+  "outputDirectory": ".bla-hardened/dist",
   "redirects": [
     {
       "source": "/:path*",

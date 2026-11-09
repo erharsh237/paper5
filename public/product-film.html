@@ -1,0 +1,3522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sprint Os — Apple Product Film (60 FPS Locked)</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: #f1f5f9;
+      color: #09090b;
+      width: 100vw;
+      height: 100vh;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      margin: 0;
+      overflow: hidden; /* ZERO WINDOW SCROLLBARS */
+    }
+
+    /* =========================================================================
+       DYNAMIC AUTO-SCALING SHOWCASE STAGE:
+       Ensures the entire device (phone or laptop) fits 100% inside any frame/viewport!
+       ========================================================================= */
+    .device-stage-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      perspective: 1200px;
+      transform-origin: center center;
+      transition: transform 650ms cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: transform;
+      margin-bottom: 24px;
+    }
+
+    /* DYNAMIC HARDWARE CHASSIS:
+       Phone in Acts 1-5 (390x780 portrait),
+       Smoothly morphs into Apple MacBook Pro (960x580) in Act 6! */
+    .device-chassis {
+      position: relative;
+      width: 390px;
+      height: 780px;
+      background: #ffffff;
+      border-radius: 54px;
+      box-shadow: 
+        0 0 0 10px #f8fafc,
+        0 0 0 13px #e2e8f0,
+        0 30px 70px -15px rgba(0, 0, 0, 0.12),
+        0 12px 28px -6px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transform: translateZ(0);
+      will-change: width, height, border-radius, box-shadow;
+      transition: 
+        width 850ms cubic-bezier(0.16, 1, 0.3, 1),
+        height 850ms cubic-bezier(0.16, 1, 0.3, 1),
+        border-radius 750ms cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 750ms ease;
+      z-index: 20;
+    }
+
+    /* MacBook Pro Screen Chassis */
+    .device-chassis.is-laptop-mode {
+      width: 960px;
+      height: 580px;
+      border-radius: 18px;
+      box-shadow: 
+        0 0 0 6px #0f172a,
+        0 0 0 8px #cbd5e1,
+        0 35px 80px -15px rgba(0, 0, 0, 0.28),
+        0 12px 30px -8px rgba(0, 0, 0, 0.12);
+    }
+
+    /* MacBook Pro Unibody Aluminum Base Deck */
+    .macbook-base-deck {
+      position: relative;
+      width: 1020px;
+      height: 18px;
+      background: linear-gradient(180deg, #e2e8f0 0%, #cbd5e1 45%, #94a3b8 100%);
+      border-radius: 2px 2px 14px 14px;
+      box-shadow: 
+        0 24px 60px -8px rgba(0, 0, 0, 0.28),
+        0 10px 20px -4px rgba(0, 0, 0, 0.12),
+        inset 0 1px 1px rgba(255, 255, 255, 0.8);
+      margin-top: -2px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      opacity: 0;
+      transform: translateY(20px) scaleX(0.35);
+      pointer-events: none;
+      transition: transform 850ms cubic-bezier(0.16, 1, 0.3, 1), opacity 550ms ease;
+      will-change: transform, opacity;
+    }
+    .device-chassis.is-laptop-mode + .macbook-base-deck {
+      opacity: 1;
+      transform: translateY(0) scaleX(1);
+      pointer-events: auto;
+    }
+
+    .macbook-hinge-slot {
+      width: 200px;
+      height: 4px;
+      background: #0f172a;
+      border-radius: 0 0 4px 4px;
+    }
+    .macbook-deck-notch {
+      width: 95px;
+      height: 4px;
+      background: #94a3b8;
+      border-radius: 0 0 5px 5px;
+      margin-top: 1px;
+    }
+
+    /* Dynamic Island (Phone) & Camera Notch (MacBook Pro) */
+    .dynamic-island {
+      position: absolute;
+      top: 13px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 122px;
+      height: 34px;
+      background: #000000;
+      border-radius: 20px;
+      z-index: 70;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 11px;
+      transition: all 750ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .island-camera {
+      width: 10px;
+      height: 10px;
+      background: #0f172a;
+      border-radius: 50%;
+      border: 1px solid #1e293b;
+    }
+    .island-sensor {
+      width: 8px;
+      height: 8px;
+      background: #172554;
+      border-radius: 50%;
+    }
+
+    /* MacBook Camera Notch in Laptop Mode (Flush with top bezel, completely clear of address bar) */
+    .device-chassis.is-laptop-mode .dynamic-island {
+      top: 0px;
+      width: 110px;
+      height: 15px;
+      border-radius: 0 0 8px 8px;
+      padding: 0 14px;
+    }
+
+    /* macOS Safari Browser Window Bar (Appears on Laptop Mode) */
+    .macos-browser-bar {
+      height: 46px;
+      padding-top: 10px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-left: 16px;
+      padding-right: 16px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-10px);
+      transition: opacity 400ms ease 250ms, transform 400ms cubic-bezier(0.16, 1, 0.3, 1) 250ms;
+      shrink: 0;
+      z-index: 65;
+    }
+    .device-chassis.is-laptop-mode .macos-browser-bar {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+    .device-chassis.is-finale-mode .macos-browser-bar {
+      opacity: 0 !important;
+      height: 0px !important;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      border-bottom: none !important;
+      transform: translateY(-16px) !important;
+      pointer-events: none !important;
+    }
+    .macos-traffic-dots {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .dot-traffic {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+    .dot-red { background: #ff5f56; border: 1px solid #e0443e; }
+    .dot-yellow { background: #ffbd2e; border: 1px solid #dea123; }
+    .dot-green { background: #27c93f; border: 1px solid #1aab29; }
+    
+    .macos-url-pill {
+      display: flex;
+      align-items: center;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 7px;
+      padding: 3px 14px;
+      font-size: 11px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+
+    /* Screen Inner Container */
+    .phone-screen {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      background: #ffffff;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transform-origin: center center;
+      transition: transform 650ms cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: transform;
+    }
+
+    /* ================= ACT 1: OPENING STAGE ================= */
+    .opening-stage {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 36px 28px;
+      z-index: 20;
+      transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1), opacity 500ms ease, filter 500ms ease;
+      will-change: transform, opacity, filter;
+    }
+
+    .assembled-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .word-token {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      color: #09090b;
+      line-height: 1.15;
+      display: inline-block;
+      will-change: transform, opacity;
+      transform-origin: center center;
+    }
+
+    .word-token.brand-companion {
+      color: #4f46e5;
+      position: relative;
+    }
+    .word-token.brand-companion::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: #4f46e5;
+      border-radius: 2px;
+    }
+
+    .word-token.brand-paper5 {
+      color: #10b981;
+      position: relative;
+    }
+    .word-token.brand-paper5::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: #10b981;
+      border-radius: 2px;
+    }
+
+    .word-token.is-hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    /* ================= ACT 2: REAL MOBILE WEBSITE STAGE ================= */
+    .website-stage {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      background: #ffffff;
+      z-index: 10;
+      opacity: 0;
+      transform: translate3d(0, 35px, 0) scale(0.96);
+      filter: blur(6px);
+      pointer-events: none;
+      transition: transform 720ms cubic-bezier(0.16, 1, 0.3, 1), opacity 520ms ease, filter 520ms ease;
+      will-change: transform, opacity, filter;
+    }
+
+    .website-stage.is-active {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+      filter: blur(0px);
+      pointer-events: auto;
+    }
+
+    /* Light Sweep Transition Flash */
+    .transition-light-flash {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.4) 50%, transparent 80%);
+      pointer-events: none;
+      z-index: 130;
+      opacity: 0;
+      transition: opacity 350ms ease-out;
+    }
+    .transition-light-flash.flash-active {
+      opacity: 0.95;
+      transition: opacity 120ms ease-in;
+    }
+
+    /* Light Grid Pattern Background */
+    .website-grid-bg {
+      position: absolute;
+      inset: 0;
+      background-size: 36px 36px;
+      background-image: 
+        linear-gradient(to right, rgba(0, 0, 0, 0.038) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 0, 0, 0.038) 1px, transparent 1px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Real Paper5 Mobile Header */
+    .paper5-header {
+      position: relative;
+      height: 60px;
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      z-index: 30;
+      margin-top: 26px;
+      transform: translate3d(0, -12px, 0);
+      opacity: 0;
+      transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1) 100ms, opacity 450ms ease 100ms;
+    }
+    .website-stage.is-active .paper5-header {
+      transform: translate3d(0, 0, 0);
+      opacity: 1;
+    }
+
+    /* Theme Toggle Pill */
+    .real-theme-toggle {
+      position: relative;
+      width: 56px;
+      height: 28px;
+      background: #f1f5f9;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5px;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+    .toggle-sun-icon {
+      color: #f59e0b;
+      width: 14px;
+      height: 14px;
+    }
+    .toggle-moon-icon {
+      color: #94a3b8;
+      width: 12px;
+      height: 12px;
+      opacity: 0.5;
+    }
+    .real-toggle-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 22px;
+      height: 22px;
+      background: #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Hamburger Menu Button */
+    .real-menu-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.15s ease, background-color 0.15s ease;
+      z-index: 45;
+    }
+    .real-menu-btn.btn-clicked {
+      transform: scale(0.88);
+      background-color: #f1f5f9;
+    }
+
+    /* Hero Section Content */
+    .website-hero-content {
+      position: relative;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 22px;
+      text-align: center;
+      z-index: 10;
+      transform: translate3d(0, 16px, 0);
+      opacity: 0;
+      transition: transform 650ms cubic-bezier(0.16, 1, 0.3, 1) 150ms, opacity 500ms ease 150ms;
+    }
+    .website-stage.is-active .website-hero-content {
+      transform: translate3d(0, 0, 0);
+      opacity: 1;
+    }
+
+    .hero-screenshot-headline {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1.12;
+      color: #09090b;
+    }
+
+    .btn-get-started {
+      width: 100%;
+      height: 48px;
+      background: #000000;
+      color: #ffffff;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+      transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+    .btn-get-started:hover {
+      background: #18181b;
+      transform: translateY(-1px);
+    }
+    .btn-get-started.btn-clicked {
+      transform: scale(0.96) !important;
+      background-color: #27272a !important;
+    }
+
+    .btn-explore {
+      width: 100%;
+      height: 46px;
+      background: #ffffff;
+      color: #09090b;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    }
+
+    /* ================= ACT 3 & 4: REAL MOBILE SIDEBAR DRAWER ================= */
+    .mobile-sidebar-drawer {
+      position: absolute;
+      inset: 0;
+      background: #ffffff;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate3d(100%, 0, 0);
+      transition: transform 550ms cubic-bezier(0.16, 1, 0.3, 1), opacity 400ms ease;
+      will-change: transform, opacity;
+      overflow-y: auto;
+    }
+    .mobile-sidebar-drawer.drawer-open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate3d(0, 0, 0);
+    }
+
+    .drawer-header {
+      height: 60px;
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      margin-top: 26px;
+      background: #ffffff;
+      shrink: 0;
+    }
+
+    .drawer-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 0 18px 24px 18px;
+    }
+
+    .drawer-row-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 2px;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 15px;
+      font-weight: 700;
+      color: #09090b;
+      letter-spacing: -0.01em;
+    }
+
+    .drawer-footer-actions {
+      margin-top: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn-drawer-signin {
+      width: 100%;
+      height: 46px;
+      background: #ffffff;
+      color: #09090b;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+
+    /* ================= ACT 5: REAL 'WELCOME BACK' 2FA SCREEN ================= */
+    .login-stage {
+      position: absolute;
+      inset: 0;
+      background: #f7f7f8;
+      z-index: 60;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 30px 18px 16px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate3d(0, 40px, 0) scale(0.96);
+      transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1), opacity 450ms ease;
+      will-change: transform, opacity;
+      overflow-y: auto;
+    }
+    .login-stage.is-active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 354px;
+      background: #ffffff;
+      border: 1px solid #eaeaea;
+      border-radius: 16px;
+      padding: 22px 20px;
+      box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.06);
+      text-align: center;
+      margin-top: 18px;
+    }
+
+    .auth-brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .auth-badge-icon {
+      width: 24px;
+      height: 24px;
+      background: #000000;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .auth-badge-dot {
+      width: 8px;
+      height: 8px;
+      background: #ffffff;
+      border-radius: 50%;
+    }
+
+    .login-title {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #09090b;
+      margin-bottom: 4px;
+    }
+    .login-subtitle-text {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 18px;
+      line-height: 1.4;
+    }
+
+    .login-field-group {
+      text-align: left;
+      margin-bottom: 12px;
+    }
+    .login-field-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .login-field-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .login-forgot-link {
+      font-size: 12px;
+      font-weight: 600;
+      color: #09090b;
+      text-decoration: none;
+    }
+
+    .login-field-input {
+      width: 100%;
+      height: 42px;
+      padding: 0 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 13.5px;
+      color: #0f172a;
+      background: #ffffff;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .login-field-input.input-focused {
+      border-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    }
+
+    .btn-send-otp {
+      width: 100%;
+      height: 42px;
+      background: #f1f5f9;
+      color: #94a3b8;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 10px 0 16px 0;
+      transition: all 0.2s ease;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-send-otp.is-ready {
+      background: #09090b;
+      color: #ffffff;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    }
+    .btn-send-otp.is-clicked {
+      transform: scale(0.96);
+      background: #18181b;
+    }
+    .btn-send-otp.is-sent {
+      background: #ecfdf5;
+      color: #059669;
+      border: 1px solid #10b981;
+    }
+
+    .otp-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .otp-section-title {
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .otp-show-digits {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .otp-boxes-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    .otp-box {
+      height: 46px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 19px;
+      font-weight: 800;
+      color: #09090b;
+      font-family: var(--font-sans);
+      transition: all 0.2s ease;
+    }
+    .otp-box.box-active {
+      border-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+      transform: scale(1.05);
+    }
+    .otp-box.box-filled {
+      border-color: #09090b;
+      background: #f8fafc;
+    }
+
+    .btn-verify-signin {
+      width: 100%;
+      height: 44px;
+      background: #f1f5f9;
+      color: #94a3b8;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s ease;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-verify-signin.is-ready {
+      background: #000000;
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+    }
+    .btn-verify-signin.is-clicked {
+      transform: scale(0.96) !important;
+      background: #18181b !important;
+    }
+
+    .login-bottom-row {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #64748b;
+    }
+    .login-signup-link {
+      font-weight: 800;
+      color: #09090b;
+      text-decoration: underline;
+    }
+
+    .login-turnstile-note {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: #64748b;
+      line-height: 1.45;
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid #f1f5f9;
+    }
+
+    /* iOS Gmail Push Notification Dropdown */
+    .gmail-push-notification {
+      position: absolute;
+      top: 54px;
+      left: 15px;
+      right: 15px;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 20px;
+      padding: 12px 14px;
+      box-shadow: 0 14px 34px -4px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.04);
+      z-index: 90;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transform: translate3d(0, -110px, 0);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 520ms cubic-bezier(0.16, 1, 0.3, 1), opacity 350ms ease;
+      will-change: transform, opacity;
+    }
+    .gmail-push-notification.notification-visible {
+      transform: translate3d(0, 0, 0);
+      opacity: 1;
+    }
+
+    .gmail-notif-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .gmail-app-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .gmail-m-icon {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      background: #ea4335;
+      color: #ffffff;
+      font-weight: 900;
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .gmail-app-name {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #334155;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+    .gmail-time-label {
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .gmail-notif-body {
+      font-size: 12px;
+      line-height: 1.4;
+      color: #0f172a;
+    }
+    .gmail-otp-highlight {
+      font-weight: 800;
+      font-family: var(--font-mono);
+      color: #059669;
+      background: #ecfdf5;
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid #10b981;
+      margin-left: 2px;
+    }
+
+    /* =========================================================================
+       ACT 6: AUTHENTIC PAPER5 DESKTOP DASHBOARD (From Screenshot)
+       ========================================================================= */
+    .dashboard-stage {
+      position: absolute;
+      inset: 0;
+      background: #f8fafc;
+      z-index: 60;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate3d(0, 30px, 0) scale(0.98);
+      filter: blur(4px);
+      transition: transform 750ms cubic-bezier(0.16, 1, 0.3, 1), opacity 500ms ease, filter 500ms ease;
+      will-change: transform, opacity, filter;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    .dashboard-stage.is-active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate3d(0, 0, 0) scale(1);
+      filter: blur(0);
+    }
+
+    /* Sticky Desktop Navigation */
+    .dash-sticky-nav {
+      position: sticky;
+      top: 0;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid #e2e8f0;
+      z-index: 50;
+      padding: 0 24px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      shrink: 0;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+      transform: translateY(-20px);
+      opacity: 0;
+      transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1) 200ms, opacity 450ms ease 200ms;
+    }
+    .dashboard-stage.is-active .dash-sticky-nav {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .dash-nav-pills {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav-pill-item {
+      padding: 5px 12px;
+      border-radius: 9999px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #64748b;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .nav-pill-item.is-active {
+      background: #f1f5f9;
+      color: #0f172a;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+
+    /* Dashboard Header Section */
+    .dash-main-container {
+      padding: 18px 24px 30px 24px;
+      max-width: 960px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .dash-header-block {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      transform: translateY(16px);
+      opacity: 0;
+      transition: transform 650ms cubic-bezier(0.16, 1, 0.3, 1) 280ms, opacity 500ms ease 280ms;
+    }
+    .dashboard-stage.is-active .dash-header-block {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .dash-badge-admin {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #eef2ff;
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      color: #4f46e5;
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      padding: 2.5px 8px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    /* 4-Card KPI Stat Strip */
+    .dash-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .kpi-tile-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 14px 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transform: translateY(20px);
+      opacity: 0;
+      transition: transform 650ms cubic-bezier(0.16, 1, 0.3, 1), opacity 500ms ease;
+    }
+    .dashboard-stage.is-active .kpi-tile-card:nth-child(1) { transition-delay: 360ms; transform: translateY(0); opacity: 1; }
+    .dashboard-stage.is-active .kpi-tile-card:nth-child(2) { transition-delay: 430ms; transform: translateY(0); opacity: 1; }
+    .dashboard-stage.is-active .kpi-tile-card:nth-child(3) { transition-delay: 500ms; transform: translateY(0); opacity: 1; }
+    .dashboard-stage.is-active .kpi-tile-card:nth-child(4) { transition-delay: 570ms; transform: translateY(0); opacity: 1; }
+
+    /* Two Column Lower Section */
+    .dash-two-column-row {
+      display: grid;
+      grid-template-columns: 1fr 290px;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .dash-surface-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+      padding: 16px 18px;
+      transform: translateY(22px);
+      opacity: 0;
+      transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1) 620ms, opacity 550ms ease 620ms;
+    }
+    .dashboard-stage.is-active .dash-surface-card {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Velocity Spline Animated Path */
+    .chart-spline-line {
+      stroke-dasharray: 850;
+      stroke-dashoffset: 850;
+      transition: stroke-dashoffset 1500ms cubic-bezier(0.16, 1, 0.3, 1) 800ms;
+    }
+    .dashboard-stage.is-active .chart-spline-line {
+      stroke-dashoffset: 0;
+    }
+
+    .chart-data-node {
+      transform: scale(0);
+      transform-origin: center;
+      transition: transform 450ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .dashboard-stage.is-active .chart-data-node {
+      transform: scale(1);
+    }
+    .dashboard-stage.is-active .chart-data-node:nth-child(1) { transition-delay: 850ms; }
+    .dashboard-stage.is-active .chart-data-node:nth-child(2) { transition-delay: 920ms; }
+    .dashboard-stage.is-active .chart-data-node:nth-child(3) { transition-delay: 990ms; }
+    .dashboard-stage.is-active .chart-data-node:nth-child(4) { transition-delay: 1060ms; }
+    .dashboard-stage.is-active .chart-data-node:nth-child(5) { transition-delay: 1130ms; }
+    .dashboard-stage.is-active .chart-data-node:nth-child(6) { transition-delay: 1200ms; }
+    .dashboard-stage.is-active .chart-data-node:nth-child(7) { transition-delay: 1270ms; }
+
+    /* Interactive Hover Tooltip on Chart */
+    .chart-hover-tooltip {
+      position: absolute;
+      top: 34px;
+      right: 48px;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 5px 10px;
+      border-radius: 7px;
+      font-size: 10.5px;
+      font-weight: 600;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 300ms ease, transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+      z-index: 40;
+    }
+    .chart-hover-tooltip.tooltip-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* =========================================================================
+       NEW DEADLINE MODAL (Completely fits screen with ZERO inner scrollbar!)
+       ========================================================================= */
+    .modal-backdrop-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.40);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 220ms ease;
+    }
+    .modal-backdrop-overlay.modal-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-window-card {
+      width: 100%;
+      max-width: 460px;
+      max-height: 86%;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      box-shadow: 
+        0 24px 60px -12px rgba(0, 0, 0, 0.28),
+        0 0 0 1px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: scale(0.95) translateY(10px);
+      transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms ease;
+      opacity: 0;
+    }
+    .modal-backdrop-overlay.modal-visible .modal-window-card {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+    }
+
+    .modal-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px 10px 18px;
+      border-bottom: 1px solid #f1f5f9;
+      flex-shrink: 0;
+    }
+    .modal-heading-text {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #09090b;
+    }
+    .modal-close-x-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      font-size: 14px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .modal-close-x-btn:hover {
+      background: #eef2ff;
+      color: #4f46e5;
+      border-color: #c7d2fe;
+    }
+    .modal-close-x-btn.btn-clicked {
+      transform: scale(0.88);
+      background-color: #e2e8f0;
+      color: #09090b;
+    }
+
+    .modal-body-scroll {
+      padding: 12px 18px 16px 18px;
+      overflow-y: auto !important;
+      overscroll-behavior: contain !important;
+      max-height: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      flex: 1;
+    }
+    .modal-body-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .modal-body-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .modal-body-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    .modal-body-scroll::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    .dashboard-stage.has-modal-open {
+      overflow-y: hidden !important;
+    }
+    .modal-field-block {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      text-align: left;
+    }
+    .modal-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .modal-text-input {
+      width: 100%;
+      height: 32px;
+      padding: 0 10px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 7px;
+      font-size: 12px;
+      color: #0f172a;
+      background: #ffffff;
+      outline: none;
+      transition: border-color 0.18s, box-shadow 0.18s;
+    }
+    .modal-text-input.input-focused, .modal-textarea-input.input-focused {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
+    }
+    .modal-textarea-input {
+      width: 100%;
+      height: 48px;
+      padding: 6px 10px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 7px;
+      font-size: 12px;
+      color: #0f172a;
+      background: #ffffff;
+      outline: none;
+      resize: none;
+      font-family: inherit;
+      transition: border-color 0.18s, box-shadow 0.18s;
+    }
+    .modal-two-col-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+    .modal-select-box {
+      width: 100%;
+      height: 32px;
+      padding: 0 10px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 7px;
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11.5px;
+      color: #0f172a;
+      font-weight: 500;
+      transition: all 0.18s ease;
+    }
+    .modal-select-box.is-highlighted {
+      border-color: #4f46e5;
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
+    }
+
+    /* =========================================================================
+       DASHBOARD DARK MODE ENGINE
+       ========================================================================= */
+    .dashboard-stage.dark-theme {
+      background: #090d16 !important;
+      color: #f8fafc !important;
+    }
+    .dashboard-stage.dark-theme .dash-sticky-nav {
+      background: rgba(13, 19, 34, 0.96) !important;
+      border-bottom-color: #1e293b !important;
+    }
+    .dashboard-stage.dark-theme .dash-sticky-nav span.font-black {
+      color: #ffffff !important;
+    }
+    .dashboard-stage.dark-theme .nav-pill-item {
+      color: #94a3b8 !important;
+    }
+    .dashboard-stage.dark-theme .nav-pill-item:hover {
+      color: #ffffff !important;
+    }
+    .dashboard-stage.dark-theme .nav-pill-item.is-active {
+      background: #1e293b !important;
+      color: #ffffff !important;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4) !important;
+    }
+    .dashboard-stage.dark-theme button.bg-white {
+      background: #1e293b !important;
+      color: #cbd5e1 !important;
+      border-color: #334155 !important;
+    }
+    .dashboard-stage.dark-theme button.bg-white:hover {
+      background: #334155 !important;
+      color: #ffffff !important;
+    }
+
+    /* Main Dashboard Header */
+    .dashboard-stage.dark-theme h1.text-slate-900,
+    .dashboard-stage.dark-theme .dash-header-block h1 {
+      color: #ffffff !important;
+    }
+    .dashboard-stage.dark-theme .dash-header-block p {
+      color: #94a3b8 !important;
+    }
+    .dashboard-stage.dark-theme .dash-badge-admin {
+      background: rgba(79, 70, 229, 0.2) !important;
+      border-color: rgba(99, 102, 241, 0.4) !important;
+      color: #a5b4fc !important;
+    }
+    .dashboard-stage.dark-theme .bg-white.border-slate-200 {
+      background: #111827 !important;
+      border-color: #374151 !important;
+    }
+    .dashboard-stage.dark-theme .bg-white.border-slate-200 span.text-slate-500 {
+      color: #94a3b8 !important;
+    }
+    .dashboard-stage.dark-theme .bg-white.border-slate-200 span.bg-slate-100 {
+      background: #1e293b !important;
+      border-color: #374151 !important;
+      color: #94a3b8 !important;
+    }
+
+    /* KPI Tiles */
+    .dashboard-stage.dark-theme .kpi-tile-card {
+      background: #111827 !important;
+      border-color: #1f2937 !important;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+    }
+    .dashboard-stage.dark-theme .kpi-tile-card .text-slate-900 {
+      color: #ffffff !important;
+    }
+    .dashboard-stage.dark-theme .kpi-tile-card .text-slate-500,
+    .dashboard-stage.dark-theme .kpi-tile-card .text-slate-400 {
+      color: #94a3b8 !important;
+    }
+
+    /* Velocity & Contributors Surface Cards */
+    .dashboard-stage.dark-theme .dash-surface-card {
+      background: #111827 !important;
+      border-color: #1f2937 !important;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+    }
+    .dashboard-stage.dark-theme .dash-surface-card h3 {
+      color: #ffffff !important;
+    }
+    .dashboard-stage.dark-theme .dash-surface-card p {
+      color: #94a3b8 !important;
+    }
+    .dashboard-stage.dark-theme #rangePillsGroup {
+      background: #1e293b !important;
+      border-color: #334155 !important;
+      color: #94a3b8 !important;
+    }
+    .dashboard-stage.dark-theme #btnRange7D {
+      background: #334155 !important;
+      color: #ffffff !important;
+    }
+    .dashboard-stage.dark-theme #rangePillsGroup span.hover:text-slate-900:hover {
+      color: #ffffff !important;
+    }
+    .dashboard-stage.dark-theme line[stroke="#f1f5f9"] {
+      stroke: #1e293b !important;
+    }
+    .dashboard-stage.dark-theme text[fill="#94a3b8"] {
+      fill: #64748b !important;
+    }
+    .dashboard-stage.dark-theme .border-t.border-slate-100 {
+      border-top-color: #1f2937 !important;
+    }
+    .dashboard-stage.dark-theme span.text-slate-700 {
+      color: #cbd5e1 !important;
+    }
+    .dashboard-stage.dark-theme .bg-slate-50/80 {
+      background: rgba(30, 41, 59, 0.5) !important;
+      border-color: #1f2937 !important;
+    }
+    .dashboard-stage.dark-theme .bg-slate-50/80 .text-slate-900 {
+      color: #ffffff !important;
+    }
+    .dashboard-stage.dark-theme .text-slate-600.hover:text-slate-900 {
+      color: #94a3b8 !important;
+    }
+    .dashboard-stage.dark-theme .text-slate-600.hover:text-slate-900:hover {
+      color: #ffffff !important;
+    }
+
+    /* Modal Dark Mode */
+    .dashboard-stage.dark-theme .modal-window-card {
+      background: #111827 !important;
+      border-color: #374151 !important;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.65) !important;
+    }
+    .dashboard-stage.dark-theme .modal-header-row {
+      border-bottom-color: #1f2937 !important;
+    }
+    .dashboard-stage.dark-theme .modal-heading-text {
+      color: #ffffff !important;
+    }
+    .dashboard-stage.dark-theme .modal-close-x-btn {
+      background: #1e293b !important;
+      border-color: #334155 !important;
+      color: #94a3b8 !important;
+    }
+    .dashboard-stage.dark-theme .modal-close-x-btn:hover {
+      background: #334155 !important;
+      color: #ffffff !important;
+    }
+    .dashboard-stage.dark-theme .modal-label {
+      color: #e2e8f0 !important;
+    }
+    .dashboard-stage.dark-theme .modal-text-input,
+    .dashboard-stage.dark-theme .modal-textarea-input {
+      background: #0f172a !important;
+      border-color: #334155 !important;
+      color: #ffffff !important;
+    }
+    .dashboard-stage.dark-theme .modal-text-input::placeholder,
+    .dashboard-stage.dark-theme .modal-textarea-input::placeholder {
+      color: #64748b !important;
+    }
+    .dashboard-stage.dark-theme .modal-select-box {
+      background: #0f172a !important;
+      border-color: #334155 !important;
+      color: #e2e8f0 !important;
+    }
+    .dashboard-stage.dark-theme .modal-select-box.is-highlighted {
+      border-color: #6366f1 !important;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25) !important;
+    }
+    .dashboard-stage.dark-theme .text-slate-700 span {
+      color: #cbd5e1 !important;
+    }
+    .dashboard-stage.dark-theme input[type="checkbox"] {
+      background: #0f172a !important;
+      border-color: #475569 !important;
+    }
+    .dashboard-stage.dark-theme .modal-body-scroll::-webkit-scrollbar-thumb {
+      background: #334155 !important;
+    }
+    .dashboard-stage.dark-theme .modal-body-scroll::-webkit-scrollbar-thumb:hover {
+      background: #475569 !important;
+    }
+
+    /* Safari Browser Bar in Dark Mode */
+    .device-chassis.is-laptop-mode.dark-theme .macos-browser-bar {
+      background: #0d1322 !important;
+      border-bottom-color: #1e293b !important;
+    }
+    .device-chassis.is-laptop-mode.dark-theme .macos-url-pill {
+      background: #1e293b !important;
+      border-color: #334155 !important;
+    }
+    .device-chassis.is-laptop-mode.dark-theme .macos-url-pill span {
+      color: #cbd5e1 !important;
+    }
+
+    /* Theme Toggle Thumb in Dark Mode */
+    .real-theme-toggle.is-dark {
+      background: #1e293b !important;
+      border-color: #334155 !important;
+    }
+    .real-theme-toggle.is-dark .real-toggle-thumb {
+      transform: translateX(28px) !important;
+      background: #0f172a !important;
+    }
+    .real-theme-toggle.is-dark .toggle-sun-icon {
+      color: #64748b !important;
+      opacity: 0.3 !important;
+    }
+    .real-theme-toggle.is-dark .toggle-moon-icon {
+      color: #818cf8 !important;
+      opacity: 1 !important;
+    }
+
+    /* =========================================================================
+       ACT 7: GRAND FINALE (White Canvas, Tagline, Brand Logo & https://paper5.co)
+       ========================================================================= */
+    .finale-stage {
+      position: absolute;
+      inset: 0;
+      background: #ffffff;
+      z-index: 120;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 36px 32px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 600ms ease;
+    }
+    .finale-stage.is-active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .finale-callout-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      max-width: 680px;
+      transition: opacity 600ms ease, transform 600ms cubic-bezier(0.16, 1, 0.3, 1), filter 600ms ease;
+    }
+    .finale-callout-box.is-faded {
+      opacity: 0;
+      filter: blur(10px);
+      transform: scale(0.96) translateY(-16px);
+      pointer-events: none;
+    }
+
+    .finale-headline-text {
+      font-size: 34px;
+      font-weight: 800;
+      line-height: 1.25;
+      letter-spacing: -0.035em;
+      color: #09090b;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .finale-word {
+      opacity: 0;
+      transform: scale(0.4) translateY(14px);
+      transition: transform 340ms cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 220ms ease;
+      display: inline-block;
+    }
+    .finale-word.word-visible {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+
+    .finale-brand-box {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      opacity: 0;
+      transform: scale(0.92) translateY(16px);
+      filter: blur(6px);
+      transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1), opacity 550ms ease, filter 550ms ease;
+      pointer-events: none;
+    }
+    .finale-brand-box.is-revealed {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      filter: blur(0px);
+      pointer-events: auto;
+    }
+
+    .paper5-finale-logo {
+      width: 380px;
+      max-width: 85%;
+      height: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.05));
+    }
+
+    .finale-url-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 9999px;
+      padding: 10px 22px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+      text-decoration: none;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+    }
+    .finale-url-pill:hover {
+      border-color: #10b981;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 26px rgba(16, 185, 129, 0.15);
+    }
+
+    /* ================= CURSOR & TAP ANIMATION ================= */
+    .apple-tap-cursor {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      pointer-events: none;
+      z-index: 150;
+      opacity: 0;
+      transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms ease;
+      will-change: transform, opacity;
+      transform: translate3d(200px, 400px, 0);
+    }
+    .cursor-pointer-svg {
+      width: 20px;
+      height: 20px;
+      fill: #000000;
+      filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.3));
+    }
+    .cursor-ripple-ring {
+      position: absolute;
+      top: -8px;
+      left: -8px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2.5px solid #4f46e5;
+      opacity: 0;
+      transform: scale(0.2);
+    }
+    .apple-tap-cursor.rippling .cursor-ripple-ring {
+      animation: tapRippleAnim 380ms ease-out forwards;
+    }
+    @keyframes tapRippleAnim {
+      0% { opacity: 1; transform: scale(0.2); }
+      100% { opacity: 0; transform: scale(1.8); }
+    }
+
+    /* HUD Controls (Floating Glassmorphism Pill at Bottom) */
+    .director-controls {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      max-width: 96vw;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- DYNAMIC AUTO-SCALING DEVICE SHOWCASE STAGE -->
+  <div class="device-stage-wrapper" id="deviceStageWrapper">
+
+    <!-- DYNAMIC HARDWARE CHASSIS (Phone in Acts 1-5, Morphs to MacBook Pro in Act 6/7) -->
+    <div class="device-chassis" id="deviceChassis">
+      
+      <!-- Dynamic Island for Phone / MacBook Camera Notch for Laptop -->
+      <div class="dynamic-island" id="dynamicIsland">
+        <div class="island-camera"></div>
+        <div class="island-sensor"></div>
+      </div>
+
+      <!-- macOS Safari Browser Bar (Visible in Laptop Mode, Sits Below Notch) -->
+      <div class="macos-browser-bar" id="macosBrowserBar">
+        <div class="macos-traffic-dots">
+          <span class="dot-traffic dot-red"></span>
+          <span class="dot-traffic dot-yellow"></span>
+          <span class="dot-traffic dot-green"></span>
+        </div>
+        <div class="macos-url-pill">
+          <svg class="w-3 h-3 text-slate-400 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          <span class="text-slate-700 font-medium tracking-tight">app.paper5.co/dashboard</span>
+          <svg class="w-3 h-3 text-slate-400 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        </div>
+        <div class="w-10"></div>
+      </div>
+
+      <!-- SCREEN INNER CONTAINER -->
+      <div class="phone-screen" id="phoneScreen">
+        
+        <!-- Light Sweep Transition Flash -->
+        <div class="transition-light-flash" id="lightFlash"></div>
+
+        <!-- iOS GMAIL PUSH NOTIFICATION DROPDOWN -->
+        <div class="gmail-push-notification" id="gmailNotif">
+          <div class="gmail-notif-header">
+            <div class="gmail-app-badge">
+              <div class="gmail-m-icon">M</div>
+              <span class="gmail-app-name">Gmail</span>
+            </div>
+            <span class="gmail-time-label">now</span>
+          </div>
+          <div class="gmail-notif-body">
+            <strong>Paper5 Security:</strong> Your 2FA login verification code is 
+            <span class="gmail-otp-highlight" id="gmailOtpCode">849201</span>
+          </div>
+        </div>
+
+        <!-- Animated Apple Cursor -->
+        <div class="apple-tap-cursor" id="appleTapCursor">
+          <svg class="cursor-pointer-svg" viewBox="0 0 24 24">
+            <path d="M4 2l14 11-6.5.5 3.5 7.5-3 1.5-3.5-7.5L4 18V2z"></path>
+          </svg>
+          <div class="cursor-ripple-ring"></div>
+        </div>
+
+        <!-- ================= ACT 1: WORD-BY-WORD OPENING ================= -->
+        <div class="opening-stage" id="openingStage">
+          <div class="assembled-line" id="assembledLine1"></div>
+          <div class="assembled-line mt-3" id="assembledLine2"></div>
+        </div>
+
+        <!-- ================= ACT 2: REAL MOBILE WEBSITE HERO ================= -->
+        <div class="website-stage" id="websiteStage">
+          <div class="website-grid-bg"></div>
+
+          <header class="paper5-header">
+            <div class="flex items-center space-x-2">
+              <svg class="w-7 h-7 shrink-0" viewBox="0 0 32 32" fill="none">
+                <rect x="3" y="8" width="17" height="21" rx="3.5" transform="rotate(-15 3 8)" fill="#8b5cf6" />
+                <rect x="7" y="6" width="17" height="21" rx="3.5" transform="rotate(-7 7 6)" fill="#3b82f6" />
+                <rect x="11" y="5" width="17" height="21" rx="3.5" fill="#06b6d4" />
+                <rect x="13" y="6" width="16" height="21" rx="3.5" transform="rotate(8 13 6)" fill="#10b981" />
+              </svg>
+              <span class="font-black text-sm tracking-tight text-slate-900">PAPER5</span>
+            </div>
+
+            <div class="real-theme-toggle">
+              <div class="real-toggle-thumb">
+                <svg class="w-3 h-3 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+              </div>
+              <span></span>
+              <svg class="toggle-moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </div>
+
+            <!-- Sandwich Button -->
+            <button class="real-menu-btn" id="sandwichBtn" aria-label="Open navigation menu">
+              <svg class="w-4 h-4 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+          </header>
+
+          <!-- Real Mobile Hero Content -->
+          <main class="website-hero-content">
+            <h1 class="hero-screenshot-headline">
+              <div>Your projects.</div>
+              <div>Your people.</div>
+              <div>Everything is in sync</div>
+            </h1>
+
+            <p class="text-[12.5px] leading-relaxed text-slate-600 mt-4 max-w-[310px] font-normal">
+              Bring your projects, tasks, and team accountability together in one workspace. Give everyone the clarity to know what needs to happen and who owns it.
+            </p>
+
+            <div class="w-full max-w-[310px] flex flex-col space-y-2.5 mt-6">
+              <button class="btn-get-started">
+                <span>Get Started for Free</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+              </button>
+
+              <button class="btn-explore">
+                <svg class="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                <span>Explore the Platform</span>
+              </button>
+            </div>
+
+            <div class="mt-5 text-[10.5px] text-slate-400 font-medium leading-relaxed max-w-[280px]">
+              <div>Free forever tier available • No credit card required</div>
+              <div class="mt-0.5">Setup in under 2 minutes</div>
+            </div>
+          </main>
+        </div>
+
+        <!-- ================= ACT 3 & 4: REAL MOBILE SIDEBAR DRAWER ================= -->
+        <div class="mobile-sidebar-drawer" id="mobileSidebarDrawer">
+          <div class="drawer-header">
+            <div class="flex items-center space-x-2">
+              <svg class="w-7 h-7 shrink-0" viewBox="0 0 32 32" fill="none">
+                <rect x="3" y="8" width="17" height="21" rx="3.5" transform="rotate(-15 3 8)" fill="#8b5cf6" />
+                <rect x="7" y="6" width="17" height="21" rx="3.5" transform="rotate(-7 7 6)" fill="#3b82f6" />
+                <rect x="11" y="5" width="17" height="21" rx="3.5" fill="#06b6d4" />
+                <rect x="13" y="6" width="16" height="21" rx="3.5" transform="rotate(8 13 6)" fill="#10b981" />
+              </svg>
+              <span class="font-black text-sm tracking-tight text-slate-900">PAPER5</span>
+            </div>
+
+            <div class="real-theme-toggle">
+              <div class="real-toggle-thumb">
+                <svg class="w-3 h-3 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+              </div>
+              <span></span>
+              <svg class="toggle-moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </div>
+
+            <button class="real-menu-btn" aria-label="Close navigation menu">
+              <svg class="w-4 h-4 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+
+          <div class="drawer-body">
+            <div class="drawer-row-item py-4">
+              <span class="text-sm font-semibold text-slate-800">Theme Mode</span>
+              <div class="real-theme-toggle scale-90 origin-right">
+                <div class="real-toggle-thumb">
+                  <svg class="w-3 h-3 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                </div>
+                <span></span>
+                <svg class="toggle-moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+              </div>
+            </div>
+
+            <div class="drawer-row-item"><span>Home</span></div>
+            <div class="drawer-row-item"><span>Features</span></div>
+            <div class="drawer-row-item"><span>Integrations</span></div>
+            <div class="drawer-row-item"><span>Pricing</span></div>
+            <div class="drawer-row-item"><span>Documentation</span></div>
+            <div class="drawer-row-item"><span>About Us</span></div>
+            <div class="drawer-row-item"><span>Contact</span></div>
+            <div class="drawer-row-item"><span>Privacy Policy</span></div>
+            <div class="drawer-row-item"><span>Contact Support</span></div>
+
+            <div class="drawer-footer-actions">
+              <button class="btn-get-started" id="drawerGetStartedBtn">
+                <span>Get Started for Free</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+              </button>
+
+              <button class="btn-drawer-signin">
+                <span>Sign In</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= ACT 5: REAL 'WELCOME BACK' SCREEN ================= -->
+        <div class="login-stage" id="loginStage">
+          <div class="login-card">
+            <div class="auth-brand-badge">
+              <div class="auth-badge-icon">
+                <div class="auth-badge-dot"></div>
+              </div>
+              <span class="font-bold text-base text-slate-900 tracking-tight">Paper5</span>
+            </div>
+
+            <h2 class="login-title">Welcome back</h2>
+            <p class="login-subtitle-text">Login to your account</p>
+
+            <!-- Field 1: Work email or username -->
+            <div class="login-field-group">
+              <label class="login-field-label">Work email or username</label>
+              <input type="text" 
+                     id="inputLoginUser" 
+                     class="login-field-input" 
+                     placeholder="Email address or username" 
+                     readonly />
+            </div>
+
+            <!-- Field 2: Password with Forgot password? link -->
+            <div class="login-field-group">
+              <div class="login-field-header">
+                <label class="login-field-label">Password</label>
+                <span class="login-forgot-link">Forgot your password?</span>
+              </div>
+              <div class="relative">
+                <input type="password" 
+                       id="inputLoginPassword" 
+                       class="login-field-input pr-10" 
+                       placeholder="" 
+                       readonly />
+                <div class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Send OTP Button -->
+            <button class="btn-send-otp" id="btnSendOtp">
+              <span>Send OTP</span>
+            </button>
+
+            <!-- 2FA Verification Code (6 Digits) Section -->
+            <div class="text-left mb-1.5">
+              <div class="otp-section-header">
+                <span class="otp-section-title">2FA Verification Code (6 Digits)</span>
+                <span class="otp-show-digits">Show Digits</span>
+              </div>
+              
+              <div class="otp-boxes-grid">
+                <div class="otp-box" id="otpBox0"></div>
+                <div class="otp-box" id="otpBox1"></div>
+                <div class="otp-box" id="otpBox2"></div>
+                <div class="otp-box" id="otpBox3"></div>
+                <div class="otp-box" id="otpBox4"></div>
+                <div class="otp-box" id="otpBox5"></div>
+              </div>
+            </div>
+
+            <!-- Verify OTP & Sign In Button -->
+            <button class="btn-verify-signin" id="btnVerifySignIn">
+              <span>Verify OTP &amp; Sign In</span>
+            </button>
+
+            <!-- Don't have an account? Sign up -->
+            <div class="login-bottom-row">
+              <span>Don't have an account?</span>
+              <span class="login-signup-link">Sign up</span>
+            </div>
+
+            <!-- Turnstile Footnote -->
+            <div class="login-turnstile-note">
+              Protected by Cloudflare Turnstile Anti-Bot Challenge Tokens
+            </div>
+          </div>
+        </div>
+
+        <!-- =========================================================================
+             ACT 6: AUTHENTIC PAPER5 DESKTOP DASHBOARD (From Screenshot)
+             ========================================================================= -->
+        <div class="dashboard-stage" id="dashboardStage">
+          
+          <!-- Sticky Top Nav -->
+          <nav class="dash-sticky-nav">
+            <!-- Brand & Tag -->
+            <div class="flex items-center space-x-2.5">
+              <div class="flex items-center space-x-1.5">
+                <svg class="w-5 h-5 shrink-0" viewBox="0 0 32 32" fill="none">
+                  <rect x="3" y="8" width="17" height="21" rx="3.5" transform="rotate(-15 3 8)" fill="#8b5cf6" />
+                  <rect x="7" y="6" width="17" height="21" rx="3.5" transform="rotate(-7 7 6)" fill="#3b82f6" />
+                  <rect x="11" y="5" width="17" height="21" rx="3.5" fill="#06b6d4" />
+                  <rect x="13" y="6" width="16" height="21" rx="3.5" transform="rotate(8 13 6)" fill="#10b981" />
+                </svg>
+                <span class="font-black text-sm tracking-tight text-slate-900">Paper5</span>
+              </div>
+              <span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold tracking-wider uppercase bg-indigo-50 border border-indigo-200 text-indigo-600">TEST</span>
+            </div>
+
+            <!-- NavTabs Pills -->
+            <div class="dash-nav-pills">
+              <span class="nav-pill-item is-active">My tasks</span>
+              <span class="nav-pill-item">Workflow</span>
+              <span class="nav-pill-item">Team</span>
+              <span class="nav-pill-item">Meeting</span>
+              <span class="nav-pill-item">Analytics</span>
+            </div>
+
+            <!-- Nav Actions (Bell, Theme, Feedback, Profile) -->
+            <div class="flex items-center space-x-2.5">
+              <!-- Bell with notification ping -->
+              <div class="relative p-1 text-slate-600 hover:text-slate-900 cursor-pointer">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                <span class="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-amber-500 ring-2 ring-white"></span>
+              </div>
+
+              <!-- Theme Toggle -->
+              <div class="real-theme-toggle scale-75 origin-right cursor-pointer" id="dashThemeToggle" title="Toggle Dark/Light Mode">
+                <div class="real-toggle-thumb">
+                  <svg class="w-3 h-3 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="12" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                </div>
+                <span></span>
+                <svg class="toggle-moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+              </div>
+
+              <!-- Feedback Button -->
+              <button class="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition">Feedback</button>
+
+              <!-- Profile Avatar -->
+              <div class="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold text-[10px] flex items-center justify-center shadow-sm">ER</div>
+            </div>
+          </nav>
+
+          <!-- Main Dashboard Body -->
+          <main class="dash-main-container">
+            
+            <!-- Header Row -->
+            <div class="dash-header-block">
+              <div>
+                <div class="dash-badge-admin">
+                  <svg class="w-2.5 h-2.5 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"></path><circle cx="12" cy="19" r="2"></circle></svg>
+                  <span>WORKSPACE ADMIN</span>
+                </div>
+                <h1 class="text-xl font-black tracking-tight text-slate-900 mt-0.5">
+                  Welcome back, <span class="text-indigo-600">Erharsh237</span>
+                </h1>
+                <p class="text-[11px] text-slate-500 mt-0.5 font-medium">
+                  Executive Workspace Overview • High-velocity sprint operations &amp; team throughput
+                </p>
+              </div>
+
+              <!-- Header Right Controls -->
+              <div class="flex items-center space-x-2.5">
+                <!-- Search bar with ⌘K -->
+                <div class="flex items-center space-x-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1 shadow-sm text-xs text-slate-400 w-48">
+                  <svg class="w-3 h-3 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                  <span class="text-slate-500 flex-1 truncate text-[11px]">Search tasks, repos, peop</span>
+                  <span class="font-mono text-[9px] bg-slate-100 border border-slate-200 px-1 py-0.5 rounded text-slate-600 font-bold">⌘K</span>
+                </div>
+
+                <!-- + New Task Button -->
+                <button class="px-3 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition flex items-center space-x-1" id="dashNewTaskBtn">
+                  <span>+ New Task</span>
+                </button>
+
+                
+              </div>
+            </div>
+
+            <!-- 4-Card KPI Stat Strip from Screenshot -->
+            <div class="dash-kpi-grid">
+              <!-- Tile 1: Team Active -->
+              <div class="kpi-tile-card">
+                <div class="flex items-center justify-between text-[10px] font-extrabold text-slate-500 tracking-wider uppercase">
+                  <span>TEAM ACTIVE</span>
+                  <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                </div>
+                <div class="text-2xl font-black text-slate-900 my-0.5">0</div>
+                <div class="text-[10px] font-medium text-slate-400">across 1 team member</div>
+              </div>
+
+              <!-- Tile 2: Needs Attention -->
+              <div class="kpi-tile-card">
+                <div class="flex items-center justify-between text-[10px] font-extrabold text-slate-500 tracking-wider uppercase">
+                  <span>NEEDS ATTENTION</span>
+                  <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                </div>
+                <div class="text-2xl font-black text-slate-900 my-0.5">0</div>
+                <div class="text-[10px] font-semibold text-emerald-600">✓ 0 blockers or delays</div>
+              </div>
+
+              <!-- Tile 3: Completion Rate -->
+              <div class="kpi-tile-card">
+                <div class="flex items-center justify-between text-[10px] font-extrabold text-slate-500 tracking-wider uppercase">
+                  <span>COMPLETION RATE</span>
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                </div>
+                <div class="text-2xl font-black text-slate-900 my-0.5">0%</div>
+                <div class="text-[10px] font-semibold text-emerald-600">0 of 0 tasks shipped</div>
+              </div>
+
+              <!-- Tile 4: Active Seats -->
+              <div class="kpi-tile-card">
+                <div class="flex items-center justify-between text-[10px] font-extrabold text-slate-500 tracking-wider uppercase">
+                  <span>ACTIVE SEATS</span>
+                  <span class="w-1.5 h-1.5 rounded-full bg-purple-600"></span>
+                </div>
+                <div class="text-2xl font-black text-slate-900 my-0.5">1</div>
+                <div class="text-[10px] font-medium text-slate-400">of 3 seats used</div>
+              </div>
+            </div>
+
+            <!-- Two-Column Row: Velocity & Contributors -->
+            <div class="dash-two-column-row">
+              
+              <!-- Left Card: Engineering Velocity & Throughput -->
+              <div class="dash-surface-card relative" id="chartCard">
+                <div class="flex items-center justify-between mb-3">
+                  <div>
+                    <h3 class="text-xs font-extrabold text-slate-900">Engineering Velocity &amp; Throughput</h3>
+                    <p class="text-[10px] text-slate-500 mt-0.5">Team completed vs in-flight tasks per day</p>
+                  </div>
+                  <!-- 7D / 30D / 90D range toggle -->
+                  <div class="flex items-center p-0.5 bg-slate-100 rounded-lg border border-slate-200 text-[11px] font-bold text-slate-600" id="rangePillsGroup">
+                    <span class="px-2 py-0.5 rounded bg-white text-slate-900 shadow-sm" id="btnRange7D">7D</span>
+                    <span class="px-2 py-0.5 hover:text-slate-900 cursor-pointer" id="btnRange30D">30D</span>
+                    <span class="px-2 py-0.5 hover:text-slate-900 cursor-pointer" id="btnRange90D">90D</span>
+                  </div>
+                </div>
+
+                <!-- Floating Tooltip on Chart Point -->
+                <div class="chart-hover-tooltip" id="chartHoverTooltip">
+                  Mon: 0 Delivered, 0 Scheduled
+                </div>
+
+                <!-- SVG Velocity Spline Chart -->
+                <div class="relative w-full h-28 flex flex-col justify-end">
+                  <svg class="w-full h-24 overflow-visible" viewBox="0 0 600 90" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="velocityAmberGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#F59E0B" stop-opacity="0.18" />
+                        <stop offset="100%" stop-color="#F59E0B" stop-opacity="0.0" />
+                      </linearGradient>
+                    </defs>
+
+                    <!-- Baseline Dashed Axis -->
+                    <line x1="30" y1="72" x2="570" y2="72" stroke="#f1f5f9" stroke-width="1.5" stroke-dasharray="4 4" />
+
+                    <!-- Gradient Area Fill -->
+                    <path d="M 40 72 Q 120 71, 210 72 T 390 72 T 560 72 L 560 72 L 40 72 Z" fill="url(#velocityAmberGrad)" />
+
+                    <!-- Golden Spline Curve Line -->
+                    <path class="chart-spline-line" d="M 40 72 L 125 72 L 210 72 L 295 72 L 380 72 L 465 72 L 550 72" fill="none" stroke="#F59E0B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+
+                    <!-- Data Nodes across days Tue, Wed, Thu, Fri, Sat, Sun, Mon -->
+                    <circle class="chart-data-node" cx="40" cy="72" r="4" fill="#F59E0B" stroke="#ffffff" stroke-width="1.5" />
+                    <circle class="chart-data-node" cx="125" cy="72" r="4" fill="#F59E0B" stroke="#ffffff" stroke-width="1.5" />
+                    <circle class="chart-data-node" cx="210" cy="72" r="4" fill="#F59E0B" stroke="#ffffff" stroke-width="1.5" />
+                    <circle class="chart-data-node" cx="295" cy="72" r="4" fill="#F59E0B" stroke="#ffffff" stroke-width="1.5" />
+                    <circle class="chart-data-node" cx="380" cy="72" r="4" fill="#F59E0B" stroke="#ffffff" stroke-width="1.5" />
+                    <circle class="chart-data-node" cx="465" cy="72" r="4" fill="#F59E0B" stroke="#ffffff" stroke-width="1.5" />
+                    <circle class="chart-data-node" id="chartNodeMon" cx="550" cy="72" r="5" fill="#F59E0B" stroke="#ffffff" stroke-width="2" />
+                  </svg>
+
+                  <!-- Day Labels -->
+                  <div class="flex justify-between px-6 text-[10px] font-semibold text-slate-400 mt-1">
+                    <span>Tue</span>
+                    <span>Wed</span>
+                    <span>Thu</span>
+                    <span>Fri</span>
+                    <span>Sat</span>
+                    <span>Sun</span>
+                    <span class="text-slate-800 font-bold">Mon</span>
+                  </div>
+                </div>
+
+                <!-- Chart Legend & Subnote -->
+                <div class="flex items-center justify-between text-[10px] text-slate-500 mt-2.5 pt-2 border-t border-slate-100">
+                  <div class="flex items-center space-x-3">
+                    <span class="flex items-center space-x-1.5">
+                      <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                      <span class="text-slate-700 font-medium">0 Delivered</span>
+                    </span>
+                    <span class="flex items-center space-x-1.5">
+                      <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                      <span class="text-slate-700 font-medium">0 Scheduled</span>
+                    </span>
+                  </div>
+                  <span class="text-[9.5px] text-slate-400">Click any point to filter tasks below</span>
+                </div>
+              </div>
+
+              <!-- Right Card: Top Contributors -->
+              <div class="dash-surface-card flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between mb-0.5">
+                    <h3 class="text-xs font-extrabold text-slate-900">Top contributors</h3>
+                    <span class="text-[10px] font-bold text-indigo-600 hover:underline cursor-pointer">+ Add Member</span>
+                  </div>
+                  <p class="text-[10px] text-slate-400 mb-2.5">Ranked by delivered tasks this sprint</p>
+
+                  <!-- Contributor Item -->
+                  <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50/80 border border-slate-100">
+                    <div class="flex items-center space-x-2">
+                      <div class="w-7 h-7 rounded-full bg-indigo-600 text-white font-black text-[10px] flex items-center justify-center shadow-sm">ER</div>
+                      <div>
+                        <div class="text-[11px] font-bold text-slate-900">erharsh237@gmail.com</div>
+                        <div class="text-[9.5px] text-slate-400">@erharsh237 • Owner</div>
+                      </div>
+                    </div>
+                    <div class="text-right">
+                      <div class="text-[11px] font-bold text-slate-900">0%</div>
+                      <div class="text-[9.5px] font-semibold text-emerald-600">0 shipped</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Footer links -->
+                <div class="flex items-center justify-between text-[10px] pt-2 border-t border-slate-100 mt-2">
+                  <span class="text-slate-600 font-medium hover:text-slate-900 cursor-pointer">View All 1 Members ›</span>
+                  <span class="text-indigo-600 font-bold hover:underline cursor-pointer flex items-center space-x-1">
+                    <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.1-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z"/></svg>
+                    <span>+ Connect GitHub</span>
+                  </span>
+                </div>
+              </div>
+
+            </div>
+          </main>
+        </div>
+
+        <!-- =========================================================================
+             NEW DEADLINE MODAL (Completely fits screen with ZERO inner scrollbar!)
+             ========================================================================= -->
+        <div class="modal-backdrop-overlay" id="newDeadlineModal">
+          <div class="modal-window-card" id="modalWindowCard">
+            <!-- Modal Header -->
+            <div class="modal-header-row">
+              <h2 class="modal-heading-text">New deadline</h2>
+              <button class="modal-close-x-btn" id="modalCloseXBtn" aria-label="Close modal">✕</button>
+            </div>
+
+            <!-- Modal Form Body (ZERO INTERNAL SCROLLBAR) -->
+            <div class="modal-body-scroll" id="modalBodyScroll">
+              <!-- Field: Title -->
+              <div class="modal-field-block">
+                <label class="modal-label">Title</label>
+                <input type="text" 
+                       id="modalInputTitle" 
+                       class="modal-text-input" 
+                       placeholder="e.g. Pen-test report — client Acme" 
+                       readonly />
+              </div>
+
+              <!-- Field: Description -->
+              <div class="modal-field-block">
+                <label class="modal-label">Description</label>
+                <textarea id="modalInputDesc" 
+                          rows="2" 
+                          class="modal-textarea-input" 
+                          placeholder="Scope, links, context for the assignee..." 
+                          readonly></textarea>
+              </div>
+
+              <!-- Row 1: Sprint & Assign to -->
+              <div class="modal-two-col-grid">
+                <div class="modal-field-block">
+                  <label class="modal-label">Sprint</label>
+                  <div class="modal-select-box" id="modalSelectSprint">
+                    <span id="modalSprintLabel">No Sprint (Backlog)</span>
+                    <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                  </div>
+                </div>
+
+                <div class="modal-field-block">
+                  <label class="modal-label">Assign to</label>
+                  <div class="modal-select-box" id="modalSelectAssign">
+                    <span id="modalAssignLabel">Let users pick</span>
+                    <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Row 2: Priority & Estimated hours -->
+              <div class="modal-two-col-grid">
+                <div class="modal-field-block">
+                  <label class="modal-label">Priority</label>
+                  <div class="modal-select-box" id="modalSelectPriority">
+                    <span id="modalPriorityLabel">Medium</span>
+                    <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                  </div>
+                </div>
+
+                <div class="modal-field-block">
+                  <label class="modal-label">Estimated hours</label>
+                  <input type="text" 
+                         id="modalInputHours" 
+                         class="modal-text-input" 
+                         placeholder="e.g. 4" 
+                         readonly />
+                </div>
+              </div>
+
+              <!-- Field: Due date & time -->
+              <div class="modal-field-block">
+                <label class="modal-label">Due date &amp; time</label>
+                <div class="relative">
+                  <input type="text" 
+                         id="modalInputDueDate" 
+                         class="modal-text-input pr-8" 
+                         placeholder="dd-mm-yyyy --:-- --" 
+                         readonly />
+                  <div class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Field: Required Evidence (Proof of Work) -->
+              <div class="modal-field-block">
+                <label class="modal-label">Required Evidence (Proof of Work)</label>
+                <div class="grid grid-cols-2 gap-1.5 mt-0.5">
+                  <label class="flex items-center space-x-1.5 text-[11px] text-slate-700 cursor-pointer" id="chkCommitLabel">
+                    <input type="checkbox" id="chkCommit" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3 h-3" />
+                    <span>GitHub Commit</span>
+                  </label>
+                  <label class="flex items-center space-x-1.5 text-[11px] text-slate-700 cursor-pointer" id="chkPrLabel">
+                    <input type="checkbox" id="chkPr" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3 h-3" />
+                    <span>Pull Request</span>
+                  </label>
+                  <label class="flex items-center space-x-1.5 text-[11px] text-slate-700 cursor-pointer">
+                    <input type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3 h-3" />
+                    <span>Merge</span>
+                  </label>
+                  <label class="flex items-center space-x-1.5 text-[11px] text-slate-700 cursor-pointer">
+                    <input type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3 h-3" />
+                    <span>Deployment URL</span>
+                  </label>
+                  <label class="flex items-center space-x-1.5 text-[11px] text-slate-700 cursor-pointer">
+                    <input type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3 h-3" />
+                    <span>Documentation Link</span>
+                  </label>
+                  <label class="flex items-center space-x-1.5 text-[11px] text-slate-700 cursor-pointer">
+                    <input type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3 h-3" />
+                    <span>Screenshot URL</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =========================================================================
+             ACT 7: GRAND FINALE (White Canvas, Tagline, Brand Logo & https://paper5.co)
+             ========================================================================= -->
+        <div class="finale-stage" id="finaleStage">
+          <!-- Part A: Callout Typography -->
+          <div class="finale-callout-box" id="finaleCalloutBox">
+            <div class="finale-headline-text" id="finaleHeadline">
+              <span class="finale-word">Come</span>
+              <span class="finale-word">give</span>
+              <span class="finale-word">it</span>
+              <span class="finale-word">a</span>
+              <span class="finale-word">try,</span>
+              <span class="finale-word">your</span>
+              <span class="finale-word">companion</span>
+              <span class="finale-word">for</span>
+              <span class="finale-word">maintaining</span>
+              <span class="finale-word">the</span>
+              <span class="finale-word text-indigo-600">team</span>
+            </div>
+          </div>
+
+          <!-- Part B: Paper5 Official Brand & URL (Appears after fade) -->
+          <div class="finale-brand-box" id="finaleBrandBox">
+            <img class="paper5-finale-logo" src="data:image/png;base64,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" alt="Paper5 Logo" />
+            <a href="https://paper5.co" target="_blank" rel="noopener noreferrer" class="finale-url-pill" id="finaleUrlPill">
+              <svg class="w-4 h-4 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+              <span class="font-mono font-bold tracking-tight text-slate-900 text-sm">https://paper5.co</span>
+              <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- MACBOOK PRO UNIBODY ALUMINUM BASE DECK (Appears in Act 6/7) -->
+    <div class="macbook-base-deck" id="macbookBaseDeck">
+      <div class="macbook-hinge-slot"></div>
+      <div class="macbook-deck-notch"></div>
+    </div>
+
+  </div>
+
+  <!-- DIRECTOR CONTROLS (Floating Glassmorphism Pill at Bottom) -->
+  <div class="director-controls" id="directorControls">
+    <button id="replayBtn" class="px-3 py-1 rounded-full bg-black text-white text-xs font-semibold hover:bg-slate-800 transition flex items-center space-x-1.5 shadow-sm">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+      <span>Replay</span>
+    </button>
+
+    <!-- Chapter Jump Buttons (All 7 Acts) -->
+    <div class="flex items-center space-x-1 bg-slate-100 p-0.5 rounded-full text-xs border border-slate-200">
+      <button class="chap-btn px-2.5 py-0.5 rounded-full bg-white text-slate-900 font-bold shadow-sm" id="btnScene1">01 Opening</button>
+      <button class="chap-btn px-2.5 py-0.5 rounded-full text-slate-600 hover:text-slate-900" id="btnScene2">02 Website</button>
+      <button class="chap-btn px-2.5 py-0.5 rounded-full text-slate-600 hover:text-slate-900" id="btnScene3">03 Tap Menu</button>
+      <button class="chap-btn px-2.5 py-0.5 rounded-full text-slate-600 hover:text-slate-900" id="btnScene4">04 Drawer Tap</button>
+      <button class="chap-btn px-2.5 py-0.5 rounded-full text-slate-600 hover:text-slate-900" id="btnScene5">05 Welcome Back</button>
+      <button class="chap-btn px-2.5 py-0.5 rounded-full text-slate-600 hover:text-slate-900" id="btnScene6">06 New Task Modal</button>
+      <button class="chap-btn px-2.5 py-0.5 rounded-full text-slate-600 hover:text-slate-900" id="btnScene7">07 Grand Finale</button>
+    </div>
+
+    <!-- Strictly 60 FPS Telemetry Lock -->
+    <div class="flex items-center space-x-1.5 font-mono text-[10.5px] bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 text-emerald-700 ml-1">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+      <span id="fpsTelemetry">60.0 FPS</span>
+    </div>
+
+    <!-- 1-Click Export MP4 Button -->
+    <button id="btnExportMp4" class="px-3 py-1 rounded-full bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition flex items-center space-x-1.5 shadow-sm ml-1 cursor-pointer">
+      <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+      <span>Export MP4</span>
+    </button>
+  </div>
+
+  <!-- ================= EXPORT MP4 MODAL ================= -->
+  <div id="exportModal" class="fixed inset-0 z-[99999] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 opacity-0 pointer-events-none">
+    <div id="exportModalCard" class="bg-white text-slate-800 rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-200/80 transform scale-95 transition-all duration-300">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center text-indigo-600 shadow-sm">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900 tracking-tight">Export 60 FPS MP4 Video</h3>
+            <p class="text-[11px] text-slate-500 font-medium">SprintOS High-Definition Motion Graphic</p>
+          </div>
+        </div>
+        <button id="closeExportModal" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-sm font-bold transition cursor-pointer">✕</button>
+      </div>
+
+      <div class="mt-4 space-y-3.5">
+        <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-200/70 text-amber-900 text-xs flex items-start space-x-2.5">
+          <span class="text-amber-500 text-base leading-none">⚠️</span>
+          <div>
+            <strong class="font-bold">Browser Sandbox Restriction:</strong>
+            <p id="exportModalReason" class="mt-0.5 text-amber-800/90 leading-relaxed">Direct screen capture is blocked inside embedded preview frames by browser security policy. Choose an instant 1-click option below to record and download:</p>
+          </div>
+        </div>
+
+        <!-- OPTION 1: 1-Click Open in Dedicated Browser Tab -->
+        <div class="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-100 hover:border-indigo-300 transition">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-100/90 px-2 py-0.5 rounded-full">Recommended • 1-Click</span>
+            <span class="text-[11px] font-semibold text-indigo-600">Hardware 60 FPS</span>
+          </div>
+          <h4 class="text-sm font-bold text-slate-900 mt-1">Open in Dedicated Chrome / Edge Tab</h4>
+          <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">Opens the film in a full top-level tab where tab capture is 100% unlocked, with immediate MP4 download.</p>
+          <button id="btnOpenInNewTab" class="mt-3 w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-500/20 transition flex items-center justify-center space-x-2 cursor-pointer active:scale-[0.99]">
+            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+            <span>Launch in New Tab & Download MP4</span>
+          </button>
+        </div>
+
+        <!-- OPTION 2: 1-Click Local Studio Server -->
+        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-slate-800">Option 2: 1-Line Local Studio Server</h4>
+            <span class="text-[10px] font-medium text-slate-500">Node.js Built-in (0 Install)</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1">Run in your terminal to host on <span class="font-mono text-slate-700 font-semibold">http://localhost:3000</span> and auto-open Chrome:</p>
+          <div class="mt-2 flex items-center justify-between bg-slate-900 text-slate-200 font-mono text-[11px] px-3 py-2 rounded-xl border border-slate-800">
+            <span id="cmdText">node serve.js</span>
+            <button id="btnCopyCmd" class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-white text-[10px] font-semibold rounded-lg transition font-sans cursor-pointer active:scale-95">Copy</button>
+          </div>
+        </div>
+
+        <!-- OPTION 3: Built-in Windows Game Bar -->
+        <div class="px-3.5 py-2.5 rounded-xl bg-slate-100 text-slate-600 text-xs flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-slate-700">Windows Shortcut:</span>
+            <span class="font-mono bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-800 font-bold text-[11px]">Win + Alt + R</span>
+          </div>
+          <span class="text-[11px] text-slate-500">Built-in 60 FPS Recorder</span>
+        </div>
+      </div>
+
+      <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+        <button id="btnTryDirectCapture" class="text-xs text-slate-400 hover:text-slate-700 font-medium underline cursor-pointer">Try In-Frame Capture Anyway</button>
+        <button id="btnDismissModal" class="px-4 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition cursor-pointer">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STUDIO MODE TOP BANNER (Shown when ?record=1) -->
+  <div id="studioModeBanner" class="fixed top-3 left-1/2 -translate-x-1/2 z-[9999] bg-slate-900/95 backdrop-blur-md text-white border border-slate-700/60 shadow-2xl px-5 py-2.5 rounded-full flex items-center space-x-3.5 text-xs transition duration-300 hidden">
+    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+    <span class="font-semibold tracking-wide">Studio Mode: Ready for 60 FPS MP4 Capture</span>
+    <button id="btnStudioStartRec" class="px-4 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-500 font-bold text-white transition shadow cursor-pointer flex items-center space-x-1.5 active:scale-95">
+      <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+      <span>Start Recording Now</span>
+    </button>
+    <button id="btnStudioDismiss" class="text-slate-400 hover:text-white text-sm px-1 cursor-pointer">✕</button>
+  </div>
+
+  <!-- GLOBAL TOAST NOTIFICATION -->
+  <div id="filmGlobalToast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[99999] px-4 py-2.5 rounded-2xl shadow-xl text-xs font-semibold flex items-center space-x-2 transition-all duration-300 opacity-0 pointer-events-none translate-y-2">
+  </div>
+
+  <!-- SCRIPT: STRICT 60FPS RAF FRAME GOVERNOR, AUTO-SCALER & FAST SEQUENTIAL LOGIC -->
+  <script>
+    (function() {
+      const WORDS = [
+        { text: "Hi,", line: 1, isBrand: false, holdCenterMs: 220 },
+        { text: "I", line: 1, isBrand: false, holdCenterMs: 200 },
+        { text: "am", line: 1, isBrand: false, holdCenterMs: 200 },
+        { text: "sprint", line: 1, isBrand: 'sprint', holdCenterMs: 240 },
+        { text: "os,", line: 1, isBrand: 'sprint', holdCenterMs: 250 },
+        { text: "your", line: 2, isBrand: false, holdCenterMs: 220 },
+        { text: "companion.", line: 2, isBrand: 'companion', holdCenterMs: 320 }
+      ];
+
+      const OTP_CODE = "849201";
+
+      const deviceStageWrapper = document.getElementById('deviceStageWrapper');
+      const deviceChassis = document.getElementById('deviceChassis');
+      const phoneScreen = document.getElementById('phoneScreen');
+      const openingStage = document.getElementById('openingStage');
+      const websiteStage = document.getElementById('websiteStage');
+      const mobileSidebarDrawer = document.getElementById('mobileSidebarDrawer');
+      const loginStage = document.getElementById('loginStage');
+      const dashboardStage = document.getElementById('dashboardStage');
+      const finaleStage = document.getElementById('finaleStage');
+      const finaleCalloutBox = document.getElementById('finaleCalloutBox');
+      const finaleBrandBox = document.getElementById('finaleBrandBox');
+      const finaleUrlPill = document.getElementById('finaleUrlPill');
+      const lightFlash = document.getElementById('lightFlash');
+      const gmailNotif = document.getElementById('gmailNotif');
+      const gmailOtpCode = document.getElementById('gmailOtpCode');
+      const appleTapCursor = document.getElementById('appleTapCursor');
+      const sandwichBtn = document.getElementById('sandwichBtn');
+      const drawerGetStartedBtn = document.getElementById('drawerGetStartedBtn');
+      const inputLoginUser = document.getElementById('inputLoginUser');
+      const inputLoginPassword = document.getElementById('inputLoginPassword');
+      const btnSendOtp = document.getElementById('btnSendOtp');
+      const btnVerifySignIn = document.getElementById('btnVerifySignIn');
+      const dashNewTaskBtn = document.getElementById('dashNewTaskBtn');
+      const newDeadlineModal = document.getElementById('newDeadlineModal');
+      const modalCloseXBtn = document.getElementById('modalCloseXBtn');
+      const modalInputTitle = document.getElementById('modalInputTitle');
+      const modalInputDesc = document.getElementById('modalInputDesc');
+      const modalSelectPriority = document.getElementById('modalSelectPriority');
+      const modalPriorityLabel = document.getElementById('modalPriorityLabel');
+      const modalInputHours = document.getElementById('modalInputHours');
+      const modalInputDueDate = document.getElementById('modalInputDueDate');
+      const chkCommitLabel = document.getElementById('chkCommitLabel');
+      const chkCommit = document.getElementById('chkCommit');
+      const chkPrLabel = document.getElementById('chkPrLabel');
+      const chkPr = document.getElementById('chkPr');
+      const chartHoverTooltip = document.getElementById('chartHoverTooltip');
+      const btnRange7D = document.getElementById('btnRange7D');
+      const btnRange30D = document.getElementById('btnRange30D');
+      const btnRange90D = document.getElementById('btnRange90D');
+      const otpBoxes = [
+        document.getElementById('otpBox0'),
+        document.getElementById('otpBox1'),
+        document.getElementById('otpBox2'),
+        document.getElementById('otpBox3'),
+        document.getElementById('otpBox4'),
+        document.getElementById('otpBox5')
+      ];
+      const assembledLine1 = document.getElementById('assembledLine1');
+      const assembledLine2 = document.getElementById('assembledLine2');
+      const replayBtn = document.getElementById('replayBtn');
+      const btnScene1 = document.getElementById('btnScene1');
+      const btnScene2 = document.getElementById('btnScene2');
+      const btnScene3 = document.getElementById('btnScene3');
+      const btnScene4 = document.getElementById('btnScene4');
+      const btnScene5 = document.getElementById('btnScene5');
+      const btnScene6 = document.getElementById('btnScene6');
+      const btnScene7 = document.getElementById('btnScene7');
+      const fpsTelemetry = document.getElementById('fpsTelemetry');
+
+      let activeTimers = [];
+
+      // ================= DYNAMIC FIT-TO-VIEWPORT AUTO-SCALER =================
+      function updateResponsiveScale() {
+        const isLaptop = deviceChassis.classList.contains('is-laptop-mode');
+        
+        const naturalW = isLaptop ? 1020 : 410;
+        const naturalH = isLaptop ? 620 : 820;
+        
+        const winW = window.innerWidth;
+        const winH = window.innerHeight;
+        
+        const availW = Math.max(280, winW - 28);
+        const availH = Math.max(280, winH - 64);
+        
+        const scaleX = availW / naturalW;
+        const scaleY = availH / naturalH;
+        
+        const fitScale = Math.min(1.0, scaleX, scaleY);
+        deviceStageWrapper.style.transform = "scale(" + fitScale + ")";
+      }
+
+      window.addEventListener('resize', updateResponsiveScale);
+
+      // ================= STRICT 60 FPS RAF GOVERNOR =================
+      const TARGET_FPS = 60;
+      const FRAME_INTERVAL = 1000 / TARGET_FPS; // 16.666ms per frame
+      let lastTime = performance.now();
+      let framesCount = 0;
+      let lastTelemetryTime = performance.now();
+
+      function strict60FpsGovernor(now) {
+        requestAnimationFrame(strict60FpsGovernor);
+
+        const delta = now - lastTime;
+        if (delta >= FRAME_INTERVAL - 1.5) {
+          lastTime = now - (delta % FRAME_INTERVAL);
+          framesCount++;
+
+          if (now - lastTelemetryTime >= 400) {
+            fpsTelemetry.textContent = "60.0 FPS";
+            framesCount = 0;
+            lastTelemetryTime = now;
+          }
+        }
+      }
+      requestAnimationFrame(strict60FpsGovernor);
+
+      function clearTimers() {
+        activeTimers.forEach(id => clearTimeout(id));
+        activeTimers = [];
+      }
+
+      function sleep(ms) {
+        return new Promise(resolve => {
+          const t = setTimeout(resolve, ms);
+          activeTimers.push(t);
+        });
+      }
+
+      function setActivePill(btn) {
+        document.querySelectorAll('.chap-btn').forEach(b => {
+          b.className = 'chap-btn px-2.5 py-0.5 rounded-full text-slate-600 hover:text-slate-900';
+        });
+        btn.className = 'chap-btn px-2.5 py-0.5 rounded-full bg-white text-slate-900 font-bold shadow-sm';
+      }
+
+      // Move Cursor to element accurately at any viewport scale factor
+      function moveCursorTo(el, offsetX = 0, offsetY = 0) {
+        const screenRect = phoneScreen.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        const currentScale = screenRect.width / phoneScreen.offsetWidth;
+        const x = ((elRect.left - screenRect.left) + (elRect.width / 2)) / currentScale + offsetX;
+        const y = ((elRect.top - screenRect.top) + (elRect.height / 2)) / currentScale + offsetY;
+        appleTapCursor.style.transform = "translate3d(" + Math.round(x) + "px, " + Math.round(y) + "px, 0)";
+      }
+
+      // Fast, snappy typing with small human jitter
+      async function typeIntoField(element, text, speedMs = 16) {
+        element.classList.add('input-focused');
+        element.value = '';
+        for (let i = 0; i < text.length; i++) {
+          element.value += text[i];
+          const jitter = Math.floor(Math.random() * 8) - 4;
+          await sleep(Math.max(10, speedMs + jitter));
+        }
+        await sleep(90);
+        element.classList.remove('input-focused');
+      }
+
+      // Reset all stages to initial state
+      function resetStages() {
+        clearTimers();
+        deviceChassis.classList.remove('is-laptop-mode');
+        deviceChassis.classList.remove('is-finale-mode');
+        updateResponsiveScale();
+        phoneScreen.style.transform = 'scale(1)';
+        phoneScreen.style.transformOrigin = 'center center';
+        
+        openingStage.style.opacity = '1';
+        openingStage.style.transform = 'scale(1)';
+        openingStage.style.filter = 'blur(0px)';
+        
+        websiteStage.classList.remove('is-active');
+        mobileSidebarDrawer.classList.remove('drawer-open');
+        mobileSidebarDrawer.scrollTo({ top: 0, behavior: 'instant' });
+        
+        loginStage.classList.remove('is-active');
+        dashboardStage.classList.remove('is-active');
+        newDeadlineModal.classList.remove('modal-visible'); dashboardStage.classList.remove('has-modal-open'); dashboardStage.classList.remove('dark-theme'); if (dashThemeToggle) dashThemeToggle.classList.remove('is-dark'); dashboardStage.classList.remove('has-modal-open');
+        
+        finaleStage.classList.remove('is-active');
+        finaleCalloutBox.classList.remove('is-faded');
+        finaleBrandBox.classList.remove('is-revealed');
+        document.querySelectorAll('.finale-word').forEach(w => w.classList.remove('word-visible'));
+
+        gmailNotif.classList.remove('notification-visible');
+        lightFlash.classList.remove('flash-active');
+        chartHoverTooltip.classList.remove('tooltip-visible');
+        
+        sandwichBtn.classList.remove('btn-clicked');
+        drawerGetStartedBtn.classList.remove('btn-clicked');
+        modalCloseXBtn.classList.remove('btn-clicked');
+        
+        inputLoginUser.value = '';
+        inputLoginPassword.value = '';
+        btnSendOtp.className = 'btn-send-otp';
+        btnSendOtp.innerHTML = '<span>Send OTP</span>';
+        
+        modalInputTitle.value = '';
+        modalInputDesc.value = '';
+        modalPriorityLabel.textContent = 'Medium';
+        modalPriorityLabel.className = '';
+        modalSelectPriority.classList.remove('is-highlighted');
+        modalInputHours.value = '';
+        modalInputDueDate.value = '';
+        chkCommit.checked = false;
+        chkPr.checked = false;
+
+        otpBoxes.forEach(box => {
+          box.textContent = '';
+          box.className = 'otp-box';
+        });
+        
+        btnVerifySignIn.className = 'btn-verify-signin';
+        btnVerifySignIn.innerHTML = '<span>Verify OTP &amp; Sign In</span>';
+        
+        appleTapCursor.style.opacity = '0';
+        appleTapCursor.classList.remove('rippling');
+      }
+
+      // ================= MASTER FILM SEQUENCE (Acts 1 -> 7) =================
+      async function runFullFilm() {
+        resetStages();
+        setActivePill(btnScene1);
+
+        // ACT 1: Words assemble popup and slide
+        assembledLine1.innerHTML = '';
+        assembledLine2.innerHTML = '';
+        const wordElements = [];
+
+        WORDS.forEach((item, index) => {
+          const span = document.createElement('span');
+          span.textContent = item.text;
+          span.className = 'word-token is-hidden';
+          if (item.isBrand === 'companion') {
+            span.classList.add('brand-companion');
+          } else if (item.isBrand === 'sprint') {
+            span.classList.add('font-black', 'text-slate-900');
+          }
+          if (item.line === 1) assembledLine1.appendChild(span);
+          else assembledLine2.appendChild(span);
+          wordElements.push(span);
+        });
+
+        await sleep(200);
+
+        for (let i = 0; i < WORDS.length; i++) {
+          const el = wordElements[i];
+          const cfg = WORDS[i];
+
+          el.classList.remove('is-hidden');
+          el.style.transform = 'scale(0.3) translateY(16px)';
+          el.style.opacity = '0';
+          el.style.transition = 'transform 280ms cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 200ms ease';
+
+          await sleep(18);
+          el.style.transform = 'scale(1.12) translateY(-3px)';
+          el.style.opacity = '1';
+
+          await sleep(cfg.holdCenterMs);
+          el.style.transform = 'scale(1) translateY(0)';
+          await sleep(50);
+        }
+
+        await sleep(550);
+
+        // ACT 2: Transition into Website
+        setActivePill(btnScene2);
+        lightFlash.classList.add('flash-active');
+
+        await sleep(120);
+        openingStage.style.transition = 'transform 600ms cubic-bezier(0.16, 1, 0.3, 1), opacity 450ms ease, filter 450ms ease';
+        openingStage.style.transform = 'scale(1.06) translateY(-20px)';
+        openingStage.style.opacity = '0';
+        openingStage.style.filter = 'blur(8px)';
+
+        websiteStage.classList.add('is-active');
+
+        await sleep(350);
+        lightFlash.classList.remove('flash-active');
+
+        await sleep(700);
+
+        // ACT 3: Zoom on Sandwich icon & Tap
+        setActivePill(btnScene3);
+        phoneScreen.style.transformOrigin = '90% 8%';
+        phoneScreen.style.transform = 'scale(1.28)';
+
+        await sleep(400);
+
+        appleTapCursor.style.opacity = '1';
+        appleTapCursor.style.transform = 'translate3d(346px, 48px, 0)';
+
+        await sleep(480);
+
+        sandwichBtn.classList.add('btn-clicked');
+        appleTapCursor.classList.add('rippling');
+
+        await sleep(200);
+        sandwichBtn.classList.remove('btn-clicked');
+
+        await sleep(160);
+        appleTapCursor.classList.remove('rippling');
+        appleTapCursor.style.opacity = '0';
+
+        // ACT 4: Sidebar drawer opens & scroll-click
+        setActivePill(btnScene4);
+        mobileSidebarDrawer.classList.add('drawer-open');
+        phoneScreen.style.transformOrigin = 'center center';
+        phoneScreen.style.transform = 'scale(1)';
+
+        await sleep(500);
+
+        mobileSidebarDrawer.scrollTo({ top: 180, behavior: 'smooth' });
+        phoneScreen.style.transformOrigin = '50% 90%';
+        phoneScreen.style.transform = 'scale(1.22)';
+
+        await sleep(420);
+
+        appleTapCursor.style.opacity = '1';
+        appleTapCursor.style.transform = 'translate3d(210px, 660px, 0)';
+
+        await sleep(480);
+
+        drawerGetStartedBtn.classList.add('btn-clicked');
+        appleTapCursor.classList.add('rippling');
+
+        await sleep(200);
+        drawerGetStartedBtn.classList.remove('btn-clicked');
+
+        await sleep(160);
+        appleTapCursor.classList.remove('rippling');
+        appleTapCursor.style.opacity = '0';
+
+        await sleep(360);
+
+        // ACT 5: Run 2FA Login & Push Notification
+        await runAct5Login();
+
+        // ACT 6: Smooth Phone -> Laptop Morph & Fast "New Deadline" Modal
+        await runAct6LaptopAndModal();
+
+        // ACT 7: The Grand Finale (White Canvas, Tagline, Brand Logo & https://paper5.co)
+        await runAct7GrandFinale();
+      }
+
+      // ACT 5 Login Engine
+      async function runAct5Login() {
+        setActivePill(btnScene5);
+        phoneScreen.style.transformOrigin = 'center center';
+        phoneScreen.style.transform = 'scale(1)';
+
+        lightFlash.classList.add('flash-active');
+        await sleep(140);
+
+        websiteStage.classList.remove('is-active');
+        mobileSidebarDrawer.classList.remove('drawer-open');
+        loginStage.classList.add('is-active');
+
+        await sleep(350);
+        lightFlash.classList.remove('flash-active');
+
+        await sleep(450);
+
+        // Cursor glides to "Work email or username"
+        appleTapCursor.style.opacity = '1';
+        appleTapCursor.style.transform = 'translate3d(180px, 215px, 0)';
+
+        await sleep(480);
+
+        appleTapCursor.classList.add('rippling');
+        await sleep(150);
+        appleTapCursor.classList.remove('rippling');
+
+        // Type "paras@paper5.co" with comfortable, readable cadence
+        await typeIntoField(inputLoginUser, 'paras@paper5.co', 34);
+
+        await sleep(250);
+
+        // Cursor glides down to "Password" field
+        appleTapCursor.style.transform = 'translate3d(180px, 280px, 0)';
+
+        await sleep(380);
+
+        appleTapCursor.classList.add('rippling');
+        await sleep(150);
+        appleTapCursor.classList.remove('rippling');
+
+        // Type password
+        await typeIntoField(inputLoginPassword, 'password123', 30);
+
+        btnSendOtp.classList.add('is-ready');
+
+        await sleep(280);
+
+        // Cursor moves to "Send OTP" button
+        appleTapCursor.style.transform = 'translate3d(190px, 345px, 0)';
+
+        await sleep(450);
+
+        // Click on "Send OTP"
+        btnSendOtp.classList.add('is-clicked');
+        appleTapCursor.classList.add('rippling');
+
+        await sleep(180);
+        btnSendOtp.classList.remove('is-clicked');
+        btnSendOtp.classList.add('is-sent');
+        btnSendOtp.innerHTML = '<span>Code Sent ✓</span>';
+
+        await sleep(220);
+        appleTapCursor.classList.remove('rippling');
+
+        // DROPDOWN GMAIL NOTIFICATION APPEARS FROM TOP
+        await sleep(280);
+        gmailOtpCode.textContent = OTP_CODE;
+        gmailNotif.classList.add('notification-visible');
+
+        await sleep(1400);
+
+        gmailNotif.classList.remove('notification-visible');
+
+        await sleep(320);
+
+        // Write the 6-digit OTP into boxes [8] [4] [9] [2] [0] [1]
+        for (let k = 0; k < OTP_CODE.length; k++) {
+          const box = otpBoxes[k];
+          box.classList.add('box-active');
+          await sleep(85);
+          box.textContent = OTP_CODE[k];
+          box.classList.remove('box-active');
+          box.classList.add('box-filled');
+          await sleep(75);
+        }
+
+        btnVerifySignIn.classList.add('is-ready');
+
+        await sleep(380);
+
+        // Cursor glides to "Verify OTP & Sign In" button
+        appleTapCursor.style.transform = 'translate3d(190px, 485px, 0)';
+
+        await sleep(520);
+
+        // Click effect on "Verify OTP & Sign In"
+        btnVerifySignIn.classList.add('is-clicked');
+        appleTapCursor.classList.add('rippling');
+
+        await sleep(200);
+        btnVerifySignIn.classList.remove('is-clicked');
+        btnVerifySignIn.innerHTML = '<span class="text-emerald-400 font-bold">Signing in... ✓</span>';
+
+        await sleep(300);
+        appleTapCursor.classList.remove('rippling');
+        appleTapCursor.style.opacity = '0';
+      }
+
+      // ================= ACT 6: LAPTOP MORPH, MODAL FILL, AND CLOSE =================
+      async function runAct6LaptopAndModal() {
+        setActivePill(btnScene6);
+
+        await sleep(350);
+
+        // Light Bloom Transition Flash
+        lightFlash.classList.add('flash-active');
+
+        await sleep(140);
+
+        // Transform chassis: Phone morphs into Apple MacBook Pro
+        deviceChassis.classList.add('is-laptop-mode');
+        updateResponsiveScale();
+        
+        // Dissolve Login stage, bring up Desktop Dashboard stage
+        loginStage.style.opacity = '0';
+        loginStage.style.transform = 'scale(0.95) translateY(20px)';
+        dashboardStage.classList.add('is-active');
+
+        await sleep(350);
+        lightFlash.classList.remove('flash-active');
+        loginStage.classList.remove('is-active');
+
+        await sleep(650);
+
+        // Apple Keynote Desktop Cursor Demo (Fast cadence)
+        appleTapCursor.style.opacity = '1';
+        
+        // 1. Move swiftly to "+ New Task" button
+        moveCursorTo(dashNewTaskBtn, 0, -2);
+        await sleep(380);
+
+        // Tactile Click on "+ New Task"
+        dashNewTaskBtn.classList.add('scale-95', 'ring-2', 'ring-indigo-300');
+        appleTapCursor.classList.add('rippling');
+        await sleep(160);
+        dashNewTaskBtn.classList.remove('scale-95', 'ring-2', 'ring-indigo-300');
+        appleTapCursor.classList.remove('rippling');
+
+        // 2. Open "New deadline" modal
+        newDeadlineModal.classList.add('modal-visible'); dashboardStage.classList.add('has-modal-open');
+        await sleep(300);
+
+        // 3. Move to Title input and type comfortably
+        moveCursorTo(modalInputTitle, -80, 0);
+        await sleep(320);
+        appleTapCursor.classList.add('rippling');
+        await sleep(120);
+        appleTapCursor.classList.remove('rippling');
+        await typeIntoField(modalInputTitle, 'Pen-test report — Paper5 core', 22);
+
+        await sleep(160);
+
+        // 4. Move to Description and type comfortably
+        moveCursorTo(modalInputDesc, -80, -10);
+        await sleep(280);
+        appleTapCursor.classList.add('rippling');
+        await sleep(120);
+        appleTapCursor.classList.remove('rippling');
+        await typeIntoField(modalInputDesc, 'Security scope, zero-downtime cluster verification & audit.', 18);
+
+        await sleep(160);
+
+        // 5. Move to Priority dropdown
+        moveCursorTo(modalSelectPriority);
+        await sleep(260);
+        appleTapCursor.classList.add('rippling');
+        modalSelectPriority.classList.add('is-highlighted');
+        await sleep(140);
+        modalPriorityLabel.textContent = 'High';
+        modalPriorityLabel.classList.add('text-indigo-600', 'font-bold');
+        appleTapCursor.classList.remove('rippling');
+
+        await sleep(160);
+
+        // 6. Move to Estimated hours
+        moveCursorTo(modalInputHours);
+        await sleep(240);
+        appleTapCursor.classList.add('rippling');
+        await sleep(110);
+        appleTapCursor.classList.remove('rippling');
+        await typeIntoField(modalInputHours, '4', 24);
+
+        await sleep(160);
+
+        // 7. Move to Due date & time
+        moveCursorTo(modalInputDueDate, -60, 0);
+        await sleep(240);
+        appleTapCursor.classList.add('rippling');
+        await sleep(110);
+        appleTapCursor.classList.remove('rippling');
+        await typeIntoField(modalInputDueDate, '12-11-2026 18:00', 20);
+
+        await sleep(180);
+
+        // 8. Click Required Evidence: GitHub Commit
+        moveCursorTo(chkCommitLabel, -20, 0);
+        await sleep(260);
+        chkCommit.checked = true;
+        appleTapCursor.classList.add('rippling');
+        await sleep(150);
+        appleTapCursor.classList.remove('rippling');
+
+        await sleep(150);
+
+        // 9. Click Required Evidence: Pull Request
+        moveCursorTo(chkPrLabel, -20, 0);
+        await sleep(240);
+        chkPr.checked = true;
+        appleTapCursor.classList.add('rippling');
+        await sleep(150);
+        appleTapCursor.classList.remove('rippling');
+
+        await sleep(220);
+
+        // 10. Click on the "X" Close Button (Top Right of Modal)
+        moveCursorTo(modalCloseXBtn);
+        await sleep(340);
+
+        // Tactile Click on "X"
+        modalCloseXBtn.classList.add('btn-clicked');
+        appleTapCursor.classList.add('rippling');
+        await sleep(180);
+        modalCloseXBtn.classList.remove('btn-clicked');
+        appleTapCursor.classList.remove('rippling');
+
+        // Modal smoothly closes
+        newDeadlineModal.classList.remove('modal-visible');
+
+        await sleep(300);
+
+        // 11. Cursor glides cleanly to the Dashboard
+        moveCursorTo(dashNewTaskBtn, 0, 0);
+        await sleep(380);
+        appleTapCursor.style.opacity = '0';
+      }
+
+      // ================= ACT 7: THE GRAND FINALE =================
+      async function runAct7GrandFinale() {
+        setActivePill(btnScene7);
+
+        await sleep(450);
+
+        // Light Bloom Transition Flash
+        lightFlash.classList.add('flash-active');
+
+        await sleep(150);
+
+        // Seamless pure white blank canvas finale stage
+        deviceChassis.classList.add('is-finale-mode');
+        dashboardStage.classList.remove('is-active');
+        finaleStage.classList.add('is-active');
+        finaleCalloutBox.classList.remove('is-faded');
+        finaleBrandBox.classList.remove('is-revealed');
+
+        await sleep(350);
+        lightFlash.classList.remove('flash-active');
+
+        await sleep(300);
+
+        // Words popup sequence: "Come give it a try, your companion for maintaining the team"
+        const words = document.querySelectorAll('.finale-word');
+        for (let i = 0; i < words.length; i++) {
+          const w = words[i];
+          w.classList.add('word-visible');
+          await sleep(125);
+        }
+
+        // Hold center for viewer to read tagline
+        await sleep(1600);
+
+        // Text smoothly fades and blurs out
+        finaleCalloutBox.classList.add('is-faded');
+
+        await sleep(500);
+
+        // Paper5 Brand Logo and https://paper5.co reveal
+        finaleBrandBox.classList.add('is-revealed');
+
+        await sleep(700);
+
+        // Apple pointer glides smoothly and hovers over https://paper5.co
+        appleTapCursor.style.opacity = '1';
+        moveCursorTo(finaleUrlPill, 40, 0);
+
+        await sleep(750);
+
+        // Subtle hover pulse
+        finaleUrlPill.classList.add('scale-105', 'border-emerald-500');
+        appleTapCursor.classList.add('rippling');
+
+        await sleep(380);
+        finaleUrlPill.classList.remove('scale-105');
+        appleTapCursor.classList.remove('rippling');
+
+        await sleep(850);
+        appleTapCursor.style.opacity = '0';
+      }
+
+      // Jump handlers
+      btnScene1.addEventListener('click', runFullFilm);
+      
+      btnScene2.addEventListener('click', () => {
+        resetStages();
+        setActivePill(btnScene2);
+        websiteStage.classList.add('is-active');
+        openingStage.style.opacity = '0';
+      });
+
+      btnScene3.addEventListener('click', () => {
+        resetStages();
+        setActivePill(btnScene3);
+        openingStage.style.opacity = '0';
+        websiteStage.classList.add('is-active');
+        phoneScreen.style.transformOrigin = '90% 8%';
+        phoneScreen.style.transform = 'scale(1.28)';
+        appleTapCursor.style.opacity = '1';
+        appleTapCursor.style.transform = 'translate3d(346px, 48px, 0)';
+        sandwichBtn.classList.add('btn-clicked');
+        appleTapCursor.classList.add('rippling');
+        setTimeout(() => {
+          sandwichBtn.classList.remove('btn-clicked');
+          appleTapCursor.classList.remove('rippling');
+          mobileSidebarDrawer.classList.add('drawer-open');
+          phoneScreen.style.transform = 'scale(1)';
+        }, 400);
+      });
+
+      btnScene4.addEventListener('click', () => {
+        resetStages();
+        setActivePill(btnScene4);
+        openingStage.style.opacity = '0';
+        websiteStage.classList.add('is-active');
+        mobileSidebarDrawer.classList.add('drawer-open');
+        mobileSidebarDrawer.scrollTo({ top: 180, behavior: 'smooth' });
+        phoneScreen.style.transformOrigin = '50% 90%';
+        phoneScreen.style.transform = 'scale(1.22)';
+        appleTapCursor.style.opacity = '1';
+        appleTapCursor.style.transform = 'translate3d(210px, 660px, 0)';
+        setTimeout(() => {
+          drawerGetStartedBtn.classList.add('btn-clicked');
+          appleTapCursor.classList.add('rippling');
+          setTimeout(() => {
+            drawerGetStartedBtn.classList.remove('btn-clicked');
+            appleTapCursor.classList.remove('rippling');
+          }, 250);
+        }, 400);
+      });
+
+      btnScene5.addEventListener('click', () => {
+        resetStages();
+        openingStage.style.opacity = '0';
+        runAct5Login();
+      });
+
+      btnScene6.addEventListener('click', () => {
+        resetStages();
+        openingStage.style.opacity = '0';
+        deviceChassis.classList.add('is-laptop-mode');
+        updateResponsiveScale();
+        dashboardStage.classList.add('is-active');
+        setActivePill(btnScene6);
+        setTimeout(() => {
+          runAct6LaptopAndModal();
+        }, 300);
+      });
+
+      btnScene7.addEventListener('click', () => {
+        resetStages();
+        openingStage.style.opacity = '0';
+        deviceChassis.classList.add('is-laptop-mode');
+        updateResponsiveScale();
+        runAct7GrandFinale();
+      });
+
+      replayBtn.addEventListener('click', runFullFilm);
+
+      // ================= 1-CLICK MP4 RECORDER & EXPORTER =================
+      const btnExportMp4 = document.getElementById('btnExportMp4');
+      const directorControls = document.getElementById('directorControls');
+      const exportModal = document.getElementById('exportModal');
+      const exportModalCard = document.getElementById('exportModalCard');
+      const exportModalReason = document.getElementById('exportModalReason');
+      const closeExportModal = document.getElementById('closeExportModal');
+      const btnDismissModal = document.getElementById('btnDismissModal');
+      const btnOpenInNewTab = document.getElementById('btnOpenInNewTab');
+      const btnCopyCmd = document.getElementById('btnCopyCmd');
+      const btnTryDirectCapture = document.getElementById('btnTryDirectCapture');
+      const studioModeBanner = document.getElementById('studioModeBanner');
+      const btnStudioStartRec = document.getElementById('btnStudioStartRec');
+      const btnStudioDismiss = document.getElementById('btnStudioDismiss');
+      const filmGlobalToast = document.getElementById('filmGlobalToast');
+
+      let mediaRecorder = null;
+      let recordedChunks = [];
+      let isRecording = false;
+
+      function showToast(message, type = 'info') {
+        if (!filmGlobalToast) return;
+        filmGlobalToast.textContent = message;
+        if (type === 'success') {
+          filmGlobalToast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-[99999] px-5 py-2.5 rounded-2xl shadow-2xl text-xs font-bold flex items-center space-x-2 transition-all duration-300 bg-emerald-600 text-white border border-emerald-400 opacity-100 translate-y-0';
+        } else if (type === 'error') {
+          filmGlobalToast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-[99999] px-5 py-2.5 rounded-2xl shadow-2xl text-xs font-bold flex items-center space-x-2 transition-all duration-300 bg-rose-600 text-white border border-rose-400 opacity-100 translate-y-0';
+        } else {
+          filmGlobalToast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-[99999] px-5 py-2.5 rounded-2xl shadow-2xl text-xs font-bold flex items-center space-x-2 transition-all duration-300 bg-slate-900 text-white border border-slate-700 opacity-100 translate-y-0';
+        }
+        setTimeout(() => {
+          filmGlobalToast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-[99999] px-4 py-2.5 rounded-2xl shadow-xl text-xs font-semibold flex items-center space-x-2 transition-all duration-300 opacity-0 pointer-events-none translate-y-2';
+        }, 3800);
+      }
+
+      function openExportModal(customReason = '') {
+        if (customReason && exportModalReason) {
+          exportModalReason.textContent = customReason;
+        }
+        if (exportModal) {
+          exportModal.classList.remove('opacity-0', 'pointer-events-none');
+          exportModal.classList.add('opacity-100');
+          if (exportModalCard) {
+            exportModalCard.classList.remove('scale-95');
+            exportModalCard.classList.add('scale-100');
+          }
+        }
+      }
+
+      function closeExportModalFn() {
+        if (exportModal) {
+          exportModal.classList.add('opacity-0', 'pointer-events-none');
+          exportModal.classList.remove('opacity-100');
+          if (exportModalCard) {
+            exportModalCard.classList.add('scale-95');
+            exportModalCard.classList.remove('scale-100');
+          }
+        }
+      }
+
+      if (closeExportModal) closeExportModal.addEventListener('click', closeExportModalFn);
+      if (btnDismissModal) btnDismissModal.addEventListener('click', closeExportModalFn);
+      if (exportModal) {
+        exportModal.addEventListener('click', (e) => {
+          if (e.target === exportModal) closeExportModalFn();
+        });
+      }
+
+      if (btnOpenInNewTab) {
+        btnOpenInNewTab.addEventListener('click', () => {
+          try {
+            const curUrl = new URL(window.location.href);
+            curUrl.searchParams.set('record', '1');
+            window.open(curUrl.href, '_blank');
+          } catch(e) {
+            const sep = window.location.href.includes('?') ? '&' : '?';
+            window.open(window.location.href + sep + 'record=1', '_blank');
+          }
+          closeExportModalFn();
+        });
+      }
+
+      if (btnCopyCmd) {
+        btnCopyCmd.addEventListener('click', () => {
+          navigator.clipboard.writeText('node serve.js').then(() => {
+            btnCopyCmd.textContent = 'Copied!';
+            setTimeout(() => { btnCopyCmd.textContent = 'Copy'; }, 2000);
+          }).catch(() => {
+            btnCopyCmd.textContent = 'node serve.js';
+          });
+        });
+      }
+
+      if (btnTryDirectCapture) {
+        btnTryDirectCapture.addEventListener('click', () => {
+          closeExportModalFn();
+          startMp4Export(true);
+        });
+      }
+
+      // Check URL params for ?record=1 studio mode
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('record') === '1' && studioModeBanner) {
+          studioModeBanner.classList.remove('hidden');
+        }
+      } catch(e) {}
+
+      if (btnStudioDismiss && studioModeBanner) {
+        btnStudioDismiss.addEventListener('click', () => {
+          studioModeBanner.classList.add('hidden');
+        });
+      }
+
+      if (btnStudioStartRec) {
+        btnStudioStartRec.addEventListener('click', () => {
+          startMp4Export(true);
+        });
+      }
+
+      async function startMp4Export(forceDirect = false) {
+        if (isRecording) {
+          if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+          }
+          return;
+        }
+
+        const isEmbedded = (window.self !== window.top);
+        if (isEmbedded && !forceDirect) {
+          openExportModal('Display recording is blocked inside preview frames by browser security policy. Launch in a dedicated tab below to record and download with 1 click!');
+          return;
+        }
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+          openExportModal('Your browser does not expose screen recording APIs in this frame context. Please open directly in Google Chrome or Microsoft Edge.');
+          return;
+        }
+
+        try {
+          // Native Tab Capture at locked 60 FPS
+          const stream = await navigator.mediaDevices.getDisplayMedia({
+            video: {
+              displaySurface: 'browser',
+              frameRate: { ideal: 60, max: 60 }
+            },
+            audio: false,
+            preferCurrentTab: true
+          });
+
+          isRecording = true;
+          recordedChunks = [];
+
+          // Auto-detect optimal MIME type: mp4 (supported natively in modern Chrome/Edge) or webm
+          let mimeType = 'video/webm;codecs=vp9';
+          let fileExt = 'webm';
+          if (typeof MediaRecorder !== 'undefined') {
+            if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')) {
+              mimeType = 'video/mp4;codecs=avc1';
+              fileExt = 'mp4';
+            } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+              mimeType = 'video/mp4';
+              fileExt = 'mp4';
+            } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
+              mimeType = 'video/webm;codecs=vp9';
+              fileExt = 'webm';
+            } else if (MediaRecorder.isTypeSupported('video/webm')) {
+              mimeType = 'video/webm';
+              fileExt = 'webm';
+            }
+          }
+
+          mediaRecorder = new MediaRecorder(stream, {
+            mimeType: mimeType,
+            videoBitsPerSecond: 18000000 // 18 Mbps high bitrate 60fps
+          });
+
+          mediaRecorder.ondataavailable = function(e) {
+            if (e.data && e.data.size > 0) {
+              recordedChunks.push(e.data);
+            }
+          };
+
+          mediaRecorder.onstop = function() {
+            isRecording = false;
+            stream.getTracks().forEach(t => t.stop());
+            
+            // Restore Controls & Toast
+            directorControls.style.display = 'flex';
+            if (studioModeBanner && new URLSearchParams(window.location.search).get('record') === '1') {
+              studioModeBanner.classList.remove('hidden');
+            }
+            const toastEl = document.getElementById('recordingToast');
+            if (toastEl) toastEl.remove();
+
+            btnExportMp4.innerHTML = '<svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg><span>Export MP4</span>';
+            btnExportMp4.className = 'px-3 py-1 rounded-full bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition flex items-center space-x-1.5 shadow-sm ml-1 cursor-pointer';
+
+            // Trigger Automatic Download
+            if (recordedChunks.length > 0) {
+              const blob = new Blob(recordedChunks, { type: mimeType });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.style.display = 'none';
+              a.href = url;
+              a.download = 'sprintos-motion-film-60fps.' + fileExt;
+              document.body.appendChild(a);
+              a.click();
+              setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+              }, 1200);
+
+              showToast('🎉 Video downloaded: sprintos-motion-film-60fps.' + fileExt, 'success');
+            }
+          };
+
+          // If user cancels or stops sharing from browser banner
+          stream.getVideoTracks()[0].onended = function() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+              mediaRecorder.stop();
+            }
+          };
+
+          // Start recorder
+          mediaRecorder.start(250);
+
+          // Hide director controls and banner for a 100% pristine capture
+          directorControls.style.display = 'none';
+          if (studioModeBanner) studioModeBanner.classList.add('hidden');
+
+          // Floating stop pill
+          const toast = document.createElement('div');
+          toast.id = 'recordingToast';
+          toast.className = 'fixed top-4 right-4 z-[999] bg-rose-600 text-white font-mono text-xs px-3.5 py-1.5 rounded-full shadow-xl flex items-center space-x-2 cursor-pointer border border-rose-400 hover:bg-rose-700 transition animate-pulse';
+          toast.innerHTML = '<span class="w-2 h-2 rounded-full bg-white"></span><span>● Recording 60 FPS... Click to Finish & Download</span>';
+          toast.onclick = () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+              mediaRecorder.stop();
+            }
+          };
+          document.body.appendChild(toast);
+
+          // Play film from beginning through Act 7
+          await runFullFilm();
+
+          // Wait 1.8s on finale logo before stopping recording automatically
+          await sleep(1800);
+          if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+          }
+
+        } catch (err) {
+          console.error('Export error or cancelled:', err);
+          isRecording = false;
+          directorControls.style.display = 'flex';
+          if (studioModeBanner && new URLSearchParams(window.location.search).get('record') === '1') {
+            studioModeBanner.classList.remove('hidden');
+          }
+
+          if (err.name === 'NotAllowedError' && (err.message.includes('denied') || err.message.includes('Permission'))) {
+            showToast('Screen capture cancelled. Click Export MP4 when you are ready!');
+          } else {
+            openExportModal('Capture Notice: ' + (err.message || 'Display capture was blocked by browser permissions.') + ' Use the 1-click new tab option below to record!');
+          }
+        }
+      }
+
+      btnExportMp4.addEventListener('click', () => startMp4Export(false));
+
+      // ================= DASHBOARD DARK MODE TOGGLE =================
+      const dashThemeToggle = document.getElementById('dashThemeToggle');
+      function toggleDashboardTheme() {
+        const isDark = dashboardStage.classList.toggle('dark-theme');
+        if (dashThemeToggle) dashThemeToggle.classList.toggle('is-dark', isDark);
+        deviceChassis.classList.toggle('dark-theme', isDark);
+      }
+      if (dashThemeToggle) {
+        dashThemeToggle.addEventListener('click', toggleDashboardTheme);
+      }
+
+      // ================= MODAL SCROLL TRAP & MANUAL CONTROLS =================
+      // Trap mouse wheel so background dashboard NEVER scrolls while modal is open
+      if (newDeadlineModal) {
+        newDeadlineModal.addEventListener('wheel', (e) => {
+          e.stopPropagation();
+        }, { passive: false });
+      }
+
+      // Allow user to manually open/close modal with mouse
+      if (dashNewTaskBtn) {
+        dashNewTaskBtn.addEventListener('click', () => {
+          newDeadlineModal.classList.add('modal-visible');
+          dashboardStage.classList.add('has-modal-open');
+        });
+      }
+      if (modalCloseXBtn) {
+        modalCloseXBtn.addEventListener('click', () => {
+          newDeadlineModal.classList.remove('modal-visible');
+          dashboardStage.classList.remove('has-modal-open');
+        });
+      }
+
+
+      window.runFullFilm = runFullFilm;
+      window.startMp4Export = startMp4Export;
+
+      // Initialize responsive scale on start
+      updateResponsiveScale();
+      runFullFilm();
+    })();
+  </script>
+</body>
+</html>
