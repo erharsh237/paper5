@@ -430,7 +430,7 @@ export default function Settings() {
         plan: 'Starter Plan (Free)',
         planId: 'free',
         changeType: 'Plan Downgrade / Cancellation',
-        amount: '$0.00',
+        amount: '₹0.00',
         status: 'Paid',
         workspaceName: workspace?.name || 'Workspace'
       }
