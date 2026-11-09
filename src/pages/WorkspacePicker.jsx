@@ -5,6 +5,7 @@ import { createWorkspace, ensureUserRecordExists } from '../lib/workspaces'
 import { TEAM_SIZE_OPTIONS, WORKFLOWS, getRecommendedWorkflow, isWorkflowUnlocked } from '../lib/workflows'
 import { supabase } from '../lib/supabase'
 import PricingModal from '../components/PricingModal'
+import ThemeToggle from '../components/ThemeToggle'
 import './WorkspacePicker.css'
 
 export default function WorkspacePicker() {
@@ -240,6 +241,9 @@ export default function WorkspacePicker() {
         <div className="wp-header">
           <div className="wp-brand">
             <span className="wp-logo-text">Paper5</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: '8px' }}>
+            <ThemeToggle />
           </div>
           <h1>Select Workspace</h1>
           <p>Choose a workspace to continue, or create a new one.</p>

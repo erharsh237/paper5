@@ -7,6 +7,7 @@ import { InlineError, InlineSuccess } from '../components/states'
 import Turnstile from '../components/Turnstile'
 import OtpInput from '../components/OtpInput'
 import { triggerSpamNotice } from '../components/FloatingNotice'
+import ThemeToggle from '../components/ThemeToggle'
 
 const maskEmail = (email) => {
   if (!email || !email.includes('@')) return email;
@@ -268,6 +269,10 @@ export default function Signup() {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         Back to website
       </a>
+
+      <div className="auth-top-actions">
+        <ThemeToggle />
+      </div>
 
       <div className="auth-form-side" style={{ padding: 0 }}>
         <div className="auth-form-container">

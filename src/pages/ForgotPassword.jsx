@@ -6,6 +6,7 @@ import { InlineError } from '../components/states'
 import { validateEmail } from '../lib/validation'
 import logo from '../assets/logo.png'
 import Turnstile from '../components/Turnstile'
+import ThemeToggle from '../components/ThemeToggle'
 import { getMainUrl } from '../lib/domain'
 
 export default function ForgotPassword() {
@@ -55,6 +56,11 @@ export default function ForgotPassword() {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         Back to website
       </a>
+
+      <div className="auth-top-actions">
+        <ThemeToggle />
+      </div>
+
       <div className="auth-showcase-bg" aria-hidden="true" />
 
       <div className="auth-container" style={{ maxWidth: '440px', margin: '0 auto', padding: '40px 20px' }}>

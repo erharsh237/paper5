@@ -4,6 +4,7 @@ import { useAuth } from '../lib/AuthContext'
 import { useWorkspace } from '../lib/WorkspaceContext'
 import { subscribeUserWorkspaces } from '../lib/workspaces'
 import FeedbackModal from './FeedbackModal'
+import ThemeToggle from './ThemeToggle'
 import './NavTabs.css'
 
 function iconProps(extra) { return { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', ...extra } }
@@ -52,6 +53,8 @@ export default function UserMenu() {
 
   return (
     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+      <ThemeToggle />
+
       <button
         type="button"
         onClick={() => setIsFeedbackOpen(true)}
@@ -131,7 +134,14 @@ export default function UserMenu() {
               <SwitchIcon /> Switch / Create Workspace
             </a>
 
-            <div style={{ margin: '4px 0', borderTop: '1px solid #EAECF6' }} />
+            <div style={{ margin: '4px 0', borderTop: '1px solid var(--border-soft, #EAECF6)' }} />
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px' }}>
+              <span style={{ fontSize: '12.5px', fontWeight: 500, color: 'var(--text-secondary, #6E7091)' }}>Theme Mode</span>
+              <ThemeToggle />
+            </div>
+
+            <div style={{ margin: '4px 0', borderTop: '1px solid var(--border-soft, #EAECF6)' }} />
 
             <button 
               className="nav-more-item nav-more-item--danger" 
