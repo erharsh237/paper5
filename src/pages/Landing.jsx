@@ -56,11 +56,35 @@ export default function Landing() {
   useScrollReveal()
   const [alertMessage, setAlertMessage] = useState(null)
   const [isContactOpen, setIsContactOpen] = useState(false)
-  const [activePreviewTab, setActivePreviewTab] = useState('workflow') // 'workflow' | 'accountability' | 'knowledge' | 'integrations'
   const [openFaq, setOpenFaq] = useState(0) // Default first FAQ item open
   const [activeFeatureSlide, setActiveFeatureSlide] = useState(0)
+  const [isFeaturePaused, setIsFeaturePaused] = useState(false)
   const [touchStartX, setTouchStartX] = useState(null)
   const [touchEndX, setTouchEndX] = useState(null)
+  const [stompTriggered, setStompTriggered] = useState(false)
+  const [stompKey, setStompKey] = useState(0)
+
+  // Auto-scroll feature cards continuously; pause on hover or touch
+  useEffect(() => {
+    if (isFeaturePaused) return
+    const interval = setInterval(() => {
+      setActiveFeatureSlide((prev) => (prev === 5 ? 0 : prev + 1))
+    }, 4500)
+    return () => clearInterval(interval)
+  }, [isFeaturePaused])
+
+  useEffect(() => {
+    setStompTriggered(false)
+    const timer = setTimeout(() => {
+      setStompTriggered(true)
+    }, 120)
+    return () => clearTimeout(timer)
+  }, [stompKey])
+
+  const replayStomp = () => {
+    setStompTriggered(false)
+    setStompKey(k => k + 1)
+  }
 
   const featureTabs = [
     { id: 0, num: '01', label: 'Agile Kanban' },
@@ -202,10 +226,48 @@ export default function Landing() {
         <AnimatedGridBackgroundSection>
           <section className="hero-section" id="hero">
             <div className="hero-content">
-              {/* Main Headline */}
-              <h1 className="hero-headline">
-                Your Projects. Your People.<br />
-                <span className="hero-headline-gradient">Everything in Sync.</span>
+              {/* Main Headline with Text Reveal Stomp Animation */}
+              <h1 
+                key={stompKey}
+                className={`hero-headline hero-stomp-headline ${stompTriggered ? 'is-active' : ''}`}
+                aria-label="Your projects. Your people. Everything is in sync"
+                onClick={replayStomp}
+                title="Click to replay stomp animation"
+              >
+                <div className="hero-stomp-row">
+                  <span className="stomp-phrase">
+                    <span className="stomp-word" style={{ '--delay': '200ms' }}>
+                      <span className="stomp-word-inner">Your</span>
+                    </span>
+                    <span className="stomp-word" style={{ '--delay': '420ms' }}>
+                      <span className="stomp-word-inner">projects.</span>
+                    </span>
+                  </span>
+                  <span className="stomp-phrase">
+                    <span className="stomp-word" style={{ '--delay': '800ms' }}>
+                      <span className="stomp-word-inner">Your</span>
+                    </span>
+                    <span className="stomp-word" style={{ '--delay': '1020ms' }}>
+                      <span className="stomp-word-inner">people.</span>
+                    </span>
+                  </span>
+                </div>
+                <div className="hero-stomp-row stomp-highlight">
+                  <span className="stomp-phrase">
+                    <span className="stomp-word" style={{ '--delay': '1440ms' }}>
+                      <span className="stomp-word-inner">Everything</span>
+                    </span>
+                    <span className="stomp-word" style={{ '--delay': '1620ms' }}>
+                      <span className="stomp-word-inner">is</span>
+                    </span>
+                    <span className="stomp-word" style={{ '--delay': '1760ms' }}>
+                      <span className="stomp-word-inner">in</span>
+                    </span>
+                    <span className="stomp-word stomp-word-final" style={{ '--delay': '1940ms' }}>
+                      <span className="stomp-word-inner">sync</span>
+                    </span>
+                  </span>
+                </div>
               </h1>
 
               {/* Supporting Subheadline */}
@@ -239,419 +301,6 @@ export default function Landing() {
                 <span>No credit card required</span>
                 <span className="microcopy-dot">•</span>
                 <span>Setup in under 2 minutes</span>
-              </div>
-            </div>
-
-            {/* ── Visual Product Hero: High-Fidelity Paper5 Workspace ── */}
-            <div className="hero-preview-container">
-              <div className="preview-window">
-                {/* Browser Window Chrome */}
-                <div className="preview-chrome">
-                  <div className="preview-dots">
-                    <span className="dot dot-red" />
-                    <span className="dot dot-yellow" />
-                    <span className="dot dot-green" />
-                  </div>
-                  <div className="preview-address-bar">
-                    <Lock size={12} color="#64748b" />
-                    <span>app.paper5.co/alpha-team/workspace</span>
-                  </div>
-                  <div className="preview-live-pill">
-                    <span className="live-indicator" />
-                    <span>Connected • Live</span>
-                  </div>
-                </div>
-
-                {/* Sub-Header & Live Workspace Context */}
-                <div className="preview-subnav">
-                  <div className="preview-title-meta">
-                    <div className="preview-workspace-name">
-                      <strong>Alpha Team</strong> <span className="workspace-sep">/</span> Sprint 14 Launch
-                    </div>
-                    <div className="preview-status-pill">
-                      <span>72% Completed • 4 Days Left</span>
-                    </div>
-                  </div>
-
-                  {/* 4 Interactive Perspective Tabs */}
-                  <div className="preview-tabs" role="tablist">
-                    <button 
-                      className={`preview-tab-btn ${activePreviewTab === 'workflow' ? 'active' : ''}`}
-                      onClick={() => setActivePreviewTab('workflow')}
-                      role="tab"
-                      aria-selected={activePreviewTab === 'workflow'}
-                    >
-                      <Layers size={14} />
-                      <span>Sprint Board</span>
-                    </button>
-                    <button 
-                      className={`preview-tab-btn ${activePreviewTab === 'accountability' ? 'active' : ''}`}
-                      onClick={() => setActivePreviewTab('accountability')}
-                      role="tab"
-                      aria-selected={activePreviewTab === 'accountability'}
-                    >
-                      <Users size={14} />
-                      <span>Accountability</span>
-                    </button>
-                    <button 
-                      className={`preview-tab-btn ${activePreviewTab === 'knowledge' ? 'active' : ''}`}
-                      onClick={() => setActivePreviewTab('knowledge')}
-                      role="tab"
-                      aria-selected={activePreviewTab === 'knowledge'}
-                    >
-                      <FileText size={14} />
-                      <span>Meeting Docs</span>
-                    </button>
-                    <button 
-                      className={`preview-tab-btn ${activePreviewTab === 'integrations' ? 'active' : ''}`}
-                      onClick={() => setActivePreviewTab('integrations')}
-                      role="tab"
-                      aria-selected={activePreviewTab === 'integrations'}
-                    >
-                      <GitPullRequest size={14} />
-                      <span>GitHub & Tools</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Interactive Preview Body */}
-                <div className="preview-body">
-                  {/* TAB 1: SPRINT BOARD & KANBAN */}
-                  {activePreviewTab === 'workflow' && (
-                    <div className="preview-board-grid">
-                      {/* Column 1: Backlog */}
-                      <div className="preview-board-col">
-                        <div className="preview-col-header">
-                          <div className="preview-col-title-wrap">
-                            <span className="col-indicator col-backlog" />
-                            <span className="col-title">Sprint Backlog</span>
-                          </div>
-                          <span className="col-count">2</span>
-                        </div>
-                        <div className="preview-card">
-                          <div className="preview-card-tags">
-                            <span className="card-badge badge-blue">Backend</span>
-                            <span className="card-badge badge-priority-high">High</span>
-                          </div>
-                          <div className="preview-card-title">Stripe webhook idempotency & retry logic</div>
-                          <div className="preview-card-meta">
-                            <div className="card-assignee">
-                              <span className="avatar-xs">AM</span>
-                              <span>Alex M.</span>
-                            </div>
-                            <span className="card-due">Due Tomorrow</span>
-                          </div>
-                        </div>
-                        <div className="preview-card">
-                          <div className="preview-card-tags">
-                            <span className="card-badge badge-gray">Product</span>
-                            <span className="card-badge badge-priority-med">Med</span>
-                          </div>
-                          <div className="preview-card-title">Customer onboarding email welcome sequence</div>
-                          <div className="preview-card-meta">
-                            <div className="card-assignee">
-                              <span className="avatar-xs">SK</span>
-                              <span>Sarah K.</span>
-                            </div>
-                            <span className="card-due">Due Friday</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Column 2: In Progress */}
-                      <div className="preview-board-col">
-                        <div className="preview-col-header">
-                          <div className="preview-col-title-wrap">
-                            <span className="col-indicator col-progress" />
-                            <span className="col-title">In Progress</span>
-                          </div>
-                          <span className="col-count">2</span>
-                        </div>
-                        <div className="preview-card card-featured">
-                          <div className="preview-card-tags">
-                            <span className="card-badge badge-purple">Core Architecture</span>
-                            <span className="card-badge badge-priority-urgent">Urgent</span>
-                          </div>
-                          <div className="preview-card-title">PostgreSQL connection pooling & read-replica routing</div>
-                          <div className="preview-card-extra">
-                            <div className="github-sync-pill">
-                              <span className="gh-icon">🐙</span>
-                              <span>PR #42: Checks Passing</span>
-                            </div>
-                          </div>
-                          <div className="preview-card-meta">
-                            <div className="card-assignee">
-                              <span className="avatar-xs avatar-paras">PK</span>
-                              <span>Paras K.</span>
-                            </div>
-                            <span className="card-due urgent-due">Due in 2d</span>
-                          </div>
-                        </div>
-                        <div className="preview-card">
-                          <div className="preview-card-tags">
-                            <span className="card-badge badge-blue">Frontend</span>
-                            <span className="card-badge badge-priority-high">High</span>
-                          </div>
-                          <div className="preview-card-title">Responsive mobile drawer navigation & keyboard accessibility</div>
-                          <div className="preview-card-meta">
-                            <div className="card-assignee">
-                              <span className="avatar-xs">ER</span>
-                              <span>Elena R.</span>
-                            </div>
-                            <span className="card-due">Due in 3d</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Column 3: Blockers & Reviews */}
-                      <div className="preview-board-col">
-                        <div className="preview-col-header">
-                          <div className="preview-col-title-wrap">
-                            <span className="col-indicator col-blocker" />
-                            <span className="col-title">Blockers & Swarms</span>
-                          </div>
-                          <span className="col-count">1</span>
-                        </div>
-                        <div className="preview-card card-blocker-highlight">
-                          <div className="preview-card-tags">
-                            <span className="card-badge badge-red">Blocker Flagged</span>
-                          </div>
-                          <div className="preview-card-title">Domain DNS SSL verification for custom vanity domains</div>
-                          <div className="blocker-reason-box">
-                            <strong>Blocker:</strong> Waiting for root nameserver delegation from client infrastructure.
-                          </div>
-                          <div className="preview-card-meta">
-                            <div className="card-assignee">
-                              <span className="avatar-xs">TK</span>
-                              <span>Tariq K.</span>
-                            </div>
-                            <span className="status-badge-inline">Swarm Alert Active</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Column 4: Done & Verified */}
-                      <div className="preview-board-col">
-                        <div className="preview-col-header">
-                          <div className="preview-col-title-wrap">
-                            <span className="col-indicator col-done" />
-                            <span className="col-title">Done & Verified</span>
-                          </div>
-                          <span className="col-count">2</span>
-                        </div>
-                        <div className="preview-card card-done">
-                          <div className="preview-card-tags">
-                            <span className="card-badge badge-green">Verified</span>
-                          </div>
-                          <div className="preview-card-title">Two-Factor Authentication with TOTP Authenticator</div>
-                          <div className="proof-of-work-pill">
-                            <CheckCircle2 size={13} color="#16a34a" />
-                            <span>Proof of work verified</span>
-                          </div>
-                          <div className="preview-card-meta">
-                            <div className="card-assignee">
-                              <span className="avatar-xs">AM</span>
-                              <span>Alex M.</span>
-                            </div>
-                            <span className="card-completed-date">Yesterday</span>
-                          </div>
-                        </div>
-                        <div className="preview-card card-done">
-                          <div className="preview-card-tags">
-                            <span className="card-badge badge-green">Verified</span>
-                          </div>
-                          <div className="preview-card-title">Standup notes sync & reflection digest configuration</div>
-                          <div className="preview-card-meta">
-                            <div className="card-assignee">
-                              <span className="avatar-xs">SK</span>
-                              <span>Sarah K.</span>
-                            </div>
-                            <span className="card-completed-date">2d ago</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* TAB 2: SINGLE-OWNER ACCOUNTABILITY ROSTER */}
-                  {activePreviewTab === 'accountability' && (
-                    <div className="preview-accountability-layout">
-                      <div className="accountability-header-bar">
-                        <div>
-                          <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 700 }}>Sprint 14 Accountability Roster</h4>
-                          <p style={{ margin: '2px 0 0', fontSize: '12.5px', color: '#64748b' }}>Every deliverable has exactly one accountable owner and peer verification.</p>
-                        </div>
-                        <div className="accountability-stat-summary">
-                          <span>Verified: <strong>6/8 Tasks</strong></span>
-                        </div>
-                      </div>
-
-                      <div className="accountability-table-mock">
-                        <div className="acc-row acc-header-row">
-                          <span>Team Member</span>
-                          <span>Ownership Area</span>
-                          <span>Active Deliverable</span>
-                          <span>Deadline</span>
-                          <span>Proof Status</span>
-                        </div>
-                        <div className="acc-row">
-                          <div className="acc-user">
-                            <span className="avatar-xs">AM</span>
-                            <div><strong>Alex Miller</strong><div className="sub-role">Backend Lead</div></div>
-                          </div>
-                          <span className="acc-tag">Stripe Billing</span>
-                          <span className="acc-task">Idempotency & Webhook Retries</span>
-                          <span className="acc-due">Tomorrow</span>
-                          <span className="acc-status status-verified"><Check size={12} /> Verified</span>
-                        </div>
-                        <div className="acc-row highlight-row">
-                          <div className="acc-user">
-                            <span className="avatar-xs avatar-paras">PK</span>
-                            <div><strong>Paras Koul</strong><div className="sub-role">Staff Engineer</div></div>
-                          </div>
-                          <span className="acc-tag">Core DB</span>
-                          <span className="acc-task">Connection Pooling & Replica Read</span>
-                          <span className="acc-due urgent-due">2 Days</span>
-                          <span className="acc-status status-review">PR #42 in Review</span>
-                        </div>
-                        <div className="acc-row">
-                          <div className="acc-user">
-                            <span className="avatar-xs">ER</span>
-                            <div><strong>Elena Rivera</strong><div className="sub-role">Frontend Specialist</div></div>
-                          </div>
-                          <span className="acc-tag">UI / UX</span>
-                          <span className="acc-task">Mobile Navigation & A11y</span>
-                          <span className="acc-due">3 Days</span>
-                          <span className="acc-status status-progress">In Progress</span>
-                        </div>
-                        <div className="acc-row blocker-row">
-                          <div className="acc-user">
-                            <span className="avatar-xs">TK</span>
-                            <div><strong>Tariq Khan</strong><div className="sub-role">DevOps</div></div>
-                          </div>
-                          <span className="acc-tag">Infrastructure</span>
-                          <span className="acc-task">Custom Domain DNS & SSL</span>
-                          <span className="acc-due">Friday</span>
-                          <span className="acc-status status-blocked"><AlertTriangle size={12} /> Blocker Swarm</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* TAB 3: PROJECT KNOWLEDGE & CONNECTED DOCS */}
-                  {activePreviewTab === 'knowledge' && (
-                    <div className="preview-knowledge-layout">
-                      <div className="knowledge-sidebar">
-                        <div className="knowledge-side-title">Project Knowledge Base</div>
-                        <div className="knowledge-side-item active">
-                          <FileText size={14} />
-                          <span>Sprint 14 Architecture Decisions</span>
-                        </div>
-                        <div className="knowledge-side-item">
-                          <FileText size={14} />
-                          <span>Weekly Sync & Retrospective (Oct 28)</span>
-                        </div>
-                        <div className="knowledge-side-item">
-                          <FileText size={14} />
-                          <span>API Authentication Standards</span>
-                        </div>
-                        <div className="knowledge-side-item">
-                          <FileText size={14} />
-                          <span>Client Deliverable Specifications</span>
-                        </div>
-                      </div>
-                      <div className="knowledge-viewer">
-                        <div className="knowledge-header">
-                          <h3>Sprint 14 Architecture Decisions</h3>
-                          <div className="knowledge-meta">Updated yesterday • Author: Paras K. • 4 Decisions Recorded</div>
-                        </div>
-                        <div className="knowledge-content-mock">
-                          <div className="doc-section">
-                            <strong>Decision 1: Connection Pooling Strategy</strong>
-                            <p>We route all high-frequency deadline reads through Supabase's transaction pooler on port 6543 to eliminate socket exhaustion under burst traffic.</p>
-                          </div>
-                          <div className="doc-section">
-                            <strong>Decision 2: Blocker Swarm Protocol</strong>
-                            <p>Any task flagged as "Blocked" broadcasts immediately into Slack `#alpha-sprint-alerts` and emails assigned teammates so swarming begins within 15 minutes.</p>
-                          </div>
-                          <div className="doc-section">
-                            <strong>Action Items:</strong>
-                            <ul className="doc-action-list">
-                              <li>Alex M. — Finalize database schema migration by Thursday</li>
-                              <li>Elena R. — Verify keyboard tab navigation across modals</li>
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* TAB 4: CONNECTED DEVELOPMENT & TOOLS */}
-                  {activePreviewTab === 'integrations' && (
-                    <div className="preview-tools-layout">
-                      <div className="tool-card-preview">
-                        <div className="tool-card-head">
-                          <div className="tool-info">
-                            <span className="tool-icon">🐙</span>
-                            <div>
-                              <h4>GitHub Repository Sync</h4>
-                              <p>Repo: <code>paper5/sprint-core</code> (Main branch)</p>
-                            </div>
-                          </div>
-                          <span className="tool-badge-live">Live & Syncing</span>
-                        </div>
-                        <div className="tool-feed">
-                          <div className="tool-feed-item">
-                            <CheckCircle2 size={14} color="#16a34a" />
-                            <span>PR #42 merged into <code>main</code> — auto-closed task "API Token Revocation"</span>
-                          </div>
-                          <div className="tool-feed-item">
-                            <GitPullRequest size={14} color="#2563eb" />
-                            <span>PR #44 opened: "Add PostgreSQL read-replica support" (All checks passing)</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="tool-card-preview">
-                        <div className="tool-card-head">
-                          <div className="tool-info">
-                            <span className="tool-icon">💬</span>
-                            <div>
-                              <h4>Slack & Discord Webhook Alerts</h4>
-                              <p>Channel: <code>#alpha-sprint-alerts</code></p>
-                            </div>
-                          </div>
-                          <span className="tool-badge-live">Active</span>
-                        </div>
-                        <div className="tool-feed">
-                          <div className="tool-feed-item">
-                            <AlertCircle size={14} color="#dc2626" />
-                            <span>Blocker notification broadcasted for "Domain DNS SSL verification"</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="tool-card-preview">
-                        <div className="tool-card-head">
-                          <div className="tool-info">
-                            <span className="tool-icon">⚡</span>
-                            <div>
-                              <h4>1-Click REST API Studio</h4>
-                              <p>Key: <code>sp_live_9f8a...4b12</code> (Status: Active)</p>
-                            </div>
-                          </div>
-                          <span className="tool-badge-live">Ready</span>
-                        </div>
-                        <div className="tool-feed">
-                          <div className="tool-feed-item">
-                            <Code2 size={14} color="#059669" />
-                            <span>CI/CD deployment trigger verified: HTTP 200 OK (Latency 38ms)</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           </section>
@@ -910,56 +559,20 @@ export default function Landing() {
               </p>
             </div>
 
-            {/* Sliding Feature Navigation Bar */}
-            <div className="features-slider-controls">
-              <div className="features-pill-tabs" role="tablist" aria-label="Feature Capabilities">
-                {featureTabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    role="tab"
-                    id={`feature-tab-${tab.id}`}
-                    aria-selected={activeFeatureSlide === tab.id}
-                    aria-controls={`feature-panel-${tab.id}`}
-                    className={`feature-tab-pill ${activeFeatureSlide === tab.id ? 'active' : ''}`}
-                    onClick={() => setActiveFeatureSlide(tab.id)}
-                  >
-                    <span className="tab-pill-num">{tab.num}</span>
-                    <span className="tab-pill-label">{tab.label}</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="features-slider-nav-arrows">
-                <button 
-                  type="button"
-                  className="slider-arrow-btn" 
-                  onClick={handlePrevSlide}
-                  aria-label="Previous capability"
-                >
-                  <ChevronLeft size={18} />
-                </button>
-                <div className="slider-counter">
-                  <span>0{activeFeatureSlide + 1}</span>
-                  <span className="counter-sep">/</span>
-                  <span>06</span>
-                </div>
-                <button 
-                  type="button"
-                  className="slider-arrow-btn" 
-                  onClick={handleNextSlide}
-                  aria-label="Next capability"
-                >
-                  <ChevronRight size={18} />
-                </button>
-              </div>
-            </div>
-
-            {/* Slider Viewport */}
+            {/* Slider Viewport with Auto-Scroll (Hover to Pause) */}
             <div 
               className="features-slider-viewport"
-              onTouchStart={handleTouchStart}
+              onMouseEnter={() => setIsFeaturePaused(true)}
+              onMouseLeave={() => setIsFeaturePaused(false)}
+              onTouchStart={(e) => {
+                setIsFeaturePaused(true)
+                handleTouchStart(e)
+              }}
               onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
+              onTouchEnd={() => {
+                handleTouchEnd()
+                setTimeout(() => setIsFeaturePaused(false), 2500)
+              }}
             >
               <div 
                 className="features-slider-track"

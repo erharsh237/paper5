@@ -1,4 +1,5 @@
 .auth-layout {
+  position: relative;
   display: flex;
   min-height: 100vh;
   width: 100%;
@@ -546,8 +547,9 @@ body[data-theme="dark"] .auth-brand-text,
 
 .auth-back-to-website {
   position: absolute;
-  top: 32px;
-  left: 32px;
+  top: 28px;
+  left: 28px;
+  z-index: 1000;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -555,11 +557,14 @@ body[data-theme="dark"] .auth-brand-text,
   color: #666;
   text-decoration: none;
   font-weight: 500;
-  transition: color 0.15s ease;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: color 0.15s ease, transform 0.15s ease;
 }
 
 .auth-back-to-website:hover {
   color: #10b981;
+  transform: translateX(-2px);
 }
 
 [data-theme="dark"] .auth-back-to-website {
@@ -568,4 +573,12 @@ body[data-theme="dark"] .auth-brand-text,
 
 [data-theme="dark"] .auth-back-to-website:hover {
   color: #ffffff !important;
+}
+
+@media (max-width: 640px) {
+  .auth-back-to-website {
+    top: 16px;
+    left: 16px;
+    font-size: 13px;
+  }
 }

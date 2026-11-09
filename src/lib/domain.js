@@ -42,6 +42,7 @@ export const getDomainConfig = () => {
 }
 
 export const APP_BASE_URL = 'https://app.paper5.co'
+export const MAIN_BASE_URL = 'https://paper5.co'
 
 /**
  * Returns full URL for App routes (app.paper5.co)
@@ -52,10 +53,9 @@ export const getAppUrl = (path = '') => {
 }
 
 /**
- * Returns full or relative URL for Main Website routes (paper5.com)
- * Guaranteed to stay on the same origin to prevent open external redirects.
+ * Returns full or relative URL for Main Website routes (paper5.co)
  */
 export const getMainUrl = (path = '') => {
-  const cleanPath = path.startsWith('/') ? path : `/${path}`
-  return cleanPath
+  const cleanPath = path === '/' ? '' : (path.startsWith('/') ? path : `/${path}`)
+  return `${MAIN_BASE_URL}${cleanPath || '/'}`
 }

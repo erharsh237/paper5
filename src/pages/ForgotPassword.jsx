@@ -6,6 +6,7 @@ import { InlineError } from '../components/states'
 import { validateEmail } from '../lib/validation'
 import logo from '../assets/logo.png'
 import Turnstile from '../components/Turnstile'
+import { getMainUrl } from '../lib/domain'
 
 export default function ForgotPassword() {
   const { resetPassword, authError, clearAuthError } = useAuth()
@@ -43,6 +44,17 @@ export default function ForgotPassword() {
 
   return (
     <div className="auth-layout">
+      <a 
+        href="https://paper5.co" 
+        className="auth-back-to-website"
+        onClick={(e) => {
+          e.preventDefault()
+          window.location.href = 'https://paper5.co'
+        }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back to website
+      </a>
       <div className="auth-showcase-bg" aria-hidden="true" />
 
       <div className="auth-container" style={{ maxWidth: '440px', margin: '0 auto', padding: '40px 20px' }}>
