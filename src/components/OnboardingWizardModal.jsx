@@ -453,10 +453,29 @@ export default function OnboardingWizardModal() {
                     type="checkbox" 
                     checked={termsAccepted} 
                     onChange={e => setTermsAccepted(e.target.checked)} 
-                    style={{ marginTop: '3px', accentColor: '#10b981', width: '16px', height: '16px' }}
+                    style={{ marginTop: '3px', accentColor: '#10b981', width: '16px', height: '16px', cursor: 'pointer' }}
                   />
                   <span>
-                    I accept the <a href="/terms" target="_blank" rel="noreferrer" style={{ color: '#10b981', textDecoration: 'underline' }}>Terms of Service</a> and <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: '#10b981', textDecoration: 'underline' }}>Privacy Policy</a>.
+                    I accept the{' '}
+                    <a 
+                      href="/terms" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ color: '#10b981', textDecoration: 'underline', fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      Terms of Service
+                    </a>{' '}
+                    and{' '}
+                    <a 
+                      href="/privacy" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ color: '#10b981', textDecoration: 'underline', fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      Privacy Policy
+                    </a>.
                   </span>
                 </label>
 
@@ -465,10 +484,29 @@ export default function OnboardingWizardModal() {
                     type="checkbox" 
                     checked={dpaAccepted} 
                     onChange={e => setDpaAccepted(e.target.checked)} 
-                    style={{ marginTop: '3px', accentColor: '#10b981', width: '16px', height: '16px' }}
+                    style={{ marginTop: '3px', accentColor: '#10b981', width: '16px', height: '16px', cursor: 'pointer' }}
                   />
                   <span>
-                    I acknowledge the <a href="/dpa" target="_blank" rel="noreferrer" style={{ color: '#10b981', textDecoration: 'underline' }}>Data Processing Agreement (DPA)</a> and vendor subprocessors.
+                    I acknowledge the{' '}
+                    <a 
+                      href="/dpa" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ color: '#10b981', textDecoration: 'underline', fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      Data Processing Agreement (DPA)
+                    </a>{' '}
+                    and{' '}
+                    <a 
+                      href="/subprocessors" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ color: '#10b981', textDecoration: 'underline', fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      vendor subprocessors
+                    </a>.
                   </span>
                 </label>
               </div>

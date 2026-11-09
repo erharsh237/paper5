@@ -215,21 +215,27 @@ export default function App() {
   const { user, userData, loading, isPending2FA } = useAuth()
   const { isAppSubdomain } = getDomainConfig()
 
-  // Public marketing pages and legal docs should NEVER be blocked by Auth loading
-  const isPublicMarketingRoute = !isAppSubdomain && (
+  // Legal compliance documents and public marketing routes should NEVER be blocked by Auth loading
+  const isLegalRoute = (
+    location.pathname === '/terms' ||
+    location.pathname === '/privacy' ||
+    location.pathname === '/dpa' ||
+    location.pathname === '/subprocessors' ||
+    location.pathname.startsWith('/legal')
+  )
+
+  const isPublicMarketingRoute = isLegalRoute || (!isAppSubdomain && (
     location.pathname === '/' ||
     location.pathname === '/pricing' ||
     location.pathname === '/features' ||
     location.pathname === '/about' ||
     location.pathname === '/contact' ||
-    location.pathname === '/privacy' ||
     location.pathname === '/product-integrations' ||
     location.pathname === '/changelog' ||
     location.pathname === '/docs' ||
     location.pathname.startsWith('/docs/') ||
-    location.pathname === '/security' ||
-    location.pathname.startsWith('/legal')
-  )
+    location.pathname === '/security'
+  ))
 
   if (loading && !isPublicMarketingRoute) {
     return <PageLoading />
@@ -287,7 +293,10 @@ export default function App() {
           
           <Route path="/legal" element={<Navigate to="/legal/terms" replace />} />
           <Route path="/legal/:docId" element={<Legal />} />
-          <Route path="/privacy" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <Privacy />} />
+          <Route path="/terms" element={<Legal defaultDocId="terms" />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/dpa" element={<Legal defaultDocId="dpa" />} />
+          <Route path="/subprocessors" element={<Legal defaultDocId="subprocessors" />} />
           <Route path="/contact" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <Contact />} />
           <Route path="/about-us" element={<Navigate to="/about" replace />} />
           <Route path="/admin" element={<LocalAdminDashboard />} />
