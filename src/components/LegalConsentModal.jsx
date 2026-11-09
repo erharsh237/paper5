@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuth, CURRENT_LEGAL_VERSION } from '../lib/AuthContext'
+import LegalPolicyModal from './LegalPolicyModal'
 import './Modal.css'
 
 export default function LegalConsentModal() {
   const { userData, acceptLegalTerms } = useAuth()
   const location = useLocation()
   const [loading, setLoading] = useState(false)
+  const [policyDoc, setPolicyDoc] = useState(null)
 
   const publicAuthPaths = ['/login', '/signup', '/forgot-password', '/verify', '/auth/action']
   const isAuthPage = publicAuthPaths.some(p => location.pathname.startsWith(p))
@@ -30,24 +32,48 @@ export default function LegalConsentModal() {
   }
 
   return (
-    <div className="modal-backdrop" style={{ zIndex: 9999 }}>
-      <div className="modal" style={{ maxWidth: '440px', padding: '32px' }}>
-        <h2 style={{ margin: '0 0 16px 0', fontSize: '20px' }}>Updated Terms & Privacy Policy</h2>
-        <p style={{ margin: '0 0 24px 0', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-          We've updated our <a href="/legal/terms" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>Terms of Service</a> and <a href="/legal/privacy" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>Privacy Policy</a> to better protect your data and comply with new regulations.
-          <br /><br />
-          Please review and accept these updated terms to continue using Paper5.
-        </p>
+    <>
+      <div className="modal-backdrop" style={{ zIndex: 9999 }}>
+        <div className="modal" style={{ maxWidth: '440px', padding: '32px' }}>
+          <h2 style={{ margin: '0 0 16px 0', fontSize: '20px' }}>Updated Terms & Privacy Policy</h2>
+          <p style={{ margin: '0 0 24px 0', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+            We've updated our{' '}
+            <button 
+              type="button"
+              onClick={() => setPolicyDoc('terms')} 
+              style={{ background: 'none', border: 'none', padding: 0, color: 'var(--accent)', textDecoration: 'underline', cursor: 'pointer', fontSize: 'inherit', fontWeight: 600 }}
+            >
+              Terms of Service
+            </button>{' '}
+            and{' '}
+            <button 
+              type="button"
+              onClick={() => setPolicyDoc('privacy')} 
+              style={{ background: 'none', border: 'none', padding: 0, color: 'var(--accent)', textDecoration: 'underline', cursor: 'pointer', fontSize: 'inherit', fontWeight: 600 }}
+            >
+              Privacy Policy
+            </button>{' '}
+            to better protect your data and comply with new regulations.
+            <br /><br />
+            Please review and accept these updated terms to continue using Paper5.
+          </p>
 
-        <button 
-          className="btn" 
-          onClick={handleAccept} 
-          disabled={loading}
-          style={{ width: '100%', justifyContent: 'center' }}
-        >
-          {loading ? 'Saving...' : 'I Accept'}
-        </button>
+          <button 
+            className="btn" 
+            onClick={handleAccept} 
+            disabled={loading}
+            style={{ width: '100%', justifyContent: 'center' }}
+          >
+            {loading ? 'Saving...' : 'I Accept'}
+          </button>
+        </div>
       </div>
-    </div>
+
+      <LegalPolicyModal 
+        isOpen={Boolean(policyDoc)} 
+        docId={policyDoc} 
+        onClose={() => setPolicyDoc(null)} 
+      />
+    </>
   )
 }

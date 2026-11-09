@@ -9,6 +9,7 @@ import { TEAM_SIZE_OPTIONS, WORKFLOWS, getRecommendedWorkflow } from '../lib/wor
 
 import { decryptPlanParam } from '../lib/urlSecurity'
 import { safeRedirect } from '../lib/safeRedirect'
+import LegalPolicyModal from './LegalPolicyModal'
 
 const TIERS = [
   {
@@ -77,6 +78,7 @@ export default function OnboardingWizardModal() {
   // Step 2: Legal Consent State (Default unchecked)
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [dpaAccepted, setDpaAccepted] = useState(false)
+  const [policyModalDoc, setPolicyModalDoc] = useState(null)
 
   // Step 3: Workspace Creation Form State
   const [wsName, setWsName] = useState('')
@@ -457,25 +459,53 @@ export default function OnboardingWizardModal() {
                   />
                   <span>
                     I accept the{' '}
-                    <a 
-                      href="/terms" 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ color: '#10b981', textDecoration: 'underline', fontWeight: 600, cursor: 'pointer' }}
+                    <button 
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setPolicyModalDoc('terms')
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        padding: 0,
+                        margin: 0,
+                        color: '#10b981',
+                        textDecoration: 'underline',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        fontSize: 'inherit',
+                        fontFamily: 'inherit',
+                        display: 'inline'
+                      }}
                     >
                       Terms of Service
-                    </a>{' '}
+                    </button>{' '}
                     and{' '}
-                    <a 
-                      href="/privacy" 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ color: '#10b981', textDecoration: 'underline', fontWeight: 600, cursor: 'pointer' }}
+                    <button 
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setPolicyModalDoc('privacy')
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        padding: 0,
+                        margin: 0,
+                        color: '#10b981',
+                        textDecoration: 'underline',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        fontSize: 'inherit',
+                        fontFamily: 'inherit',
+                        display: 'inline'
+                      }}
                     >
                       Privacy Policy
-                    </a>.
+                    </button>.
                   </span>
                 </label>
 
@@ -488,25 +518,53 @@ export default function OnboardingWizardModal() {
                   />
                   <span>
                     I acknowledge the{' '}
-                    <a 
-                      href="/dpa" 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ color: '#10b981', textDecoration: 'underline', fontWeight: 600, cursor: 'pointer' }}
+                    <button 
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setPolicyModalDoc('dpa')
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        padding: 0,
+                        margin: 0,
+                        color: '#10b981',
+                        textDecoration: 'underline',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        fontSize: 'inherit',
+                        fontFamily: 'inherit',
+                        display: 'inline'
+                      }}
                     >
                       Data Processing Agreement (DPA)
-                    </a>{' '}
+                    </button>{' '}
                     and{' '}
-                    <a 
-                      href="/subprocessors" 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ color: '#10b981', textDecoration: 'underline', fontWeight: 600, cursor: 'pointer' }}
+                    <button 
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setPolicyModalDoc('subprocessors')
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        padding: 0,
+                        margin: 0,
+                        color: '#10b981',
+                        textDecoration: 'underline',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        fontSize: 'inherit',
+                        fontFamily: 'inherit',
+                        display: 'inline'
+                      }}
                     >
                       vendor subprocessors
-                    </a>.
+                    </button>.
                   </span>
                 </label>
               </div>
@@ -812,6 +870,12 @@ export default function OnboardingWizardModal() {
           </div>
         )}
       </div>
+
+      <LegalPolicyModal 
+        isOpen={Boolean(policyModalDoc)} 
+        docId={policyModalDoc} 
+        onClose={() => setPolicyModalDoc(null)} 
+      />
     </div>
   )
 }
