@@ -391,7 +391,7 @@ export default function LocalAdminDashboard() {
             This operations & telemetry dashboard is restricted to local server execution. To view metrics, run the project locally and visit <code style={{ color: '#4f46e5', background: '#eef2ff', padding: '2px 6px', borderRadius: '4px' }}>http://localhost:5173/admin</code>.
           </p>
           <Link to="/workspace" className="admin-btn admin-btn-primary" style={{ textDecoration: 'none', display: 'inline-flex', padding: '10px 20px' }}>
-            Return to SprintOS →
+            Return to Paper5 →
           </Link>
         </div>
       </div>

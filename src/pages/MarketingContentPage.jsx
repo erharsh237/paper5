@@ -11,7 +11,7 @@ export default function MarketingContentPage({ title, lastUpdated, children }) {
     <MarketingLayout>
       <SEOHead 
         title={`${title} | Paper5`} 
-        description={`Read official ${title} for Paper5 and SprintOS engineering execution platform.`}
+        description={`Read official ${title} for Paper5 project management and team accountability workspace.`}
         canonicalUrl={canonical}
       />
       <div className="marketing-content-page">

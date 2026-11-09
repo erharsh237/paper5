@@ -134,7 +134,7 @@ export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspac
           <body>
             <div class="header">
               <div>
-                <div class="brand">Paper5™ | SprintOS™</div>
+                <div class="brand">Paper5</div>
                 <div class="brand-sub">Paper5 Technologies Inc. · Official Billing & Tax Receipt</div>
               </div>
               <div class="invoice-title">
@@ -205,7 +205,7 @@ export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspac
             </div>
 
             <div class="footer">
-              This document is an official tax invoice/receipt issued by Paper5 Technologies Inc. for SprintOS™ Platform Subscription Services.<br/>
+              This document is an official tax invoice/receipt issued by Paper5 Technologies Inc. for Paper5 Platform Subscription Services.<br/>
               Questions? Contact Customer Support at support@paper5.co · © ${new Date().getFullYear()} Paper5. All rights reserved.
             </div>
 

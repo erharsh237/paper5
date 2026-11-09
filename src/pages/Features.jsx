@@ -15,8 +15,8 @@ export default function Features() {
   return (
     <MarketingLayout>
       <SEOHead 
-        title="Features Suite & Engineering Capabilities | SprintOS™ by Paper5™" 
-        description="Explore SprintOS™ features: 8-tier Agile workflows, 1-Click API Webhook Studio, GitHub & Vercel live stack integrations, and PDF workspace data ownership."
+        title="Features Suite & Capabilities | Paper5" 
+        description="Explore Paper5 features: sprint tracking, single-owner task accountability, proof of work, live deadline alerts, meeting docs, and GitHub integrations."
         canonicalUrl="https://paper5.co/features"
       />
 
@@ -26,7 +26,7 @@ export default function Features() {
           Architected for High-Velocity Engineering Teams.
         </h1>
         <p className="features-subtitle">
-          Eliminate administrative friction. SprintOS™ unites 8-tier Agile methodologies, 1-Click API automation, live stack integrations, and PDF data ownership in a single minimalist platform.
+          Eliminate administrative friction. Paper5 unites sprint workflows, single-owner task accountability, GitHub integrations, and complete data portability in a single focused workspace.
         </p>
         <div className="features-hero-actions">
           <button className="btn-primary" style={{ padding: '12px 28px', fontSize: '15px' }} onClick={() => navigate('/#pricing')}>

@@ -288,9 +288,9 @@ export default function OnboardingWizardModal() {
         {/* Header with Step Indicator */}
         <div style={{ marginBottom: '24px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-            <img src={logo} alt="SprintOS Logo" style={{ height: '32px', width: 'auto' }} />
+            <img src={logo} alt="Paper5 Logo" style={{ height: '32px', width: 'auto' }} />
             <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', color: '#09090b' }}>
-              SprintOS {wsName.trim() ? `| ${wsName.trim()}` : ''}
+              Paper5 {wsName.trim() ? `| ${wsName.trim()}` : ''}
             </span>
           </div>
 
@@ -323,7 +323,7 @@ export default function OnboardingWizardModal() {
             {step === 4 && 'Data Storage & Persistence Preference'}
           </h2>
           <p style={{ margin: 0, fontSize: '14px', color: '#71717a', lineHeight: 1.5, maxWidth: '600px', marginLeft: 'auto', marginRight: 'auto' }}>
-            {step === 1 && 'Choose an account tier to unlock SprintOS. Paid plans are 100% Free during Launch.'}
+            {step === 1 && 'Choose an account tier to unlock Paper5. Paid plans are 100% Free during Launch.'}
             {step === 2 && 'Review and accept our legal terms, privacy policy, and data processing agreement to continue.'}
             {step === 3 && 'Name your workspace and align your agile workflow methodology.'}
             {step === 4 && 'Choose whether to enable persistent cloud database backup or transient memory mode.'}
@@ -441,7 +441,7 @@ export default function OnboardingWizardModal() {
             <div style={{ padding: '20px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: '#0f172a', fontWeight: 700, fontSize: '15px' }}>
                 <ShieldCheck size={20} color="#10b981" />
-                <span>SprintOS Legal & Compliance Framework</span>
+                <span>Paper5 Legal & Compliance Framework</span>
               </div>
               <p style={{ fontSize: '13px', color: '#475569', lineHeight: 1.6, margin: '0 0 16px 0' }}>
                 Before setting up your workspace, please review our legal terms. By continuing, you agree to comply with our terms of service, privacy practices, and security agreements.
@@ -768,7 +768,7 @@ export default function OnboardingWizardModal() {
                   gap: '8px'
                 }}
               >
-                <span>{loading ? 'Setting up Workspace...' : 'Launch SprintOS Workspace'}</span>
+                <span>{loading ? 'Setting up Workspace...' : 'Launch Paper5 Workspace'}</span>
               </button>
             </div>
           </div>

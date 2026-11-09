@@ -173,7 +173,7 @@ export default function WorkspacePicker() {
           </h2>
           
           <p style={{ fontSize: '14px', color: 'var(--text-secondary, #6B7280)', lineHeight: 1.6, marginBottom: '28px' }}>
-            Your account is not currently a member of any active workspace. To access SprintOS, you must either be invited by a workspace administrator or subscribe to a plan.
+            Your account is not currently a member of any active workspace. To access Paper5, you must either be invited by a workspace administrator or subscribe to a plan.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
@@ -239,7 +239,7 @@ export default function WorkspacePicker() {
 
         <div className="wp-header">
           <div className="wp-brand">
-            <span className="wp-logo-text">Paper5 &bull; SprintOS</span>
+            <span className="wp-logo-text">Paper5</span>
           </div>
           <h1>Select Workspace</h1>
           <p>Choose a workspace to continue, or create a new one.</p>
@@ -394,7 +394,7 @@ export default function WorkspacePicker() {
               <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
                 <div className="wp-modal-header">
                   <h2>Data Storage Consent</h2>
-                  <p>Choose whether SprintOS may store workspace state</p>
+                  <p>Choose whether Paper5 may store workspace state</p>
                 </div>
 
                 <div className="wp-modal-body-scroll">
@@ -409,7 +409,7 @@ export default function WorkspacePicker() {
                         disabled={isCreating}
                       />
                       <span>
-                        <strong>Allow SprintOS to persist workspace data</strong>
+                        <strong>Allow Paper5 to persist workspace data</strong>
                         <small>
                           Enables saving tasks, deadlines, meeting notes, and team configuration across sessions.
                         </small>

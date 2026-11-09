@@ -37,7 +37,7 @@ export default function NotificationBell({ currentUser }) {
         playBellChimeSound()
         const latestNotif = unreadItems[0]
         if (latestNotif?.message) {
-          triggerChromeNotification('SprintOS Notification 🔔', {
+          triggerChromeNotification('Paper5 Notification 🔔', {
             body: latestNotif.message,
             tag: `notif-${latestNotif.id || Date.now()}`
           })

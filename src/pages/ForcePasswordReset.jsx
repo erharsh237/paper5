@@ -188,10 +188,10 @@ export default function ForcePasswordReset() {
           <div className="auth-brand-icon">
             <span className="auth-brand-dot" />
           </div>
-          <span className="auth-brand-text" style={{ fontSize: '16px' }}>SprintOS</span>
+          <span className="auth-brand-text" style={{ fontSize: '16px' }}>Paper5</span>
         </div>
 
-        <h2 style={{ margin: '0 0 8px 0', fontSize: '22px', fontWeight: 700, color: 'var(--text-primary, #111)' }}>Welcome to SprintOS!</h2>
+        <h2 style={{ margin: '0 0 8px 0', fontSize: '22px', fontWeight: 700, color: 'var(--text-primary, #111)' }}>Welcome to Paper5!</h2>
         <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: 'var(--text-secondary, #6b7280)', lineHeight: '1.5' }}>
           You've been invited to join a workspace. To secure your account, please set your password before continuing.
           {requiresStrict && (

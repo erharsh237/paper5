@@ -40,7 +40,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
           category,
           rating: `${rating} / 5 Stars`,
           message,
-          source: 'SprintOS Application Feedback'
+          source: 'Paper5 Application Feedback'
         })
       })
 
@@ -76,14 +76,14 @@ export default function FeedbackModal({ isOpen, onClose }) {
         <div className="feedback-modal-header">
           <div className="feedback-icon-badge">💬</div>
           <h2>Share Your Feedback</h2>
-          <p>Help us improve SprintOS. We read every single message!</p>
+          <p>Help us improve Paper5. We read every single message!</p>
         </div>
 
         {submitted ? (
           <div className="feedback-success-state">
             <div className="success-icon">🎉</div>
             <h3>Thank You!</h3>
-            <p>Your feedback has been delivered to the SprintOS product team.</p>
+            <p>Your feedback has been delivered to the Paper5 product team.</p>
             <button className="btn-primary w-full" onClick={handleResetAndClose} style={{ marginTop: '20px' }}>
               Done
             </button>

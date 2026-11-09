@@ -185,7 +185,7 @@ export default function AuthAction() {
         <div className="auth-form-container glass-panel" style={{ textAlign: 'center', maxWidth: '440px', margin: '0 auto' }}>
           <div className="auth-logo" style={{ justifyContent: 'center', marginBottom: 24, color: 'var(--text-primary)' }}>
             <span className="auth-logo-dot" />
-            Paper5 · SprintOS
+            Paper5
           </div>
 
           <h1 style={{ marginTop: '16px', marginBottom: '16px', fontSize: '24px' }}>

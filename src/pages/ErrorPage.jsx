@@ -36,7 +36,7 @@ export default function ErrorPage({ error, errorInfo, resetError }) {
     <div className="nf-wrap" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
       <div className="nf-card glass-panel" style={{ maxWidth: '640px', width: '100%', textAlign: 'center', padding: '40px 32px' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '20px', fontWeight: 700, fontFamily: 'var(--mono)', color: 'var(--text-primary)', marginBottom: '20px' }}>
-          SprintOS
+          Paper5
         </div>
 
         <div className="nf-badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-critical, #ef4444)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
@@ -48,7 +48,7 @@ export default function ErrorPage({ error, errorInfo, resetError }) {
           Something unexpected happened.
         </h1>
         <p className="nf-sub" style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: 1.6 }}>
-          SprintOS encountered an unhandled exception. Don't worry — your data is safely saved in your workspace.
+          Paper5 encountered an unhandled exception. Don't worry — your data is safely saved in your workspace.
         </p>
 
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '24px' }}>
@@ -90,7 +90,7 @@ export default function ErrorPage({ error, errorInfo, resetError }) {
         </div>
 
         <div className="nf-footnote mono" style={{ marginTop: '24px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
-          SprintOS by Paper5 · Exception Handled Safely
+          Paper5 · Exception Handled Safely
         </div>
       </div>
     </div>

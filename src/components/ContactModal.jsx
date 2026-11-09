@@ -25,7 +25,7 @@ export default function ContactModal({ isOpen, onClose }) {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify({ email, message, source: 'SprintOS Contact Sales' })
+        body: JSON.stringify({ email, message, source: 'Paper5 Contact Sales' })
       })
 
       if (response.ok) {

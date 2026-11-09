@@ -31,8 +31,8 @@ export default function DocsPage() {
   return (
     <MarketingLayout>
       <SEOHead 
-        title="Developer Documentation & API Reference | SprintOS™ by Paper5™" 
-        description="Comprehensive developer documentation for SprintOS™: 8-tier Agile workflows, 1-Click REST API endpoints, GitHub & Slack webhooks, and PDF data compliance."
+        title="Developer Documentation & API Reference | Paper5" 
+        description="Comprehensive developer documentation for Paper5: sprint workflows, 1-Click REST API endpoints, GitHub webhooks, and PDF data export."
         canonicalUrl="https://paper5.co/docs"
       />
 
@@ -40,7 +40,7 @@ export default function DocsPage() {
         {/* Header Hero */}
         <header className="docs-hero">
           <div className="docs-hero-inner">
-            <h1 className="docs-title">SprintOS™ Developer Documentation</h1>
+            <h1 className="docs-title">Paper5 Developer Documentation</h1>
             <p className="docs-subtitle">
               Everything you need to set up Agile workflows, integrate developer tools, and connect with 1-Click REST API webhooks.
             </p>
@@ -116,10 +116,10 @@ export default function DocsPage() {
             {(activeSection === 'getting-started' || searchQuery) && (
               <article className="docs-article-section" id="getting-started">
                 <h2 className="docs-article-title">
-                  <BookOpen size={24} color="#10b981" /> Getting Started with SprintOS™
+                  <BookOpen size={24} color="#10b981" /> Getting Started with Paper5
                 </h2>
                 <p className="docs-article-text">
-                  SprintOS™ by Paper5™ is a high-velocity sprint management platform engineered to eliminate administrative friction. Sprints are time-boxed iterations where tasks automatically transition or roll over upon deadline expiration.
+                  Paper5 is a high-velocity project management and team accountability platform engineered to eliminate administrative friction. Sprints are focused iterations where tasks have clear single-owner accountability and proof of work.
                 </p>
 
                 <h3 style={{ fontSize: '18px', fontWeight: 700, margin: '24px 0 12px 0' }}>Quickstart Onboarding Flow</h3>
@@ -139,7 +139,7 @@ export default function DocsPage() {
                   <Layers size={24} color="#10b981" /> 8-Tier Agile Methodology Engine
                 </h2>
                 <p className="docs-article-text">
-                  SprintOS™ dynamically configures board columns based on team size and methodology selection. Workflows adapt dynamically without losing task state.
+                  Paper5 dynamically configures board columns based on team size and methodology selection. Workflows adapt dynamically without losing task state.
                 </p>
 
                 <table className="docs-param-table">
@@ -208,7 +208,7 @@ export default function DocsPage() {
 
                 <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '20px 0 10px 0' }}>GitHub Auto-Closing Trigger</h3>
                 <p className="docs-article-text">
-                  When a pull request containing a task ID (e.g. `Fixes #104`) is merged into `main`, SprintOS™ automatically updates the task status to <strong>Done</strong>.
+                  When a pull request containing a task ID (e.g. `Fixes #104`) is merged into `main`, Paper5 automatically updates the task status to <strong>Done</strong>.
                 </p>
 
                 <div className="docs-code-block">
@@ -335,7 +335,7 @@ export default function DocsPage() {
                   <FileText size={24} color="#10b981" /> PDF Data Export & Compliance
                 </h2>
                 <p className="docs-article-text">
-                  SprintOS™ guarantees complete data portability. Workspace admins can export printable vector PDF reports or CSV security audit trails at any time.
+                  Paper5 guarantees complete data portability. Workspace admins can export printable vector PDF reports or CSV security audit trails at any time.
                 </p>
 
                 <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '20px 0 10px 0' }}>Selective Export Sections</h3>

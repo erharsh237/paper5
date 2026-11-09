@@ -138,7 +138,7 @@ export default function AccountTierModal() {
         <div style={{ marginBottom: '24px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
             <img src={logo} alt="Paper5 Logo" style={{ height: '32px', width: 'auto' }} />
-            <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', color: '#09090b' }}>SprintOS™ by Paper5™</span>
+            <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', color: '#09090b' }}>Paper5</span>
           </div>
           <h2 style={{ fontSize: '24px', fontWeight: 800, margin: '0 0 8px 0', letterSpacing: '-0.02em', color: '#09090b' }}>
             Select Your Account Tier to Continue
@@ -247,7 +247,7 @@ export default function AccountTierModal() {
               transition: 'all 0.2s'
             }}
           >
-            {saving ? 'Saving Account Tier...' : '🚀 Confirm & Continue to SprintOS'}
+            {saving ? 'Saving Account Tier...' : '🚀 Confirm & Continue to Paper5'}
           </button>
           <div style={{ marginTop: '12px', fontSize: '11px', color: '#a1a1aa' }}>
             🔒 You can upgrade or modify your workspace plan anytime in Workspace Settings.

@@ -235,7 +235,7 @@ export default function Login({ accessDenied, denialReason }) {
             <div className="auth-brand-icon">
               <span className="auth-brand-dot" />
             </div>
-            <span className="auth-brand-text">SprintOS</span>
+            <span className="auth-brand-text">Paper5</span>
           </div>
           <h1>Welcome back</h1>
           <p className="auth-subtitle">Login to your account</p>

@@ -48,7 +48,7 @@ export default function VerifyEmail() {
         <div className="auth-form-container glass-panel" style={{ textAlign: 'center' }}>
           <div className="auth-logo" style={{ justifyContent: 'center', marginBottom: 24, color: 'var(--text-primary)' }}>
             <span className="auth-logo-dot" />
-            SprintOS
+            Paper5
           </div>
         
         <h1>Verify your email</h1>

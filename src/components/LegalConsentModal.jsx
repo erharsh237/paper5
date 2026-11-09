@@ -36,7 +36,7 @@ export default function LegalConsentModal() {
         <p style={{ margin: '0 0 24px 0', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
           We've updated our <a href="/legal/terms" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>Terms of Service</a> and <a href="/legal/privacy" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>Privacy Policy</a> to better protect your data and comply with new regulations.
           <br /><br />
-          Please review and accept these updated terms to continue using SprintOS.
+          Please review and accept these updated terms to continue using Paper5.
         </p>
 
         <button 

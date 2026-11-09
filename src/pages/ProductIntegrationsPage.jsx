@@ -21,8 +21,8 @@ export default function ProductIntegrationsPage() {
   return (
     <MarketingLayout>
       <SEOHead 
-        title="Stack Integrations & 1-Click API Webhook Studio | SprintOS™ by Paper5™" 
-        description="Connect GitHub, Vercel, Discord, Slack, Google Calendar, and 1-Click REST API webhooks natively with SprintOS™ by Paper5™."
+        title="Stack Integrations & API Webhook Studio | Paper5" 
+        description="Connect GitHub, Vercel, Discord, Slack, Google Calendar, and 1-Click REST API webhooks natively with Paper5."
         canonicalUrl="https://paper5.co/product-integrations"
       />
 
@@ -32,7 +32,7 @@ export default function ProductIntegrationsPage() {
           Connect Your Entire Developer Stack in Seconds.
         </h1>
         <p className="integrations-subtitle">
-          Eliminate manual ticket updates. SprintOS™ connects natively with GitHub, Vercel, Discord, Slack, Google Calendar, and 1-Click REST API webhooks.
+          Eliminate manual ticket updates. Paper5 connects natively with GitHub, Vercel, Discord, Slack, Google Calendar, and 1-Click REST API webhooks.
         </p>
 
         {/* Filter Pills */}
@@ -205,7 +205,7 @@ export default function ProductIntegrationsPage() {
             Up and Running in Under 2 Minutes.
           </h2>
           <p style={{ fontSize: '15px', color: 'var(--text-secondary)', margin: 0 }}>
-            Connecting tools to SprintOS™ requires zero complex server setup.
+            Connecting tools to Paper5 requires zero complex server setup.
           </p>
 
           <div className="steps-grid">

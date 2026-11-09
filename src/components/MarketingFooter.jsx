@@ -33,9 +33,9 @@ export default function MarketingFooter({ hideCTA = false }) {
       {!hideCTA && (
         <div className="footer-cta-banner">
           <div className="footer-cta-container">
-            <h2>Give your team one place to move forward.</h2>
+            <h2>Bring Clarity to the Way Your Team Works.</h2>
             <p>
-              Organise your projects, bring your information together and spend less time chasing updates.
+              Give your team one place to organize work, own responsibilities, and move projects forward.
             </p>
             <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', justifyContent: 'center' }}>
               <button 
@@ -43,7 +43,7 @@ export default function MarketingFooter({ hideCTA = false }) {
                 onClick={handleGetStarted}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
               >
-                <span>Start Your Free Workspace</span>
+                <span>Get Started with Paper5</span>
                 <ArrowRight size={16} />
               </button>
               <button 

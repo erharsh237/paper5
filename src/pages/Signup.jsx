@@ -268,7 +268,7 @@ export default function Signup() {
             <div className="auth-brand-icon">
               <span className="auth-brand-dot" />
             </div>
-            <span className="auth-brand-text">SprintOS</span>
+            <span className="auth-brand-text">Paper5</span>
           </div>
           <h1>Create your account</h1>
           <p className="auth-subtitle">Enter your email below to create your account</p>

@@ -866,7 +866,7 @@ export default function Settings() {
       ])
 
       const fullExport = {
-        app: 'SprintOS by Paper5™',
+        app: 'Paper5',
         version: '1.0.0',
         exported_at: new Date().toISOString(),
         exported_by: user?.email || user?.uid,
@@ -987,7 +987,7 @@ export default function Settings() {
       <nav className="dash-sticky-nav">
         <div className="dash-container dash-nav-inner">
           <Link to={`/${workspaceId}`} className="dash-nav-brand">
-            <span className="dash-logo-name">SprintOS</span>
+            <span className="dash-logo-name">Paper5</span>
             <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
           </Link>
 
@@ -1274,7 +1274,7 @@ export default function Settings() {
                     }}>
                       <strong>Disclaimer:</strong> {wsSettings.save_data !== false 
                         ? 'Workspace data is encrypted and backed up daily in our secure cloud database. While automated snapshots and point-in-time recovery are maintained, administrators remain responsible for maintaining local offline backups via Workspace Settings → Export.'
-                        : 'Data is stored solely in volatile browser session memory. Closing your tab, clearing cache, or logging out will permanently erase workspace data. Neither Paper5™ nor SprintOS™ will be held responsible or liable for any data loss resulting from Zero-Data Retention Mode.'}
+                        : 'Data is stored solely in volatile browser session memory. Closing your tab, clearing cache, or logging out will permanently erase workspace data. Paper5 will not be held responsible or liable for any data loss resulting from Zero-Data Retention Mode.'}
                     </div>
                   </div>
 

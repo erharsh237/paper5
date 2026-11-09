@@ -122,7 +122,7 @@ export default function DataExportModal({ isOpen, onClose, currentWorkspaceId, c
       <!DOCTYPE html>
       <html>
         <head>
-          <title>SprintOS Data Export - ${ws.name}</title>
+          <title>Paper5 Data Export - ${ws.name}</title>
           <style>
             @page { size: A4; margin: 15mm; }
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #111827; margin: 0; padding: 10px; line-height: 1.5; }
@@ -146,7 +146,7 @@ export default function DataExportModal({ isOpen, onClose, currentWorkspaceId, c
         </head>
         <body>
           <div class="header-bar">
-            <div class="logo">Paper5™ | SprintOS™</div>
+            <div class="logo">Paper5</div>
             <div class="report-title">Workspace Data Export Report</div>
           </div>
 
@@ -286,7 +286,7 @@ export default function DataExportModal({ isOpen, onClose, currentWorkspaceId, c
           ` : ''}
 
           <div class="footer">
-            Confidential Document · Paper5™ | SprintOS™ Data Ownership Export · © ${new Date().getFullYear()} Paper5. All rights reserved.
+            Confidential Document · Paper5 Data Ownership Export · © ${new Date().getFullYear()} Paper5. All rights reserved.
           </div>
 
           <script>
@@ -371,7 +371,7 @@ export default function DataExportModal({ isOpen, onClose, currentWorkspaceId, c
         </head>
         <body>
           <div class="header">
-            <div class="brand">SprintOS Security Audit Log</div>
+            <div class="brand">Paper5 Security Audit Log</div>
             <div class="title">Official Activity Trail Report</div>
           </div>
           <div class="meta">
@@ -402,7 +402,7 @@ export default function DataExportModal({ isOpen, onClose, currentWorkspaceId, c
             </tbody>
           </table>
           <div class="footer">
-            CONFIDENTIAL SECURITY REPORT · Paper5™ | SprintOS™ Compliance Engine · Generated on ${reportDate}
+            CONFIDENTIAL SECURITY REPORT · Paper5 Compliance Engine · Generated on ${reportDate}
           </div>
           <script>
             window.onload = () => {

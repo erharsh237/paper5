@@ -88,7 +88,7 @@ function PageLoading() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
         <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#000000', display: 'inline-block' }} />
         <span style={{ fontFamily: 'var(--mono, "JetBrains Mono", monospace)', fontWeight: 700, fontSize: '15px', letterSpacing: '-0.02em', color: '#000000' }}>
-          Paper5 <span style={{ opacity: 0.6, fontWeight: 400 }}>| SprintOS</span>
+          Paper5
         </span>
       </div>
 

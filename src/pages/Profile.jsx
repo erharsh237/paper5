@@ -275,7 +275,7 @@ export default function Profile() {
       <nav className="dash-sticky-nav">
         <div className="dash-container dash-nav-inner">
           <Link to={`/${workspaceId}`} className="dash-nav-brand">
-            <span className="dash-logo-name">SprintOS</span>
+            <span className="dash-logo-name">Paper5</span>
             <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
           </Link>
 

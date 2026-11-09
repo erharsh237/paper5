@@ -8,7 +8,7 @@ export default function SEOHead({ title, description, canonicalUrl, ogType = 'we
   useEffect(() => {
     // 1. Update Title
     if (title) {
-      document.title = title.includes('Paper5') ? title : `${title} | SprintOS by Paper5`
+      document.title = title.includes('Paper5') ? title : `${title} | Paper5`
     }
 
     // Helper to set meta content

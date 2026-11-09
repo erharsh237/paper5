@@ -61,22 +61,27 @@ export default function MarketingNav() {
     }
   }
 
-  const handlePricingClick = (e) => {
+  const handleAnchorClick = (e, anchorId) => {
     if (location.pathname === '/' || location.pathname === '') {
       if (e) e.preventDefault()
-      const el = document.getElementById('pricing')
+      const el = document.getElementById(anchorId)
       if (el) {
         if (window.__lenis) {
           window.__lenis.scrollTo(el, {
             offset: -84,
-            duration: 1.35,
+            duration: 1.25,
             easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
           })
         } else {
           el.scrollIntoView({ behavior: 'smooth', block: 'start' })
         }
+        window.history.pushState('', document.title, `#${anchorId}`)
       }
     }
+  }
+
+  const handlePricingClick = (e) => {
+    handleAnchorClick(e, 'pricing')
   }
 
   useEffect(() => {
@@ -94,7 +99,7 @@ export default function MarketingNav() {
     { label: 'Home', path: '/', exact: true, icon: faHouse },
     { label: 'Features', path: '/features', icon: faLayerGroup },
     { label: 'Integrations', path: '/product-integrations', icon: faPlug },
-    { label: 'Pricing', path: '/#pricing', isAnchor: true, icon: faTag },
+    { label: 'Pricing', path: '/#pricing', isAnchor: true, anchorId: 'pricing', icon: faTag },
     { label: 'Documentation', path: '/docs', icon: faBookOpen },
     { label: 'About', path: '/about', icon: faCircleInfo },
     { label: 'Contact', path: '/contact', icon: faEnvelope },
@@ -102,7 +107,7 @@ export default function MarketingNav() {
   ]
 
   const isLinkActive = (item) => {
-    if (item.isAnchor) return location.hash === '#pricing'
+    if (item.isAnchor) return location.hash === `#${item.anchorId}`
     if (item.exact) return location.pathname === '/' && !location.hash
     return location.pathname.startsWith(item.path)
   }
@@ -136,14 +141,14 @@ export default function MarketingNav() {
             </Link>
           )}
 
-          {/* Desktop Text Navigation */}
+          {/* Desktop Icon Navigation */}
           <div className="nav-links desktop-only">
             {navLinks.map((item) => (
               item.isAnchor ? (
                 <a
                   key={item.label}
                   href={isAppSubdomain ? getMainUrl(item.path) : item.path}
-                  onClick={isAppSubdomain ? undefined : handlePricingClick}
+                  onClick={(e) => handleAnchorClick(e, item.anchorId)}
                   className={`nav-link-icon-wrap ${isLinkActive(item) ? "active" : ""}`}
                   aria-label={item.label}
                 >

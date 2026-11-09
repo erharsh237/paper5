@@ -1,5 +1,13 @@
 @import './pages/Auth.css';
 
+/* Prevent typing cursor / blinking caret from appearing when clicking non-editable elements */
+*:not(input):not(textarea):not([contenteditable="true"]):not([contenteditable="true"] *) {
+  caret-color: transparent !important;
+}
+
+input, textarea, [contenteditable="true"], [contenteditable="true"] * {
+  caret-color: auto !important;
+}
 
 /* Smooth Scroll & Global Transition Foundations */
 html {

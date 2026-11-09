@@ -11,38 +11,38 @@ export default function AboutUs() {
   return (
     <MarketingLayout>
       <SEOHead 
-        title="About Us & Company Mission | SprintOS™ by Paper5™" 
-        description="Learn about Paper5™ and our mission to build SprintOS™: the zero-friction operating system for high-velocity software engineering teams."
+        title="About Us & Company Mission | Paper5" 
+        description="Learn about Paper5 and our mission: the zero-friction project management and team accountability workspace for small teams and startups."
         canonicalUrl="https://paper5.co/about"
       />
 
       {/* Hero Header */}
       <section className="about-hero">
         <h1 className="about-title">
-          Building the Operating System for Modern Engineering Teams.
+          Building the Operating System for Modern Teams.
         </h1>
         <p className="about-subtitle">
-          Paper5™ was founded on a simple principle: developer productivity tools should accelerate execution, not create administrative overhead. SprintOS™ is the antidote to bloated, slow issue trackers.
+          Paper5 was founded on a simple principle: developer productivity tools should accelerate execution, not create administrative overhead. Paper5 gives small teams one place to see everything happening across their projects, understand responsibilities, track progress, and stay accountable.
         </p>
       </section>
 
       {/* Key Metrics Counter Strip */}
       <div className="about-metrics-strip">
         <div className="metric-card">
-          <div className="metric-val">8-Tier</div>
-          <div className="metric-label">Agile Workflows</div>
+          <div className="metric-val">100%</div>
+          <div className="metric-label">Ownership Clarity</div>
         </div>
         <div className="metric-card">
-          <div className="metric-val">94%</div>
-          <div className="metric-label">Velocity Accuracy</div>
+          <div className="metric-val">3–10</div>
+          <div className="metric-label">Optimized Team Size</div>
         </div>
         <div className="metric-card">
           <div className="metric-val">100%</div>
-          <div className="metric-label">PDF Data Ownership</div>
+          <div className="metric-label">Data Portability</div>
         </div>
         <div className="metric-card">
-          <div className="metric-val">38ms</div>
-          <div className="metric-label">Live API Latency</div>
+          <div className="metric-val">&lt; 50ms</div>
+          <div className="metric-label">Live API & Sync Latency</div>
         </div>
       </div>
 
@@ -51,7 +51,7 @@ export default function AboutUs() {
         <section className="about-section">
           <h2 className="about-section-title">Our Mission</h2>
           <p className="about-section-text">
-            To accelerate software progress by giving engineering teams the operational clarity they need to ship code flawlessly. We design tools that require zero maintenance, zero training, and provide immediate value.
+            To accelerate software progress by giving small engineering teams the operational clarity they need to ship work flawlessly. We design tools that require zero maintenance, zero administrative drag, and provide immediate value.
           </p>
 
           <div className="pillars-grid">
@@ -59,7 +59,7 @@ export default function AboutUs() {
               <div className="pillar-icon"><Zap size={22} /></div>
               <h3 className="pillar-title">Engineered for Focus</h3>
               <p className="pillar-desc">
-                We build interfaces to be invisible. If you spend more time updating tickets than writing software, the tool has failed. SprintOS™ automates task transitions on PR merges and deadline expirations.
+                We build interfaces to be invisible. If your team spends more time updating tickets than shipping features, the tool has failed. Paper5 automates task transitions and status visibility seamlessly.
               </p>
             </div>
 
@@ -73,38 +73,38 @@ export default function AboutUs() {
 
             <div className="pillar-item">
               <div className="pillar-icon"><Code2 size={22} /></div>
-              <h3 className="pillar-title">Developer Automation First</h3>
+              <h3 className="pillar-title">Developer Workflow First</h3>
               <p className="pillar-desc">
-                Connect GitHub, Vercel, Discord, Slack, and custom webhooks seamlessly with 1-Click REST API keys (`sp_live_...`) and multi-language code SDKs.
+                Connect GitHub, Slack, Discord, Google Calendar, and custom webhooks effortlessly with 1-Click REST API keys and automated git synchronization.
               </p>
             </div>
 
             <div className="pillar-item">
               <div className="pillar-icon"><LineChart size={22} /></div>
-              <h3 className="pillar-title">Predictive Sprint Intelligence</h3>
+              <h3 className="pillar-title">Accountability & Visibility</h3>
               <p className="pillar-desc">
-                Historical velocity models predict whether your team will hit sprint deadlines with 94% accuracy, alerting managers to potential risks before they cause delays.
+                Single-owner task assignment, automated status rollups, and live deadline alerts give small teams complete visibility without endless status sync meetings.
               </p>
             </div>
           </div>
         </section>
 
-        {/* Product Architecture & Standards */}
+        {/* Product Evolution & Standards */}
         <section className="about-section">
           <h2 className="about-section-title">Product Evolution & Standards</h2>
           <p className="about-section-text">
-            SprintOS™ is built on top of enterprise-grade cloud architecture with cryptographically isolated workspace data layers.
+            Paper5 is engineered on top of enterprise-grade cloud architecture with cryptographically isolated workspace data layers.
           </p>
 
           <div className="timeline-list">
             <div className="timeline-item">
-              <span className="timeline-badge">SprintOS 1.0</span>
+              <span className="timeline-badge">Paper5 Core</span>
               <div>
                 <h4 className="timeline-heading">
-                  8-Tier Agile Methodology Engine & Board Alignment
+                  High-Velocity Sprint Engine & Board Alignment
                 </h4>
                 <p className="timeline-desc">
-                  Introduced team-size adaptive workflows from 1 Solo Developer up to 500+ SAFe Enterprise tribes.
+                  Focused sprint cycles, single-owner task accountability, and live progress indicators tailored for fast-moving startups.
                 </p>
               </div>
             </div>
@@ -116,7 +116,7 @@ export default function AboutUs() {
                   GitHub Auto-Close & Chat Notifications
                 </h4>
                 <p className="timeline-desc">
-                  Real-time synchronization between git commits, pull requests, Slack standups, and Discord blocker alerts.
+                  Real-time synchronization between git commits, pull requests, Slack updates, and Discord blocker alerts.
                 </p>
               </div>
             </div>
@@ -146,7 +146,7 @@ export default function AboutUs() {
           <p className="security-desc">
             Security is built into the foundation of Paper5. Powered by TLS 1.3 transit encryption, AES-256 data protection at rest, strict PostgreSQL Row-Level Security (RLS) tenant isolation, enforced email verification, and optional Multi-Factor Authentication (2FA).
           </p>
-          <button className="btn-primary" style={{ padding: '10px 24px' }} onClick={() => navigate('/signup')}>
+          <button className="btn-primary" style={{ padding: '12px 28px', fontSize: '15px' }} onClick={() => navigate('/signup')}>
             Start Free Workspace
           </button>
         </section>

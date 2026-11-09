@@ -5,8 +5,8 @@ import './SiteTour.css'
 
 const STEPS = [
   {
-    title: 'Welcome to SprintOS by Paper5 🚀',
-    body: "SprintOS keeps your team aligned and shipping on time. Let's take a quick 4-step walkthrough of your workspace features.",
+    title: 'Welcome to Paper5 🚀',
+    body: "Paper5 keeps your team aligned and shipping on time. Let's take a quick 4-step walkthrough of your workspace features.",
   },
   {
     title: 'My Tasks & Personal Focus 📌',
