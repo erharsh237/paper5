@@ -614,6 +614,12 @@
       pointer-events: auto;
       transform: translate3d(0, 0, 0) scale(1);
     }
+    .login-stage.is-dissolved {
+      opacity: 0;
+      transform: scale(0.95) translateY(20px);
+      pointer-events: none;
+      transition: transform 450ms cubic-bezier(0.16, 1, 0.3, 1), opacity 350ms ease;
+    }
 
     .login-card {
       width: 100%;
@@ -2648,7 +2654,9 @@
         mobileSidebarDrawer.classList.remove('drawer-open');
         mobileSidebarDrawer.scrollTo({ top: 0, behavior: 'instant' });
         
-        loginStage.classList.remove('is-active');
+        loginStage.classList.remove('is-active', 'is-dissolved');
+        loginStage.style.opacity = '';
+        loginStage.style.transform = '';
         dashboardStage.classList.remove('is-active');
         newDeadlineModal.classList.remove('modal-visible'); dashboardStage.classList.remove('has-modal-open'); dashboardStage.classList.remove('dark-theme'); if (dashThemeToggle) dashThemeToggle.classList.remove('is-dark'); dashboardStage.classList.remove('has-modal-open');
         
@@ -2824,6 +2832,11 @@
         phoneScreen.style.transformOrigin = 'center center';
         phoneScreen.style.transform = 'scale(1)';
 
+        // Ensure clean, fully visible login stage with no lingering inline styles
+        loginStage.classList.remove('is-dissolved');
+        loginStage.style.opacity = '';
+        loginStage.style.transform = '';
+
         lightFlash.classList.add('flash-active');
         await sleep(140);
 
@@ -2944,13 +2957,14 @@
         updateResponsiveScale();
         
         // Dissolve Login stage, bring up Desktop Dashboard stage
-        loginStage.style.opacity = '0';
-        loginStage.style.transform = 'scale(0.95) translateY(20px)';
+        loginStage.classList.remove('is-active');
+        loginStage.classList.add('is-dissolved');
+        loginStage.style.opacity = '';
+        loginStage.style.transform = '';
         dashboardStage.classList.add('is-active');
 
         await sleep(350);
         lightFlash.classList.remove('flash-active');
-        loginStage.classList.remove('is-active');
 
         await sleep(650);
 
