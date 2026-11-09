@@ -3412,8 +3412,7 @@
             if (studioModeBanner && new URLSearchParams(window.location.search).get('record') === '1') {
               studioModeBanner.classList.remove('hidden');
             }
-            const toastEl = document.getElementById('recordingToast');
-            if (toastEl) toastEl.remove();
+            window.removeEventListener('keydown', escStopHandler);
 
             btnExportMp4.innerHTML = '<svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg><span>Export MP4</span>';
             btnExportMp4.className = 'px-3 py-1 rounded-full bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition flex items-center space-x-1.5 shadow-sm ml-1 cursor-pointer';
@@ -3451,17 +3450,14 @@
           directorControls.style.display = 'none';
           if (studioModeBanner) studioModeBanner.classList.add('hidden');
 
-          // Floating stop pill
-          const toast = document.createElement('div');
-          toast.id = 'recordingToast';
-          toast.className = 'fixed top-4 right-4 z-[999] bg-rose-600 text-white font-mono text-xs px-3.5 py-1.5 rounded-full shadow-xl flex items-center space-x-2 cursor-pointer border border-rose-400 hover:bg-rose-700 transition animate-pulse';
-          toast.innerHTML = '<span class="w-2 h-2 rounded-full bg-white"></span><span>● Recording 60 FPS... Click to Finish & Download</span>';
-          toast.onclick = () => {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          // Completely clean, pristine capture - no red badge or UI overlays in frame
+          // Allow Escape key to stop recording early without any visual elements on screen
+          const escStopHandler = (e) => {
+            if (e.key === 'Escape' && mediaRecorder && mediaRecorder.state !== 'inactive') {
               mediaRecorder.stop();
             }
           };
-          document.body.appendChild(toast);
+          window.addEventListener('keydown', escStopHandler, { once: true });
 
           // Play film from beginning through Act 7
           await runFullFilm();
