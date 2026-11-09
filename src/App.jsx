@@ -50,7 +50,7 @@ const Legal = safeLazy(() => import('./pages/Legal'))
 const Privacy = safeLazy(() => import('./pages/Privacy'))
 const Contact = safeLazy(() => import('./pages/Contact'))
 const ForgotPassword = safeLazy(() => import('./pages/ForgotPassword'))
-const LocalAdminDashboard = safeLazy(() => import('./pages/LocalAdminDashboard'))
+
 import NotFound from './pages/NotFound'
 import ErrorPage from './pages/ErrorPage'
 import LegalConsentModal from './components/LegalConsentModal'
@@ -299,8 +299,6 @@ export default function App() {
           <Route path="/subprocessors" element={<Legal defaultDocId="subprocessors" />} />
           <Route path="/contact" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <Contact />} />
           <Route path="/about-us" element={<Navigate to="/about" replace />} />
-          <Route path="/admin" element={<LocalAdminDashboard />} />
-          <Route path="/localhost-dashboard" element={<LocalAdminDashboard />} />
           <Route path="/error" element={<ErrorPage />} />
 
           {/* Marketing Pages - Redirect to paper5.com if visited on app.paper5.com */}

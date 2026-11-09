@@ -6,6 +6,7 @@ import { getUrgency } from '../lib/utils'
 import { hasSeenTour } from '../lib/onboarding'
 import DeadlineCard from '../components/DeadlineCard'
 import NotificationBell from '../components/NotificationBell'
+import NavTabs from '../components/NavTabs'
 import SiteTour from '../components/SiteTour'
 import UserMenu from '../components/UserMenu'
 import { useWorkspace } from '../lib/WorkspaceContext'
@@ -15,6 +16,25 @@ import NewDeadlineModal from '../components/NewDeadlineModal'
 import './Dashboard.css'
 import './MyDashboard.css'
 
+// Catmull-Rom spline path generator for smooth golden wave curve
+function getSmoothSplinePath(points) {
+  if (!points || points.length === 0) return ''
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`
+  let d = `M ${points[0].x} ${points[0].y}`
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i === 0 ? 0 : i - 1]
+    const p1 = points[i]
+    const p2 = points[i + 1]
+    const p3 = points[i + 2] || p2
+    const cp1x = p1.x + (p2.x - p0.x) / 6
+    const cp1y = p1.y + (p2.y - p0.y) / 6
+    const cp2x = p2.x - (p3.x - p1.x) / 6
+    const cp2y = p2.y - (p3.y - p1.y) / 6
+    d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`
+  }
+  return d
+}
+
 export default function MyDashboard() {
   const { workspaceId, workspace, workspaceRole } = useWorkspace()
   const isAdmin = workspaceRole === 'owner' || workspaceRole === 'admin'
@@ -23,6 +43,7 @@ export default function MyDashboard() {
   const [sprints, setSprints] = useState([])
   const [adminScope, setAdminScope] = useState('team') // 'team' | 'mine'
   const [selectedPeriodFilter, setSelectedPeriodFilter] = useState(null)
+  const [laneFilter, setLaneFilter] = useState(null) // null | 'todo' | 'in_progress' | 'dueSoon' | 'done'
   const [showTour, setShowTour] = useState(false)
   const [viewMode, setViewMode] = useState('list')
   const [timeRange, setTimeRange] = useState('7D')
@@ -74,7 +95,7 @@ export default function MyDashboard() {
   const myEmail = (user?.email || '').trim().toLowerCase()
   const myUid = user?.id || user?.uid
   const myName = (user?.displayName || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || '').trim().toLowerCase()
-  const activeSprint = useMemo(() => sprints.find(s => s.status === 'active'), [sprints])
+  const activeSprint = useMemo(() => sprints.find(s => s.status === 'active') || sprints[0], [sprints])
 
   const myTasks = useMemo(
     () => deadlines.filter(d => {
@@ -98,13 +119,25 @@ export default function MyDashboard() {
 
   const filteredTasks = useMemo(() => {
     return displayTasks.filter(d => {
+      // Period filter from velocity chart
       if (selectedPeriodFilter && Array.isArray(selectedPeriodFilter.taskIds)) {
         if (!selectedPeriodFilter.taskIds.includes(d.id)) return false
       }
+      // Lane filter from Sprint Lanes shelf
+      if (laneFilter === 'todo') {
+        if (d.status !== 'not_started' && d.status !== 'todo') return false
+      } else if (laneFilter === 'in_progress') {
+        if (d.status !== 'in_progress' && d.status !== 'review') return false
+      } else if (laneFilter === 'dueSoon') {
+        if (!['critical', 'warn'].includes(getUrgency(d.dueDate, d.status))) return false
+      } else if (laneFilter === 'done') {
+        if (d.status !== 'done' && d.status !== 'completed' && d.status !== 'shipped') return false
+      }
+      // Search filter
       if (search.trim() && !d.title?.toLowerCase().includes(search.toLowerCase())) return false
       return true
     })
-  }, [displayTasks, search, selectedPeriodFilter])
+  }, [displayTasks, search, selectedPeriodFilter, laneFilter])
 
   const stats = useMemo(() => {
     const active = displayTasks.filter(d => d.status !== 'done')
@@ -112,7 +145,14 @@ export default function MyDashboard() {
     const dueSoon = active.filter(d => ['critical', 'warn'].includes(getUrgency(d.dueDate, d.status)))
     const done = displayTasks.filter(d => d.status === 'done' || d.status === 'completed' || d.status === 'shipped')
     const blocked = displayTasks.filter(d => d.status === 'blocked')
-    return { total: displayTasks.length, active: active.length, overdue: overdue.length, dueSoon: dueSoon.length, done: done.length, blocked: blocked.length }
+    return {
+      total: displayTasks.length,
+      active: active.length,
+      overdue: overdue.length,
+      dueSoon: dueSoon.length,
+      done: done.length,
+      blocked: blocked.length
+    }
   }, [displayTasks])
 
   const sortedTasks = useMemo(() => {
@@ -122,11 +162,11 @@ export default function MyDashboard() {
   // 5 Canonical Kanban Columns
   const kanbanColumns = useMemo(() => {
     const standardCols = [
-      { id: 'not_started', title: 'To Do', dotColor: '#1C1D2B', emptyText: 'Nothing queued', showAdd: true },
-      { id: 'in_progress', title: 'In Progress', dotColor: '#3D6FD6', emptyText: 'Nothing in flight', showAdd: false },
-      { id: 'review', title: 'Review / QA', dotColor: '#C4791A', emptyText: 'Nothing to review', showAdd: false },
-      { id: 'blocked', title: 'Blocked', dotColor: '#D14343', emptyText: 'No blockers 🎉', showAdd: false },
-      { id: 'done', title: 'Done', dotColor: '#4F46E5', emptyText: 'Ship your first task', showAdd: false },
+      { id: 'not_started', title: 'To Do', dotColor: '#1e293b', emptyText: 'Nothing queued', showAdd: true },
+      { id: 'in_progress', title: 'In Progress', dotColor: '#3b82f6', emptyText: 'Nothing in flight', showAdd: false },
+      { id: 'review', title: 'Review / QA', dotColor: '#f59e0b', emptyText: 'Nothing to review', showAdd: false },
+      { id: 'blocked', title: 'Blocked', dotColor: '#ef4444', emptyText: 'No blockers 🎉', showAdd: false },
+      { id: 'done', title: 'Done', dotColor: '#10b981', emptyText: 'Ship your first task', showAdd: false },
     ]
 
     return standardCols.map(col => {
@@ -146,7 +186,7 @@ export default function MyDashboard() {
     })
   }, [sortedTasks])
 
-  // Real Data Velocity Calculation (7D / 30D / 90D)
+  // Velocity Calculation (7D / 30D / 90D)
   const velocityData = useMemo(() => {
     const now = new Date()
     const isDone = t => t.status === 'done' || t.status === 'completed' || t.status === 'shipped'
@@ -199,7 +239,7 @@ export default function MyDashboard() {
 
       const maxCount = Math.max(1, ...days.map(d => d.total))
       return {
-        subtitle: 'Data updates in real-time',
+        subtitle: 'Completed vs assigned per day',
         bars: days.map(d => ({
           ...d,
           heightPct: d.total > 0 ? Math.round((d.total / maxCount) * 100) : 0,
@@ -255,12 +295,12 @@ export default function MyDashboard() {
 
       const maxCount = Math.max(1, ...weeks.map(w => w.total))
       return {
-        subtitle: 'Weekly velocity aggregation',
+        subtitle: 'Weekly sprint delivery velocity',
         bars: weeks.map(w => ({
           ...w,
           heightPct: w.total > 0 ? Math.round((w.total / maxCount) * 100) : 0,
-          donePct: w.total > 0 ? Math.round((w.done / w.total) * 100) : 0,
-          progPct: w.total > 0 ? Math.round((w.inProgress / w.total) * 100) : 0,
+          donePct: w.total > 0 ? Math.round((d.done / d.total) * 100) : 0,
+          progPct: w.total > 0 ? Math.round((d.inProgress / d.total) * 100) : 0,
         })),
         totalDone: displayTasks.filter(isDone).length,
         totalProg: displayTasks.filter(isInProg).length,
@@ -268,7 +308,7 @@ export default function MyDashboard() {
       }
     }
 
-    // 90D: 3-month breakdown
+    // 90D Breakdown
     const months = []
     for (let i = 2; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
@@ -306,7 +346,7 @@ export default function MyDashboard() {
 
     const maxCount = Math.max(1, ...months.map(m => m.total))
     return {
-      subtitle: 'Quarterly velocity breakdown',
+      subtitle: 'Quarterly sprint execution',
       bars: months.map(m => ({
         ...m,
         heightPct: m.total > 0 ? Math.round((m.total / maxCount) * 100) : 0,
@@ -319,7 +359,71 @@ export default function MyDashboard() {
     }
   }, [displayTasks, timeRange])
 
-  // User presentation names
+  // Golden Wave Chart Spline Points
+  const splineChartData = useMemo(() => {
+    const bars = velocityData.bars
+    if (!bars || bars.length === 0) return { splinePath: '', areaPath: '', points: [] }
+
+    const maxVal = Math.max(1, ...bars.map(b => b.total))
+    // Natural subtle rhythm curve for when data is zero/low
+    const baseCurve = [78, 55, 70, 52, 65, 45, 38]
+
+    const points = bars.map((b, idx) => {
+      const x = 20 + idx * (500 / Math.max(1, bars.length - 1))
+      let y = baseCurve[idx % baseCurve.length]
+      if (b.total > 0) {
+        y = 105 - (b.total / maxVal) * 75
+      }
+      return { x, y, bar: b, idx }
+    })
+
+    const splinePath = getSmoothSplinePath(points)
+    const lastX = points[points.length - 1].x
+    const firstX = points[0].x
+    const areaPath = `${splinePath} L ${lastX} 130 L ${firstX} 130 Z`
+
+    return { splinePath, areaPath, points }
+  }, [velocityData])
+
+  // Team Contributors Breakdown
+  const contributors = useMemo(() => {
+    const map = new Map()
+    displayTasks.forEach(t => {
+      const key = t.assigneeEmail || t.assigneeName || 'Unassigned'
+      if (!map.has(key)) {
+        map.set(key, {
+          name: t.assigneeName || (t.assigneeEmail ? t.assigneeEmail.split('@')[0] : 'Team Member'),
+          role: t.assigneeEmail ? `@${t.assigneeEmail.split('@')[0]}` : 'Engineer',
+          total: 0,
+          done: 0
+        })
+      }
+      const item = map.get(key)
+      item.total++
+      if (t.status === 'done' || t.status === 'completed' || t.status === 'shipped') {
+        item.done++
+      }
+    })
+
+    const list = Array.from(map.values())
+    if (list.length === 0) {
+      return [
+        { name: user?.displayName || user?.email?.split('@')[0] || 'Erharsh237', role: '@lead · Owner', pct: '100%', done: stats.done, total: stats.total },
+        { name: 'Sprint CI/CD', role: '@automations', pct: '85%', done: 0, total: 0 }
+      ]
+    }
+
+    const totalTasks = Math.max(1, displayTasks.length)
+    return list.slice(0, 3).map(c => ({
+      name: c.name,
+      role: c.role,
+      pct: `${Math.round((c.total / totalTasks) * 100)}%`,
+      done: c.done,
+      total: c.total
+    }))
+  }, [displayTasks, user, stats])
+
+  // User First Name
   const userFirstName = useMemo(() => {
     if (user?.displayName) return user.displayName.split(' ')[0]
     if (user?.email) {
@@ -329,26 +433,7 @@ export default function MyDashboard() {
     return 'there'
   }, [user])
 
-  const userFullName = useMemo(() => {
-    if (user?.displayName) return user.displayName
-    if (user?.user_metadata?.full_name) return user.user_metadata.full_name
-    if (user?.email) {
-      const prefix = user.email.split('@')[0]
-      return prefix.charAt(0).toUpperCase() + prefix.slice(1)
-    }
-    return 'Workspace Admin'
-  }, [user])
-
-  const userInitials = useMemo(() => {
-    const raw = user?.displayName || user?.user_metadata?.full_name || user?.email || 'ER'
-    const parts = raw.split(/[\s@._]+/).filter(Boolean)
-    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-    return raw.slice(0, 2).toUpperCase()
-  }, [user])
-
   const activeHoverItem = hoveredIndex !== null ? velocityData.bars[hoveredIndex] : null
-
-  // Helper for workspace navigation links
   const getPath = (path) => `/${workspaceId}${path === '/' ? '' : path}`
 
   const scrollToDeliverables = () => {
@@ -357,628 +442,610 @@ export default function MyDashboard() {
   }
 
   return (
-    <div className="mydash-page-bg">
-      <div className="mydash-shell-card">
-        {/* ─────────────────────────────────────────────────────────────
-             1. LEFT SIDEBAR (WARM IVORY #FCF8F2)
-        ───────────────────────────────────────────────────────────── */}
-        <aside className="mydash-sidebar">
-          <div className="mydash-sidebar-top">
-            {/* Brand Logo with 4 colored dots */}
-            <Link to={getPath('/')} className="mydash-brand">
-              <div className="mydash-dots">
-                <span className="mydash-dot-1" />
-                <span className="mydash-dot-2" />
-                <span className="mydash-dot-3" />
-                <span className="mydash-dot-4" />
-              </div>
-              <span className="mydash-brand-name">Paper5</span>
-              <span className="mydash-env-pill">{(workspace?.name || 'TEST').toUpperCase()}</span>
-            </Link>
+    <div className="sprint-dash-root">
+      {/* ─────────────────────────────────────────────────────────────
+           1. STICKY TOP NAV
+      ───────────────────────────────────────────────────────────── */}
+      <nav className="dash-sticky-nav">
+        <div className="dash-container dash-nav-inner">
+          <Link to={getPath('/')} className="dash-nav-brand">
+            <span className="dash-logo-name">Paper5</span>
+            <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
+          </Link>
 
-            {/* Profile badge with avatar & role */}
-            <div className="mydash-profile">
-              <div className="mydash-avatar-wrap">
-                {user?.user_metadata?.avatar_url ? (
-                  <img src={user.user_metadata.avatar_url} alt="Profile" className="mydash-avatar-img" />
-                ) : (
-                  <div className="mydash-avatar-initials">{userInitials}</div>
-                )}
-              </div>
-              <h3 className="mydash-profile-name">{userFullName}</h3>
-              <p className="mydash-profile-role">
-                {workspaceRole === 'owner' ? 'Workspace Owner' : (isAdmin ? 'Workspace Admin' : 'Product Lead')}
-              </p>
-            </div>
+          <NavTabs />
 
-            {/* Vertical Navigation Links */}
-            <nav className="mydash-nav">
-              <Link to={getPath('/')} className="mydash-nav-item active">
-                <span>Dashboard</span>
-                <span className="mydash-badge-pill">{stats.active || 1}</span>
-              </Link>
-              <Link to={getPath('/workflow')} className="mydash-nav-item">
-                <span>Workflow</span>
-              </Link>
-              <Link to={getPath('/team')} className="mydash-nav-item">
-                <span>Team</span>
-              </Link>
-              <Link to={getPath('/meeting')} className="mydash-nav-item">
-                <span>Meeting</span>
-              </Link>
-              <Link to={getPath('/analytics')} className="mydash-nav-item">
-                <span>Analytics</span>
-              </Link>
-            </nav>
-          </div>
-
-          {/* Sidebar Footer with Notification, User Menu & Settings */}
-          <div className="mydash-sidebar-footer">
+          <div className="dash-nav-actions">
             <NotificationBell currentUser={user} />
             <UserMenu />
-            <Link to={getPath('/settings')} className="mydash-gear-btn" title="Workspace Settings">
+            <Link to={getPath('/settings')} className="dash-nav-btn-icon" title="Workspace Settings" style={{ color: 'var(--muted)', display: 'flex', alignItems: 'center' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="3" />
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
               </svg>
             </Link>
           </div>
-        </aside>
+        </div>
+      </nav>
 
-        {/* ─────────────────────────────────────────────────────────────
-             2. MAIN CONTENT CANVAS (EDITORIAL WHITE CANVAS)
-        ───────────────────────────────────────────────────────────── */}
-        <main className="mydash-main-content">
-          {/* ── TOP ROW: TITLE + SEARCH + KPI STRIP + ARC GAUGE CARD ── */}
-          <div className="mydash-top-row">
-            <div className="mydash-top-left">
-              <div className="mydash-title-row">
-                <h1 className="mydash-heading">Dashboard</h1>
-                <span className="mydash-action-badge">1</span>
-                <Link to={getPath('/settings')} className="mydash-gear-btn" title="Settings">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                  </svg>
-                </Link>
+      {/* ─────────────────────────────────────────────────────────────
+           MAIN DASHBOARD CONTAINER
+      ───────────────────────────────────────────────────────────── */}
+      <main className="sprint-dash-container">
+
+        {/* ── 1. HEADER ROW: GREETING & CONCENTRIC ARC GAUGE CARD ── */}
+        <section className="sprint-header-row">
+          <div className="sprint-header-left">
+            <div>
+              <div className="sprint-welcome-meta">
+                <span className="sprint-role-badge">
+                  {workspaceRole === 'owner' ? 'Workspace Owner' : (isAdmin ? 'Workspace Admin' : 'Team Member')}
+                </span>
+                <span className="sprint-active-pill">
+                  {activeSprint?.name ? `Active: ${activeSprint.name}` : 'Sprint 1 · In Flight'}
+                </span>
               </div>
+              <h1 className="sprint-greeting-title">
+                Welcome back, <span>{userFirstName}</span>
+              </h1>
+            </div>
 
-              {/* Search Bar with ⌘K */}
-              <div className="mydash-search-wrap">
-                <svg className="mydash-search-icon" width="15" height="15" viewBox="0 0 15 15" fill="none">
-                  <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.5" />
-                  <path d="M10 10L13 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            {/* Quick Search */}
+            <div className="sprint-search-row">
+              <div className="sprint-search-wrap">
+                <svg className="sprint-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
                 <input
-                  className="mydash-search-input"
                   type="text"
-                  placeholder="Search tasks, repos, people..."
+                  className="sprint-search-input"
+                  placeholder="Search tasks, sprints, repos, assignees..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
-                <kbd className="mydash-search-kbd">⌘K</kbd>
-              </div>
-
-              {/* KPI Strip */}
-              <div className="mydash-kpi-strip">
-                <div className="mydash-kpi-unit">
-                  <div className="mydash-kpi-label">
-                    <span>Active</span>
-                    <span className="mydash-dot-blue" />
-                  </div>
-                  <div className="mydash-kpi-value">{stats.active}</div>
-                </div>
-
-                <div className="mydash-kpi-unit">
-                  <div className="mydash-kpi-label">
-                    <span>Overdue</span>
-                    <span className="mydash-dot-red" />
-                  </div>
-                  <div className="mydash-kpi-value">{stats.overdue}</div>
-                </div>
-
-                <div className="mydash-kpi-unit">
-                  <div className="mydash-kpi-label">
-                    <span>Due Soon</span>
-                    <span className="mydash-dot-orange" />
-                  </div>
-                  <div className="mydash-kpi-value">{stats.dueSoon}</div>
-                </div>
-
-                <div className="mydash-kpi-unit">
-                  <div className="mydash-kpi-label">
-                    <span>Completed</span>
-                    <span className="mydash-dot-green" />
-                  </div>
-                  <div className="mydash-kpi-value">{stats.done}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Top Right: Arc Gauge Card ("Upgrade Your Crowd" / Sprint Velocity) */}
-            <div className="mydash-arc-card">
-              <div className="mydash-arc-left">
-                <div className="mydash-arc-badge">⚡</div>
-                <h4 className="mydash-arc-title">Upgrade Your Crowd</h4>
-                <p className="mydash-arc-sub">
-                  {activeSprint?.name ? `Sprint: ${activeSprint.name}` : 'Pro plan for better results'}
-                </p>
-              </div>
-
-              {/* Concentric Arc Gauges */}
-              <div className="mydash-arc-wrap">
-                <svg viewBox="0 0 140 85" style={{ width: '130px', height: '80px', overflow: 'visible' }}>
-                  {/* Outer pastel teal arc */}
-                  <path
-                    d="M 12 75 A 58 58 0 0 1 128 75"
-                    fill="none"
-                    stroke="#7dd3fc"
-                    strokeWidth="9"
-                    strokeLinecap="round"
-                  />
-                  {/* Middle warm peach arc */}
-                  <path
-                    d="M 26 75 A 44 44 0 0 1 114 75"
-                    fill="none"
-                    stroke="#fdba74"
-                    strokeWidth="9"
-                    strokeLinecap="round"
-                  />
-                  {/* Inner dark charcoal arc */}
-                  <path
-                    d="M 40 75 A 30 30 0 0 1 100 75"
-                    fill="none"
-                    stroke="#334155"
-                    strokeWidth="9"
-                    strokeLinecap="round"
-                  />
-                </svg>
-
-                {/* Central Action Button */}
-                <button
-                  type="button"
-                  className="mydash-arc-button"
-                  onClick={() => setShowNewModal(true)}
-                  title="Add New Task"
-                >
-                  + TASK
-                </button>
+                <kbd className="sprint-search-kbd">⌘K</kbd>
               </div>
             </div>
           </div>
 
-          {/* ── MIDDLE ROW: ACTIVITY GOLDEN WAVE CHART + TOP PERFORMERS ── */}
-          <div className="mydash-middle-grid">
-            {/* Left: Activity Chart */}
-            <div className="mydash-activity-col">
-              <div className="mydash-activity-header">
-                <h3 className="mydash-activity-title">Activity</h3>
-                <div className="mydash-activity-meta">
-                  <span className="mydash-activity-subtext">{velocityData.subtitle}</span>
-                  <div className="mydash-range-tabs">
-                    <button
-                      type="button"
-                      className={`mydash-range-btn${timeRange === '7D' ? ' active' : ''}`}
-                      onClick={() => { setTimeRange('7D'); setHoveredIndex(null); }}
-                    >
-                      01-07 May ⌵
-                    </button>
-                    <button
-                      type="button"
-                      className={`mydash-range-btn${timeRange === '30D' ? ' active' : ''}`}
-                      onClick={() => { setTimeRange('30D'); setHoveredIndex(null); }}
-                    >
-                      30D
-                    </button>
-                    <button
-                      type="button"
-                      className={`mydash-range-btn${timeRange === '90D' ? ' active' : ''}`}
-                      onClick={() => { setTimeRange('90D'); setHoveredIndex(null); }}
-                    >
-                      90D
-                    </button>
-                  </div>
+          {/* Top Right: Arc Gauge Card (Dribbble Design Reference) */}
+          <div className="sprint-arc-card">
+            <div className="sprint-arc-info">
+              <span className="sprint-arc-tag">⚡ Sprint Health</span>
+              <h3 className="sprint-arc-title">
+                {activeSprint?.name || 'Sprint Velocity'}
+              </h3>
+              <p className="sprint-arc-sub">
+                {stats.done} of {stats.total} delivered
+              </p>
+            </div>
+
+            {/* Concentric Semi-Circular Arc Gauges */}
+            <div className="sprint-arc-gauge-wrap">
+              <svg viewBox="0 0 150 90" style={{ width: '135px', height: '80px', overflow: 'visible' }}>
+                {/* Outer Scope Arc (Pastel Cyan) */}
+                <path
+                  d="M 12 80 A 62 62 0 0 1 138 80"
+                  fill="none"
+                  stroke="#38bdf8"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                />
+                {/* Middle In-Progress Arc (Warm Peach) */}
+                <path
+                  d="M 26 80 A 48 48 0 0 1 124 80"
+                  fill="none"
+                  stroke="#fb923c"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                />
+                {/* Inner Completed Arc (Indigo) */}
+                <path
+                  d="M 40 80 A 34 34 0 0 1 110 80"
+                  fill="none"
+                  stroke="#4f46e5"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                />
+              </svg>
+
+              {/* Central Action Button */}
+              <button
+                type="button"
+                className="sprint-arc-button"
+                onClick={() => setShowNewModal(true)}
+                title="Create New Task"
+              >
+                + TASK
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* ── 2. METRIC STRIP (4 MODERN KPI CARDS) ── */}
+        <section className="sprint-kpi-grid">
+          {/* ACTIVE */}
+          <div className="sprint-kpi-card" onClick={() => setLaneFilter(laneFilter === 'in_progress' ? null : 'in_progress')}>
+            <div className="sprint-kpi-head">
+              <span className="sprint-kpi-label">Active</span>
+              <span className="sprint-kpi-dot" style={{ background: '#3b82f6' }} />
+            </div>
+            <div className="sprint-kpi-val">{stats.active}</div>
+            <div className="sprint-kpi-sub">
+              <span>{stats.active === 0 ? 'No active tasks' : 'In flight this week'}</span>
+            </div>
+          </div>
+
+          {/* OVERDUE */}
+          <div className="sprint-kpi-card" onClick={() => setLaneFilter(laneFilter === 'dueSoon' ? null : 'dueSoon')}>
+            <div className="sprint-kpi-head">
+              <span className="sprint-kpi-label">Overdue</span>
+              <span className="sprint-kpi-dot" style={{ background: '#ef4444' }} />
+            </div>
+            <div className="sprint-kpi-val">{stats.overdue}</div>
+            <div className="sprint-kpi-sub" style={{ color: stats.overdue === 0 ? '#10b981' : '#ef4444' }}>
+              <span>{stats.overdue === 0 ? '✓ Scope on schedule' : 'Requires attention'}</span>
+            </div>
+          </div>
+
+          {/* DUE SOON */}
+          <div className="sprint-kpi-card" onClick={() => setLaneFilter(laneFilter === 'dueSoon' ? null : 'dueSoon')}>
+            <div className="sprint-kpi-head">
+              <span className="sprint-kpi-label">Due Soon</span>
+              <span className="sprint-kpi-dot" style={{ background: '#f59e0b' }} />
+            </div>
+            <div className="sprint-kpi-val">{stats.dueSoon}</div>
+            <div className="sprint-kpi-sub">
+              <span>Next 48 hours</span>
+            </div>
+          </div>
+
+          {/* COMPLETED */}
+          <div className="sprint-kpi-card" onClick={() => setLaneFilter(laneFilter === 'done' ? null : 'done')}>
+            <div className="sprint-kpi-head">
+              <span className="sprint-kpi-label">Completed</span>
+              <span className="sprint-kpi-dot" style={{ background: '#10b981' }} />
+            </div>
+            <div className="sprint-kpi-val">{stats.done}</div>
+            <div className="sprint-kpi-sub" style={{ color: '#10b981' }}>
+              <span>Delivered this sprint</span>
+            </div>
+          </div>
+        </section>
+
+        {/* ── 3. MIDDLE SECTION: VELOCITY GOLDEN SPLINE + TOP CONTRIBUTORS ── */}
+        <section className="sprint-middle-grid">
+          {/* Left: Task Velocity Card */}
+          <div className="sprint-velocity-card">
+            <div className="sprint-chart-header">
+              <div>
+                <h3 className="sprint-chart-title">Task Velocity & Activity</h3>
+                <p className="sprint-chart-sub">
+                  {activeHoverItem
+                    ? `${activeHoverItem.title}: ${activeHoverItem.done} completed, ${activeHoverItem.inProgress} active`
+                    : velocityData.subtitle}
+                </p>
+              </div>
+
+              {/* Time Range Pills */}
+              <div className="sprint-range-pills">
+                <button
+                  type="button"
+                  className={`sprint-range-btn${timeRange === '7D' ? ' active' : ''}`}
+                  onClick={() => { setTimeRange('7D'); setHoveredIndex(null); }}
+                >
+                  7D
+                </button>
+                <button
+                  type="button"
+                  className={`sprint-range-btn${timeRange === '30D' ? ' active' : ''}`}
+                  onClick={() => { setTimeRange('30D'); setHoveredIndex(null); }}
+                >
+                  30D
+                </button>
+                <button
+                  type="button"
+                  className={`sprint-range-btn${timeRange === '90D' ? ' active' : ''}`}
+                  onClick={() => { setTimeRange('90D'); setHoveredIndex(null); }}
+                >
+                  90D
+                </button>
+              </div>
+            </div>
+
+            {/* Smooth Spline SVG Chart */}
+            <div className="sprint-svg-area">
+              <div className="sprint-y-axis">
+                <span>40k</span>
+                <span>30k</span>
+                <span>20k</span>
+                <span>10k</span>
+                <span>0k</span>
+              </div>
+
+              {/* Peak Floating Tooltip Badge */}
+              <div className="sprint-peak-tooltip">
+                <div className="sprint-tooltip-val">
+                  {stats.active > 0 || stats.done > 0
+                    ? `${stats.active + stats.done} Active Scope`
+                    : 'Sprint Target On Track'}
+                </div>
+                <div className="sprint-tooltip-sub">
+                  {activeSprint?.name || 'Sprint Velocity'}
                 </div>
               </div>
 
-              {/* Golden Wave Spline Chart with Floating Tooltip */}
-              <div className="mydash-chart-container">
-                {/* Y-Axis Labels */}
-                <div className="mydash-y-axis">
-                  <span>40k</span>
-                  <span>30k</span>
-                  <span>20k</span>
-                  <span>10k</span>
-                  <span>0 k</span>
-                </div>
+              <div className="sprint-svg-wrapper">
+                <svg
+                  viewBox="0 0 540 120"
+                  preserveAspectRatio="none"
+                  className="sprint-svg-element"
+                >
+                  <defs>
+                    <linearGradient id="sprintWaveGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.30" />
+                      <stop offset="60%" stopColor="#f59e0b" stopOpacity="0.08" />
+                      <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
 
-                {/* Floating Peak Tooltip */}
-                <div className="mydash-tooltip-card">
-                  <div className="mydash-tooltip-num">
-                    {stats.active > 0 || stats.done > 0
-                      ? `${stats.active + stats.done} Tasks / active`
-                      : '32 210 Views/hour'}
-                  </div>
-                  <div className="mydash-tooltip-sub">
-                    {activeSprint?.name || 'Sprint velocity on target'}
-                  </div>
-                </div>
-
-                {/* SVG Spline Canvas */}
-                <div style={{ marginLeft: '36px', height: '100%', position: 'relative' }}>
-                  <svg
-                    viewBox="0 0 500 130"
-                    preserveAspectRatio="none"
-                    className="mydash-svg-canvas"
-                  >
-                    <defs>
-                      <linearGradient id="mydashGoldenGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.32" />
-                        <stop offset="70%" stopColor="#f59e0b" stopOpacity="0.08" />
-                        <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
-                      </linearGradient>
-                    </defs>
-
-                    {/* Gradient Area Fill under spline */}
+                  {/* Area fill beneath spline */}
+                  {splineChartData.areaPath && (
                     <path
-                      d="M 15 85 Q 85 40, 160 70 T 320 65 T 410 40 T 485 28 L 485 130 L 15 130 Z"
-                      fill="url(#mydashGoldenGrad)"
+                      d={splineChartData.areaPath}
+                      fill="url(#sprintWaveGrad)"
                     />
+                  )}
 
-                    {/* Golden Spline Stroke */}
+                  {/* Golden Wave Stroke */}
+                  {splineChartData.splinePath && (
                     <path
-                      d="M 15 85 Q 85 40, 160 70 T 320 65 T 410 40 T 485 28"
+                      d={splineChartData.splinePath}
                       fill="none"
                       stroke="#f59e0b"
                       strokeWidth="3.5"
                       strokeLinecap="round"
                     />
+                  )}
 
-                    {/* Peak Point Indicator */}
-                    <circle cx="320" cy="65" r="5" fill="#f59e0b" stroke="#ffffff" strokeWidth="2.5" />
-                    <circle cx="410" cy="40" r="4.5" fill="#f59e0b" stroke="#ffffff" strokeWidth="2" />
-                    <circle cx="485" cy="28" r="4.5" fill="#f59e0b" stroke="#ffffff" strokeWidth="2" />
-                  </svg>
-                </div>
+                  {/* Interactive points on the curve */}
+                  {splineChartData.points.map((pt, idx) => (
+                    <circle
+                      key={idx}
+                      cx={pt.x}
+                      cy={pt.y}
+                      r={hoveredIndex === idx ? 6 : 4}
+                      fill="#f59e0b"
+                      stroke="#ffffff"
+                      strokeWidth="2"
+                      style={{ cursor: 'pointer', transition: 'r 0.15s ease' }}
+                      onMouseEnter={() => setHoveredIndex(idx)}
+                      onMouseLeave={() => setHoveredIndex(null)}
+                      onClick={() => setSelectedPeriodFilter(selectedPeriodFilter?.title === pt.bar.title ? null : pt.bar)}
+                    />
+                  ))}
+                </svg>
+              </div>
 
-                {/* X-Axis Labels */}
-                <div className="mydash-x-axis">
-                  {velocityData.bars.map((bar, idx) => (
+              {/* X-Axis Labels */}
+              <div className="sprint-x-axis">
+                {velocityData.bars.map((bar, idx) => {
+                  const isSel = selectedPeriodFilter?.title === bar.title
+                  return (
                     <span
                       key={idx}
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => setSelectedPeriodFilter(selectedPeriodFilter?.title === bar.title ? null : bar)}
+                      className={isSel ? 'selected' : ''}
+                      onClick={() => setSelectedPeriodFilter(isSel ? null : bar)}
+                      onMouseEnter={() => setHoveredIndex(idx)}
+                      onMouseLeave={() => setHoveredIndex(null)}
                     >
-                      {bar.label}
+                      {bar.dayName || bar.label}
                     </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Right: Top Performers */}
-            <div className="mydash-performers-col">
-              <h3 className="mydash-performers-title">Top performers</h3>
-              <div className="mydash-performers-list">
-                <div className="mydash-performer-row">
-                  <div className="mydash-performer-left">
-                    <img
-                      src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces"
-                      alt="Valy Antonova"
-                      className="mydash-performer-avatar"
-                    />
-                    <div className="mydash-performer-info">
-                      <h4 className="mydash-performer-name">Valy Antonova</h4>
-                      <span className="mydash-performer-handle">@valyantonova</span>
-                    </div>
-                  </div>
-                  <span className="mydash-performer-stat">39%</span>
-                </div>
-
-                <div className="mydash-performer-row">
-                  <div className="mydash-performer-left">
-                    <img
-                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces"
-                      alt="Mark Noil"
-                      className="mydash-performer-avatar"
-                    />
-                    <div className="mydash-performer-info">
-                      <h4 className="mydash-performer-name">Mark Noil</h4>
-                      <span className="mydash-performer-handle">@marknoil</span>
-                    </div>
-                  </div>
-                  <span className="mydash-performer-stat">18%</span>
-                </div>
-
-                <div className="mydash-performer-row">
-                  <div className="mydash-performer-left">
-                    <img
-                      src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces"
-                      alt="Nenci Villy"
-                      className="mydash-performer-avatar"
-                    />
-                    <div className="mydash-performer-info">
-                      <h4 className="mydash-performer-name">Nenci Villy</h4>
-                      <span className="mydash-performer-handle">@nencivilly</span>
-                    </div>
-                  </div>
-                  <span className="mydash-performer-stat">25%</span>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px' }}>
-                <Link to={getPath('/team')} className="mydash-view-more-link">
-                  View More ›
-                </Link>
-
-                {isAdmin && (
-                  <Link
-                    to={getPath('/integrations')}
-                    style={{ fontSize: '11.5px', color: '#4f46e5', textDecoration: 'none', fontWeight: 700 }}
-                  >
-                    {githubRepos.length > 0 ? '✓ GitHub Synced' : '+ Connect GitHub'}
-                  </Link>
-                )}
+                  )
+                })}
               </div>
             </div>
           </div>
 
-          {/* ── BOTTOM SHELF: CHANNELS (MINT ROUNDED CONTAINER #E3F4EF) ── */}
-          <div className="mydash-channels-shelf">
-            <div className="mydash-channels-intro">
-              <h3 className="mydash-channels-title">Channels</h3>
-              <p className="mydash-channels-desc">
-                Your channels statistics for 1 week period.
-              </p>
+          {/* Right: Top Contributors & GitHub Sync */}
+          <div className="sprint-performers-card">
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h3 className="sprint-performers-title">Top Contributors</h3>
+                <Link to={getPath('/team')} style={{ fontSize: '12px', color: '#4f46e5', fontWeight: 700, textDecoration: 'none' }}>
+                  View All ›
+                </Link>
+              </div>
+              <p className="sprint-performers-sub">Velocity share this sprint</p>
             </div>
 
-            <div className="mydash-channels-deck">
-              {/* Card 1: Dribbble / Active */}
-              <div className="mydash-card-pill" onClick={scrollToDeliverables} title="View Active Tasks">
-                <div className="mydash-icon-circle mydash-icon-pink">⚽</div>
-                <h4 className="mydash-card-name">Dribble</h4>
-                <p className="mydash-card-handle">@grantart</p>
-                <span className="mydash-card-stat">+2 %</span>
-              </div>
+            <div className="sprint-performers-list">
+              {contributors.map((c, i) => (
+                <div key={i} className="sprint-performer-row">
+                  <div className="sprint-performer-info">
+                    <div className="sprint-performer-avatar">
+                      {c.name.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <h4 className="sprint-performer-name">{c.name}</h4>
+                      <p className="sprint-performer-role">{c.role}</p>
+                    </div>
+                  </div>
+                  <div className="sprint-performer-metric">
+                    <div className="sprint-performer-pct">{c.pct}</div>
+                    <div className="sprint-performer-sub">{c.done} shipped</div>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-              {/* Card 2: Behance / Overdue */}
-              <div className="mydash-card-pill" onClick={scrollToDeliverables} title="View Overdue Tasks">
-                <div className="mydash-icon-circle mydash-icon-blue">Bē</div>
-                <h4 className="mydash-card-name">Bahance</h4>
-                <p className="mydash-card-handle">@grantart</p>
-                <span className="mydash-card-stat" style={{ color: stats.overdue > 0 ? '#ef4444' : '#111827' }}>
-                  {stats.overdue > 0 ? `-${stats.overdue}%` : '-7 %'}
+            {/* Repositories / GitHub Sync Box */}
+            <div className="sprint-github-sync-box">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#475569' }}>
+                  <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.1-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z"/>
+                </svg>
+                <span className="sprint-github-text">
+                  {githubRepos.length > 0 ? `${githubRepos.length} Repos synced` : 'GitHub PR Sync'}
                 </span>
               </div>
+              <Link to={getPath('/integrations')} className="sprint-github-btn">
+                {githubRepos.length > 0 ? 'Manage ›' : 'Connect ›'}
+              </Link>
+            </div>
+          </div>
+        </section>
 
-              {/* Card 3: Instagram / Due Soon */}
-              <div className="mydash-card-pill" onClick={scrollToDeliverables} title="View Due Soon Tasks">
-                <div className="mydash-icon-circle mydash-icon-orange">📷</div>
-                <h4 className="mydash-card-name">Instagram</h4>
-                <p className="mydash-card-handle">@robertgrant</p>
-                <span className="mydash-card-stat">+4 %</span>
-              </div>
+        {/* ── 4. SPRINT LANES SHELF (ADAPTED FROM DRIBBBLE CHANNELS CONTAINER) ── */}
+        <section className="sprint-lanes-shelf">
+          <div className="sprint-lanes-intro">
+            <h3 className="sprint-lanes-heading">Sprint Lanes</h3>
+            <p className="sprint-lanes-desc">
+              Live status across current iteration workstreams.
+            </p>
+          </div>
 
-              {/* Card 4: Pinterest / Completed */}
-              <div className="mydash-card-pill" onClick={scrollToDeliverables} title="View Completed Tasks">
-                <div className="mydash-icon-circle mydash-icon-red">P</div>
-                <h4 className="mydash-card-name">Pinterest</h4>
-                <p className="mydash-card-handle">@robertgrant</p>
-                <span className="mydash-card-stat">+2 %</span>
-              </div>
+          <div className="sprint-lanes-deck">
+            {/* Card 1: Queued / Backlog */}
+            <div
+              className={`sprint-lane-pill${laneFilter === 'todo' ? ' active' : ''}`}
+              onClick={() => setLaneFilter(laneFilter === 'todo' ? null : 'todo')}
+              title="Click to filter To Do items"
+            >
+              <div className="sprint-lane-icon" style={{ background: '#f1f5f9', color: '#1e293b' }}>📋</div>
+              <h4 className="sprint-lane-title">Queued</h4>
+              <p className="sprint-lane-sub">Backlog</p>
+              <span className="sprint-lane-stat">{stats.total - stats.active - stats.done > 0 ? stats.total - stats.active - stats.done : 0}</span>
+            </div>
 
-              {/* Card 5: Full Stats Accent Pill */}
+            {/* Card 2: In Flight */}
+            <div
+              className={`sprint-lane-pill${laneFilter === 'in_progress' ? ' active' : ''}`}
+              onClick={() => setLaneFilter(laneFilter === 'in_progress' ? null : 'in_progress')}
+              title="Click to filter In Progress items"
+            >
+              <div className="sprint-lane-icon" style={{ background: '#eff6ff', color: '#3b82f6' }}>⚡</div>
+              <h4 className="sprint-lane-title">In Flight</h4>
+              <p className="sprint-lane-sub">Active tasks</p>
+              <span className="sprint-lane-stat">{stats.active}</span>
+            </div>
+
+            {/* Card 3: Due Soon / Attention */}
+            <div
+              className={`sprint-lane-pill${laneFilter === 'dueSoon' ? ' active' : ''}`}
+              onClick={() => setLaneFilter(laneFilter === 'dueSoon' ? null : 'dueSoon')}
+              title="Click to filter Due Soon items"
+            >
+              <div className="sprint-lane-icon" style={{ background: '#fffbeb', color: '#f59e0b' }}>⏳</div>
+              <h4 className="sprint-lane-title">Due Soon</h4>
+              <p className="sprint-lane-sub">Next 48h</p>
+              <span className="sprint-lane-stat" style={{ color: stats.dueSoon > 0 ? '#d97706' : '#0f172a' }}>
+                {stats.dueSoon}
+              </span>
+            </div>
+
+            {/* Card 4: Shipped / Done */}
+            <div
+              className={`sprint-lane-pill${laneFilter === 'done' ? ' active' : ''}`}
+              onClick={() => setLaneFilter(laneFilter === 'done' ? null : 'done')}
+              title="Click to filter Completed items"
+            >
+              <div className="sprint-lane-icon" style={{ background: '#ecfdf5', color: '#10b981' }}>🚀</div>
+              <h4 className="sprint-lane-title">Shipped</h4>
+              <p className="sprint-lane-sub">Delivered</p>
+              <span className="sprint-lane-stat" style={{ color: '#10b981' }}>{stats.done}</span>
+            </div>
+
+            {/* Card 5: Full Board Button */}
+            <button
+              type="button"
+              className="sprint-full-board-btn"
+              onClick={scrollToDeliverables}
+              title="Jump to Deliverables Board"
+            >
+              <div className="sprint-full-board-title">Full<br />Board</div>
+              <div className="sprint-full-board-icon">›</div>
+            </button>
+          </div>
+        </section>
+
+        {/* ── 5. DELIVERABLES BOARD SECTION (KANBAN & LIST) ── */}
+        <section id="deliverables-board" className="sprint-board-section">
+          <div className="sprint-board-header">
+            <div className="sprint-board-title-group">
+              <h2 className="sprint-board-title">
+                {isAdmin ? (adminScope === 'team' ? 'Team Deadlines' : 'My Assigned Tasks') : 'My Assigned Tasks'}
+              </h2>
+              <span className="sprint-board-count">{sortedTasks.length} total</span>
+
+              {isAdmin && (
+                <div className="sprint-scope-pills">
+                  <button
+                    type="button"
+                    className={`sprint-scope-btn${adminScope === 'team' ? ' active' : ''}`}
+                    onClick={() => setAdminScope('team')}
+                  >
+                    Whole Team
+                  </button>
+                  <button
+                    type="button"
+                    className={`sprint-scope-btn${adminScope === 'mine' ? ' active' : ''}`}
+                    onClick={() => setAdminScope('mine')}
+                  >
+                    Assigned to Me
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Kanban / List Toggle */}
+            <div className="sprint-view-mode-toggle">
               <button
                 type="button"
-                className="mydash-full-stats-card"
-                onClick={scrollToDeliverables}
-                title="Scroll to Deliverables Board"
+                className={`sprint-view-btn${viewMode === 'board' ? ' active' : ''}`}
+                onClick={() => setViewMode('board')}
               >
-                <div className="mydash-full-stats-title">Full<br />Stats</div>
-                <div className="mydash-full-stats-icon">›</div>
+                <span>☷</span> Kanban
+              </button>
+              <button
+                type="button"
+                className={`sprint-view-btn${viewMode === 'list' ? ' active' : ''}`}
+                onClick={() => setViewMode('list')}
+              >
+                <span>☰</span> List
               </button>
             </div>
           </div>
 
-          {/* ── DELIVERABLES / TASKS SECTION (KANBAN & LIST) ── */}
-          <section id="deliverables-board" className="mydash-deliverables-section">
-            <div className="mydash-deliv-header">
-              <div className="mydash-deliv-title-group">
-                <h2 className="mydash-deliv-title">
-                  {isAdmin ? (adminScope === 'team' ? 'Team Deadlines' : 'My Assigned Tasks') : 'My Assigned Tasks'}
-                </h2>
-                <span className="mydash-deliv-count">{sortedTasks.length} total</span>
-
-                {isAdmin && (
-                  <div className="mydash-scope-toggle">
-                    <button
-                      type="button"
-                      className={`mydash-scope-btn${adminScope === 'team' ? ' active' : ''}`}
-                      onClick={() => setAdminScope('team')}
-                    >
-                      Whole Team
-                    </button>
-                    <button
-                      type="button"
-                      className={`mydash-scope-btn${adminScope === 'mine' ? ' active' : ''}`}
-                      onClick={() => setAdminScope('mine')}
-                    >
-                      Assigned to Me
-                    </button>
-                  </div>
-                )}
+          {/* Active Filter Banner */}
+          {(selectedPeriodFilter || laneFilter) && (
+            <div className="sprint-filter-banner">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>🔍 Filter Applied:</span>
+                <span style={{ fontWeight: 800 }}>
+                  {selectedPeriodFilter ? selectedPeriodFilter.title : `Lane: ${laneFilter}`}
+                </span>
+                <span style={{ background: '#2563eb', color: '#ffffff', fontSize: '11px', padding: '2px 8px', borderRadius: '100px' }}>
+                  {sortedTasks.length} task{sortedTasks.length === 1 ? '' : 's'}
+                </span>
               </div>
-
-              {/* Kanban vs List Switcher */}
-              <div className="mydash-view-mode-toggle">
-                <button
-                  type="button"
-                  className={`mydash-view-btn${viewMode === 'board' ? ' active' : ''}`}
-                  onClick={() => setViewMode('board')}
-                >
-                  <span>☷</span> Kanban
-                </button>
-                <button
-                  type="button"
-                  className={`mydash-view-btn${viewMode === 'list' ? ' active' : ''}`}
-                  onClick={() => setViewMode('list')}
-                >
-                  <span>☰</span> List
-                </button>
-              </div>
+              <button
+                type="button"
+                className="sprint-filter-clear-btn"
+                onClick={() => { setSelectedPeriodFilter(null); setLaneFilter(null); }}
+              >
+                Clear Filter ✕
+              </button>
             </div>
+          )}
 
-            {/* Active Timeline Filter banner if clicked */}
-            {selectedPeriodFilter && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                background: 'rgba(244, 91, 86, 0.08)',
-                border: '1px solid rgba(244, 91, 86, 0.25)',
-                borderRadius: '12px',
-                padding: '10px 18px',
-                fontSize: '13px',
-                color: '#f45b56',
-                fontWeight: 600
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>🔍 Filtered by Activity Period:</span>
-                  <span style={{ color: '#111827', fontWeight: 700 }}>{selectedPeriodFilter.title}</span>
-                  <span style={{
-                    background: '#f45b56',
-                    color: '#ffffff',
-                    fontSize: '11px',
-                    padding: '2px 8px',
-                    borderRadius: '100px'
+          {/* Kanban Board View */}
+          {viewMode === 'board' ? (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(5, minmax(260px, 1fr))',
+              gap: '14px',
+              alignItems: 'start',
+              overflowX: 'auto',
+              paddingBottom: '12px',
+              WebkitOverflowScrolling: 'touch'
+            }}>
+              {kanbanColumns.map(col => (
+                <div key={col.id} className="dash-surface-card" style={{ overflow: 'hidden' }}>
+                  {/* Column Header */}
+                  <div style={{
+                    padding: '16px 18px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    borderBottom: '1px solid var(--border-soft)'
                   }}>
-                    {sortedTasks.length} task{sortedTasks.length === 1 ? '' : 's'}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedPeriodFilter(null)}
-                  style={{
-                    background: 'rgba(244, 91, 86, 0.15)',
-                    border: 'none',
-                    color: '#f45b56',
-                    cursor: 'pointer',
-                    fontWeight: 700,
-                    fontSize: '12px',
-                    padding: '4px 10px',
-                    borderRadius: '6px'
-                  }}
-                >
-                  Clear Filter ✕
-                </button>
-              </div>
-            )}
-
-            {/* View Render: Kanban or List */}
-            {viewMode === 'board' ? (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(5, minmax(260px, 1fr))',
-                gap: '14px',
-                alignItems: 'start',
-                overflowX: 'auto',
-                paddingBottom: '12px',
-                WebkitOverflowScrolling: 'touch'
-              }}>
-                {kanbanColumns.map(col => (
-                  <div key={col.id} className="dash-surface-card" style={{ overflow: 'hidden' }}>
-                    <div style={{
-                      padding: '16px 18px 14px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      borderBottom: '1px solid var(--border-soft)'
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: col.dotColor, flexShrink: 0 }} />
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>{col.title}</span>
+                    </div>
+                    <span style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      background: 'var(--surface-2)',
+                      color: 'var(--muted)',
+                      padding: '2px 8px',
+                      borderRadius: '100px',
+                      border: '1px solid var(--border-soft)'
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: col.dotColor, flexShrink: 0 }} />
-                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>{col.title}</span>
+                      {col.items.length}
+                    </span>
+                  </div>
+
+                  {/* Tasks Column Body */}
+                  <div style={{
+                    padding: '14px 10px',
+                    minHeight: '160px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: col.items.length === 0 ? 'center' : 'stretch',
+                    justifyContent: col.items.length === 0 ? 'center' : 'flex-start',
+                    textAlign: col.items.length === 0 ? 'center' : 'left'
+                  }}>
+                    {col.items.length === 0 ? (
+                      <div style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 500 }}>
+                        {col.emptyText}
                       </div>
-                      <span style={{
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        background: 'var(--surface-2)',
-                        color: 'var(--muted)',
-                        padding: '2px 8px',
-                        borderRadius: '100px',
-                        border: '1px solid var(--border-soft)'
-                      }}>
-                        {col.items.length}
-                      </span>
-                    </div>
-
-                    <div style={{
-                      padding: '14px 10px',
-                      minHeight: '160px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: col.items.length === 0 ? 'center' : 'stretch',
-                      justifyContent: col.items.length === 0 ? 'center' : 'flex-start',
-                      textAlign: col.items.length === 0 ? 'center' : 'left'
-                    }}>
-                      {col.items.length === 0 ? (
-                        <div style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 500 }}>
-                          {col.emptyText}
-                        </div>
-                      ) : (
-                        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                          {col.items.map(d => (
-                            <DeadlineCard
-                              key={d.id}
-                              deadline={d}
-                              currentUser={user}
-                              teamId={d.workspaceId || 'default-team'}
-                              sprintLocked={!!(d.sprintId && activeSprint?.id === d.sprintId && activeSprint?.locked)}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    ) : (
+                      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {col.items.map(d => (
+                          <DeadlineCard
+                            key={d.id}
+                            deadline={d}
+                            currentUser={user}
+                            teamId={d.workspaceId || 'default-team'}
+                            sprintLocked={!!(d.sprintId && activeSprint?.id === d.sprintId && activeSprint?.locked)}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <section className="dash-list-view">
-                {sortedTasks.length === 0 ? (
-                  <div className="dash-empty-list">
-                    {isAdmin && adminScope === 'team' ? 'No deadlines in workspace yet.' : 'No tasks assigned to you yet.'}
-                  </div>
-                ) : (
-                  sortedTasks.map(d => (
-                    <DeadlineCard
-                      key={d.id}
-                      deadline={d}
-                      currentUser={user}
-                      teamId={d.workspaceId || 'default-team'}
-                      sprintLocked={!!(d.sprintId && activeSprint?.id === d.sprintId && activeSprint?.locked)}
-                    />
-                  ))
-                )}
-              </section>
-            )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <section className="dash-list-view">
+              {sortedTasks.length === 0 ? (
+                <div className="dash-empty-list">
+                  {isAdmin && adminScope === 'team' ? 'No deadlines in workspace yet.' : 'No tasks assigned to you yet.'}
+                </div>
+              ) : (
+                sortedTasks.map(d => (
+                  <DeadlineCard
+                    key={d.id}
+                    deadline={d}
+                    currentUser={user}
+                    teamId={d.workspaceId || 'default-team'}
+                    sprintLocked={!!(d.sprintId && activeSprint?.id === d.sprintId && activeSprint?.locked)}
+                  />
+                ))
+              )}
+            </section>
+          )}
 
-            {hasMore && (
-              <div className="dash-load-more" style={{ marginTop: '24px' }}>
-                <button
-                  className="btn-ghost btn-sm"
-                  onClick={loadMore}
-                  disabled={loadingMore}
-                  style={{ borderRadius: '8px', border: '1px solid var(--border-soft)' }}
-                >
-                  {loadingMore ? 'Loading…' : 'Load more'}
-                </button>
-              </div>
-            )}
-          </section>
-        </main>
-      </div>
+          {hasMore && (
+            <div className="dash-load-more" style={{ marginTop: '24px' }}>
+              <button
+                className="btn-ghost btn-sm"
+                onClick={loadMore}
+                disabled={loadingMore}
+                style={{ borderRadius: '8px', border: '1px solid var(--border-soft)' }}
+              >
+                {loadingMore ? 'Loading…' : 'Load more'}
+              </button>
+            </div>
+          )}
+        </section>
+      </main>
 
-      {/* New Deadline / Task Modal */}
+      {/* New Task Modal */}
       {showNewModal && (
         <NewDeadlineModal
           teamId={workspaceId || 'default-team'}
@@ -989,7 +1056,7 @@ export default function MyDashboard() {
         />
       )}
 
-      {/* Site Tour */}
+      {/* Interactive Tour */}
       {showTour && (
         <SiteTour currentUser={user} onFinish={() => setShowTour(false)} />
       )}
