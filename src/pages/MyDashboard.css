@@ -1,6 +1,6 @@
 /* ==========================================================================
    SPRINT OS — MY DASHBOARD STYLESHEET
-   Clean, modern, editorial SaaS redesign for the real workspace dashboard
+   Clean, modern, editorial SaaS redesign for Admin & Member Dashboards
    ========================================================================== */
 
 .dash-root {
@@ -28,7 +28,7 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid #e2e8f0;
@@ -52,7 +52,7 @@
 }
 
 .dash-logo-name {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 900;
   color: #0f172a;
   letter-spacing: -0.02em;
@@ -77,7 +77,7 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
-   2. HEADER ROW
+   2. HEADER ROW & ROLE BADGES
 ───────────────────────────────────────────────────────────── */
 .dash-page-header {
   padding: 32px 0 24px;
@@ -93,11 +93,43 @@
 
 .dash-header-left {
   flex: 1;
-  min-width: 240px;
+  min-width: 260px;
+}
+
+.dash-badge-admin {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #eef2ff;
+  border: 1px solid rgba(79, 70, 229, 0.25);
+  color: #4f46e5;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  border-radius: 100px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.dash-badge-member {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0f9ff;
+  border: 1px solid rgba(2, 132, 199, 0.25);
+  color: #0284c7;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  border-radius: 100px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
 }
 
 .dash-greeting {
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 900;
   color: #0f172a;
   letter-spacing: -0.03em;
@@ -107,6 +139,13 @@
 
 .dash-greeting span {
   color: #4f46e5;
+}
+
+.dash-subtitle {
+  font-size: 13.5px;
+  color: #64748b;
+  margin: 4px 0 0;
+  font-weight: 500;
 }
 
 .dash-header-actions {
@@ -125,7 +164,7 @@
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 9px 14px;
-  min-width: 280px;
+  min-width: 260px;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
   transition: all 0.2s ease;
 }
@@ -167,29 +206,25 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
-   3. 4-CARD STAT STRIP (UPGRADED FROM FLAT BOX TO 4 CARDS)
+   3. 4-CARD STAT STRIP (HIGH-CONTRAST KPI TILES)
 ───────────────────────────────────────────────────────────── */
 .dash-stat-strip {
   margin-bottom: 24px;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  background: transparent;
-  border: none;
-  box-shadow: none;
 }
 
 .dash-stat-col {
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 18px;
+  border-radius: 20px;
   padding: 20px 24px;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
-  position: relative;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
 .dash-stat-col:hover {
@@ -198,21 +233,16 @@
   border-color: #cbd5e1;
 }
 
-/* Clear legacy before divider */
-.dash-stat-col + .dash-stat-col::before {
-  display: none !important;
-}
-
 .dash-stat-label-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 11.5px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 800;
   color: #64748b;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .dash-stat-dot {
@@ -223,13 +253,12 @@
 }
 
 .dash-stat-value {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 34px;
   font-weight: 900;
   color: #0f172a;
   line-height: 1;
   letter-spacing: -0.03em;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .dash-stat-delta {
@@ -242,11 +271,11 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
-   4. TWO-COLUMN ROW: VELOCITY & REPOSITORIES
+   4. TWO-COLUMN ROW: ACTIVITY WAVE & CONTRIBUTORS / FOCUS
 ───────────────────────────────────────────────────────────── */
 .dash-two-col {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: 1fr 390px;
   gap: 20px;
   margin-bottom: 28px;
   align-items: stretch;
@@ -261,7 +290,7 @@
 .dash-surface-card {
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 20px;
+  border-radius: 22px;
   box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
@@ -270,12 +299,13 @@
   border-color: #cbd5e1;
 }
 
-/* Velocity Chart Panel */
+/* Velocity / Activity Chart Panel */
 .dash-chart-panel {
   padding: 24px 28px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  position: relative;
 }
 
 .dash-panel-header {
@@ -284,7 +314,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .dash-panel-title {
@@ -328,46 +358,374 @@
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 }
 
-/* Repositories Card Panel */
-.dash-milestone-panel {
-  padding: 24px 28px;
+/* Floating Activity Pill (Inspired by Crowz Reference) */
+.dash-activity-pill {
+  position: absolute;
+  background: #1e1b4b;
+  color: #ffffff;
+  padding: 8px 14px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
+  pointer-events: none;
+  z-index: 20;
+  transform: translate(-50%, -120%);
   display: flex;
   flex-direction: column;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.dash-activity-pill-val {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dash-activity-pill-sub {
+  font-size: 11px;
+  color: #a5b4fc;
+  font-weight: 500;
+}
+
+/* SVG Chart Elements */
+.dash-activity-svg {
+  width: 100%;
+  height: 170px;
+  overflow: visible;
+}
+
+.dash-chart-node {
+  cursor: pointer;
+  transition: r 0.15s ease, stroke-width 0.15s ease;
+}
+
+.dash-chart-node:hover {
+  r: 6.5;
+  stroke-width: 3.5;
+}
+
+/* Top Contributors (Admin Side Panel) */
+.dash-performers-panel {
+  padding: 24px 26px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dash-performers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.dash-performer-row {
+  display: flex;
   align-items: center;
   justify-content: space-between;
-  text-align: center;
+  padding: 8px 10px;
+  border-radius: 12px;
+  transition: background 0.15s ease;
 }
 
-.dash-milestone-desc {
-  font-size: 13px;
-  color: #64748b;
-  line-height: 1.5;
-  margin-bottom: 18px;
-  max-width: 300px;
+.dash-performer-row:hover {
+  background: #f8fafc;
 }
 
-.dash-btn-accent {
+.dash-performer-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.dash-performer-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   background: #4f46e5;
   color: #ffffff;
+  font-size: 12px;
   font-weight: 700;
-  font-size: 13px;
-  text-decoration: none;
-  padding: 10px 24px;
-  border-radius: 12px;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
-  transition: all 0.15s ease;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px rgba(79, 70, 229, 0.15);
 }
 
-.dash-btn-accent:hover {
-  background: #4338ca;
-  transform: translateY(-1px);
+.dash-performer-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dash-performer-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-performer-role {
+  font-size: 11.5px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-performer-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  margin-left: 10px;
+}
+
+.dash-performer-share {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.dash-performer-done {
+  font-size: 11px;
+  color: #10b981;
+  font-weight: 600;
+}
+
+/* My Focus (Member Side Panel) */
+.dash-priorities-panel {
+  padding: 24px 26px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dash-priority-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  margin-top: 8px;
+}
+
+.dash-priority-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.dash-priority-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dash-priority-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-priority-meta {
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+.dash-priority-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ─────────────────────────────────────────────────────────────
-   5. TEAM DEADLINES / KANBAN & LIST VIEW
+   5. CONNECTED INFRASTRUCTURE / CHANNELS STRIP
+───────────────────────────────────────────────────────────── */
+.dash-channels-container {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 22px;
+  padding: 22px 26px;
+  margin-bottom: 28px;
+}
+
+.dash-channels-header {
+  margin-bottom: 16px;
+}
+
+.dash-channels-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.dash-channels-subtitle {
+  font-size: 12.5px;
+  color: #64748b;
+  margin: 2px 0 0;
+  font-weight: 500;
+}
+
+.dash-channels-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr) 200px;
+  gap: 14px;
+  align-items: stretch;
+}
+
+@media (max-width: 1180px) {
+  .dash-channels-grid {
+    grid-template-columns: repeat(2, 1fr) 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dash-channels-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dash-channel-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  text-decoration: none;
+}
+
+.dash-channel-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+}
+
+.dash-channel-card--link {
+  cursor: pointer;
+}
+
+.dash-channel-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+
+.dash-channel-name {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.dash-channel-meta {
+  font-size: 11.5px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.dash-channel-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 100px;
+  margin-top: 2px;
+}
+
+.badge-active {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid rgba(5, 150, 105, 0.2);
+}
+
+.badge-locked {
+  background: #fef3c7;
+  color: #d97706;
+  border: 1px solid rgba(217, 119, 6, 0.2);
+}
+
+.badge-idle {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.dash-channel-action-card {
+  background: #0d9488;
+  color: #ffffff;
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25);
+  transition: all 0.15s ease;
+}
+
+.dash-channel-action-card:hover {
+  background: #0f766e;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(13, 148, 136, 0.35);
+}
+
+.dash-action-card-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.dash-action-card-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.dash-action-card-sub {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.dash-action-card-arrow {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   6. DELIVERABLES / KANBAN & LIST VIEW
 ───────────────────────────────────────────────────────────── */
 .dash-scope-pills {
   display: inline-flex;
@@ -440,6 +798,52 @@
   font-size: 14px;
   color: #64748b;
   font-weight: 500;
+}
+
+.dash-btn-accent {
+  background: #4f46e5;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: none;
+  padding: 9px 18px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+  transition: all 0.15s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.dash-btn-accent:hover {
+  background: #4338ca;
+  transform: translateY(-1px);
+}
+
+.dash-btn-secondary {
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: none;
+  padding: 9px 16px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.dash-btn-secondary:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 
 /* Responsive adjustments */
