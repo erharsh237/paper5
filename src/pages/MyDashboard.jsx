@@ -743,47 +743,18 @@ export default function MyDashboard() {
 
             {/* If Admin, show Whole Team / Assigned to Me toggle */}
             {isAdmin && (
-              <div style={{
-                display: 'inline-flex',
-                gap: '2px',
-                background: 'var(--surface-2, #EEF0F9)',
-                padding: '3px',
-                borderRadius: '8px',
-                border: '1px solid var(--border-soft, #E2E8F0)'
-              }}>
+              <div className="dash-scope-pills">
                 <button
                   type="button"
+                  className={`dash-scope-btn${adminScope === 'team' ? ' active' : ''}`}
                   onClick={() => setAdminScope('team')}
-                  style={{
-                    border: 'none',
-                    background: adminScope === 'team' ? '#FFFFFF' : 'transparent',
-                    color: adminScope === 'team' ? 'var(--accent, #4F46E5)' : 'var(--muted, #64748B)',
-                    fontWeight: adminScope === 'team' ? 700 : 500,
-                    fontSize: '11.5px',
-                    padding: '3px 10px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    boxShadow: adminScope === 'team' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                    transition: 'all 0.15s ease'
-                  }}
                 >
                   Whole Team
                 </button>
                 <button
                   type="button"
+                  className={`dash-scope-btn${adminScope === 'mine' ? ' active' : ''}`}
                   onClick={() => setAdminScope('mine')}
-                  style={{
-                    border: 'none',
-                    background: adminScope === 'mine' ? '#FFFFFF' : 'transparent',
-                    color: adminScope === 'mine' ? 'var(--accent, #4F46E5)' : 'var(--muted, #64748B)',
-                    fontWeight: adminScope === 'mine' ? 700 : 500,
-                    fontSize: '11.5px',
-                    padding: '3px 10px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    boxShadow: adminScope === 'mine' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                    transition: 'all 0.15s ease'
-                  }}
                 >
                   Assigned to Me
                 </button>

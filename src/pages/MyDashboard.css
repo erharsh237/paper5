@@ -369,6 +369,34 @@
 /* ─────────────────────────────────────────────────────────────
    5. TEAM DEADLINES / KANBAN & LIST VIEW
 ───────────────────────────────────────────────────────────── */
+.dash-scope-pills {
+  display: inline-flex;
+  gap: 2px;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.dash-scope-btn {
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dash-scope-btn.active {
+  background: #ffffff;
+  color: #4f46e5 !important;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
 .dash-view-toggle {
   display: inline-flex;
   gap: 2px;
