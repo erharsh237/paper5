@@ -329,6 +329,9 @@ input::-webkit-credentials-auto-fill-button {
   padding: 20px;
   z-index: 99999;
   box-sizing: border-box;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .modal-panel {
@@ -339,7 +342,9 @@ input::-webkit-credentials-auto-fill-button {
   border-radius: 14px;
   box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(15, 23, 42, 0.05);
   animation: modal-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow: hidden;
+  overflow-y: auto;
+  max-height: calc(100vh - 40px);
+  overscroll-behavior: contain;
   box-sizing: border-box;
 }
 
@@ -703,4 +708,59 @@ a {
   background: rgba(255, 255, 255, 0.08) !important;
   border-color: rgba(255, 255, 255, 0.4) !important;
   color: #ffffff !important;
+}
+
+
+/* =========================================================
+   DARK THEME MODAL STYLING
+   ========================================================= */
+[data-theme="dark"] .modal-panel {
+  background: #121215;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .modal-header {
+  background: #121215;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .modal-header h2 {
+  color: #f4f4f5;
+}
+
+[data-theme="dark"] .modal-close {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .modal-close:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .modal-form {
+  background: #121215;
+}
+
+[data-theme="dark"] .field label {
+  color: #f4f4f5;
+}
+
+[data-theme="dark"] .field input,
+[data-theme="dark"] .field textarea,
+[data-theme="dark"] .field select {
+  background: #18181b;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f4f4f5;
+}
+
+[data-theme="dark"] .field input:focus,
+[data-theme="dark"] .field textarea:focus,
+[data-theme="dark"] .field select:focus {
+  background: #1e1e24;
+  border-color: #818cf8;
+}
+
+[data-theme="dark"] .checkbox-row {
+  color: #d4d4d8;
 }

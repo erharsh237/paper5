@@ -30,6 +30,26 @@
   --font-mono: 'JetBrains Mono', monospace;
 }
 
+[data-theme="dark"],
+html[data-theme="dark"],
+body[data-theme="dark"] {
+  --bg: #09090b;
+  --surface: #121215;
+  --surface-2: #18181b;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-soft: rgba(255, 255, 255, 0.08);
+  --text: #f4f4f5;
+  --muted: #a1a1aa;
+  --muted-2: #71717a;
+  --accent-dim: rgba(79, 70, 229, 0.2);
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.4);
+  --card-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.4), 0 8px 28px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .dash-sticky-nav {
+  background: rgba(9, 9, 11, 0.88);
+}
+
 /* ─────────────────────────────────────────────────────────────
    LAYOUT
 ───────────────────────────────────────────────────────────── */

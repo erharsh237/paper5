@@ -628,16 +628,6 @@ export default function MyDashboard() {
                   <span style={{ fontSize: '15px', lineHeight: 1 }}>+</span> New Task
                 </button>
               )}
-
-              {isAdmin ? (
-                <Link to={`/${workspaceId}/settings`} className="dash-btn-secondary">
-                  Settings
-                </Link>
-              ) : (
-                <Link to={`/${workspaceId}/meeting`} className="dash-btn-secondary">
-                  My Meetings
-                </Link>
-              )}
             </div>
           </div>
         </header>

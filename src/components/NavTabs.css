@@ -196,3 +196,16 @@
   background: rgba(239, 68, 68, 0.15) !important;
   color: #fca5a5 !important;
 }
+
+[data-theme="dark"] .nav-tab:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .nav-tab--active {
+  background: #18181b !important;
+  color: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+[data-theme="dark"] .user-avatar-btn {
+  box-shadow: 0 0 0 2px #121215, 0 0 0 4px rgba(79, 70, 229, 0.35);
+}

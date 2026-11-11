@@ -32,6 +32,15 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, s
   const [emailStatus, setEmailStatus] = useState(null) // null | 'sending' | 'sent' | 'failed' | 'skipped'
   const [error, setError] = useState('')
 
+  // Lock background body scroll when modal is active
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = originalOverflow
+    }
+  }, [])
+
   useEffect(() => {
     if (sprints && sprints.length > 0) {
       setLoadedSprints(sprints.filter(isSprintOpen))
@@ -159,8 +168,31 @@ export default function NewDeadlineModal({ members, currentUser, activeSprint, s
   }
 
   return (
-    <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()} style={{ zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-      <div className="modal-panel" role="dialog" aria-modal="true" aria-label={title} style={{ maxHeight: '90vh', overflowY: 'auto', margin: 'auto' }}>
+    <div
+      className="modal-overlay"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+      style={{
+        zIndex: 1100,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px',
+        overflowY: 'auto',
+        overscrollBehavior: 'contain'
+      }}
+    >
+      <div
+        className="modal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        style={{
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          overscrollBehavior: 'contain',
+          margin: 'auto'
+        }}
+      >
         <div className="modal-header">
           <h2>{title}</h2>
           <button className="modal-close" onClick={onClose} aria-label="Close">✕</button>

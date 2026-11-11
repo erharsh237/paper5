@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "postbuild": "npx bla-agents harden . --self-seal --allow-lane-independent",
     "preview": "vite preview"
   },
   "dependencies": {

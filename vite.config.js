@@ -55,6 +55,7 @@ export default defineConfig({
     },
   },
   build: {
-    // Automatic chunking in Vite 8 / Rolldown
+    target: ['es2015', 'chrome75', 'edge79', 'firefox78', 'safari13'],
+    cssTarget: ['chrome75', 'edge79', 'firefox78', 'safari13'],
   },
 })
