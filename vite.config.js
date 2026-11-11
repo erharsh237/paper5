@@ -57,5 +57,29 @@ export default defineConfig({
   build: {
     target: ['es2015', 'chrome60', 'edge79', 'firefox68', 'safari12'],
     cssTarget: ['chrome60', 'edge79', 'firefox68', 'safari12'],
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'vendor-react'
+            }
+            if (id.includes('@supabase')) {
+              return 'vendor-supabase'
+            }
+            if (id.includes('lucide-react') || id.includes('@fortawesome')) {
+              return 'vendor-icons'
+            }
+            if (id.includes('@sentry')) {
+              return 'vendor-sentry'
+            }
+            if (id.includes('lenis')) {
+              return 'vendor-lenis'
+            }
+          }
+        }
+      }
+    }
   },
 })

@@ -7,14 +7,6 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './lib/AuthContext'
 import { WorkspaceProvider, useWorkspace } from './lib/WorkspaceContext'
 import LockedOverlay from './components/LockedOverlay'
-import Login from './pages/Login'
-import Signup from './pages/Signup'
-import VerifyEmail from './pages/VerifyEmail'
-import WorkspacePicker from './pages/WorkspacePicker'
-import JoinWorkspace from './pages/JoinWorkspace'
-import Landing from './pages/Landing'
-import AuthAction from './pages/AuthAction'
-import ForcePasswordReset from './pages/ForcePasswordReset'
 // Auto-reloads page if a Vercel deploy replaced older JS bundle filenames
 function safeLazy(componentImport) {
   return lazy(async () => {
@@ -38,6 +30,15 @@ function safeLazy(componentImport) {
 }
 
 // Route-based code splitting: each page ships as its own chunk, loaded only when visited.
+const Landing = safeLazy(() => import('./pages/Landing'))
+const Login = safeLazy(() => import('./pages/Login'))
+const Signup = safeLazy(() => import('./pages/Signup'))
+const VerifyEmail = safeLazy(() => import('./pages/VerifyEmail'))
+const WorkspacePicker = safeLazy(() => import('./pages/WorkspacePicker'))
+const JoinWorkspace = safeLazy(() => import('./pages/JoinWorkspace'))
+const AuthAction = safeLazy(() => import('./pages/AuthAction'))
+const ForcePasswordReset = safeLazy(() => import('./pages/ForcePasswordReset'))
+
 const WorkflowPage = safeLazy(() => import('./pages/WorkflowPage'))
 const MyDashboard = safeLazy(() => import('./pages/MyDashboard'))
 const Dashboard = safeLazy(() => import('./pages/Dashboard'))
@@ -51,20 +52,18 @@ const Privacy = safeLazy(() => import('./pages/Privacy'))
 const Contact = safeLazy(() => import('./pages/Contact'))
 const ForgotPassword = safeLazy(() => import('./pages/ForgotPassword'))
 
+// Marketing Pages
+const Features = safeLazy(() => import('./pages/Features'))
+const AboutUs = safeLazy(() => import('./pages/AboutUs'))
+const ProductIntegrations = safeLazy(() => import('./pages/ProductIntegrationsPage'))
+const DocsPage = safeLazy(() => import('./pages/DocsPage'))
+const Changelog = safeLazy(() => import('./pages/MarketingPages').then(m => ({ default: m.Changelog })))
+const Security = safeLazy(() => import('./pages/MarketingPages').then(m => ({ default: m.Security })))
 import NotFound from './pages/NotFound'
 import ErrorPage from './pages/ErrorPage'
-import LegalConsentModal from './components/LegalConsentModal'
-import OnboardingWizardModal from './components/OnboardingWizardModal'
+const LegalConsentModal = safeLazy(() => import('./components/LegalConsentModal'))
+const OnboardingWizardModal = safeLazy(() => import('./components/OnboardingWizardModal'))
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react'
-
-// Marketing Pages
-import Features from './pages/Features'
-import AboutUs from './pages/AboutUs'
-import ProductIntegrations from './pages/ProductIntegrationsPage'
-import DocsPage from './pages/DocsPage'
-import { 
-  Changelog, Security 
-} from './pages/MarketingPages'
 
 import { getDomainConfig, getAppUrl, getMainUrl } from './lib/domain'
 import { safeRedirect } from './lib/safeRedirect'
@@ -365,10 +364,10 @@ export default function App() {
         </Routes>
       </Suspense>
       {user && user.emailVerified && (
-        <>
+        <Suspense fallback={null}>
           <LegalConsentModal />
           <OnboardingWizardModal />
-        </>
+        </Suspense>
       )}
       <VercelAnalytics />
     </InitialPreloader>

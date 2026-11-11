@@ -54,7 +54,7 @@
   -webkit-user-select: none;
   cursor: default;
   caret-color: transparent;
-  pointer-events: none; /* Let hover light up tiles behind text, and clicks never show a text caret! */
+  pointer-events: none;
 }
 
 .agb-bg-layer {
@@ -90,59 +90,23 @@
   background: radial-gradient(ellipse 90% 70% at 50% 36%, transparent 35%, rgba(9, 9, 11, 0.8) 75%, #09090b 95%);
 }
 
+/* High-performance pure CSS hardware-accelerated grid background (0 DOM overhead) */
 .agb-tiles-container {
-  display: flex;
   width: 100%;
   height: 100%;
-  justify-content: center;
-  align-items: flex-start;
+  position: absolute;
+  inset: 0;
   user-select: none;
   -webkit-user-select: none;
-  cursor: default;
+  pointer-events: none;
+  background-size: 48px 48px;
+  background-image: 
+    linear-gradient(to right, var(--agb-grid-border) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--agb-grid-border) 1px, transparent 1px);
 }
 
-.agb-row {
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  border-left: 1px solid var(--agb-grid-border);
-}
-
-.agb-row:last-child {
-  border-right: 1px solid var(--agb-grid-border);
-}
-
-.agb-col {
-  width: 36px;
-  height: 36px;
-  border-top: 1px solid var(--agb-grid-border);
-  position: relative;
-  transition: background-color 0.8s ease;
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: default;
-}
-
-.agb-col:last-child {
-  border-bottom: 1px solid var(--agb-grid-border);
-}
-
-.agb-col:hover {
-  background-color: var(--agb-tile-hover);
-  transition: background-color 0s;
-}
-
-@media (min-width: 640px) {
-  .agb-col {
-    height: 48px;
-  }
-}
-
-@media (min-width: 768px) {
-  .agb-row {
-    width: 48px;
-  }
-  .agb-col {
-    width: 48px;
+@media (max-width: 640px) {
+  .agb-tiles-container {
+    background-size: 36px 36px;
   }
 }
