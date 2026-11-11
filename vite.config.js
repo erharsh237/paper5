@@ -55,7 +55,7 @@ export default defineConfig({
     },
   },
   build: {
-    target: ['es2015', 'chrome75', 'edge79', 'firefox78', 'safari13'],
-    cssTarget: ['chrome75', 'edge79', 'firefox78', 'safari13'],
+    target: ['es2015', 'chrome60', 'edge79', 'firefox68', 'safari12'],
+    cssTarget: ['chrome60', 'edge79', 'firefox68', 'safari12'],
   },
 })

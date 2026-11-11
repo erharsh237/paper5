@@ -7,6 +7,7 @@ import { ArrowRight, Menu, X, ChevronDown, User, LogOut } from 'lucide-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faHouse, faLayerGroup, faPlug, faTag, faBookOpen, faCircleInfo, faEnvelope, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
 import logo from '../assets/logo.png'
+import Paper5Logo from './Paper5Logo'
 import '../pages/Landing.css'
 import { getDomainConfig, getAppUrl, getMainUrl } from '../lib/domain'
 import { safeRedirect } from '../lib/safeRedirect'
@@ -109,23 +110,15 @@ export default function MarketingNav() {
           {/* Logo & Brand */}
           {isAppSubdomain ? (
             <a href={getMainUrl('/')} className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-              <img 
-                src={logo} 
-                alt="Paper5 Logo" 
-                style={{ width: '30px', height: '30px', objectFit: 'contain' }} 
-              />
-              <span style={{ fontSize: '17px', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
+              <Paper5Logo size={28} />
+              <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
                 PAPER5
               </span>
             </a>
           ) : (
             <Link to="/" onClick={handleHomeClick} className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-              <img 
-                src={logo} 
-                alt="Paper5 Logo" 
-                style={{ width: '30px', height: '30px', objectFit: 'contain' }} 
-              />
-              <span style={{ fontSize: '17px', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
+              <Paper5Logo size={28} />
+              <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
                 PAPER5
               </span>
             </Link>

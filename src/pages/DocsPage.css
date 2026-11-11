@@ -334,3 +334,39 @@
   color: #f4f4f5;
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
+
+
+/* Ultrawide & TV Optimizations */
+@media (min-width: 1600px) {
+  .docs-hero-inner,
+  .docs-layout-container {
+    max-width: 1540px;
+  }
+}
+@media (min-width: 2000px) {
+  .docs-hero-inner,
+  .docs-layout-container {
+    max-width: 1840px;
+  }
+  .docs-title {
+    font-size: 48px;
+  }
+}
+@media (min-width: 2560px) {
+  .docs-hero-inner,
+  .docs-layout-container {
+    max-width: 2280px;
+  }
+  .docs-title {
+    font-size: 56px;
+  }
+}
+@media (min-width: 3840px) {
+  .docs-hero-inner,
+  .docs-layout-container {
+    max-width: 2880px;
+  }
+  .docs-title {
+    font-size: 68px;
+  }
+}

@@ -15,6 +15,7 @@ import UserMenu from '../components/UserMenu'
 import { useWorkspace } from '../lib/WorkspaceContext'
 import { Link } from 'react-router-dom'
 import { getWorkflowById } from '../lib/workflows'
+import Paper5Logo from '../components/Paper5Logo'
 import './Dashboard.css'
 
 const TEAM_ID = 'default-team'
@@ -323,6 +324,7 @@ export default function Dashboard() {
       <nav className="dash-sticky-nav">
         <div className="dash-container dash-nav-inner">
           <Link to={`/${workspaceId}`} className="dash-nav-brand">
+            <Paper5Logo size={22} style={{ marginRight: '6px' }} />
             <span className="dash-logo-name">Paper5</span>
             <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
           </Link>

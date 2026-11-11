@@ -484,3 +484,21 @@
   border-top: 1px solid rgba(0, 0, 0, 0.06);
   flex-shrink: 0;
 }
+
+
+/* Ultrawide & TV Optimizations */
+@media (min-width: 2000px) {
+  .wp-container {
+    max-width: 660px;
+  }
+}
+@media (min-width: 2560px) {
+  .wp-container {
+    max-width: 720px;
+  }
+}
+@media (min-width: 3840px) {
+  .wp-container {
+    max-width: 820px;
+  }
+}

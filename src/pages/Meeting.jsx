@@ -10,6 +10,7 @@ import ReflectionPanel from '../components/ReflectionPanel'
 import UserMenu from '../components/UserMenu'
 import CalendarWidget from '../components/CalendarWidget'
 import ConfirmModal from '../components/ui/ConfirmModal'
+import Paper5Logo from '../components/Paper5Logo'
 import { useWorkspace } from '../lib/WorkspaceContext'
 import { Plus, Edit2, Trash2, Calendar, FileText, X } from 'lucide-react'
 import './Dashboard.css'
@@ -133,6 +134,7 @@ export default function Meeting() {
       <nav className="dash-sticky-nav">
         <div className="dash-container dash-nav-inner">
           <Link to={`/${workspaceId}`} className="dash-nav-brand">
+            <Paper5Logo size={22} style={{ marginRight: '6px' }} />
             <span className="dash-logo-name">Paper5</span>
             <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
           </Link>

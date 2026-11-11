@@ -13,6 +13,7 @@ import NotificationBell from '../components/NotificationBell'
 import DeadlineCard from '../components/DeadlineCard'
 import NewDeadlineModal from '../components/NewDeadlineModal'
 import AlertModal from '../components/ui/AlertModal'
+import Paper5Logo from '../components/Paper5Logo'
 
 import { ShieldCheck, Plus, Lock, Unlock, Layers, AlertTriangle, CheckCircle, Kanban, Sliders, ArrowRight } from 'lucide-react'
 import './Dashboard.css'
@@ -122,6 +123,7 @@ export default function WorkflowPage() {
       <nav className="dash-sticky-nav">
         <div className="dash-container dash-nav-inner">
           <Link to={`/${workspaceId}`} className="dash-nav-brand">
+            <Paper5Logo size={22} style={{ marginRight: '6px' }} />
             <span className="dash-logo-name">Paper5</span>
             <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
           </Link>

@@ -764,3 +764,74 @@ a {
 [data-theme="dark"] .checkbox-row {
   color: #d4d4d8;
 }
+
+
+/* ==========================================================================
+   ULTRAWIDE, 4K & SMART TV DISPLAY OPTIMIZATIONS
+   Seamless scaling for 21:9 monitors, 3440px/5120px ultrawides, and 4K TVs
+   ========================================================================== */
+
+/* 1. Large Desktop & Entry Ultrawide (1600px - 1999px) */
+@media (min-width: 1600px) {
+  :root {
+    --container-max-w: 1560px;
+    --container-padding: 40px;
+  }
+}
+
+/* 2. Full Ultrawide (2000px - 2559px, e.g. 2560x1440, 21:9 QHD) */
+@media (min-width: 2000px) {
+  :root {
+    --container-max-w: 1840px;
+    --container-padding: 48px;
+  }
+  html {
+    font-size: 16.5px;
+  }
+}
+
+/* 3. 4K UHD & Super Ultrawide (2560px+, e.g. 3440x1440, 3840x2160, 5120x1440) */
+@media (min-width: 2560px) {
+  :root {
+    --container-max-w: 2200px;
+    --container-padding: 64px;
+  }
+  html {
+    font-size: 17.5px;
+  }
+}
+
+/* 4. Extreme 4K TV & Ultra-Density (3840px+) */
+@media (min-width: 3840px) {
+  :root {
+    --container-max-w: 2800px;
+    --container-padding: 80px;
+  }
+  html {
+    font-size: 20px;
+  }
+}
+
+/* 5. TV Remote / D-Pad Navigation & Safe Area Adaptations */
+@media tv, (hover: none) and (min-width: 768px), (pointer: coarse) and (min-width: 768px) {
+  :focus-visible {
+    outline: 3px solid var(--accent, #4F46E5) !important;
+    outline-offset: 4px !important;
+    box-shadow: 0 0 0 8px rgba(79, 70, 229, 0.3) !important;
+    transform: scale(1.02);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  /* Safe area overscan handling for TV bezels */
+  body {
+    padding-left: max(24px, env(safe-area-inset-left));
+    padding-right: max(24px, env(safe-area-inset-right));
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+
+  /* Minimum interactive target size for TV remote pointer / D-pad */
+  button, a.btn-primary, a.btn-ghost, input, select, textarea {
+    min-height: 44px;
+  }
+}

@@ -94,7 +94,10 @@ if (typeof window !== 'undefined') {
 
   const rootElement = document.getElementById('root')
   if (rootElement) {
-    const appTree = (
+    // Clear any initial pre-render/loading content to ensure reliable client-side mount on TV & all browsers
+    rootElement.innerHTML = ''
+
+    ReactDOM.createRoot(rootElement).render(
       <React.StrictMode>
         <ErrorBoundary>
           <ConnectionStatus />
@@ -106,16 +109,5 @@ if (typeof window !== 'undefined') {
         </ErrorBoundary>
       </React.StrictMode>
     )
-
-    if (rootElement.hasChildNodes()) {
-      try {
-        ReactDOM.hydrateRoot(rootElement, appTree)
-      } catch (hydrateErr) {
-        console.warn('Hydration warning, falling back to client render:', hydrateErr)
-        ReactDOM.createRoot(rootElement).render(appTree)
-      }
-    } else {
-      ReactDOM.createRoot(rootElement).render(appTree)
-    }
   }
 }

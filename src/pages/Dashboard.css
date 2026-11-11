@@ -1206,3 +1206,119 @@ body[data-theme="dark"] {
   .dash-controls-left, .dash-controls-right { width: 100%; }
   .dash-greeting { font-size: 24px; }
 }
+
+
+/* ==========================================================================
+   ULTRAWIDE, 4K & SMART TV OPTIMIZATIONS (Workspace Dashboard)
+   Extended 5-column kanban board, wide velocity panels, and expanded telemetry
+   ========================================================================== */
+
+/* Large Desktop / Entry Ultrawide (1600px - 1999px) */
+@media (min-width: 1600px) {
+  .dash-container {
+    max-width: 1540px;
+    padding: 0 40px;
+  }
+  .dash-two-col {
+    grid-template-columns: 1fr 440px;
+    gap: 24px;
+  }
+  .dash-main-columns {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 24px;
+  }
+  .dash-kanban-grid {
+    grid-template-columns: repeat(5, minmax(230px, 1fr));
+    gap: 18px;
+  }
+  .dash-stat-value {
+    font-size: 38px;
+  }
+}
+
+/* Full Ultrawide (2000px - 2559px, e.g. 2560x1440 / 3440x1440 QHD) */
+@media (min-width: 2000px) {
+  .dash-container {
+    max-width: 1880px;
+    padding: 0 48px;
+  }
+  .dash-two-col {
+    grid-template-columns: 1fr 480px;
+    gap: 28px;
+  }
+  .dash-main-columns {
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 28px;
+  }
+  .dash-kanban-grid {
+    grid-template-columns: repeat(5, minmax(270px, 1fr));
+    gap: 22px;
+  }
+  .dash-stat-value {
+    font-size: 42px;
+  }
+  .dash-greeting {
+    font-size: 32px;
+  }
+  .dash-subtitle {
+    font-size: 15px;
+  }
+}
+
+/* 4K UHD & Super Ultrawide (2560px - 3839px, e.g. 3840x2160, 5120x1440) */
+@media (min-width: 2560px) {
+  .dash-container {
+    max-width: 2360px;
+    padding: 0 64px;
+  }
+  .dash-two-col {
+    grid-template-columns: 1.25fr 540px;
+    gap: 32px;
+  }
+  .dash-main-columns {
+    grid-template-columns: minmax(0, 1fr) 420px;
+    gap: 32px;
+  }
+  .dash-kanban-grid {
+    grid-template-columns: repeat(5, minmax(320px, 1fr));
+    gap: 26px;
+  }
+  .dash-stat-value {
+    font-size: 48px;
+  }
+  .dash-greeting {
+    font-size: 38px;
+  }
+  .dash-subtitle {
+    font-size: 17px;
+  }
+}
+
+/* Extreme 4K TV & Ultra-Density (3840px+) */
+@media (min-width: 3840px) {
+  .dash-container {
+    max-width: 3200px;
+    padding: 0 80px;
+  }
+  .dash-two-col {
+    grid-template-columns: 1.35fr 640px;
+    gap: 40px;
+  }
+  .dash-main-columns {
+    grid-template-columns: minmax(0, 1fr) 520px;
+    gap: 40px;
+  }
+  .dash-kanban-grid {
+    grid-template-columns: repeat(5, minmax(420px, 1fr));
+    gap: 34px;
+  }
+  .dash-stat-value {
+    font-size: 58px;
+  }
+  .dash-greeting {
+    font-size: 48px;
+  }
+  .dash-subtitle {
+    font-size: 20px;
+  }
+}

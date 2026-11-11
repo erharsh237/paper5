@@ -3229,11 +3229,73 @@
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   16. RESPONSIVE MEDIA QUERIES (Mobile & Tablet Optimization)
+   16. SMART TV & DESKTOP MULTI-COLUMN ENFORCEMENT
+   Prevents single-column list collapsing on Smart TVs and medium/large screens
    ────────────────────────────────────────────────────────────────────────── */
-@media (max-width: 1024px) {
+@media tv, (min-width: 769px) {
+  .problem-split-layout {
+    grid-template-columns: 1.15fr 1fr !important;
+  }
+  .solution-bento-grid {
+    display: grid !important;
+    grid-template-columns: 1.15fr 1fr !important;
+    gap: 24px !important;
+  }
+  .integrations-split-layout {
+    grid-template-columns: 1fr 1.15fr !important;
+  }
+  .trust-blueprint-layout {
+    grid-template-columns: 1.15fr 1fr !important;
+  }
+  .faq-two-col-layout {
+    grid-template-columns: 1fr 1.35fr !important;
+  }
+  .workflow-timeline-track {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+  .feature-block-card {
+    display: grid !important;
+    grid-template-columns: 1.15fr 1fr !important;
+  }
+  .feature-block-card.reverse {
+    display: grid !important;
+    grid-template-columns: 1fr 1.15fr !important;
+  }
+  .pricing-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    max-width: 1100px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    gap: 24px !important;
+  }
+  .footer-content {
+    display: grid !important;
+    grid-template-columns: 1.2fr 2fr !important;
+  }
+  .footer-links-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+  .preview-board-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+  .desktop-only {
+    display: flex !important;
+  }
+  .mobile-only {
+    display: none !important;
+  }
+  .mobile-menu-btn {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
   .hero-headline {
-    font-size: 48px;
+    font-size: 38px;
   }
   
   .problem-split-layout,
@@ -3260,14 +3322,14 @@
   
   .problem-cards-grid,
   .trust-pillars-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
   }
   
   .feature-block-card,
   .feature-block-card.reverse {
     grid-template-columns: 1fr;
     gap: 32px;
-    padding: 32px;
+    padding: 24px;
   }
   
   .feature-block-card.reverse .feature-block-info {
@@ -3279,7 +3341,7 @@
   }
 
   .preview-board-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
   }
   
   .preview-tools-layout {
@@ -3289,6 +3351,8 @@
   .pricing-grid {
     grid-template-columns: 1fr;
     max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .footer-content {
@@ -4310,4 +4374,134 @@
 }
 [data-theme="dark"] .faq-contact-btn:hover {
   background: #e4e4e7;
+}
+
+
+/* ==========================================================================
+   ULTRAWIDE, 4K & SMART TV OPTIMIZATIONS (Landing Page)
+   Scale container widths, bento grid gaps, typography, and preview windows
+   ========================================================================== */
+
+/* Large Desktop / Entry Ultrawide (1600px - 1999px) */
+@media (min-width: 1600px) {
+  .section-container,
+  .nav-container,
+  .footer-content,
+  .footer-bottom-content {
+    max-width: 1520px;
+    padding-left: 36px;
+    padding-right: 36px;
+  }
+  .hero-preview-container {
+    max-width: 1440px;
+  }
+  .hero-content {
+    max-width: 980px;
+  }
+  .hero-headline {
+    font-size: clamp(48px, 4vw, 72px);
+  }
+  .section-header {
+    max-width: 960px;
+  }
+  .section-title {
+    font-size: 46px;
+  }
+  .section-description {
+    font-size: 19px;
+  }
+}
+
+/* Full Ultrawide (2000px - 2559px, e.g. 2560x1440 / 3440x1440 QHD) */
+@media (min-width: 2000px) {
+  .section-container,
+  .nav-container,
+  .footer-content,
+  .footer-bottom-content {
+    max-width: 1840px;
+    padding-left: 48px;
+    padding-right: 48px;
+  }
+  .hero-preview-container {
+    max-width: 1720px;
+  }
+  .hero-content {
+    max-width: 1160px;
+  }
+  .hero-headline {
+    font-size: clamp(54px, 3.6vw, 84px);
+  }
+  .section-header {
+    max-width: 1100px;
+  }
+  .section-title {
+    font-size: 52px;
+  }
+  .section-description {
+    font-size: 21px;
+  }
+  .bento-grid,
+  .footer-links-grid {
+    gap: 36px;
+  }
+}
+
+/* 4K UHD & Super Ultrawide (2560px - 3839px, e.g. 3840x2160, 5120x1440) */
+@media (min-width: 2560px) {
+  .section-container,
+  .nav-container,
+  .footer-content,
+  .footer-bottom-content {
+    max-width: 2280px;
+    padding-left: 64px;
+    padding-right: 64px;
+  }
+  .hero-preview-container {
+    max-width: 2100px;
+  }
+  .hero-content {
+    max-width: 1360px;
+  }
+  .hero-headline {
+    font-size: clamp(62px, 3.2vw, 96px);
+  }
+  .section-header {
+    max-width: 1260px;
+  }
+  .section-title {
+    font-size: 60px;
+  }
+  .section-description {
+    font-size: 23px;
+  }
+}
+
+/* Extreme 4K TV & Ultra-Density (3840px+) */
+@media (min-width: 3840px) {
+  .section-container,
+  .nav-container,
+  .footer-content,
+  .footer-bottom-content {
+    max-width: 2900px;
+    padding-left: 80px;
+    padding-right: 80px;
+  }
+  .hero-preview-container {
+    max-width: 2640px;
+  }
+  .hero-content {
+    max-width: 1600px;
+  }
+  .hero-headline {
+    font-size: clamp(72px, 2.8vw, 114px);
+  }
+  .section-header {
+    max-width: 1480px;
+  }
+  .section-title {
+    font-size: 72px;
+  }
+  .section-description {
+    font-size: 26px;
+  }
 }

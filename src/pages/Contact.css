@@ -397,3 +397,35 @@
     font-size: 32px;
   }
 }
+
+
+/* Ultrawide & TV Optimizations */
+@media (min-width: 1600px) {
+  .contact-container {
+    max-width: 1480px;
+  }
+}
+@media (min-width: 2000px) {
+  .contact-container {
+    max-width: 1760px;
+  }
+  .contact-title {
+    font-size: 54px;
+  }
+}
+@media (min-width: 2560px) {
+  .contact-container {
+    max-width: 2200px;
+  }
+  .contact-title {
+    font-size: 64px;
+  }
+}
+@media (min-width: 3840px) {
+  .contact-container {
+    max-width: 2800px;
+  }
+  .contact-title {
+    font-size: 76px;
+  }
+}

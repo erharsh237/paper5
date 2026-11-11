@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import ContactModal from './ContactModal'
 import FeedbackModal from './FeedbackModal'
 import logo from '../assets/logo.png'
+import Paper5Logo from './Paper5Logo'
 import '../pages/Landing.css'
 import { getDomainConfig, getAppUrl, getMainUrl } from '../lib/domain'
 import { safeRedirect } from '../lib/safeRedirect'
@@ -58,12 +59,12 @@ export default function MarketingFooter({ hideCTA = false }) {
         <div className="footer-brand-col">
           {isAppSubdomain ? (
             <a href={getMainUrl('/')} className="landing-brand" style={{ display: 'flex', alignItems: 'center', marginBottom: '14px', textDecoration: 'none' }}>
-              <img src={logo} alt="Paper5 Logo" style={{ width: '32px', height: '32px', marginRight: '10px', objectFit: 'contain' }} />
+              <Paper5Logo size={30} style={{ marginRight: '10px' }} />
               <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>PAPER5</span>
             </a>
           ) : (
             <Link to="/" className="landing-brand" style={{ display: 'flex', alignItems: 'center', marginBottom: '14px', textDecoration: 'none' }}>
-              <img src={logo} alt="Paper5 Logo" style={{ width: '32px', height: '32px', marginRight: '10px', objectFit: 'contain' }} />
+              <Paper5Logo size={30} style={{ marginRight: '10px' }} />
               <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>PAPER5</span>
             </Link>
           )}

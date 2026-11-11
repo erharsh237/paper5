@@ -394,3 +394,43 @@ body[data-theme="dark"] .security-desc {
     font-size: 32px;
   }
 }
+
+
+/* Ultrawide & TV Optimizations */
+@media (min-width: 1600px) {
+  .about-container,
+  .about-metrics-strip,
+  .about-hero-inner {
+    max-width: 1480px;
+  }
+}
+@media (min-width: 2000px) {
+  .about-container,
+  .about-metrics-strip,
+  .about-hero-inner {
+    max-width: 1760px;
+  }
+  .about-title {
+    font-size: 58px;
+  }
+}
+@media (min-width: 2560px) {
+  .about-container,
+  .about-metrics-strip,
+  .about-hero-inner {
+    max-width: 2200px;
+  }
+  .about-title {
+    font-size: 68px;
+  }
+}
+@media (min-width: 3840px) {
+  .about-container,
+  .about-metrics-strip,
+  .about-hero-inner {
+    max-width: 2800px;
+  }
+  .about-title {
+    font-size: 80px;
+  }
+}

@@ -10,6 +10,7 @@ import { subscribeSprints } from '../lib/sprints'
 import { computeAccountability } from '../lib/accountability'
 import NavTabs from '../components/NavTabs'
 import UserMenu from '../components/UserMenu'
+import Paper5Logo from '../components/Paper5Logo'
 import { useWorkspace } from '../lib/WorkspaceContext'
 import './Dashboard.css'
 import './Analytics.css'
@@ -164,11 +165,7 @@ export default function Analytics() {
       <nav className="dash-sticky-nav">
         <div className="dash-container dash-nav-inner">
           <Link to={`/${workspaceId}`} className="dash-nav-brand">
-            <div className="dash-logo-dot">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-              </svg>
-            </div>
+            <Paper5Logo size={22} style={{ marginRight: '6px' }} />
             <span className="dash-logo-name">Paper5</span>
             <span className="dash-env-tag">{(workspace?.name || 'Workspace').toUpperCase()}</span>
           </Link>
