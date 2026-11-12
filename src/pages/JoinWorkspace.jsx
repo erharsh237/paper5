@@ -65,7 +65,11 @@ export default function JoinWorkspace() {
         {loading ? (
           <>
             <h1 style={{ marginBottom: '12px' }}>Joining workspace...</h1>
-            <p className="auth-subtitle">Please wait while we verify your invitation.</p>
+            <p className="auth-subtitle" style={{ marginBottom: '20px' }}>Please wait while we verify your invitation.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '280px', margin: '0 auto' }}>
+              <div className="p5-skeleton-block" style={{ height: '14px', width: '100%', borderRadius: '8px' }} aria-hidden="true" />
+              <div className="p5-skeleton-block" style={{ height: '14px', width: '76%', margin: '0 auto', borderRadius: '8px' }} aria-hidden="true" />
+            </div>
           </>
         ) : error ? (
           <>

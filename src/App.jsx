@@ -2,16 +2,18 @@ import { ThemeProvider } from './lib/ThemeContext'
 import { useLenis } from './hooks/useLenis'
 import ScrollToTop from './components/ScrollToTop'
 import FloatingNotice from './components/FloatingNotice'
-import { Suspense, lazy, useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useState, useSyncExternalStore } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './lib/AuthContext'
 import { WorkspaceProvider, useWorkspace } from './lib/WorkspaceContext'
 import LockedOverlay from './components/LockedOverlay'
 // Auto-reloads page if a Vercel deploy replaced older JS bundle filenames
-function safeLazy(componentImport) {
+function safeLazy(routeKey, { trackLoading = true } = {}) {
   return lazy(async () => {
+    const shouldTrack = trackLoading && !isRouteKeyLoaded(routeKey)
+    if (shouldTrack) beginRouteLoad()
     try {
-      const component = await componentImport()
+      const component = await loadRouteModule(routeKey)
       sessionStorage.removeItem('chunk_reload_attempt')
       return component
     } catch (error) {
@@ -25,45 +27,47 @@ function safeLazy(componentImport) {
         }
       }
       throw error
+    } finally {
+      if (shouldTrack) endRouteLoad()
     }
   })
 }
 
-// Route-based code splitting: each page ships as its own chunk, loaded only when visited.
-const Landing = safeLazy(() => import('./pages/Landing'))
-const Login = safeLazy(() => import('./pages/Login'))
-const Signup = safeLazy(() => import('./pages/Signup'))
-const VerifyEmail = safeLazy(() => import('./pages/VerifyEmail'))
-const WorkspacePicker = safeLazy(() => import('./pages/WorkspacePicker'))
-const JoinWorkspace = safeLazy(() => import('./pages/JoinWorkspace'))
-const AuthAction = safeLazy(() => import('./pages/AuthAction'))
-const ForcePasswordReset = safeLazy(() => import('./pages/ForcePasswordReset'))
+// Route-based code splitting backed by the shared prefetch registry.
+const Landing = safeLazy('landing')
+const Login = safeLazy('login')
+const Signup = safeLazy('signup')
+const VerifyEmail = safeLazy('verify')
+const WorkspacePicker = safeLazy('workspacePicker')
+const JoinWorkspace = safeLazy('join')
+const AuthAction = safeLazy('authAction')
+const ForcePasswordReset = safeLazy('forcePasswordReset')
 
-const WorkflowPage = safeLazy(() => import('./pages/WorkflowPage'))
-const MyDashboard = safeLazy(() => import('./pages/MyDashboard'))
-const Dashboard = safeLazy(() => import('./pages/Dashboard'))
-const Meeting = safeLazy(() => import('./pages/Meeting'))
-const Analytics = safeLazy(() => import('./pages/Analytics'))
-const Integrations = safeLazy(() => import('./pages/Integrations'))
-const Profile = safeLazy(() => import('./pages/Profile'))
-const Settings = safeLazy(() => import('./pages/Settings'))
-const Legal = safeLazy(() => import('./pages/Legal'))
-const Privacy = safeLazy(() => import('./pages/Privacy'))
-const Contact = safeLazy(() => import('./pages/Contact'))
-const ThankYou = safeLazy(() => import('./pages/ThankYou'))
-const ForgotPassword = safeLazy(() => import('./pages/ForgotPassword'))
+const WorkflowPage = safeLazy('workflow')
+const MyDashboard = safeLazy('myDashboard')
+const Dashboard = safeLazy('team')
+const Meeting = safeLazy('meeting')
+const Analytics = safeLazy('analytics')
+const Integrations = safeLazy('integrations')
+const Profile = safeLazy('profile')
+const Settings = safeLazy('settings')
+const Legal = safeLazy('legal')
+const Privacy = safeLazy('privacy')
+const Contact = safeLazy('contact')
+const ThankYou = safeLazy('thankYou')
+const ForgotPassword = safeLazy('forgotPassword')
 
 // Marketing Pages
-const Features = safeLazy(() => import('./pages/Features'))
-const AboutUs = safeLazy(() => import('./pages/AboutUs'))
-const ProductIntegrations = safeLazy(() => import('./pages/ProductIntegrationsPage'))
-const DocsPage = safeLazy(() => import('./pages/DocsPage'))
-const Changelog = safeLazy(() => import('./pages/MarketingPages').then(m => ({ default: m.Changelog })))
-const Security = safeLazy(() => import('./pages/MarketingPages').then(m => ({ default: m.Security })))
+const Features = safeLazy('features')
+const AboutUs = safeLazy('about')
+const ProductIntegrations = safeLazy('productIntegrations')
+const DocsPage = safeLazy('docs')
+const Changelog = safeLazy('changelog')
+const Security = safeLazy('security')
 import NotFound from './pages/NotFound'
 import ErrorPage from './pages/ErrorPage'
-const LegalConsentModal = safeLazy(() => import('./components/LegalConsentModal'))
-const OnboardingWizardModal = safeLazy(() => import('./components/OnboardingWizardModal'))
+const LegalConsentModal = safeLazy('legalConsentModal', { trackLoading: false })
+const OnboardingWizardModal = safeLazy('onboardingWizardModal', { trackLoading: false })
 const PrivacyNotice = lazy(() =>
   import('./components/PrivacyNotice').catch(() => ({ default: () => null }))
 )
@@ -79,69 +83,17 @@ import InitialPreloader from './components/InitialPreloader'
 import SEOHead from './components/SEOHead'
 import { hasAnalyticsConsent, subscribeConsent } from './lib/privacyPrefs'
 import { initGA4, trackPageView } from './lib/metrics'
+import {
+  beginRouteLoad,
+  endRouteLoad,
+  getIsRouteLoading,
+  isRouteKeyLoaded,
+  loadRouteModule,
+  scheduleBackgroundPrefetch,
+  subscribeRouteLoading
+} from './lib/routePrefetch'
+import RouteSkeleton, { WorkspaceSkeleton } from './components/PageSkeleton'
 import { useLivePresenceTracker } from './hooks/useLivePresence'
-import { Cardio } from 'ldrs/react'
-import 'ldrs/react/Cardio.css'
-
-function WorkspaceSubpageLoader() {
-  return (
-    <div style={{
-      minHeight: '60vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '10px',
-      color: '#64748b',
-      fontFamily: 'sans-serif',
-      fontSize: '13px',
-      fontWeight: 600
-    }}>
-      <div style={{
-        width: '24px',
-        height: '24px',
-        border: '2.5px solid #e2e8f0',
-        borderTopColor: '#4f46e5',
-        borderRadius: '50%',
-        animation: 'spin 0.6s linear infinite'
-      }} />
-      <span>Loading...</span>
-      <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
-    </div>
-  )
-}
-
-function PageLoading() {
-  return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '14px',
-      background: '#ffffff',
-      color: '#000000',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
-        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#000000', display: 'inline-block' }} />
-        <span style={{ fontFamily: 'var(--mono, "JetBrains Mono", monospace)', fontWeight: 700, fontSize: '15px', letterSpacing: '-0.02em', color: '#000000' }}>
-          Paper5
-        </span>
-      </div>
-
-      <Cardio
-        size="48"
-        stroke="3.5"
-        speed="2"
-        color="#d1d5db"
-      />
-
-      <span style={{ fontFamily: 'var(--mono, "JetBrains Mono", monospace)', fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.12em', marginTop: '2px' }}>
-        LOADING WORKSPACE...
-      </span>
-    </div>
-  )
-}
 
 function CrossDomainRedirect({ toApp = false, path = '' }) {
   const target = toApp 
@@ -150,11 +102,11 @@ function CrossDomainRedirect({ toApp = false, path = '' }) {
   
   if (target.startsWith('https://')) {
     window.location.replace(target)
-    return <PageLoading />
+    return <RouteSkeleton />
   }
   if (target.startsWith('http://') && (target.includes('localhost') || target.includes('127.0.0.1'))) {
     window.location.replace(target)
-    return <PageLoading />
+    return <RouteSkeleton />
   }
   return <Navigate to={target} replace />
 }
@@ -163,7 +115,7 @@ function WorkspaceGuard({ children }) {
   const { isLocked, isCapacityFrozen, capacityDetails, is2FABlocked, loadingWorkspace, workspace, workspaceRole, workspaceError, isAdmin, isOwner } = useWorkspace()
   const location = useLocation()
 
-  if (loadingWorkspace) return <PageLoading />
+  if (loadingWorkspace) return <WorkspaceSkeleton showHeader />
   
   if (workspaceError || !workspace || !workspaceRole) {
     return <Navigate to="/workspace" replace />
@@ -260,6 +212,7 @@ export default function App() {
   const location = useLocation()
   const { user, userData, loading, isPending2FA } = useAuth()
   const [analyticsConsent, setAnalyticsConsent] = useState(() => hasAnalyticsConsent())
+  const isRouteChunkLoading = useSyncExternalStore(subscribeRouteLoading, getIsRouteLoading, () => false)
 
   useEffect(() => {
     if (analyticsConsent) {
@@ -274,6 +227,10 @@ export default function App() {
     })
   }, [])
   const { isAppSubdomain, hostname } = getDomainConfig()
+
+  useEffect(() => {
+    scheduleBackgroundPrefetch(isAppSubdomain)
+  }, [isAppSubdomain])
   const isMarketingRootHost = hostname === 'paper5.co' || hostname === 'www.paper5.co'
   const allowWorkspaceRoutes = isAppSubdomain || (!isMarketingRootHost && (Boolean(user) || hostname.endsWith('.vercel.app')))
 
@@ -300,7 +257,7 @@ export default function App() {
   ))
 
   if (loading && !isPublicMarketingRoute) {
-    return <PageLoading />
+    return <RouteSkeleton />
   }
 
   // If the user just accepted an invite or logged in with temporary password, force them to set it
@@ -310,7 +267,7 @@ export default function App() {
 
   // If user is logged in but not verified or has pending 2FA, force them to login/verify screen
   const requireAuthAndVerification = (children) => {
-    if (loading) return <PageLoading />
+    if (loading) return <RouteSkeleton />
     if (!user) return <Navigate to="/login" replace />
     if (isPending2FA) return <Navigate to="/login" replace />
     if (!user.emailVerified) return <Navigate to="/verify" replace />
@@ -322,19 +279,22 @@ export default function App() {
       <InitialPreloader>
       <ScrollToTop />
       <FloatingNotice />
-      <Suspense fallback={<PageLoading />}>
+      <Suspense fallback={<RouteSkeleton />}>
+        {isRouteChunkLoading ? (
+          <RouteSkeleton />
+        ) : (
         <Routes>
           {/* Subdomain-aware Root Path */}
           <Route path="/" element={
             isAppSubdomain 
-              ? (loading ? <PageLoading /> : (!user || isPending2FA ? <Navigate to="/login" replace /> : <Navigate to="/workspace" replace />))
+              ? (loading ? <RouteSkeleton /> : (!user || isPending2FA ? <Navigate to="/login" replace /> : <Navigate to="/workspace" replace />))
               : <Landing />
           } />
 
           <Route path="/auth/action" element={<AuthAction />} />
           <Route path="/reset-password" element={<AuthAction />} />
           <Route path="/workspace" element={
-            loading ? <PageLoading /> :
+            loading ? <RouteSkeleton /> :
             !user || isPending2FA ? <Navigate to="/login" replace /> :
             !user.emailVerified ? <Navigate to="/verify" replace /> :
             <WorkspacePicker />
@@ -380,7 +340,7 @@ export default function App() {
               requireAuthAndVerification(
                 <WorkspaceProvider>
                   <WorkspaceGuard>
-                    <Suspense fallback={<WorkspaceSubpageLoader />}>
+                    <Suspense fallback={<WorkspaceSkeleton showHeader />}>
                       <Routes>
                         <Route path="" element={<MyDashboard />} />
                         <Route path="workflow" element={<WorkflowPage />} />
@@ -401,6 +361,7 @@ export default function App() {
           
           <Route path="*" element={<NotFound />} />
         </Routes>
+        )}
       </Suspense>
       {user && user.emailVerified && (
         <Suspense fallback={null}>

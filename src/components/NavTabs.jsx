@@ -1,14 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
+import { NavLink } from 'react-router-dom'
 import { useWorkspace } from '../lib/WorkspaceContext'
-import { useAuth } from '../lib/AuthContext'
-import { subscribeUserWorkspaces } from '../lib/workspaces'
+import { prefetchRoute, scheduleBackgroundPrefetch } from '../lib/routePrefetch'
 import './NavTabs.css'
 
-// Two primary destinations stay always visible; everything else collapses
-// into a "More" menu. Seven flat tabs never fit a phone width no matter how
-// much horizontal scroll you bolt on — this fixes the actual layout problem
-// instead of working around it.
 const PRIMARY = [
   { to: '/', end: true, label: 'My tasks', icon: HomeIcon },
   { to: '/workflow', label: 'Workflow', icon: BoardIcon },
@@ -17,29 +12,13 @@ const PRIMARY = [
   { to: '/analytics', label: 'Analytics', icon: AnalyticsIcon },
 ]
 
-// Preload route chunks into browser memory
-const prefetchRoute = (to) => {
-  if (to === '/meeting') import('../pages/Meeting')
-  else if (to === '/analytics') import('../pages/Analytics')
-  else if (to === '/workflow') import('../pages/WorkflowPage')
-  else if (to === '/team') import('../pages/Dashboard')
-}
-
 export default function NavTabs() {
   const { workspaceId } = useWorkspace()
-  const location = useLocation()
-  
+
   const getPath = (path) => `/${workspaceId}${path === '/' ? '' : path}`
 
   useEffect(() => {
-    // Eagerly prefetch workspace subpages in background so opening Meeting or Analytics is instantaneous
-    const timer = setTimeout(() => {
-      import('../pages/Meeting')
-      import('../pages/Analytics')
-      import('../pages/WorkflowPage')
-      import('../pages/Dashboard')
-    }, 300)
-    return () => clearTimeout(timer)
+    scheduleBackgroundPrefetch(true)
   }, [])
 
   return (
@@ -50,6 +29,7 @@ export default function NavTabs() {
           to={getPath(item.to)}
           end={item.end}
           onMouseEnter={() => prefetchRoute(item.to)}
+          onFocus={() => prefetchRoute(item.to)}
           onTouchStart={() => prefetchRoute(item.to)}
           className={({ isActive }) => `nav-tab${isActive ? ' nav-tab--active' : ''}`}
         >
@@ -61,7 +41,6 @@ export default function NavTabs() {
   )
 }
 
-// Small inline icons — no icon-library dependency, keeps the bundle lean.
 function iconProps(extra) { return { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', ...extra } }
 
 function HomeIcon() { return <svg {...iconProps()}><path d="M3 9.5 12 3l9 6.5" /><path d="M5 10v10h14V10" /></svg> }

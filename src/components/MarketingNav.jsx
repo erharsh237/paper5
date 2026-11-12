@@ -10,6 +10,7 @@ import Paper5Logo from './Paper5Logo'
 import '../pages/Landing.css'
 import { getDomainConfig, getAppUrl, getMainUrl } from '../lib/domain'
 import { safeRedirect } from '../lib/safeRedirect'
+import { prefetchRoute } from '../lib/routePrefetch'
 
 export default function MarketingNav() {
   const { user, logout } = useAuth()
@@ -33,7 +34,7 @@ export default function MarketingNav() {
       if (e) e.preventDefault()
       if (window.__lenis) {
         window.__lenis.scrollTo(0, {
-          duration: 1.25,
+          duration: 0.75,
           easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
         })
       } else {
@@ -41,12 +42,6 @@ export default function MarketingNav() {
       }
       if (window.location.hash) {
         window.history.pushState('', document.title, window.location.pathname)
-      }
-    } else {
-      if (window.__lenis) {
-        window.__lenis.scrollTo(0, { duration: 1.25 })
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' })
       }
     }
   }
@@ -141,6 +136,9 @@ export default function MarketingNav() {
                   <Link
                     key={item.label}
                     to="/pricing"
+                    onMouseEnter={() => prefetchRoute('/pricing')}
+                    onFocus={() => prefetchRoute('/pricing')}
+                    onTouchStart={() => prefetchRoute('/pricing')}
                     onClick={(e) => handleAnchorClick(e, item.anchorId)}
                     className={`nav-link-icon-wrap ${isLinkActive(item) ? "active" : ""}`}
                     aria-label={item.label}
@@ -163,6 +161,9 @@ export default function MarketingNav() {
                 <Link
                   key={item.label}
                   to={item.path}
+                  onMouseEnter={() => prefetchRoute(item.path)}
+                  onFocus={() => prefetchRoute(item.path)}
+                  onTouchStart={() => prefetchRoute(item.path)}
                   onClick={item.path === '/' ? handleHomeClick : undefined}
                   className={`nav-link-icon-wrap ${isLinkActive(item) ? "active" : ""}`}
                   aria-label={item.label}

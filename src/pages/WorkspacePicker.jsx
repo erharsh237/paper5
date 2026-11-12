@@ -8,6 +8,7 @@ import PricingModal from '../components/PricingModal'
 import ThemeToggle from '../components/ThemeToggle'
 import SEOHead from '../components/SEOHead'
 import './WorkspacePicker.css'
+import { WorkspacePickerGridSkeleton } from '../components/PageSkeleton'
 
 export default function WorkspacePicker() {
   const { user, userData, logout } = useAuth()
@@ -146,7 +147,7 @@ export default function WorkspacePicker() {
         </div>
         {workspaceSeo}
         <div className="wp-container" style={{ textAlign: 'center' }}>
-          <p style={{ color: '#666', fontSize: '15px' }}>Loading workspaces...</p>
+          <WorkspacePickerGridSkeleton />
         </div>
       </div>
     )

@@ -6,6 +6,7 @@ import Paper5Logo from './Paper5Logo'
 import '../pages/Landing.css'
 import { getDomainConfig, getAppUrl, getMainUrl } from '../lib/domain'
 import { openConsentPreferences } from '../lib/privacyPrefs'
+import { prefetchRoute } from '../lib/routePrefetch'
 import { ArrowRight, MessageSquare } from 'lucide-react'
 
 export default function MarketingFooter({ hideCTA = false }) {
@@ -17,7 +18,16 @@ export default function MarketingFooter({ hideCTA = false }) {
 
   const FooterLink = ({ to, children }) => {
     if (isAppSubdomain) return <a href={getMainUrl(to)}>{children}</a>
-    return <Link to={to}>{children}</Link>
+    return (
+      <Link
+        to={to}
+        onMouseEnter={() => prefetchRoute(to)}
+        onFocus={() => prefetchRoute(to)}
+        onTouchStart={() => prefetchRoute(to)}
+      >
+        {children}
+      </Link>
+    )
   }
 
   const handleGetStarted = () => {
