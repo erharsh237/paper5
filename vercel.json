@@ -39,8 +39,20 @@
       "destination": "/index.html"
     },
     {
+      "source": "/api/contact",
+      "destination": "/api/public?action=contact"
+    },
+    {
+      "source": "/api/feedback",
+      "destination": "/api/public?action=feedback"
+    },
+    {
+      "source": "/api/forgot-password",
+      "destination": "/api/public?action=forgot-password"
+    },
+    {
       "source": "/((?!api/|assets/|logo\\.png|og-image\\.png|favicon\\.ico|favicon\\.svg|dashboard-mockup\\.jpg|product-film\\.html|sprintos_dashboard\\.html|llms\\.txt|robots\\.txt|sitemap\\.xml|\\.well-known(?:/.*)?|\\.dev\\.vars|wrangler\\.(?:toml|json|jsonc)|vercel\\.json|\\.vercel(?:/.*)?|\\.env(?:\\..*)?|\\.git(?:/.*)?).*)",
-      "destination": "/api/not-found"
+      "destination": "/api/public?action=not-found"
     }
   ],
   "headers": [

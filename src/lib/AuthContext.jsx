@@ -542,7 +542,7 @@ export function AuthProvider({ children }) {
     setAuthError(null)
 
     // 1. Verify existence and dispatch via serverless recovery function
-    const resp = await fetch('/api/forgot-password', {
+    const resp = await fetch('/api/public?action=forgot-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: cleanEmail })

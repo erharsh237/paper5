@@ -39,7 +39,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
     setSubmitting(true)
 
     try {
-      const response = await fetch('/api/feedback', {
+      const response = await fetch('/api/public?action=feedback', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
