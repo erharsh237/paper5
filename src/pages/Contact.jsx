@@ -106,10 +106,6 @@ export default function Contact() {
       <div className="contact-page">
         {/* Hero Section */}
         <header className="contact-hero">
-          <div className="contact-badge">
-            <span className="contact-badge-dot"></span>
-            <span>GET IN TOUCH</span>
-          </div>
           <h1 className="contact-title">We are here to help.</h1>
           <p className="contact-subtitle">
             Have questions about Paper5, enterprise plans, or need technical support? Send us a message or reach out directly.
