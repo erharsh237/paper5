@@ -567,3 +567,321 @@ export function handleNotFound(req, res) {
 </body>
 </html>`)
 }
+
+export function handleServerError(req, res, err) {
+  const initialTheme = parseCookieTheme(req)
+  const errorRef = `ERR-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+
+  if (err) {
+    console.error(`[Server Error ${errorRef}]`, err)
+  }
+
+  res.statusCode = 500
+  res.setHeader('Content-Type', 'text/html; charset=utf-8')
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow')
+  res.setHeader('Cache-Control', 'no-store')
+
+  res.end(`<!doctype html>
+<html lang="en" data-theme="${initialTheme}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>500 &mdash; Server Error | Paper5</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
+  <script>
+    (function () {
+      try {
+        var host = window.location.hostname || '';
+        var key = host.indexOf('app.') === 0 ? 'paper5_app_theme' : 'paper5_marketing_theme';
+        var saved = localStorage.getItem(key);
+        if (saved === 'dark' || saved === 'light') {
+          document.documentElement.setAttribute('data-theme', saved);
+        }
+      } catch (_) {}
+    })();
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #ffffff;
+      color: #09090b;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      padding: 40px 24px;
+      user-select: none;
+    }
+    html[data-theme="dark"] body {
+      background-color: #09090b;
+      color: #f4f4f5;
+    }
+    .server-500-container {
+      width: 100%;
+      max-width: 1140px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: min(720px, 86vh);
+      position: relative;
+    }
+    .server-500-topbar {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      width: 100%;
+      padding: 0 10px;
+    }
+    .server-500-heading-left,
+    .server-500-heading-right {
+      font-size: clamp(38px, 5.5vw, 68px);
+      font-weight: 700;
+      letter-spacing: -0.035em;
+      line-height: 1;
+      color: #09090b;
+    }
+    html[data-theme="dark"] .server-500-heading-left,
+    html[data-theme="dark"] .server-500-heading-right {
+      color: #ffffff;
+    }
+    .server-500-stage {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      margin: 20px 0 10px 0;
+      gap: 20px;
+    }
+    .server-digit {
+      font-size: clamp(140px, 26vw, 360px);
+      font-weight: 800;
+      line-height: 0.88;
+      letter-spacing: -0.06em;
+      color: #09090b;
+      flex: 1;
+      text-align: center;
+    }
+    html[data-theme="dark"] .server-digit {
+      color: #f4f4f5;
+    }
+    .server-digit-left {
+      text-align: right;
+      padding-right: clamp(10px, 2vw, 40px);
+    }
+    .server-digit-right {
+      text-align: left;
+      padding-left: clamp(10px, 2vw, 40px);
+    }
+    .server-center-icon-wrap {
+      flex-shrink: 0;
+      width: clamp(120px, 18vw, 240px);
+      height: clamp(130px, 20vw, 260px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .server-center-svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.08));
+    }
+    .server-poly-outer { fill: #09090b; }
+    .server-poly-inner { fill: #ffffff; }
+    html[data-theme="dark"] .server-poly-outer { fill: #f4f4f5; }
+    html[data-theme="dark"] .server-poly-inner { fill: #09090b; }
+    @keyframes serverPulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.18); opacity: 0.85; }
+    }
+    .server-focal-dot {
+      fill: #f59e0b;
+      transform-origin: 136px 110px;
+      animation: serverPulse 2.2s ease-in-out infinite;
+    }
+    .server-500-bottom {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      width: 100%;
+      padding: 0 10px;
+      position: relative;
+    }
+    .server-bracket {
+      font-size: clamp(48px, 6vw, 90px);
+      font-weight: 300;
+      color: #09090b;
+      line-height: 0.8;
+      user-select: none;
+    }
+    html[data-theme="dark"] .server-bracket { color: #ffffff; }
+    .server-action-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 14px;
+      margin-bottom: 8px;
+      max-width: 620px;
+    }
+    .server-desc {
+      font-size: clamp(13px, 1.1vw, 15px);
+      color: #52525b;
+      margin: 0;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      line-height: 1.5;
+    }
+    html[data-theme="dark"] .server-desc { color: #a1a1aa; }
+    .server-btn-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .server-cta-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background-color: #e11d48;
+      color: #ffffff !important;
+      text-decoration: none;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 10px 22px;
+      border-radius: 9999px;
+      border: none;
+      box-shadow: 0 8px 20px -4px rgba(225, 29, 72, 0.4);
+      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, box-shadow 0.22s ease;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .server-cta-btn:hover {
+      background-color: #be123c;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 26px -4px rgba(225, 29, 72, 0.55);
+    }
+    .server-cta-btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background-color: transparent;
+      color: #09090b !important;
+      text-decoration: none;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 9px 20px;
+      border-radius: 9999px;
+      border: 1px solid #d4d4d8;
+      transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    html[data-theme="dark"] .server-cta-btn-ghost {
+      color: #f4f4f5 !important;
+      border-color: #3f3f46;
+    }
+    .server-cta-btn-ghost:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+      border-color: #a1a1aa;
+      transform: translateY(-2px);
+    }
+    html[data-theme="dark"] .server-cta-btn-ghost:hover {
+      background-color: rgba(255, 255, 255, 0.08);
+      border-color: #71717a;
+    }
+    .server-meta-line {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11px;
+      color: #71717a;
+      letter-spacing: 0.02em;
+      margin-top: 6px;
+    }
+    html[data-theme="dark"] .server-meta-line { color: #a1a1aa; }
+    @media (max-width: 640px) {
+      .server-500-container { min-height: 520px; justify-content: space-around; }
+      .server-digit-left { padding-right: 0; }
+      .server-digit-right { padding-left: 0; }
+      .server-bracket { font-size: 40px; }
+      .server-action-center { gap: 12px; }
+      .server-btn-row { flex-direction: column; width: 100%; }
+      .server-cta-btn, .server-cta-btn-ghost { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="server-500-container">
+    <div class="server-500-topbar">
+      <span class="server-500-heading-left">Server</span>
+      <span class="server-500-heading-right">error?</span>
+    </div>
+
+    <div class="server-500-stage">
+      <div class="server-digit server-digit-left">5</div>
+
+      <div class="server-center-icon-wrap" role="img" aria-label="Geometric 500 status block">
+        <svg
+          class="server-center-svg"
+          viewBox="0 0 200 220"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <path
+            d="M75 10 H145 V50 H175 V130 H155 V150 H175 V180 H145 V200 H75 V180 H45 V150 H20 V90 H45 V50 H75 V10 Z"
+            class="server-poly-outer"
+          />
+          <path
+            d="M75 42 H135 V85 H145 V145 H125 V168 H75 V145 H52 V85 H75 V42 Z"
+            class="server-poly-inner"
+          />
+          <circle
+            cx="136"
+            cy="110"
+            r="18"
+            class="server-focal-dot"
+          />
+        </svg>
+      </div>
+
+      <div class="server-digit server-digit-right">0</div>
+    </div>
+
+    <div class="server-500-bottom">
+      <span class="server-bracket server-bracket-left">[</span>
+
+      <div class="server-action-center">
+        <p class="server-desc">Our servers ran into an unexpected issue. Don't worry &mdash; your workspace data is safe.</p>
+
+        <div class="server-btn-row">
+          <button onclick="window.location.reload()" class="server-cta-btn" type="button">
+            <span>&#8635; RELOAD PAGE</span>
+          </button>
+          <a href="/" class="server-cta-btn-ghost">
+            <span>GO BACK HOME</span>
+          </a>
+        </div>
+
+        <div class="server-meta-line">
+          HTTP 500 &middot; Ref: ${errorRef}
+        </div>
+      </div>
+
+      <span class="server-bracket server-bracket-right">]</span>
+    </div>
+  </div>
+</body>
+</html>`)
+}

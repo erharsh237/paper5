@@ -2,14 +2,17 @@ import {
   handleContact,
   handleFeedback,
   handleForgotPassword,
-  handleNotFound
+  handleNotFound,
+  handleServerError
 } from './_publicHandlers.js'
 
 const ACTION_HANDLERS = {
   contact: handleContact,
   feedback: handleFeedback,
   'forgot-password': handleForgotPassword,
-  'not-found': handleNotFound
+  'not-found': handleNotFound,
+  '500': handleServerError,
+  'server-error': handleServerError
 }
 
 /**
@@ -25,14 +28,19 @@ function resolveAction(req) {
   if (pathname === '/api/contact') return 'contact'
   if (pathname === '/api/feedback') return 'feedback'
   if (pathname === '/api/forgot-password') return 'forgot-password'
+  if (pathname === '/api/500' || pathname === '/500') return '500'
   return 'not-found'
 }
 
 /**
  * Unified public endpoint consolidating contact, feedback, password recovery,
- * and SSR 404 responses within Vercel's Hobby plan Serverless Function limit.
+ * SSR 404 responses, and resilient 500 error handling within Vercel's Serverless Function limit.
  */
-export default function handler(req, res) {
-  const action = resolveAction(req)
-  return ACTION_HANDLERS[action](req, res)
+export default async function handler(req, res) {
+  try {
+    const action = resolveAction(req)
+    return await ACTION_HANDLERS[action](req, res)
+  } catch (err) {
+    return handleServerError(req, res, err)
+  }
 }

@@ -323,6 +323,7 @@ export default function App() {
           <Route path="/thank-you" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <ThankYou />} />
           <Route path="/about-us" element={<Navigate to="/about" replace />} />
           <Route path="/error" element={<ErrorPage />} />
+          <Route path="/500" element={<ErrorPage />} />
 
           {/* Marketing Pages - Redirect to paper5.com if visited on app.paper5.com */}
           <Route path="/pricing" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} path="/#pricing" /> : <Landing />} />

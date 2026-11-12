@@ -1,17 +1,20 @@
 import React, { useState } from 'react'
-import { safeRedirect } from '../lib/safeRedirect'
+import { Link } from 'react-router-dom'
 import SEOHead from '../components/SEOHead'
-import Paper5Logo from '../components/Paper5Logo'
-import './NotFound.css'
+import { safeRedirect } from '../lib/safeRedirect'
+import { getDomainConfig, getMainUrl } from '../lib/domain'
+import './ErrorPage.css'
 
 export default function ErrorPage({ error, errorInfo, resetError }) {
   const [showDetails, setShowDetails] = useState(false)
   const [copied, setCopied] = useState(false)
+  const { isAppSubdomain } = getDomainConfig()
 
-  const errorRef = `ERR-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+  // Generate deterministic-looking error reference for tracking
+  const [errorRef] = useState(() => `ERR-${Math.random().toString(36).substring(2, 8).toUpperCase()}`)
 
   const copyErrorDetails = () => {
-    const details = `Error Reference: ${errorRef}\nMessage: ${error?.message || error?.toString()}\nTimestamp: ${new Date().toISOString()}\nStack:\n${errorInfo?.componentStack || error?.stack || 'No stack trace available'}`
+    const details = `Error Reference: ${errorRef}\nMessage: ${error?.message || error?.toString() || 'Internal Server Error'}\nTimestamp: ${new Date().toISOString()}\nStack:\n${errorInfo?.componentStack || error?.stack || 'No stack trace available'}`
     navigator.clipboard.writeText(details)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -19,87 +22,149 @@ export default function ErrorPage({ error, errorInfo, resetError }) {
 
   const handleReturnHome = () => {
     if (resetError) resetError()
-    safeRedirect('/')
+    if (isAppSubdomain) {
+      safeRedirect(getMainUrl('/'))
+    } else {
+      safeRedirect('/')
+    }
   }
 
   const handleReload = () => {
     if (resetError) resetError()
-    sessionStorage.clear()
-    if ('caches' in window) {
-      caches.keys().then((names) => {
-        names.forEach((name) => caches.delete(name))
-      })
-    }
+    try {
+      sessionStorage.clear()
+      if ('caches' in window) {
+        caches.keys().then((names) => {
+          names.forEach((name) => caches.delete(name))
+        })
+      }
+    } catch (_) {}
     window.location.reload()
   }
 
+  const hasDiagnostics = Boolean(error || errorInfo)
+
   return (
-    <div className="nf-wrap" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+    <div className="server-500-page">
       <SEOHead
-        title="Application Error | Paper5"
-        description="An unexpected error occurred while loading this Paper5 page."
+        title="500 — Server Error | Paper5"
+        description="Our servers ran into an unexpected issue. Don't worry, your workspace data is safe."
         noIndex
       />
-      <div className="nf-card glass-panel" style={{ maxWidth: '640px', width: '100%', textAlign: 'center', padding: '40px 32px' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '20px', fontWeight: 700, fontFamily: 'var(--mono)', color: 'var(--text-primary)', marginBottom: '20px' }}>
-          <Paper5Logo size={26} decorative />
-          <span>Paper5</span>
+
+      <div className="server-500-container">
+        {/* Top Header Split: "Server" on the left, "error?" on the right */}
+        <div className="server-500-topbar">
+          <span className="server-500-heading-left">Server</span>
+          <span className="server-500-heading-right">error?</span>
         </div>
 
-        <div className="nf-badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-critical, #ef4444)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-          <span className="nf-dot" style={{ background: 'var(--accent-critical, #ef4444)' }} />
-          System Anomaly · Ref: {errorRef}
-        </div>
+        {/* Centerpiece 5 [0-polygon] 0 row */}
+        <div className="server-500-stage">
+          <div className="server-digit server-digit-left">5</div>
 
-        <h1 className="nf-title" style={{ fontSize: '26px', marginTop: '16px', marginBottom: '12px' }}>
-          Something unexpected happened.
-        </h1>
-        <p className="nf-sub" style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: 1.6 }}>
-          Paper5 encountered an unhandled exception. Don't worry — your data is safely saved in your workspace.
-        </p>
-
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '24px' }}>
-          <button onClick={handleReturnHome} className="btn-primary" style={{ padding: '10px 20px', fontSize: '14px' }}>
-            Return to Workspace →
-          </button>
-          <button onClick={handleReload} className="btn-ghost" style={{ padding: '10px 20px', fontSize: '14px' }}>
-            Reload Page
-          </button>
-        </div>
-
-        {import.meta.env.DEV && (
-          <div style={{ borderTop: '1px solid var(--border-subtle, rgba(255,255,255,0.08))', paddingTop: '20px', marginTop: '12px' }}>
-            <button 
-              onClick={() => setShowDetails(!showDetails)} 
-              className="btn-ghost btn-sm"
-              style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}
+          <div className="server-center-icon-wrap" role="img" aria-label="Geometric 500 status block">
+            {/* Geometric pixel block representing the '0' */}
+            <svg
+              className="server-center-svg"
+              viewBox="0 0 200 220"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
             >
-              {showDetails ? '▲ Hide Developer Diagnostics' : '▼ View Developer Diagnostics'}
-            </button>
-
-            {showDetails && (
-              <div style={{ marginTop: '16px', textAlign: 'left', background: 'var(--bg-layer-2, #0d1117)', border: '1px solid var(--border, #30363d)', borderRadius: '8px', padding: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <span className="mono" style={{ fontSize: '12px', color: 'var(--accent-critical, #ef4444)' }}>
-                    {error?.name || 'Error'}: {error?.message || error?.toString()}
-                  </span>
-                  <button onClick={copyErrorDetails} className="btn-ghost btn-sm" style={{ padding: '2px 8px', fontSize: '11px' }}>
-                    {copied ? '✓ Copied' : 'Copy Diagnostics'}
-                  </button>
-                </div>
-
-                {(errorInfo?.componentStack || error?.stack) && (
-                  <pre style={{ margin: 0, padding: '12px', background: 'rgba(0,0,0,0.4)', borderRadius: '6px', fontSize: '11px', color: 'var(--text-secondary)', overflowX: 'auto', maxHeight: '200px', fontFamily: 'var(--mono, monospace)', whiteSpace: 'pre-wrap' }}>
-                    {errorInfo?.componentStack || error?.stack}
-                  </pre>
-                )}
-              </div>
-            )}
+              {/* Stepped blocky polygon outer shell */}
+              <path
+                d="M75 10 H145 V50 H175 V130 H155 V150 H175 V180 H145 V200 H75 V180 H45 V150 H20 V90 H45 V50 H75 V10 Z"
+                className="server-poly-outer"
+              />
+              {/* Stepped inner cutout */}
+              <path
+                d="M75 42 H135 V85 H145 V145 H125 V168 H75 V145 H52 V85 H75 V42 Z"
+                className="server-poly-inner"
+              />
+              {/* Amber status beacon dot */}
+              <circle
+                cx="136"
+                cy="110"
+                r="18"
+                className="server-focal-dot"
+              />
+            </svg>
           </div>
-        )}
 
-        <div className="nf-footnote mono" style={{ marginTop: '24px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
-          Paper5 · Exception Handled Safely
+          <div className="server-digit server-digit-right">0</div>
+        </div>
+
+        {/* Bottom Framing Brackets & Action Area */}
+        <div className="server-500-bottom">
+          <span className="server-bracket server-bracket-left">[</span>
+
+          <div className="server-action-center">
+            <p className="server-desc">
+              Our servers ran into an unexpected issue. Don't worry &mdash; your workspace data is safe.
+            </p>
+
+            <div className="server-btn-row">
+              <button onClick={handleReload} className="server-cta-btn" type="button">
+                <span className="server-cta-plus">&#8635;</span>
+                <span>RELOAD PAGE</span>
+              </button>
+
+              {isAppSubdomain ? (
+                <a href={getMainUrl('/')} onClick={handleReturnHome} className="server-cta-btn-ghost">
+                  <span>GO BACK HOME</span>
+                </a>
+              ) : (
+                <Link to="/" onClick={handleReturnHome} className="server-cta-btn-ghost">
+                  <span>GO BACK HOME</span>
+                </Link>
+              )}
+            </div>
+
+            {/* Subtle diagnostic drawer */}
+            <div className="server-diagnostics-wrap">
+              <div className="server-meta-line">
+                Error Code: 500 &middot; Ref: {errorRef}
+              </div>
+
+              {hasDiagnostics && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setShowDetails(!showDetails)}
+                    className="server-diag-toggle"
+                  >
+                    {showDetails ? '▲ Hide Diagnostics' : '▼ View Diagnostics'}
+                  </button>
+
+                  {showDetails && (
+                    <div className="server-diag-panel">
+                      <div className="server-diag-panel-header">
+                        <span className="server-diag-error-text">
+                          {error?.name || 'Exception'}: {error?.message || error?.toString()}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={copyErrorDetails}
+                          className="server-diag-copy-btn"
+                        >
+                          {copied ? '✓ Copied' : 'Copy'}
+                        </button>
+                      </div>
+
+                      {(errorInfo?.componentStack || error?.stack) && (
+                        <pre className="server-diag-stack">
+                          {errorInfo?.componentStack || error?.stack}
+                        </pre>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          <span className="server-bracket server-bracket-right">]</span>
         </div>
       </div>
     </div>

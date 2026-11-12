@@ -15,7 +15,7 @@
   ],
   "rewrites": [
     {
-      "source": "/(pricing|features|about|about-us|contact|product-integrations|changelog|docs|docs/api|security|legal|legal/terms|legal/privacy|legal/dpa|legal/subprocessors|terms|privacy|dpa|subprocessors|thank-you|error|login|signup|forgot-password|verify|join|workspace|auth/action|reset-password)",
+      "source": "/(pricing|features|about|about-us|contact|product-integrations|changelog|docs|docs/api|security|legal|legal/terms|legal/privacy|legal/dpa|legal/subprocessors|terms|privacy|dpa|subprocessors|thank-you|error|500|login|signup|forgot-password|verify|join|workspace|auth/action|reset-password)",
       "destination": "/index.html"
     },
     {
