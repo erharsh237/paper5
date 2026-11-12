@@ -1,0 +1,271 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Vibrant Twilight-to-Sunset Dawn Sky -->
+    <linearGradient id="skyGrad" x1="0.04" y1="0.02" x2="0.96" y2="0.9">
+      <stop offset="0%" stop-color="#120933" />
+      <stop offset="22%" stop-color="#2c1363" />
+      <stop offset="48%" stop-color="#6d28d9" />
+      <stop offset="70%" stop-color="#db2777" />
+      <stop offset="86%" stop-color="#f97316" />
+      <stop offset="100%" stop-color="#fde047" />
+    </linearGradient>
+
+    <!-- Radiant Sunrise Burst -->
+    <radialGradient id="sunGlow" cx="0.86" cy="0.44" r="0.58">
+      <stop offset="0%" stop-color="#fef9c3" stop-opacity="1" />
+      <stop offset="18%" stop-color="#fde047" stop-opacity="0.85" />
+      <stop offset="42%" stop-color="#fb7185" stop-opacity="0.48" />
+      <stop offset="72%" stop-color="#7c3aed" stop-opacity="0.22" />
+      <stop offset="100%" stop-color="#120933" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Vivid Aurora Ribbon Gradient -->
+    <linearGradient id="auroraGrad1" x1="0" y1="0" x2="1" y2="0.4">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0" />
+      <stop offset="28%" stop-color="#38bdf8" stop-opacity="0.42" />
+      <stop offset="58%" stop-color="#c084fc" stop-opacity="0.52" />
+      <stop offset="85%" stop-color="#fb7185" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#fde047" stop-opacity="0" />
+    </linearGradient>
+
+    <linearGradient id="auroraGrad2" x1="0.1" y1="0.2" x2="0.95" y2="0.8">
+      <stop offset="0%" stop-color="#a855f7" stop-opacity="0" />
+      <stop offset="40%" stop-color="#f472b6" stop-opacity="0.38" />
+      <stop offset="75%" stop-color="#fb923c" stop-opacity="0.34" />
+      <stop offset="100%" stop-color="#fef08a" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Studio Warmth -->
+    <radialGradient id="studioGlow" cx="0.78" cy="0.63" r="0.24">
+      <stop offset="0%" stop-color="#fde047" stop-opacity="0.65" />
+      <stop offset="45%" stop-color="#fb923c" stop-opacity="0.24" />
+      <stop offset="100%" stop-color="#120933" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Mountain Gradients -->
+    <linearGradient id="farMtnGrad" x1="0" y1="0" x2="1" y2="0.5">
+      <stop offset="0%" stop-color="#241757" />
+      <stop offset="50%" stop-color="#5b21b6" />
+      <stop offset="100%" stop-color="#be185d" />
+    </linearGradient>
+
+    <linearGradient id="sunlitPeakGrad" x1="0.1" y1="0.05" x2="0.9" y2="0.92">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="28%" stop-color="#fb923c" />
+      <stop offset="62%" stop-color="#db2777" />
+      <stop offset="100%" stop-color="#3b0764" />
+    </linearGradient>
+
+    <linearGradient id="sunlitShadowGrad" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#4c1d95" />
+      <stop offset="100%" stop-color="#190e3d" />
+    </linearGradient>
+
+    <linearGradient id="midRidgeGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#170f3b" />
+      <stop offset="50%" stop-color="#2e185e" />
+      <stop offset="100%" stop-color="#581c87" />
+    </linearGradient>
+
+    <linearGradient id="lakeGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#150f38" />
+      <stop offset="52%" stop-color="#3b1d6e" />
+      <stop offset="100%" stop-color="#831843" />
+    </linearGradient>
+
+    <linearGradient id="cloudWarm" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fef3c7" stop-opacity="0.92" />
+      <stop offset="55%" stop-color="#fb7185" stop-opacity="0.72" />
+      <stop offset="100%" stop-color="#7e22ce" stop-opacity="0.22" />
+    </linearGradient>
+
+    <linearGradient id="cloudCool" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c084fc" stop-opacity="0.52" />
+      <stop offset="100%" stop-color="#3b0764" stop-opacity="0.08" />
+    </linearGradient>
+
+    <linearGradient id="mistGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fb923c" stop-opacity="0.42" />
+      <stop offset="100%" stop-color="#2e1065" stop-opacity="0" />
+    </linearGradient>
+
+    <linearGradient id="windowGlass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fef9c3" />
+      <stop offset="55%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#ea580c" />
+    </linearGradient>
+
+    <filter id="softBlur" x="-15%" y="-15%" width="130%" height="130%">
+      <feGaussianBlur stdDeviation="10" />
+    </filter>
+    <filter id="auroraBlur" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="24" />
+    </filter>
+    <filter id="gentleGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" />
+    </filter>
+
+    <style>
+      @keyframes starPulse {
+        0%, 100% { opacity: 0.35; }
+        50% { opacity: 0.95; }
+      }
+      @keyframes auroraDrift {
+        0%, 100% { transform: translateX(0px) translateY(0px) scale(1); }
+        50% { transform: translateX(28px) translateY(-12px) scale(1.03); }
+      }
+      @keyframes gliderFloatA {
+        0%, 100% { transform: translate(880px, 212px) rotate(-14deg); }
+        50% { transform: translate(892px, 198px) rotate(-11deg); }
+      }
+      @keyframes gliderFloatB {
+        0%, 100% { transform: translate(715px, 182px) rotate(-8deg) scale(0.78); }
+        50% { transform: translate(728px, 192px) rotate(-5deg) scale(0.78); }
+      }
+      @keyframes gliderFloatC {
+        0%, 100% { transform: translate(1060px, 162px) rotate(-6deg) scale(0.68); }
+        50% { transform: translate(1048px, 152px) rotate(-9deg) scale(0.68); }
+      }
+      .svg-aurora { animation: auroraDrift 14s ease-in-out infinite; transform-origin: center; }
+      .svg-star-a { animation: starPulse 3.8s ease-in-out infinite; }
+      .svg-star-b { animation: starPulse 5.2s ease-in-out 1.4s infinite; }
+      .svg-glider-a { animation: gliderFloatA 7s ease-in-out infinite; }
+      .svg-glider-b { animation: gliderFloatB 8.5s ease-in-out infinite; }
+      .svg-glider-c { animation: gliderFloatC 6.8s ease-in-out infinite; }
+      @media (prefers-reduced-motion: reduce) {
+        .svg-aurora, .svg-star-a, .svg-star-b, .svg-glider-a, .svg-glider-b, .svg-glider-c {
+          animation: none !important;
+        }
+      }
+    </style>
+  </defs>
+
+  <!-- Base Sky & Radiant Sun Halo -->
+  <rect width="1600" height="900" fill="url(#skyGrad)" />
+  <rect width="1600" height="900" fill="url(#sunGlow)" />
+
+  <!-- Luminous Aurora Ribbons -->
+  <g class="svg-aurora" filter="url(#auroraBlur)">
+    <path d="M-80 260 Q280 120 640 215 Q980 305 1420 130 L1580 210 Q1050 385 620 295 Q240 215 -80 340 Z" fill="url(#auroraGrad1)" />
+    <path d="M120 165 Q540 65 920 185 Q1240 275 1620 155 L1620 250 Q1200 340 880 245 Q520 140 120 245 Z" fill="url(#auroraGrad2)" />
+  </g>
+
+  <!-- Twinkling Stars -->
+  <g fill="#ffffff">
+    <g class="svg-star-a">
+      <circle cx="110" cy="88" r="1.6" />
+      <circle cx="340" cy="64" r="1.8" />
+      <circle cx="610" cy="72" r="1.5" />
+      <circle cx="155" cy="215" r="1.3" />
+    </g>
+    <g class="svg-star-b">
+      <circle cx="220" cy="140" r="1.3" />
+      <circle cx="485" cy="118" r="1.4" />
+      <circle cx="410" cy="192" r="1.1" />
+      <circle cx="760" cy="95" r="1.4" />
+      <circle cx="940" cy="78" r="1.3" />
+    </g>
+  </g>
+
+  <!-- Soft Painterly Clouds -->
+  <g filter="url(#softBlur)">
+    <path d="M-40 340 Q120 275 260 325 Q390 265 540 320 Q680 285 820 345 L820 420 L-40 420 Z" fill="url(#cloudCool)" />
+    <path d="M740 310 Q890 215 1045 270 Q1185 180 1350 240 Q1490 190 1640 260 L1640 410 L740 410 Z" fill="url(#cloudWarm)" />
+    <ellipse cx="1320" cy="360" rx="240" ry="46" fill="#fef08a" opacity="0.58" />
+    <ellipse cx="990" cy="390" rx="190" ry="32" fill="#fb7185" opacity="0.42" />
+  </g>
+
+  <!-- Distant Mountain Range -->
+  <path d="M0 540 L180 430 L340 495 L540 390 L720 465 L930 375 L1120 460 L1320 365 L1600 455 L1600 720 L0 720 Z" fill="url(#farMtnGrad)" opacity="0.9" />
+
+  <!-- Sunlit Hero Peak -->
+  <path d="M620 620 L1085 265 L1390 470 L1600 400 L1600 740 L620 740 Z" fill="url(#sunlitShadowGrad)" />
+  <path d="M1085 265 L1390 470 L1245 555 L1115 445 L1035 510 L930 435 Z" fill="url(#sunlitPeakGrad)" />
+  <path d="M1085 265 L1185 370 L1095 405 L1045 350 Z" fill="#fef08a" opacity="0.78" />
+
+  <!-- Valley Atmospheric Mist -->
+  <rect x="0" y="470" width="1600" height="190" fill="url(#mistGrad)" filter="url(#softBlur)" />
+
+  <!-- Midground Forested Ridge -->
+  <path d="M0 570 Q240 505 490 575 Q740 625 990 545 Q1250 480 1600 540 L1600 790 L0 790 Z" fill="url(#midRidgeGrad)" />
+
+  <!-- Reflective Dawn Lake -->
+  <path d="M0 645 Q380 625 760 665 Q1020 695 1260 760 L1260 900 L0 900 Z" fill="url(#lakeGrad)" />
+  <g opacity="0.54">
+    <ellipse cx="470" cy="735" rx="250" ry="20" fill="#fb923c" filter="url(#softBlur)" />
+    <rect x="250" y="718" width="220" height="4.5" rx="2" fill="#fef08a" opacity="0.82" />
+    <rect x="330" y="742" width="155" height="3.5" rx="1.5" fill="#fb7185" opacity="0.75" />
+    <rect x="285" y="768" width="195" height="3.5" rx="1.5" fill="#c084fc" opacity="0.62" />
+    <rect x="360" y="795" width="115" height="2.5" rx="1.2" fill="#fde047" opacity="0.52" />
+  </g>
+  <path d="M295 795 L322 742 L356 768 L368 802 Z" fill="#130c2e" />
+  <path d="M510 835 L536 785 L574 812 L582 842 Z" fill="#160e36" />
+
+  <!-- Foreground Cliffside Promontory -->
+  <path d="M840 900 Q980 735 1175 685 Q1380 640 1600 665 L1600 900 Z" fill="#110b29" />
+  <path d="M975 745 Q1160 682 1365 660 Q1490 648 1600 665 L1600 715 Q1380 702 1175 735 Z" fill="#2c1957" opacity="0.88" />
+
+  <!-- Studio Ambient Warmth Halo -->
+  <circle cx="1265" cy="585" r="235" fill="url(#studioGlow)" filter="url(#gentleGlow)" />
+
+  <!-- Cliffside Collaborative Engineering Studio -->
+  <g transform="translate(1145, 505)">
+    <rect x="-12" y="136" width="242" height="10" rx="3" fill="#291b4a" />
+    <line x1="12" y1="146" x2="6" y2="185" stroke="#181033" stroke-width="6" />
+    <line x1="108" y1="146" x2="108" y2="180" stroke="#181033" stroke-width="6" />
+    <line x1="204" y1="146" x2="210" y2="178" stroke="#181033" stroke-width="6" />
+
+    <polygon points="8,44 128,8 228,36 228,136 8,136" fill="#1d133b" />
+    <polygon points="22,52 126,24 126,128 22,128" fill="url(#windowGlass)" opacity="0.96" />
+    <polygon points="136,24 214,46 214,128 136,128" fill="url(#windowGlass)" opacity="0.88" />
+
+    <line x1="74" y1="38" x2="74" y2="128" stroke="#291b4a" stroke-width="3.5" />
+    <line x1="175" y1="35" x2="175" y2="128" stroke="#291b4a" stroke-width="3.5" />
+    <line x1="22" y1="88" x2="214" y2="88" stroke="#291b4a" stroke-width="3" />
+
+    <rect x="40" y="106" width="72" height="6" rx="2" fill="#241740" />
+    <rect x="64" y="92" width="18" height="13" rx="2" fill="#3b2666" />
+    <circle cx="52" cy="86" r="7" fill="#21143b" />
+    <path d="M40 128 Q42 96 52 96 Q62 96 64 128 Z" fill="#21143b" />
+    <circle cx="100" cy="88" r="6.5" fill="#21143b" />
+    <path d="M89 128 Q91 98 100 98 Q109 98 111 128 Z" fill="#21143b" />
+
+    <polygon points="-10,46 128,0 242,35 232,45 128,13 -2,54" fill="#150d2e" />
+    <polygon points="128,0 242,35 238,39 128,6" fill="#fde047" opacity="0.78" />
+    <line x1="128" y1="0" x2="128" y2="-22" stroke="#fde047" stroke-width="2" opacity="0.9" />
+    <circle cx="128" cy="-24" r="3.5" fill="#fef08a" />
+  </g>
+
+  <!-- Animated Origami Paper Gliders -->
+  <g opacity="0.94">
+    <g class="svg-glider-a" transform="translate(880, 212) rotate(-14)">
+      <polygon points="0,12 44,0 14,21" fill="#fef9c3" />
+      <polygon points="14,21 44,0 25,26" fill="#fb923c" />
+    </g>
+    <g class="svg-glider-b" transform="translate(715, 182) rotate(-8) scale(0.78)">
+      <polygon points="0,12 44,0 14,21" fill="#f5d0fe" />
+      <polygon points="14,21 44,0 25,26" fill="#e879f9" />
+    </g>
+    <g class="svg-glider-c" transform="translate(1060, 162) rotate(-6) scale(0.68)">
+      <polygon points="0,12 44,0 14,21" fill="#fef08a" />
+      <polygon points="14,21 44,0 25,26" fill="#f43f5e" />
+    </g>
+    <g transform="translate(520, 210) rotate(-18) scale(0.6)">
+      <polygon points="0,12 44,0 14,21" fill="#bae6fd" />
+      <polygon points="14,21 44,0 25,26" fill="#38bdf8" />
+    </g>
+  </g>
+
+  <!-- Foreground Silhouette Grass -->
+  <g fill="#0c0720">
+    <path d="M880 900 Q910 810 935 765 Q925 835 918 900 Z" />
+    <path d="M930 900 Q945 790 978 730 Q960 825 955 900 Z" />
+    <path d="M990 900 Q1025 785 1068 745 Q1038 830 1022 900 Z" />
+    <path d="M1070 900 Q1088 770 1122 720 Q1105 820 1100 900 Z" />
+    <path d="M1180 900 Q1200 795 1235 745 Q1218 825 1210 900 Z" />
+    <path d="M1280 900 Q1315 780 1358 725 Q1332 820 1320 900 Z" />
+    <path d="M1390 900 Q1415 770 1455 710 Q1435 820 1430 900 Z" />
+    <path d="M1480 900 Q1515 765 1565 718 Q1535 825 1525 900 Z" />
+    <path d="M0 900 Q45 840 90 865 Q140 890 200 900 Z" />
+  </g>
+</svg>

@@ -13,7 +13,7 @@ export default function Features() {
   const selectedWorkflow = WORKFLOWS.find(w => w.id === activeWorkflowId) || WORKFLOWS[5]
 
   return (
-    <MarketingLayout>
+    <MarketingLayout hideFooterCTA>
       <SEOHead 
         title="Features | Paper5"
         description="Explore Paper5 features: sprint tracking, single-owner task accountability, peer proof-of-work verification, live deadline alerts, and meeting documents."

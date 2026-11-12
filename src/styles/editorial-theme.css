@@ -1,0 +1,301 @@
+/* ==========================================================================
+   PAPER5 UNIFIED SWISS EDITORIAL DESIGN SYSTEM (ALL PAGES)
+   Preserves .landing-nav (icon navbar) and .hero-illustrated-editorial layout.
+   Applies cohesive warm-stone/obsidian surfaces, 1px hairlines, tabular
+   typography, and smooth motion across every marketing, auth & app page.
+   ========================================================================== */
+
+:root {
+  --p5-canvas: #ffffff;
+  --p5-surface: #fafaf9;
+  --p5-surface-elevated: #ffffff;
+  --p5-inset: #f4f4f2;
+  --p5-hairline: #e4e4e7;
+  --p5-hairline-strong: #d4d4d8;
+  --p5-ink: #09090b;
+  --p5-ink-muted: #52525b;
+  --p5-ink-subtle: #71717a;
+  --p5-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="dark"] {
+  --p5-canvas: #09090b;
+  --p5-surface: #111114;
+  --p5-surface-elevated: #141418;
+  --p5-inset: #18181b;
+  --p5-hairline: #27272a;
+  --p5-hairline-strong: #3f3f46;
+  --p5-ink: #f4f4f5;
+  --p5-ink-muted: #a1a1aa;
+  --p5-ink-subtle: #71717a;
+}
+
+/* ── Global Editorial Motion ── */
+@keyframes p5PageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes p5HeroAmbientPulse {
+  0%, 100% {
+    opacity: 0.94;
+    filter: saturate(1) brightness(1);
+  }
+  50% {
+    opacity: 1;
+    filter: saturate(1.08) brightness(1.04);
+  }
+}
+
+/* Gentle living motion on the Hero background SVG without breaking background-attachment: fixed */
+.hero-illustrated-editorial .hero-editorial-bg-img {
+  animation: p5HeroAmbientPulse 16s ease-in-out infinite;
+  will-change: opacity, filter;
+}
+
+/* Smooth page transitions across marketing, auth & workspace views */
+main > section:not(.hero-illustrated-editorial),
+.features-container,
+.about-container,
+.integrations-showcase-container,
+.docs-layout-container,
+.contact-container,
+.legal-container,
+.wp-container,
+.auth-form-container,
+.dash-container {
+  animation: p5PageEnter 0.45s var(--p5-ease) both;
+}
+
+/* ── Shared Editorial Section Typography (excludes Hero & Navbar) ── */
+.landing-page .section-kicker,
+.features-hero .section-kicker,
+.about-hero .section-kicker,
+.integrations-hero .section-kicker,
+.docs-hero .section-kicker,
+.contact-hero .section-kicker {
+  font-family: var(--mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--p5-ink-subtle);
+}
+
+.landing-page .section-title,
+.features-hero h1,
+.about-hero h1,
+.integrations-hero h1,
+.docs-hero h1,
+.contact-hero h1,
+.legal-page h1,
+.wp-header h1,
+.dash-page-header h1 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--p5-ink);
+}
+
+/* ── Landing Sections Below Hero (Solution, Overview, Pricing, FAQ, Footer) ── */
+.solution-section,
+.overview-section,
+.workflow-section,
+.pricing-section,
+.faq-section {
+  background: var(--p5-canvas);
+  border-top: 1px solid var(--p5-hairline);
+}
+
+.overview-section,
+.faq-section {
+  background: var(--p5-surface);
+}
+
+.bento-tile,
+.preview-window,
+.pricing-card,
+.faq-item,
+.capability-card,
+.audience-card {
+  background: var(--p5-surface-elevated);
+  border: 1px solid var(--p5-hairline);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: transform 0.28s var(--p5-ease), border-color 0.22s ease, box-shadow 0.28s var(--p5-ease);
+}
+
+.bento-tile:hover,
+.pricing-card:hover,
+.capability-card:hover,
+.audience-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--p5-hairline-strong);
+  box-shadow: 0 14px 30px -14px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .bento-tile:hover,
+[data-theme="dark"] .pricing-card:hover,
+[data-theme="dark"] .capability-card:hover,
+[data-theme="dark"] .audience-card:hover {
+  box-shadow: 0 16px 32px -14px rgba(0, 0, 0, 0.55);
+}
+
+.pricing-card.featured {
+  border-color: var(--p5-ink);
+  box-shadow: 0 12px 28px -12px rgba(0, 0, 0, 0.12);
+}
+
+.pricing-price,
+.metric-value,
+.stat-number {
+  font-variant-numeric: tabular-nums;
+}
+
+.preview-tab-btn {
+  border-radius: 8px;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.18s var(--p5-ease);
+}
+
+.preview-tab-btn:hover {
+  transform: translateY(-1px);
+}
+
+/* ── Marketing Subpages (Features, About, Integrations, Docs, Contact, Legal) ── */
+.features-hero,
+.about-hero,
+.integrations-hero,
+.docs-hero,
+.contact-hero {
+  background: var(--p5-surface);
+  border-bottom: 1px solid var(--p5-hairline);
+}
+
+.features-page,
+.about-page,
+.integrations-page,
+.docs-page-wrap,
+.contact-page,
+.legal-page,
+.marketing-content-page {
+  background: var(--p5-canvas);
+  color: var(--p5-ink);
+}
+
+.metric-card,
+.pillar-card,
+.showcase-card,
+.step-card,
+.contact-card,
+.contact-info-card,
+.docs-article-section,
+.legal-card,
+.feature-linear-card {
+  background: var(--p5-surface-elevated);
+  border: 1px solid var(--p5-hairline);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: transform 0.26s var(--p5-ease), border-color 0.22s ease, box-shadow 0.26s var(--p5-ease);
+}
+
+.metric-card:hover,
+.pillar-card:hover,
+.showcase-card:hover,
+.step-card:hover,
+.feature-linear-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--p5-hairline-strong);
+  box-shadow: 0 12px 26px -12px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Auth & Workspace Picker Pages ── */
+.auth-page,
+.auth-container,
+.workspace-picker-page {
+  background: var(--p5-surface);
+  color: var(--p5-ink);
+}
+
+.auth-form-container,
+.wp-card,
+.wp-modal-card,
+.workflow-card-option {
+  background: var(--p5-surface-elevated);
+  border: 1px solid var(--p5-hairline);
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  transition: transform 0.24s var(--p5-ease), border-color 0.2s ease, box-shadow 0.24s var(--p5-ease);
+}
+
+.wp-card:hover,
+.workflow-card-option:hover:not(.locked) {
+  transform: translateY(-2px);
+  border-color: var(--p5-hairline-strong);
+  box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.1);
+}
+
+/* ── Workspace App Pages (Dashboard, MyDashboard, Analytics, Meeting, Settings, Profile, Integrations) ── */
+.dash-container,
+.my-dashboard-page,
+.analytics-page,
+.settings-page,
+.profile-page,
+.meeting-page,
+.integrations-settings-page {
+  background: var(--p5-canvas);
+  color: var(--p5-ink);
+}
+
+.dash-surface-card,
+.dash-chart-panel,
+.analytics-card,
+.settings-card,
+.profile-card,
+.meeting-card,
+.integration-config-card {
+  background: var(--p5-surface-elevated);
+  border: 1px solid var(--p5-hairline);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.025);
+  transition: transform 0.24s var(--p5-ease), border-color 0.2s ease, box-shadow 0.24s var(--p5-ease);
+}
+
+.dash-surface-card:hover,
+.integration-config-card:hover {
+  border-color: var(--p5-hairline-strong);
+}
+
+/* ── Crisp Form Inputs Across All Pages ── */
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select {
+  border-radius: 8px;
+  border-color: var(--p5-hairline);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):focus,
+textarea:focus,
+select:focus {
+  border-color: var(--p5-ink);
+  box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.08);
+  outline: none;
+}
+
+[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):focus,
+[data-theme="dark"] textarea:focus,
+[data-theme="dark"] select:focus {
+  border-color: #e4e4e7;
+  box-shadow: 0 0 0 3px rgba(244, 244, 245, 0.1);
+}
+
+/* ── Marketing Footer Refinement ── */
+.marketing-footer {
+  background: var(--p5-surface);
+  border-top: 1px solid var(--p5-hairline);
+}

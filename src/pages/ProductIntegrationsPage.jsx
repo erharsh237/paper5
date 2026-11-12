@@ -20,7 +20,7 @@ export default function ProductIntegrationsPage() {
   }
 
   return (
-    <MarketingLayout>
+    <MarketingLayout hideFooterCTA>
       <SEOHead 
         title="Stack Integrations & API Webhook Studio | Paper5" 
         description="Connect GitHub, Vercel, Discord, Slack, Google Calendar, and 1-Click REST API webhooks natively with Paper5."

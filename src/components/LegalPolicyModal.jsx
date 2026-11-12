@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { X, ShieldCheck, FileText } from 'lucide-react'
 import termsMd from '../content/legal/terms.md?raw'
 import privacyMd from '../content/legal/privacy.md?raw'
@@ -167,7 +168,7 @@ export default function LegalPolicyModal({ isOpen, docId, onClose }) {
           }}
         >
           <div className="legal-content">
-            <ReactMarkdown>{doc.content}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{doc.content}</ReactMarkdown>
           </div>
         </div>
 

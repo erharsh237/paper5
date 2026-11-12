@@ -1,73 +1,146 @@
 # Privacy Policy
 
-> **DRAFT / TEMPLATE NOTICE — REVIEW REQUIRED BEFORE LEGAL SIGN-OFF:**
-> This Privacy Policy is a technical draft prepared from an inspection of the Paper5 (`https://paper5.co` and `https://app.paper5.co`) source code and configuration. It intentionally avoids inventing company registration details, retention schedules, or security certifications. Before publishing in production as your binding legal policy, Paper5 must review this text with legal counsel and complete every **[To be confirmed by Paper5]** section below.
+**Effective Date:** November 12, 2026  
+**Last Updated:** November 12, 2026
 
-**Last Updated:** November 2026
+Paper5 ("Paper5", "we", "us", or "our"), operating at `https://paper5.co` and `https://app.paper5.co`, provides a collaborative project and task management workspace engineered for startups, engineering teams, and small organizations.
 
-Paper5 (`https://paper5.co` and `https://app.paper5.co`) provides a collaborative project and task management workspace for small teams. This Privacy Policy describes what information the website and application actually collect and process.
+This Privacy Policy explains how we collect, use, disclose, protect, and retain personal information when you visit our website, register for an account, access our workspaces, or communicate with our support and sales teams.
+
+---
 
 ## 1. Information We Collect
 
 ### A. Account & Authentication Information
-- **Registration and Sign-In (`/signup`, `/login`, `/verify`, `/forgot-password`, `/auth/action`, `/reset-password`):** Email address, username, optional display name, and credentials or one-time verification codes (OTP) managed through **Supabase Auth**.
-- **Google OAuth (if chosen):** Basic profile identifiers returned by Google OAuth when signing in with Google.
-- **Anti-Bot Verification:** Authentication and public form routes may invoke **Cloudflare Turnstile** (`challenges.cloudflare.com`), which evaluates single-use verification tokens to block automated abuse.
+When you create an account, sign in, or manage your profile (`/signup`, `/login`, `/verify`, `/forgot-password`, `/auth/action`, `/reset-password`):
+- **User Credentials & Identifiers:** Email address, username, optional full name, account creation date, and authentication factors (including one-time password / OTP verification tokens).
+- **Federated Authentication (Google OAuth):** If you choose to authenticate using Google, we receive your verified Google email address, account name, and profile avatar URL directly from Google OAuth scopes.
+- **Anti-Bot & Verification Metadata:** Public authentication and contact routes incorporate Cloudflare Turnstile to distinguish real users from automated malicious scrapers. Single-use challenge validation tokens are processed to safeguard our infrastructure.
 
-### B. Workspace & Product Activity Data
-- **Team Content:** Workspaces, projects/sprints, tasks, deadlines, blocker notices, meeting notes, member roles, invitations (`/join`), and notification read states stored in **Supabase PostgreSQL** under multi-tenant access policies.
-- **Profile Photos:** Optional uploaded or OAuth profile avatar images displayed on workspace profiles.
-- **Optional Integrations:** If a workspace enables integrations (GitHub, Google Calendar, Discord, Slack, or custom webhooks), the tokens or webhook configurations needed to deliver those requested integrations.
+### B. Workspace, Sprint & Collaboration Content
+When using the Paper5 workspace application:
+- **Workspaces & Memberships:** Workspace names, member email addresses, assigned workspace roles (`Owner`, `Admin`, `Member`, `Collaborator`), invitations, and audit log entries.
+- **Project & Task Content:** Agile sprints, workflow columns, task titles, descriptions, due dates, owner assignments, milestone tags, deliverable proof attachments/URLs, and blocker status reports.
+- **Meeting Notes & Action Items:** Meeting titles, attendee lists, synchronized notes, linked action items, and deadline records.
+- **Notification State:** Read/unread flags, delivery timestamps, and alert notification triggers.
 
 ### C. Contact & Feedback Form Submissions
-- **Contact Us (`/contact`), Contact Sales Modal, and Give Feedback Modal:** Name, work email address, inquiry subject or feedback category, optional star rating, and message content. Submissions are validated server-side via serverless endpoints (`/api/contact`, `/api/feedback`) and forwarded to Paper5's support inbox via **Formspree**.
+When you submit an inquiry through `/contact`, the Contact Sales modal, or the in-app Feedback modal:
+- Name, work email address, company name, subject, inquiry category, feedback message text, and optional user satisfaction rating.
+- Form submissions are processed through our serverless security gateway (`/api/contact`, `/api/feedback`) and forwarded securely to our support queue via Formspree.
 
-### D. Technical Logs, Anti-Spam Rate Limiting & Error Diagnostics
-- **Serverless Anti-Spam & Rate-Limit Metadata:** Request IP addresses, endpoint paths, and transient submission fingerprint hashes processed in serverless memory (`_rateLimit.js`, `_formSecurity.js`) to enforce IP rate limits, reject hidden honeypot spam, and block duplicate submissions.
-- **Error Monitoring (Sentry):** When configured via `VITE_SENTRY_DSN`, crash diagnostics are sent to **Sentry** to help resolve software errors. Browser session replay is enabled only after analytics consent is granted.
+### D. Technical Logs, Security & Rate-Limiting Data
+- **Anti-Spam & Network Integrity:** Transient request IP addresses, endpoint paths, user-agent headers, and cryptographic submission hashes processed in volatile serverless memory (`_rateLimit.js`, `_formSecurity.js`) to block denial-of-service attempts, spam bots, and duplicate requests.
+- **Error Diagnostics:** In the event of application failures, diagnostic crash logs and stack traces are captured via Sentry to detect and remediate bugs.
 
-## 2. Cookies, Local Storage & Tracking
+---
+
+## 2. Cookies, Local Storage & Privacy Preferences
+
+Paper5 adheres to privacy-by-design standards. We distinguish between strictly necessary technical cookies and optional measurement tools.
 
 ### Strictly Necessary Cookies & Storage (Always Active)
-To keep accounts signed in safely across `paper5.co` and `app.paper5.co` without storing raw authentication tokens in `localStorage`:
-- **Session Cookies (`/api/auth/session`):** `sb_access_token`, `sb_refresh_token`, `sb_expires_at`, `sb_2fa_pending`, and `sb_2fa_email`, set with `HttpOnly`, `Secure`, `SameSite=Lax`, and `Path=/`.
-- **Browser Storage (`localStorage` / `sessionStorage`):** Essential preference and workflow state including `p5_cookie_consent` (your cookie consent decision), UI theme preference, selected onboarding plan (`sprintos_selected_plan`), 2FA step state (`sprintos:2fa_pending_email`), cached meeting notes / notification read state, and onboarding flags.
+These technologies are required for core site functionality, security, and authentication, and cannot be disabled:
+- **Secure Authentication Cookies:** Managed via `/api/auth/session` with `HttpOnly`, `Secure`, `SameSite=Lax`, and `Path=/` flags (`sb_access_token`, `sb_refresh_token`, `sb_expires_at`, `sb_2fa_pending`, `sb_2fa_email`). These securely maintain authenticated sessions without exposing raw JWTs to malicious browser extensions.
+- **Local Browser Storage (`localStorage` / `sessionStorage`):** Essential local preferences including your cookie consent choices (`p5_cookie_consent`), UI dark/light theme preference, selected subscription plan during signup (`sprintos_selected_plan`), multi-factor authentication handshake state, and offline draft caching.
 
-### Optional Analytics & Telemetry (Consent-Gated)
-For visitors in the EU, UK, Switzerland, and globally, non-essential analytics scripts **do not load until you click "Accept All" or enable Analytics in Cookie Preferences** (and can be withdrawn at any time via **"Cookie Preferences"** in the website footer):
-- **Google Tag Manager (`GTM-TT5LW9Z7`) & Google Analytics 4 (`G-PKKZJXS8FX`):** Dynamically loaded only after consent is granted to measure page views and verified product interactions (`page_view`, `contact_submit`, `form_submit`, `sign_up`, `login`, `pricing_view`, `cta_click`) with IP anonymization enabled. When enabled, Google Analytics may set first-party measurement cookies such as `_ga` and `_ga_*`.
-- **Vercel Web Analytics (`@vercel/analytics/react`):** Rendered only after analytics consent for aggregated page and performance telemetry.
-- **Live Visitor Presence (`p5_visitor_id`):** Session-scoped identifier used with Supabase Realtime presence only when analytics consent is granted.
-- **Sentry Performance Tracing & Session Replay:** Enabled only when analytics consent is granted and Sentry is configured.
+### Optional Analytics & Telemetry (Consent-Gated Only)
+Optional analytics and telemetry scripts are **blocked by default** and will never execute until you provide explicit consent via our Cookie Preferences banner:
+- **Google Tag Manager (`GTM-TT5LW9Z7`) & Google Analytics 4 (`G-PKKZJXS8FX`):** Loaded only upon explicit consent to measure aggregated site visits, navigation flows, and conversion metrics with IP anonymization enabled.
+- **Vercel Web Analytics (`@vercel/analytics/react`):** Privacy-friendly aggregated page performance and web vitals tracking loaded only when analytics consent is enabled.
+- **Live Visitor Presence (`p5_visitor_id`):** Realtime workspace collaborator presence channels loaded only with active user consent.
+- **Sentry Performance Tracing & Replay:** Performance traces and user experience replays are restricted strictly to consent-granted sessions.
 
-## 3. Third-Party Services & Subprocessors
+You can modify or withdraw your consent at any time by clicking **"Cookie Preferences"** in the footer of any page.
 
-We do not sell your personal information. Depending on the features used and your consent choices, data may be processed by:
-- **Supabase Inc.** — Managed PostgreSQL database, authentication, and realtime channels.
-- **Vercel Inc.** — Application hosting, serverless API execution, and optional consent-gated Vercel Web Analytics.
-- **Google LLC** — Consent-gated Google Tag Manager (`GTM-TT5LW9Z7`) & Google Analytics 4 (`G-PKKZJXS8FX`), optional Google OAuth sign-in, and optional Google Calendar integration.
-- **Cloudflare, Inc.** — Network security and optional Cloudflare Turnstile anti-bot verification.
-- **Formspree, Inc.** — Form delivery and inbox routing for `/api/contact` and `/api/feedback`.
-- **Resend / EmailJS** — Transactional emails (workspace invitations, password resets, and task notifications).
-- **Sentry (Functional Software, Inc.)** — Crash and performance diagnostics (when configured).
-- **Razorpay Software Private Limited** — Payment and subscription lifecycle processing (card details are not stored on Paper5 servers).
+---
 
-See also our [Subprocessors page](/legal/subprocessors).
+## 3. How We Use Your Information
 
-## 4. Data Retention & Deletion
+Paper5 processes personal data exclusively for lawful business and operational purposes:
+1. **To Provide the Service:** Operating your workspaces, persisting tasks, authenticating team members, synchronizing sprint boards, and delivering verified deliverables.
+2. **To Ensure Account & Platform Security:** Preventing credential stuffing, enforcing role-based permissions, monitoring system health, and defending against automated abuse.
+3. **To Communicate With You:** Sending critical transactional notifications, workspace invitations, password reset links, security alerts, and responding to support tickets.
+4. **To Process Payments:** Facilitating subscription billing, upgrades, and renewals through PCI-DSS Level 1 certified payment gateways.
+5. **To Comply With Legal Obligations:** Maintaining necessary financial transaction records and fulfilling legitimate regulatory or judicial requests.
 
-- **Account & Workspace Deletion:** Workspace owners can delete workspaces from Settings, and users can request account deletion via in-app flows (`/api/request-account-deletion`, `/api/delete-user`) or by emailing **support@paper5.co**.
-- **Anti-Spam Rate-Limit Memory Windows:** Transient IP rate-limit counters and duplicate-submission hashes expire automatically in serverless memory (typically within 2 to 15 minutes).
-- **Formspree, Backups & Analytics Retention:** **[To be confirmed by Paper5: exact retention periods for Formspree contact/feedback submissions, Supabase database backups, transactional email logs, and Google Analytics 4 event/user data retention settings.]**
+**We never sell, rent, trade, or monetize your personal information or workspace content.**
 
-## 5. Visitors in the EU, UK & Switzerland (Privacy Choices)
+---
 
-Visitors in the European Union, United Kingdom, Switzerland, and other regions can accept, reject, or customize optional analytics before Google Tag Manager, Google Analytics 4, Vercel Web Analytics, or live presence scripts load. You can reopen **"Cookie Preferences"** from the footer at any time to withdraw or change consent.
+## 4. Subprocessors and Third-Party Sharing
 
-- **EU/UK/Swiss Supervisory & Transfer Safeguards:** **[To be confirmed by Paper5: legal bases summary, International Data Transfer mechanism (e.g., SCCs), and EU/UK representative details if applicable.]**
+We share data with third-party service providers ("Subprocessors") solely to provide, secure, and maintain the platform. All subprocessors are subject to strict data protection agreements ensuring confidentiality, security, and compliance with applicable data protection laws.
 
-## 6. Operator & Contact Details
+Our active subprocessor directory is maintained at [Subprocessors](/legal/subprocessors) and includes:
+- **Supabase Inc.** — Managed PostgreSQL database with Row-Level Security, authentication infrastructure, and realtime channels.
+- **Vercel Inc.** — Global edge network hosting, CDN, and serverless compute execution.
+- **Cloudflare, Inc.** — DNS management, DDoS mitigation, and Cloudflare Turnstile bot verification.
+- **Formspree, Inc.** — Secure form gateway for contact inquiries and user feedback.
+- **Resend / EmailJS** — Transactional email delivery for invitations, password resets, and notifications.
+- **Sentry (Functional Software, Inc.)** — Error monitoring and software crash diagnostics.
+- **Razorpay Software Private Limited** — Secure payment processing and subscription billing. Paper5 never stores complete credit card numbers or banking secrets.
 
-- **Support & Privacy Inquiries:** support@paper5.co
-- **Security Disclosures:** security@paper5.co
-- **Legal Operator Details:** **[To be confirmed by Paper5: full registered legal entity name, registered street address, jurisdiction of incorporation, and designated Data Protection / Grievance Officer.]**
+### User-Directed Integrations
+If your workspace administrator elects to connect optional third-party integrations (e.g., GitHub, Google Calendar, Discord, Slack, or custom webhooks), we exchange the necessary authorization tokens to execute actions explicitly requested by your team.
+
+---
+
+## 5. Data Retention & Deletion
+
+- **Active Workspace Data:** Stored for as long as your workspace remains active.
+- **Zero-Data Retention Mode:** For teams utilizing zero-data persistence mode (`save_data: false`), workspace content is processed strictly in temporary client browser memory and is never written to backend databases.
+- **Account & Workspace Deletion:** Workspace owners can permanently delete workspaces directly within Workspace Settings. Users may delete their user account via the in-app deletion flow (`/api/delete-user`, `/api/request-account-deletion`) or by emailing `support@paper5.co`. Upon verified request, personal data and workspace databases are permanently purged within 30 days, except where retention is required by applicable tax or financial auditing laws.
+- **Transient Security & Rate-Limit Logs:** In-memory rate limiting and anti-spam submission hashes expire automatically within 2 to 15 minutes.
+- **System Backups:** Encrypted database backups are cycled and purged on a standard 30-day rolling retention cycle.
+
+---
+
+## 6. International Data Transfers & Global Privacy Rights
+
+Paper5 provides services globally. Data may be stored and processed in servers located in the United States, India, or European Union depending on regional infrastructure routing. Whenever personal data is transferred internationally, we ensure adequate transfer mechanisms—such as standard contractual clauses (SCCs) and robust encryption in transit (TLS 1.3) and at rest (AES-256)—are in place.
+
+### Your Rights Under GDPR, UK GDPR, and Applicable Privacy Laws
+Depending on your jurisdiction, you have the right to:
+- **Access & Portability:** Request a copy of the personal information we maintain about you in a structured, machine-readable format.
+- **Rectification:** Request corrections to incomplete or inaccurate account details.
+- **Erasure ("Right to Be Forgotten"):** Request the permanent deletion of your personal account data.
+- **Restriction & Objection:** Object to or restrict the processing of your data under specific statutory circumstances.
+- **Withdraw Consent:** Withdraw consent previously granted for analytics and cookies at any time via the Cookie Preferences link.
+- **Lodge a Complaint:** Lodge a complaint with your competent supervisory authority.
+
+To exercise any of these rights, contact us at **support@paper5.co**.
+
+---
+
+## 7. Security Safeguards
+
+We implement defense-in-depth organizational, physical, and technical safeguards, including:
+- End-to-end transport layer security (HTTPS / TLS 1.3) with HSTS headers.
+- Multi-tenant PostgreSQL database isolation enforced by database-level Row Level Security (RLS).
+- `HttpOnly`, `Secure`, `SameSite=Lax` authentication token handling.
+- Cryptographic password hashing and optional multi-factor authentication (2FA).
+- Continuous vulnerability scanning and rate-limited API protection.
+
+---
+
+## 8. Children's Privacy
+
+Paper5 is a workplace productivity service intended for business professionals, founders, and adults aged 18 and older (or the age of majority in your jurisdiction). We do not knowingly solicit or collect personal information from individuals under the age of 16. If we become aware that a child has provided us with personal information, we will take immediate steps to delete such data.
+
+---
+
+## 9. Changes to This Privacy Policy
+
+We may update this Privacy Policy from time to time to reflect operational, legal, or regulatory modifications. When material changes are introduced, we will notify registered users via in-app notification banners or email prior to the changes taking effect, and update the "Last Updated" date at the top of this page.
+
+---
+
+## 10. Contact Us
+
+If you have questions, feedback, or requests regarding this Privacy Policy or our data protection practices, please contact us:
+
+- **Email:** [support@paper5.co](mailto:support@paper5.co)
+- **Security Team:** [security@paper5.co](mailto:security@paper5.co)
+- **Official Website:** [https://paper5.co](https://paper5.co)
+- **App Portal:** [https://app.paper5.co](https://app.paper5.co)

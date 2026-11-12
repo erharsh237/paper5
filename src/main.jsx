@@ -14,6 +14,7 @@ import { hasAnalyticsConsent } from './lib/privacyPrefs.js'
 import * as Sentry from '@sentry/react'
 import './index.css'
 import './pages/Auth.css'
+import './styles/editorial-theme.css'
 
 // Server-side rendering export
 export function render(url = '/') {

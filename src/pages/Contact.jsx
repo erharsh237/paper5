@@ -96,7 +96,7 @@ export default function Contact() {
   }
 
   return (
-    <MarketingLayout>
+    <MarketingLayout hideFooterCTA>
       <SEOHead 
         title="Contact Us & Team Support | Paper5"
         description="Get in touch with Paper5. Reach out for sales inquiries, technical support, enterprise security disclosures, or product feedback."

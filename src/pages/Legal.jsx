@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import MarketingNav from '../components/MarketingNav'
 import MarketingFooter from '../components/MarketingFooter'
 import SEOHead from '../components/SEOHead'
@@ -81,7 +82,7 @@ export default function Legal({ defaultDocId }) {
         </aside>
 
         <article className="legal-content">
-          <ReactMarkdown>{doc.content}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{doc.content}</ReactMarkdown>
         </article>
       </main>
       

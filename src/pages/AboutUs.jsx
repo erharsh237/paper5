@@ -10,7 +10,7 @@ export default function AboutUs() {
   const navigate = useNavigate()
 
   return (
-    <MarketingLayout>
+    <MarketingLayout hideFooterCTA>
       <SEOHead 
         title="About Paper5 | Our Mission" 
         description="Learn about Paper5 and our mission to build a zero-friction project workspace where small engineering teams plan sprints and ship work with clarity."

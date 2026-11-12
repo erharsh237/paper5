@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'; import MarketingLayout from '../components/MarketingLayout'
+import { useLocation, Link } from 'react-router-dom'; import MarketingLayout from '../components/MarketingLayout'
 import SEOHead from '../components/SEOHead'
-import { Search, Terminal, BookOpen, Key, Layers, GitPullRequest, FileText, Check, Copy } from 'lucide-react'
+import { Search, Terminal, BookOpen, Key, Layers, GitPullRequest, FileText, Check, Copy, UserCheck, ShieldCheck, Lock } from 'lucide-react'
 import './DocsPage.css'
 
 export default function DocsPage() {
@@ -18,9 +18,11 @@ export default function DocsPage() {
   const sections = [
     { id: 'getting-started', title: 'Getting Started', group: 'Overview' },
     { id: 'agile-workflows', title: 'Agile Workflow Engine', group: 'Overview' },
+    { id: 'single-ownership', title: 'Single-Owner Accountability', group: 'Overview' },
     { id: 'integrations', title: 'Stack Webhooks & Integrations', group: 'Developer Guide' },
-    { id: 'api-reference', title: '1-Click REST API Reference', group: 'Developer Guide' },
-    { id: 'data-export', title: 'PDF Data Export & Compliance', group: 'Enterprise' }
+    { id: 'api-reference', title: 'REST API & Webhooks', group: 'Developer Guide' },
+    { id: 'data-export', title: 'Data Export & Compliance', group: 'Enterprise & Security' },
+    { id: 'security-compliance', title: 'Security, Subprocessors & Privacy', group: 'Enterprise & Security' }
   ]
 
   const filteredSections = sections.filter(s => 
@@ -29,7 +31,7 @@ export default function DocsPage() {
   )
 
   return (
-    <MarketingLayout>
+    <MarketingLayout hideFooterCTA>
       <SEOHead 
         title={isApiRoute ? "API Reference & Webhooks | Paper5" : "Documentation | Paper5"}
         description={isApiRoute ? "Developer reference for Paper5 REST API endpoints and 1-click webhooks to automate task updates, sprint milestones, and CI verification events." : "Official Paper5 documentation covering workspace setup, Kanban and Scrum workflows, single-owner task tracking, integrations, and full data export."}
@@ -93,9 +95,9 @@ export default function DocsPage() {
             </div>
 
             <div className="docs-sidebar-group">
-              <span className="docs-sidebar-title">Enterprise</span>
+              <span className="docs-sidebar-title">Enterprise & Security</span>
               <ul className="docs-sidebar-links">
-                {filteredSections.filter(s => s.group === 'Enterprise').map(s => (
+                {filteredSections.filter(s => s.group === 'Enterprise & Security').map(s => (
                   <li key={s.id}>
                     <a href={`#${s.id}`}
                       className={`docs-sidebar-link ${activeSection === s.id ? 'active' : ''}`}
@@ -193,6 +195,25 @@ export default function DocsPage() {
                     </tr>
                   </tbody>
                 </table>
+              </article>
+            )}
+
+            {/* Section 2.5: Single-Owner Accountability */}
+            {(activeSection === 'single-ownership' || searchQuery) && (
+              <article className="docs-article-section" id="single-ownership">
+                <h2 className="docs-article-title">
+                  <UserCheck size={24} color="#10b981" /> Single-Owner Task Accountability
+                </h2>
+                <p className="docs-article-text">
+                  In Paper5, every deliverable has exactly one accountable owner. By enforcing single ownership, teams eliminate vague "squad" assignments, prevent unassigned review bottlenecks, and ensure every milestone has an unambiguous champion.
+                </p>
+
+                <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '20px 0 10px 0' }}>Core Operating Rules</h3>
+                <ul style={{ paddingLeft: '20px', color: 'var(--text-secondary)', lineHeight: 1.7, fontSize: '14px' }}>
+                  <li><strong>One Owner Principle:</strong> Only one team member can be assigned as the primary deliverable owner at any time. Ownership handoffs are logged in the audit trail.</li>
+                  <li><strong>Proof of Verification:</strong> Before moving an item to Done, owners attach deliverables, commit links, staging URLs, or automated test checks.</li>
+                  <li><strong>1-Click Blocker Radar:</strong> If an engineer is blocked, a 1-click blocker alert immediately notifies workspace collaborators and displays on the team risk dashboard.</li>
+                </ul>
               </article>
             )}
 
@@ -345,6 +366,42 @@ export default function DocsPage() {
                   <li><strong>Meeting Notes & Agendas:</strong> Saved Google Calendar meeting notes and standup transcripts.</li>
                   <li><strong>Security Audit Trails:</strong> Tamper-proof log records containing actor IDs, modified resources, and timestamps.</li>
                 </ul>
+              </article>
+            )}
+
+            {/* Section 6: Security, Subprocessors & Privacy */}
+            {(activeSection === 'security-compliance' || searchQuery) && (
+              <article className="docs-article-section" id="security-compliance">
+                <h2 className="docs-article-title">
+                  <ShieldCheck size={24} color="#10b981" /> Security, Subprocessors & Privacy
+                </h2>
+                <p className="docs-article-text">
+                  Paper5 enforces enterprise-grade security standards across multi-tenant database isolation, session authentication, and third-party data processing.
+                </p>
+
+                <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '20px 0 10px 0' }}>Key Security Architectural Controls</h3>
+                <ul style={{ paddingLeft: '20px', color: 'var(--text-secondary)', lineHeight: 1.7, fontSize: '14px' }}>
+                  <li><strong>Row-Level Security (RLS):</strong> Every PostgreSQL query is cryptographically bound to workspace tenant boundaries. Members can never read or query records outside their authorized workspaces.</li>
+                  <li><strong>Hardened Session Cookies:</strong> Authentication tokens are stored strictly in <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code> cookies to prevent client-side script and XSS exfiltration.</li>
+                  <li><strong>Zero-Data Retention Mode:</strong> Workspaces handling highly sensitive intellectual property can toggle zero-data persistence (`save_data: false`) to keep data volatile strictly in browser memory.</li>
+                  <li><strong>Third-Party Vendor Diligence:</strong> All vendors processing customer data are vetted and bound by Data Processing Agreements (DPAs).</li>
+                </ul>
+
+                <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '24px 0 10px 0' }}>Legal & Compliance Links</h3>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '12px' }}>
+                  <Link to="/privacy" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border-hair)', background: 'var(--bg-inset)', fontSize: '13px', textDecoration: 'none', color: 'var(--text-primary)', fontWeight: 600 }}>
+                    <Lock size={14} />
+                    <span>Privacy Policy</span>
+                  </Link>
+                  <Link to="/legal/subprocessors" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border-hair)', background: 'var(--bg-inset)', fontSize: '13px', textDecoration: 'none', color: 'var(--text-primary)', fontWeight: 600 }}>
+                    <ShieldCheck size={14} />
+                    <span>Subprocessors Directory</span>
+                  </Link>
+                  <Link to="/legal/dpa" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border-hair)', background: 'var(--bg-inset)', fontSize: '13px', textDecoration: 'none', color: 'var(--text-primary)', fontWeight: 600 }}>
+                    <FileText size={14} />
+                    <span>Data Processing Agreement (DPA)</span>
+                  </Link>
+                </div>
               </article>
             )}
 

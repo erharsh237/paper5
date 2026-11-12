@@ -104,15 +104,10 @@ a, button, input, select, textarea, [role="button"] {
   animation: fadeInScale 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.15s backwards;
 }
 
-/* Motion Accessibility Guarantee */
+/* Motion Accessibility: allow user-requested animations while respecting smooth scroll */
 @media (prefers-reduced-motion: reduce) {
   html {
-    scroll-behavior: auto !important;
-  }
-  *, *::before, *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
+    scroll-behavior: auto;
   }
 }
 

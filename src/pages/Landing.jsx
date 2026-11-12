@@ -257,51 +257,54 @@ export default function Landing() {
 
       <main>
         {/* ════════════════════════════════════════════════════════════════
-            1. HERO SECTION (Section 2)
-            Headline, Subheadline, Primary/Secondary CTAs, Product Visual Hero
+            1. HERO SECTION (Illustrated Editorial Dawn)
+            Editorial Serif Headline, Pill CTAs, Custom Dawn Studio Scene & Milestone Dock
             ════════════════════════════════════════════════════════════════ */}
-        <AnimatedGridBackgroundSection>
-          <section className="hero-section" id="hero">
+        <section className="hero-section hero-illustrated-editorial" id="hero">
+          <div className="hero-editorial-bg-img" aria-hidden="true" />
+          <div className="hero-editorial-scrim" aria-hidden="true" />
+
+          <div className="hero-editorial-inner">
             <div className="hero-content">
-              {/* Main Headline with Text Reveal Stomp Animation */}
+              {/* Main Headline with Editorial Kinetic Reveal Animation */}
               <h1 
                 key={stompKey}
-                className={`hero-headline hero-stomp-headline ${stompTriggered ? 'is-active' : ''}`}
+                className={`hero-headline hero-stomp-headline hero-editorial-headline ${stompTriggered ? 'is-active' : ''}`}
                 aria-label="Your projects. Your people. Everything is in sync"
                 onClick={replayStomp}
-                title="Click to replay stomp animation"
+                title="Click to replay headline animation"
               >
                 <div className="hero-stomp-row">
                   <span className="stomp-phrase">
-                    <span className="stomp-word" style={{ '--delay': '200ms' }}>
+                    <span className="stomp-word" style={{ '--delay': '60ms' }}>
                       <span className="stomp-word-inner">Your</span>
                     </span>
-                    <span className="stomp-word" style={{ '--delay': '420ms' }}>
+                    <span className="stomp-word" style={{ '--delay': '140ms' }}>
                       <span className="stomp-word-inner">projects.</span>
                     </span>
                   </span>
                   <span className="stomp-phrase">
-                    <span className="stomp-word" style={{ '--delay': '800ms' }}>
+                    <span className="stomp-word" style={{ '--delay': '240ms' }}>
                       <span className="stomp-word-inner">Your</span>
                     </span>
-                    <span className="stomp-word" style={{ '--delay': '1020ms' }}>
+                    <span className="stomp-word" style={{ '--delay': '320ms' }}>
                       <span className="stomp-word-inner">people.</span>
                     </span>
                   </span>
                 </div>
                 <div className="hero-stomp-row stomp-highlight">
                   <span className="stomp-phrase">
-                    <span className="stomp-word" style={{ '--delay': '1440ms' }}>
+                    <span className="stomp-word" style={{ '--delay': '420ms' }}>
                       <span className="stomp-word-inner">Everything</span>
                     </span>
-                    <span className="stomp-word" style={{ '--delay': '1620ms' }}>
+                    <span className="stomp-word" style={{ '--delay': '490ms' }}>
                       <span className="stomp-word-inner">is</span>
                     </span>
-                    <span className="stomp-word" style={{ '--delay': '1760ms' }}>
+                    <span className="stomp-word" style={{ '--delay': '560ms' }}>
                       <span className="stomp-word-inner">in</span>
                     </span>
-                    <span className="stomp-word stomp-word-final" style={{ '--delay': '1940ms' }}>
-                      <span className="stomp-word-inner">sync</span>
+                    <span className="stomp-word stomp-word-final" style={{ '--delay': '640ms' }}>
+                      <span className="stomp-word-inner">sync.</span>
                     </span>
                   </span>
                 </div>
@@ -315,7 +318,7 @@ export default function Landing() {
               {/* CTA Action Group */}
               <div className="hero-cta-group">
                 <button 
-                  className="btn-primary btn-lg hero-btn-cta" 
+                  className="btn-primary btn-lg hero-btn-cta hero-pill-btn" 
                   onClick={() => handleGetStarted('team')}
                 >
                   <span>Get Started for Free</span>
@@ -324,9 +327,8 @@ export default function Landing() {
                 <a 
                   href="#overview"
                   onClick={(e) => scrollToSection(e, 'overview')}
-                  className="btn-ghost btn-lg hero-btn-explore"
+                  className="btn-ghost btn-lg hero-btn-explore hero-pill-btn"
                 >
-                  <Eye size={18} />
                   <span>Explore the Platform</span>
                 </a>
               </div>
@@ -340,8 +342,36 @@ export default function Landing() {
                 <span>Setup in under 2 minutes</span>
               </div>
             </div>
-          </section>
-        </AnimatedGridBackgroundSection>
+
+            {/* Frosted Glass Sprint Milestone Scrubber Dock */}
+            <div className="hero-editorial-dock" aria-label="Sprint progress snapshot">
+              <div className="editorial-dock-header">
+                <span className="editorial-dock-title">Sprint 14</span>
+                <span className="editorial-dock-sep">•</span>
+                <span className="editorial-dock-metric">72% Shipped</span>
+              </div>
+              <div className="editorial-dock-track" role="progressbar" aria-valuenow={72} aria-valuemin={0} aria-valuemax={100}>
+                <div className="editorial-dock-fill" style={{ width: '72%' }}>
+                  <span className="editorial-dock-thumb" />
+                </div>
+              </div>
+              <div className="editorial-dock-chips">
+                <span className="editorial-dock-chip">
+                  <CheckCircle2 size={13} />
+                  <span>Deliverables Verified</span>
+                </span>
+                <span className="editorial-dock-chip">
+                  <Users size={13} />
+                  <span>Single Owner Active</span>
+                </span>
+                <span className="editorial-dock-chip">
+                  <GitPullRequest size={13} />
+                  <span>GitHub Synced</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* ════════════════════════════════════════════════════════════════
             2. THE PROBLEM SECTION (Section 3)
