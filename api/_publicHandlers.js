@@ -324,7 +324,7 @@ export function handleNotFound(req, res) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>404 Page Not Found | Paper5</title>
+  <title>404 &mdash; Are you lost? | Paper5</title>
   <meta name="robots" content="noindex, nofollow" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
   <script>
@@ -340,144 +340,230 @@ export function handleNotFound(req, res) {
     })();
   </script>
   <style>
-    :root {
-      color-scheme: light;
-      --bg-void: #fafafa;
-      --bg-card: #ffffff;
-      --border-card: #e4e4f0;
-      --border-divider: #f4f4f5;
-      --text-primary: #09090b;
-      --text-secondary: #52525b;
-      --cta-bg: #09090b;
-      --cta-text: #ffffff;
-      --badge-text: #dc2626;
-      --badge-bg: #fef2f2;
-      --badge-border: #fecaca;
-      --card-shadow: 0 12px 32px rgba(0, 0, 0, 0.05);
-    }
-    html[data-theme="dark"] {
-      color-scheme: dark;
-      --bg-void: #09090b;
-      --bg-card: #18181b;
-      --border-card: #27272a;
-      --border-divider: #27272a;
-      --text-primary: #f4f4f5;
-      --text-secondary: #a1a1aa;
-      --cta-bg: #ffffff;
-      --cta-text: #09090b;
-      --badge-text: #f87171;
-      --badge-bg: rgba(239, 68, 68, 0.14);
-      --badge-border: rgba(239, 68, 68, 0.35);
-      --card-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
-    }
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      margin: 0;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      background: var(--bg-void);
-      color: var(--text-primary);
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-    .nf-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-card);
-      border-radius: 16px;
-      padding: 40px 36px;
-      max-width: 460px;
       width: 100%;
-      text-align: center;
-      box-shadow: var(--card-shadow);
-    }
-    .nf-brand {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 800;
-      font-size: 18px;
-      letter-spacing: -0.02em;
-      margin-bottom: 20px;
-      color: var(--text-primary);
-      text-decoration: none;
-    }
-    .nf-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--badge-text);
-      background: var(--badge-bg);
-      border: 1px solid var(--badge-border);
-      border-radius: 9999px;
-      padding: 4px 12px;
-      margin-bottom: 16px;
-    }
-    h1 {
-      font-size: 22px;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin: 0 0 8px;
-      line-height: 1.3;
-    }
-    p {
-      font-size: 14px;
-      color: var(--text-secondary);
-      line-height: 1.6;
-      margin: 0 0 24px;
-    }
-    .nf-cta {
-      display: inline-block;
-      background: var(--cta-bg);
-      color: var(--cta-text);
-      font-size: 13.5px;
-      font-weight: 600;
-      text-decoration: none;
-      padding: 10px 22px;
-      border-radius: 8px;
-    }
-    .nf-cta:hover { opacity: 0.88; }
-    .nf-links {
       display: flex;
-      flex-wrap: wrap;
+      align-items: center;
       justify-content: center;
-      gap: 16px;
-      margin-top: 20px;
-      padding-top: 16px;
-      border-top: 1px solid var(--border-divider);
+      background-color: #ffffff;
+      color: #09090b;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      padding: 40px 24px;
+      user-select: none;
     }
-    .nf-links a {
-      font-size: 13px;
+    html[data-theme="dark"] body {
+      background-color: #09090b;
+      color: #f4f4f5;
+    }
+    .lost-404-container {
+      width: 100%;
+      max-width: 1140px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: min(720px, 86vh);
+      position: relative;
+    }
+    .lost-404-topbar {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      width: 100%;
+      padding: 0 10px;
+    }
+    .lost-404-heading-left,
+    .lost-404-heading-right {
+      font-size: clamp(38px, 5.5vw, 68px);
+      font-weight: 700;
+      letter-spacing: -0.035em;
+      line-height: 1;
+      color: #09090b;
+    }
+    html[data-theme="dark"] .lost-404-heading-left,
+    html[data-theme="dark"] .lost-404-heading-right {
+      color: #ffffff;
+    }
+    .lost-404-stage {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      margin: 20px 0 10px 0;
+      gap: 20px;
+    }
+    .lost-digit {
+      font-size: clamp(140px, 26vw, 360px);
+      font-weight: 800;
+      line-height: 0.88;
+      letter-spacing: -0.06em;
+      color: #09090b;
+      flex: 1;
+      text-align: center;
+    }
+    html[data-theme="dark"] .lost-digit {
+      color: #f4f4f5;
+    }
+    .lost-digit-left {
+      text-align: right;
+      padding-right: clamp(10px, 2vw, 40px);
+    }
+    .lost-digit-right {
+      text-align: left;
+      padding-left: clamp(10px, 2vw, 40px);
+    }
+    .lost-center-icon-wrap {
+      flex-shrink: 0;
+      width: clamp(120px, 18vw, 240px);
+      height: clamp(130px, 20vw, 260px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .lost-center-svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.08));
+    }
+    html[data-theme="dark"] .lost-poly-outer { fill: #f4f4f5; }
+    html[data-theme="dark"] .lost-poly-inner { fill: #09090b; }
+    @keyframes dotPulseNotice {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.15); opacity: 0.85; }
+    }
+    .lost-focal-dot {
+      fill: #e11d48;
+      transform-origin: 136px 110px;
+      animation: dotPulseNotice 2.4s ease-in-out infinite;
+    }
+    .lost-404-bottom {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      width: 100%;
+      padding: 0 10px;
+      position: relative;
+    }
+    .lost-bracket {
+      font-size: clamp(48px, 6vw, 90px);
+      font-weight: 300;
+      color: #09090b;
+      line-height: 0.8;
+      user-select: none;
+    }
+    html[data-theme="dark"] .lost-bracket { color: #ffffff; }
+    .lost-action-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 14px;
+      margin-bottom: 8px;
+    }
+    .lost-desc {
+      font-size: clamp(13px, 1.1vw, 15px);
+      color: #52525b;
+      margin: 0;
       font-weight: 500;
-      color: var(--text-secondary);
-      text-decoration: none;
+      letter-spacing: -0.01em;
     }
-    .nf-links a:hover { color: var(--text-primary); text-decoration: underline; }
+    html[data-theme="dark"] .lost-desc { color: #a1a1aa; }
+    .lost-cta-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background-color: #e11d48;
+      color: #ffffff !important;
+      text-decoration: none;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 10px 22px;
+      border-radius: 9999px;
+      box-shadow: 0 8px 20px -4px rgba(225, 29, 72, 0.4);
+      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, box-shadow 0.22s ease;
+      cursor: pointer;
+    }
+    .lost-cta-btn:hover {
+      background-color: #be123c;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 26px -4px rgba(225, 29, 72, 0.55);
+    }
+    .lost-cta-plus {
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1;
+    }
+    @media (max-width: 640px) {
+      .lost-404-container { min-height: 520px; justify-content: space-around; }
+      .lost-digit-left { padding-right: 0; }
+      .lost-digit-right { padding-left: 0; }
+      .lost-bracket { font-size: 40px; }
+      .lost-action-center { gap: 12px; }
+    }
   </style>
 </head>
 <body>
-  <main class="nf-card">
-    <a href="/" class="nf-brand">
-      <img src="/logo.png" alt="" aria-hidden="true" width="26" height="26" />
-      <span>PAPER5</span>
-    </a>
-    <div><span class="nf-badge">404 &middot; Not Found</span></div>
-    <h1>This page missed its deadline.</h1>
-    <p>The page you are looking for does not exist or may have been moved.</p>
-    <a href="/" class="nf-cta">Back to Homepage &rarr;</a>
-    <nav class="nf-links" aria-label="Public navigation">
-      <a href="/features">Features</a>
-      <a href="/pricing">Pricing</a>
-      <a href="/docs">Documentation</a>
-      <a href="/contact">Contact</a>
-    </nav>
-  </main>
+  <div class="lost-404-container">
+    <div class="lost-404-topbar">
+      <span class="lost-404-heading-left">Are you</span>
+      <span class="lost-404-heading-right">lost?</span>
+    </div>
+
+    <div class="lost-404-stage">
+      <div class="lost-digit lost-digit-left">4</div>
+
+      <div class="lost-center-icon-wrap" role="img" aria-label="Geometric 404 block with locator dot">
+        <svg
+          class="lost-center-svg"
+          viewBox="0 0 200 220"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <path
+            d="M75 10 H145 V50 H175 V130 H155 V150 H175 V180 H145 V200 H75 V180 H45 V150 H20 V90 H45 V50 H75 V10 Z"
+            fill="#09090b"
+            class="lost-poly-outer"
+          />
+          <path
+            d="M75 42 H135 V85 H145 V145 H125 V168 H75 V145 H52 V85 H75 V42 Z"
+            fill="#ffffff"
+            class="lost-poly-inner"
+          />
+          <circle
+            cx="136"
+            cy="110"
+            r="18"
+            fill="#e11d48"
+            class="lost-focal-dot"
+          />
+        </svg>
+      </div>
+
+      <div class="lost-digit lost-digit-right">4</div>
+    </div>
+
+    <div class="lost-404-bottom">
+      <span class="lost-bracket lost-bracket-left">[</span>
+
+      <div class="lost-action-center">
+        <p class="lost-desc">The page you were looking for is not found.</p>
+        <a href="/" class="lost-cta-btn">
+          <span class="lost-cta-plus">+</span>
+          <span>GO BACK HOME</span>
+        </a>
+      </div>
+
+      <span class="lost-bracket lost-bracket-right">]</span>
+    </div>
+  </div>
 </body>
 </html>`)
 }
