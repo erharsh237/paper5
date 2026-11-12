@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
+import { hasAnalyticsConsent, subscribeConsent } from '../lib/privacyPrefs'
 
 function getOrCreateVisitorId() {
   if (typeof window === 'undefined') return 'server'
@@ -17,13 +18,27 @@ export function useLivePresenceTracker() {
   const location = useLocation()
   const { user } = useAuth()
   const channelRef = useRef(null)
-  const visitorIdRef = useRef(getOrCreateVisitorId())
+  const [consented, setConsented] = useState(() => hasAnalyticsConsent())
 
   useEffect(() => {
-    if (!supabase || typeof window === 'undefined') return
+    return subscribeConsent((state) => {
+      const next = Boolean(state?.analytics)
+      setConsented(next)
+      if (!next && channelRef.current && supabase) {
+        try {
+          channelRef.current.untrack()
+          supabase.removeChannel(channelRef.current)
+        } catch {}
+        channelRef.current = null
+      }
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!supabase || typeof window === 'undefined' || !consented) return
 
     let cancelled = false
-    const visitorId = visitorIdRef.current
+    const visitorId = getOrCreateVisitorId()
     const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent)
     const refHost = document.referrer ? (new URL(document.referrer, window.location.origin).hostname || 'Direct') : 'Direct'
 
@@ -70,7 +85,7 @@ export function useLivePresenceTracker() {
       cancelled = true
       clearTimeout(timer)
     }
-  }, [location.pathname, user?.id, user?.email])
+  }, [location.pathname, user?.id, user?.email, consented])
 
   useEffect(() => {
     const handleUnload = () => {

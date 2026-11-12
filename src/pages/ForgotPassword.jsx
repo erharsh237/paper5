@@ -6,7 +6,7 @@ import { InlineError } from '../components/states'
 import { validateEmail } from '../lib/validation'
 import logo from '../assets/logo.png'
 import Turnstile from '../components/Turnstile'
-import ThemeToggle from '../components/ThemeToggle'
+import ThemeToggle from '../components/ThemeToggle'; import SEOHead from '../components/SEOHead'
 import { getMainUrl } from '../lib/domain'
 
 export default function ForgotPassword() {
@@ -44,7 +44,7 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="auth-layout">
+    <div className="auth-layout"><SEOHead title="Reset Password | Paper5" description="Reset the password for your Paper5 account." noIndex />
       <a 
         href="https://paper5.co" 
         className="auth-back-to-website"
@@ -53,7 +53,7 @@ export default function ForgotPassword() {
           window.location.href = 'https://paper5.co'
         }}
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         Back to website
       </a>
 
@@ -67,7 +67,7 @@ export default function ForgotPassword() {
         <div className="auth-card glass-panel" style={{ padding: '40px 32px' }}>
           
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <img src={logo} alt="Paper5 Logo" style={{ height: '36px', width: 'auto', marginBottom: '16px' }} />
+            <img src={logo} alt="Paper5 logo" style={{ height: '36px', width: 'auto', marginBottom: '16px' }} />
             <h1 className="auth-title" style={{ fontSize: '24px', fontWeight: 700, margin: '0 0 8px 0' }}>
               Reset Password
             </h1>

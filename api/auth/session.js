@@ -1,7 +1,7 @@
 /**
  * Vercel Serverless Function: /api/auth/session
  *
- * Manages Supabase JWT session tokens as httpOnly, Secure, SameSite=Strict cookies.
+ * Manages Supabase JWT session tokens as httpOnly, Secure, SameSite=Lax cookies.
  * This keeps raw JWTs out of JavaScript-accessible localStorage, eliminating
  * the XSS → localStorage → token theft attack chain.
  *
@@ -13,8 +13,8 @@
  * Security properties of issued cookies:
  *   - HttpOnly:    Not accessible by JavaScript (prevents XSS token theft)
  *   - Secure:      Transmitted only over HTTPS
- *   - SameSite=Strict: Not sent on cross-site requests (prevents CSRF)
- *   - Path=/:      Scoped to the entire application
+ *   - SameSite=Lax: Protected across cross-site subrequests while preserving top-level domain redirects (.paper5.co)
+ *   - Path=/:      Scoped to the entire application (with Domain=.paper5.co in production)
  */
 
 import { checkRateLimit } from '../_rateLimit.js'

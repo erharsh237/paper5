@@ -2,13 +2,15 @@
 User-agent: *
 Allow: /
 
-# Private Auth, Onboarding & Workspace Selection Routes
+# Private Auth, Confirmation, Error & Workspace Routes
 Disallow: /auth/action
 Disallow: /force-password-reset
 Disallow: /reset-password
 Disallow: /verify
 Disallow: /workspace
 Disallow: /join
+Disallow: /thank-you
+Disallow: /error
 
 # XML Sitemap Location
 Sitemap: https://paper5.co/sitemap.xml

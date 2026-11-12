@@ -3,7 +3,12 @@ import MarketingContentPage from './MarketingContentPage'
 
 export function Changelog() {
   return (
-    <MarketingContentPage title="Changelog" lastUpdated="Oct 14, 2026">
+    <MarketingContentPage
+      title="Changelog"
+      canonicalPath="/changelog"
+      description="Track the latest Paper5 product updates, workspace improvements, agile workflow enhancements, and platform releases across engineering sprints."
+      lastUpdated="Oct 14, 2026"
+    >
       <h2>October 2026</h2>
       <ul>
         <li>Added new multi-column footer layout.</li>
@@ -21,7 +26,12 @@ export function Changelog() {
 
 export function Documentation() {
   return (
-    <MarketingContentPage title="Documentation" lastUpdated="Sep 01, 2026">
+    <MarketingContentPage
+      title="Documentation"
+      canonicalPath="/docs"
+      description="Browse official Paper5 setup guides, sprint workflows, task ownership rules, and workspace configuration documentation."
+      lastUpdated="Sep 01, 2026"
+    >
       <h2>Getting Started</h2>
       <p>Welcome to Paper5. To get started, create a workspace and invite your team. You can then connect your GitHub repository from the integrations tab.</p>
       <h2>Sprint Management</h2>
@@ -32,7 +42,12 @@ export function Documentation() {
 
 export function ApiReference() {
   return (
-    <MarketingContentPage title="API Reference" lastUpdated="Aug 15, 2026">
+    <MarketingContentPage
+      title="API Reference"
+      canonicalPath="/docs/api"
+      description="Explore Paper5 REST API authentication, workspace endpoints, and task creation webhooks for engineering workflow automation."
+      lastUpdated="Aug 15, 2026"
+    >
       <h2>Authentication</h2>
       <p>All API endpoints require a Bearer token. You can generate a personal access token from your profile settings.</p>
       <h3>GET /api/v1/workspaces</h3>
@@ -43,11 +58,14 @@ export function ApiReference() {
   )
 }
 
-
-
 export function Security() {
   return (
-    <MarketingContentPage title="Security & Data Protection" lastUpdated="Nov 02, 2026">
+    <MarketingContentPage
+      title="Security & Data Protection"
+      canonicalPath="/security"
+      description="Review how Paper5 protects workspace data with PostgreSQL row-level tenant isolation, TLS in transit, AES-256 encryption at rest, and optional 2FA."
+      lastUpdated="Nov 02, 2026"
+    >
       <h2>Built with Security & Privacy by Design</h2>
       <p>Security is fundamental to Paper5. We employ modern defensive engineering, tenant isolation, and strict encryption protocols to safeguard your team's workspace data.</p>
       <ul>
@@ -56,7 +74,6 @@ export function Security() {
         <li><strong>Cloud Infrastructure:</strong> Built on top of enterprise AWS cloud infrastructure via Supabase, with automatic failover, daily automated backups, and high availability.</li>
         <li><strong>Access Control & Authentication:</strong> Enforced email verification, cryptographically signed HTTP-only session tokens, and optional Two-Factor Authentication (2FA) via authenticator apps.</li>
         <li><strong>Full Data Portability:</strong> You maintain complete ownership of your team's project records with one-click full vector PDF reports and CSV data export.</li>
-
       </ul>
     </MarketingContentPage>
   )

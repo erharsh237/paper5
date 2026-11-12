@@ -7,6 +7,7 @@ import Turnstile from '../components/Turnstile'
 import OtpInput from '../components/OtpInput'
 import { triggerSpamNotice } from '../components/FloatingNotice'
 import ThemeToggle from '../components/ThemeToggle'
+import SEOHead from '../components/SEOHead'
 
 const maskEmail = (email) => {
   if (!email || !email.includes('@')) return email;
@@ -16,6 +17,7 @@ const maskEmail = (email) => {
 }
 
 import { getMainUrl } from '../lib/domain'
+import { trackEvent } from '../lib/metrics'
 import { validateRequestHeaders, checkAccountLockout, recordFailedAttempt, resetSecurityState, checkIpBlocked } from '../lib/security'
 
 export default function Login({ accessDenied, denialReason }) {
@@ -145,6 +147,7 @@ export default function Login({ accessDenied, denialReason }) {
       
       // If user is an invited member logging in with temporary password, navigate directly to ForcePasswordReset
       if (data?.isInviteDirectLogin || data?.requiresPasswordReset) {
+        trackEvent('login', { method: 'invite_temp_password' })
         setIsPending2FA(false)
         navigate('/workspace')
         return
@@ -213,6 +216,7 @@ export default function Login({ accessDenied, denialReason }) {
       
       // Verify OTP. This will fully authenticate the user and complete 2FA.
       await verifyOtp(verifiedEmail, otp)
+      trackEvent('login', { method: 'email_otp' })
       
       // Clear 2FA flag so App.jsx redirects to /workspace
       setIsPending2FA(false)
@@ -225,6 +229,7 @@ export default function Login({ accessDenied, denialReason }) {
 
   return (
     <div className="auth-layout">
+      <SEOHead title="Sign In | Paper5" description="Sign in to your Paper5 team workspace." noIndex />
       <a 
         href="https://paper5.co" 
         className="auth-back-to-website"
@@ -233,7 +238,7 @@ export default function Login({ accessDenied, denialReason }) {
           window.location.href = 'https://paper5.co'
         }}
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         Back to website
       </a>
 

@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useAuth } from '../lib/AuthContext'
 import { useSubmitRateLimit } from '../hooks/useSubmitRateLimit'
+import { trackEvent } from '../lib/metrics'
+import Turnstile from './Turnstile'
 import './FeedbackModal.css'
 
 export default function FeedbackModal({ isOpen, onClose }) {
@@ -10,17 +12,26 @@ export default function FeedbackModal({ isOpen, onClose }) {
   const [message, setMessage] = useState('')
   const [name, setName] = useState(user?.displayName || '')
   const [email, setEmail] = useState(user?.email || '')
+  const [website, setWebsite] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState(null)
+  const turnstileRef = useRef(null)
+  const hasTurnstileKey = Boolean(import.meta.env.VITE_TURNSTILE_SITE_KEY)
   const { isLockedOut, isHardLocked, cooldownRemaining, startCooldown } = useSubmitRateLimit(30, 5)
 
   if (!isOpen) return null
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (submitting) return
     if (!message.trim()) {
       setError('Please enter your feedback message.')
+      return
+    }
+    if (message.trim().length < 3) {
+      setError('Please enter at least 3 characters.')
       return
     }
 
@@ -28,31 +39,36 @@ export default function FeedbackModal({ isOpen, onClose }) {
     setSubmitting(true)
 
     try {
-      const response = await fetch('https://formspree.io/f/xwlekeea', {
+      const response = await fetch('/api/feedback', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
         body: JSON.stringify({
-          name: name || user?.displayName || 'Anonymous User',
-          email: email || user?.email || 'not-provided',
+          name: (name || user?.displayName || 'Anonymous User').trim(),
+          email: (email || user?.email || 'not-provided').trim(),
           category,
-          rating: `${rating} / 5 Stars`,
-          message,
+          rating,
+          message: message.trim(),
+          website,
+          turnstileToken,
           source: 'Paper5 Application Feedback'
         })
       })
 
+      const data = await response.json().catch(() => ({}))
       if (response.ok) {
         setSubmitted(true)
         setMessage('')
+        setWebsite('')
+        trackEvent('form_submit', { form_source: 'feedback_modal', category })
       } else {
-        const data = await response.json()
         throw new Error(data.error || 'Failed to submit feedback.')
       }
     } catch (err) {
       console.error('Feedback submit error:', err)
+      if (turnstileRef.current) turnstileRef.current.reset()
       setError(err?.message || 'Something went wrong. Please try again.')
     } finally {
       setSubmitting(false)
@@ -150,15 +166,29 @@ export default function FeedbackModal({ isOpen, onClose }) {
 
             <div className="form-group">
               <label className="feedback-label">Your Feedback / Feature Suggestion</label>
+              <div style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }} aria-hidden="true">
+                <input type="text" name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+              </div>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Tell us what you love or what we can fix..."
                 className="feedback-textarea"
                 rows={4}
+                minLength={3}
+                maxLength={3000}
                 required
               />
             </div>
+
+            {hasTurnstileKey && (
+              <Turnstile
+                ref={turnstileRef}
+                action="feedback"
+                onSuccess={(tok) => setTurnstileToken(tok)}
+                onExpire={() => setTurnstileToken('')}
+              />
+            )}
 
             <div className="feedback-actions">
               <button type="button" className="btn-ghost" onClick={handleResetAndClose}>

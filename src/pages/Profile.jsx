@@ -300,7 +300,7 @@ export default function Profile() {
             <div className="profile-header-content">
               <div className="profile-pic-wrap">
                 {profile?.photoURL ? (
-                  <img src={profile.photoURL} alt="Profile" className="profile-pic" decoding="async" />
+                  <img src={profile.photoURL} alt={name ? `Profile photo of ${name}` : 'User profile photo'} className="profile-pic" decoding="async" />
                 ) : (
                   <div className="profile-pic profile-pic--placeholder mono">
                     {(name || user?.email || '?')[0]?.toUpperCase()}

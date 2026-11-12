@@ -15,8 +15,8 @@ export default function Features() {
   return (
     <MarketingLayout>
       <SEOHead 
-        title="Features Suite & Capabilities | Paper5" 
-        description="Explore Paper5 features: sprint tracking, single-owner task accountability, proof of work, live deadline alerts, meeting docs, and GitHub integrations."
+        title="Features | Paper5"
+        description="Explore Paper5 features: sprint tracking, single-owner task accountability, peer proof-of-work verification, live deadline alerts, and meeting documents."
         canonicalUrl="https://paper5.co/features"
       />
 

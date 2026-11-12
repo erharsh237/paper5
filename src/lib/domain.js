@@ -6,12 +6,23 @@
 
 export const IS_PRODUCTION = import.meta.env.PROD
 
+export const isLocalHost = (hostname = '') => {
+  const host = String(hostname || '').toLowerCase()
+  return (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '::1' ||
+    host.endsWith('.localhost') ||
+    host.endsWith('.lvh.me')
+  )
+}
+
 export const getDomainConfig = () => {
   const hostname = window.location.hostname
-  const protocol = window.location.protocol
+  const protocol = isLocalHost(hostname) ? window.location.protocol : 'https:'
   const port = window.location.port ? `:${window.location.port}` : ''
 
-  // Detect if current request is on the app subdomain (app.paper5.com or app.localhost)
+  // Detect if current request is on the app subdomain (app.paper5.co or app.localhost)
   const isAppSubdomain = 
     hostname.startsWith('app.') || 
     hostname.includes('app.localhost') ||
@@ -22,10 +33,10 @@ export const getDomainConfig = () => {
   let appSiteUrl = import.meta.env.VITE_APP_SITE_URL
 
   if (!mainSiteUrl || !appSiteUrl) {
-    if (IS_PRODUCTION) {
+    if (IS_PRODUCTION && !isLocalHost(hostname)) {
       const rootDomain = hostname.replace(/^(app\.|www\.)+/, '') || 'paper5.co'
-      mainSiteUrl = `${protocol}//${rootDomain}`
-      appSiteUrl = `${protocol}//app.${rootDomain}`
+      mainSiteUrl = `https://${rootDomain}`
+      appSiteUrl = `https://app.${rootDomain}`
     } else {
       const cleanDevHost = hostname.replace(/^app\./, '')
       mainSiteUrl = `${protocol}//${cleanDevHost}${port}`

@@ -1,4 +1,5 @@
 export const title = "Paper5 | Connected Project Workspace for Small Teams"
 export const description = "Paper5 is the operating workspace for small teams and startups. Bring your team's projects, tasks, deadlines, documents and development in one place."
-export const ogImage = "https://paper5.co/dashboard-mockup.jpg"
+export const ogImage = "https://paper5.co/og-image.png"
+export const ogImageAlt = "Paper5 share banner reading Connected Project Workspace for Small Teams"
 export const canonicalUrl = "https://paper5.co/"

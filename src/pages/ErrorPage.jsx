@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { safeRedirect } from '../lib/safeRedirect'
-import logo from '../assets/logo.png'
+import SEOHead from '../components/SEOHead'
+import Paper5Logo from '../components/Paper5Logo'
 import './NotFound.css'
 
 export default function ErrorPage({ error, errorInfo, resetError }) {
@@ -34,9 +35,15 @@ export default function ErrorPage({ error, errorInfo, resetError }) {
 
   return (
     <div className="nf-wrap" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+      <SEOHead
+        title="Application Error | Paper5"
+        description="An unexpected error occurred while loading this Paper5 page."
+        noIndex
+      />
       <div className="nf-card glass-panel" style={{ maxWidth: '640px', width: '100%', textAlign: 'center', padding: '40px 32px' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '20px', fontWeight: 700, fontFamily: 'var(--mono)', color: 'var(--text-primary)', marginBottom: '20px' }}>
-          Paper5
+          <Paper5Logo size={26} decorative />
+          <span>Paper5</span>
         </div>
 
         <div className="nf-badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-critical, #ef4444)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
@@ -60,34 +67,36 @@ export default function ErrorPage({ error, errorInfo, resetError }) {
           </button>
         </div>
 
-        <div style={{ borderTop: '1px solid var(--border-subtle, rgba(255,255,255,0.08))', paddingTop: '20px', marginTop: '12px' }}>
-          <button 
-            onClick={() => setShowDetails(!showDetails)} 
-            className="btn-ghost btn-sm"
-            style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}
-          >
-            {showDetails ? '▲ Hide Developer Diagnostics' : '▼ View Developer Diagnostics'}
-          </button>
+        {import.meta.env.DEV && (
+          <div style={{ borderTop: '1px solid var(--border-subtle, rgba(255,255,255,0.08))', paddingTop: '20px', marginTop: '12px' }}>
+            <button 
+              onClick={() => setShowDetails(!showDetails)} 
+              className="btn-ghost btn-sm"
+              style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}
+            >
+              {showDetails ? '▲ Hide Developer Diagnostics' : '▼ View Developer Diagnostics'}
+            </button>
 
-          {showDetails && (
-            <div style={{ marginTop: '16px', textAlign: 'left', background: 'var(--bg-layer-2, #0d1117)', border: '1px solid var(--border, #30363d)', borderRadius: '8px', padding: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <span className="mono" style={{ fontSize: '12px', color: 'var(--accent-critical, #ef4444)' }}>
-                  {error?.name || 'Error'}: {error?.message || error?.toString()}
-                </span>
-                <button onClick={copyErrorDetails} className="btn-ghost btn-sm" style={{ padding: '2px 8px', fontSize: '11px' }}>
-                  {copied ? '✓ Copied' : 'Copy Diagnostics'}
-                </button>
+            {showDetails && (
+              <div style={{ marginTop: '16px', textAlign: 'left', background: 'var(--bg-layer-2, #0d1117)', border: '1px solid var(--border, #30363d)', borderRadius: '8px', padding: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <span className="mono" style={{ fontSize: '12px', color: 'var(--accent-critical, #ef4444)' }}>
+                    {error?.name || 'Error'}: {error?.message || error?.toString()}
+                  </span>
+                  <button onClick={copyErrorDetails} className="btn-ghost btn-sm" style={{ padding: '2px 8px', fontSize: '11px' }}>
+                    {copied ? '✓ Copied' : 'Copy Diagnostics'}
+                  </button>
+                </div>
+
+                {(errorInfo?.componentStack || error?.stack) && (
+                  <pre style={{ margin: 0, padding: '12px', background: 'rgba(0,0,0,0.4)', borderRadius: '6px', fontSize: '11px', color: 'var(--text-secondary)', overflowX: 'auto', maxHeight: '200px', fontFamily: 'var(--mono, monospace)', whiteSpace: 'pre-wrap' }}>
+                    {errorInfo?.componentStack || error?.stack}
+                  </pre>
+                )}
               </div>
-
-              {(errorInfo?.componentStack || error?.stack) && (
-                <pre style={{ margin: 0, padding: '12px', background: 'rgba(0,0,0,0.4)', borderRadius: '6px', fontSize: '11px', color: 'var(--text-secondary)', overflowX: 'auto', maxHeight: '200px', fontFamily: 'var(--mono, monospace)', whiteSpace: 'pre-wrap' }}>
-                  {errorInfo?.componentStack || error?.stack}
-                </pre>
-              )}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         <div className="nf-footnote mono" style={{ marginTop: '24px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
           Paper5 · Exception Handled Safely

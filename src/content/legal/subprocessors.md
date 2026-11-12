@@ -1,40 +1,47 @@
 # Subprocessors List
 
-**Last Updated:** August 2026
+**Last Updated:** November 2026
 
-To provide the SprintOS service, Paper5 engages the following third-party entities to process personal data on our behalf ("Subprocessors"). We require all Subprocessors to adhere to strict data protection and security standards.
+To operate Paper5 (`https://paper5.co` and `https://app.paper5.co`), Paper5 uses the following third-party service providers ("Subprocessors") based on integrations verified in the Paper5 codebase. **[To be confirmed by Paper5: contractual DPA effective dates and exact regional hosting selections configured in vendor dashboards.]**
 
-## Core Infrastructure & Hosting
+## Core Infrastructure, Auth & Security
 
 - **Supabase, Inc.**
-  - **Purpose:** Managed PostgreSQL database hosting, Row-Level Security (RLS) enforcement, Supabase Authentication, and Realtime web sockets.
-  - **Location:** United States / AWS Infrastructure.
+  - **Purpose:** Managed PostgreSQL database, Row-Level Security (RLS), user authentication, realtime channels, and edge functions.
+  - **Region:** **[To be confirmed by Paper5: configured Supabase project region]**
 
 - **Vercel Inc.**
-  - **Purpose:** Frontend application hosting, Global Edge CDN network, and Serverless API function execution.
-  - **Location:** Global Edge Network (Primary USA).
+  - **Purpose:** Static asset hosting, serverless API function execution (`/api/*`), and consent-gated Vercel Web Analytics.
+  - **Region:** Global Edge Network / Serverless deployment region
 
 - **Cloudflare, Inc.**
-  - **Purpose:** Non-invasive anti-bot challenge token validation (Cloudflare Turnstile), DDoS protection, and Web Application Firewall (WAF).
-  - **Location:** Global Edge Network.
+  - **Purpose:** Cloudflare Turnstile anti-bot verification on authentication and protected form flows.
+  - **Region:** Global Edge Network
 
-- **Google LLC (Google Cloud Platform & Firebase)**
-  - **Purpose:** Secondary authentication provider (Google OAuth) and cloud asset storage.
-  - **Location:** Global.
+## Communications, Forms & Error Monitoring
 
-## Payment Processing
+- **Formspree, Inc.**
+  - **Purpose:** Receiving and routing public contact and feedback submissions forwarded from `/api/contact` and `/api/feedback`.
+
+- **Resend / EmailJS**
+  - **Purpose:** Sending transactional emails (workspace invitations, password reset links, and deadline assignment alerts).
+
+- **Sentry (Functional Software, Inc.)**
+  - **Purpose:** Application error diagnostics (and consent-gated replay/tracing when `VITE_SENTRY_DSN` is configured).
+
+## Analytics (Consent-Gated)
+
+- **Google LLC (Google Analytics 4)**
+  - **Purpose:** Optional website usage analytics loaded only when `VITE_GA_MEASUREMENT_ID` is configured and the user grants analytics consent.
+
+## Billing & User-Connected Integrations
 
 - **Razorpay Software Private Limited**
-  - **Purpose:** Secure processing of subscription payments, INR/Global invoicing, and recurring billing webhook execution.
-  - **Location:** India / Global.
+  - **Purpose:** Subscription billing and cancellation webhook integration.
+- **User-Enabled Workspace Integrations (Optional):**
+  - **GitHub, Inc.** (repository / PR tracking when connected)
+  - **Google LLC** (Google OAuth / Google Calendar when connected)
+  - **Discord Inc. / Slack Technologies, LLC** (workspace webhook notifications when configured)
 
-## Optional Third-Party Integrations
-If a Workspace Owner or Member explicitly connects a third-party service, data may be processed by these entities according to their respective privacy policies:
-
-- **GitHub, Inc.** (If connected for PR/Commit tracking)
-- **Google LLC** (If Google Calendar is connected)
-- **Discord Inc.** (If webhook notifications are enabled)
-- **Slack Technologies, LLC** (If webhook notifications are enabled)
-
-## Updates to this List
-We may update this list as our business needs change. We will provide notice of any new Subprocessors by updating this page.
+## Updates to This List
+We update this page when subprocessors are added or removed. For questions, contact **support@paper5.co**.

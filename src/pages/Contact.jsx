@@ -1,17 +1,24 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import MarketingLayout from '../components/MarketingLayout'
 import SEOHead from '../components/SEOHead'
+import Turnstile from '../components/Turnstile'
 import { Mail, Clock, ShieldCheck, MessageSquare, Send, CheckCircle2, ArrowRight } from 'lucide-react'
 import { useSubmitRateLimit } from '../hooks/useSubmitRateLimit'
 import './Contact.css'
 
 export default function Contact() {
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     subject: 'General Inquiry',
-    message: ''
+    message: '',
+    website: ''
   })
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const turnstileRef = useRef(null)
+  const hasTurnstileKey = Boolean(import.meta.env.VITE_TURNSTILE_SITE_KEY)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState(null)
@@ -24,8 +31,13 @@ export default function Contact() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (submitting) return
     if (!formData.email.trim() || !formData.message.trim()) {
       setError('Please provide your email address and message.')
+      return
+    }
+    if (formData.message.trim().length < 5) {
+      setError('Please enter a message of at least 5 characters.')
       return
     }
 
@@ -38,30 +50,44 @@ export default function Contact() {
     setSubmitting(true)
 
     try {
-      const response = await fetch('https://formspree.io/f/mwvgzpwa', {
+      const response = await fetch('/api/contact', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
         body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
+          name: formData.name.trim(),
+          email: formData.email.trim(),
           subject: formData.subject,
-          message: formData.message,
+          message: formData.message.trim(),
+          website: formData.website,
+          turnstileToken,
           source: 'Paper5 Contact Page'
         })
       })
 
+      const data = await response.json().catch(() => ({}))
       if (response.ok) {
+        const submittedEmail = formData.email.trim()
+        const submittedSubject = formData.subject
         setSubmitted(true)
-        setFormData({ name: '', email: '', subject: 'General Inquiry', message: '' })
+        setFormData({ name: '', email: '', subject: 'General Inquiry', message: '', website: '' })
+        navigate('/thank-you', {
+          state: {
+            submitted: true,
+            submissionId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            source: 'contact_page',
+            subject: submittedSubject,
+            email: submittedEmail
+          }
+        })
       } else {
-        const data = await response.json()
         throw new Error(data.error || 'Failed to deliver message.')
       }
     } catch (err) {
       console.error('Contact submission error:', err)
+      if (turnstileRef.current) turnstileRef.current.reset()
       setError(err?.message || 'Something went wrong. You can also email us directly at support@paper5.co.')
     } finally {
       setSubmitting(false)
@@ -119,12 +145,26 @@ export default function Contact() {
                 <form onSubmit={handleSubmit}>
                   {error && <div className="contact-error">{error}</div>}
 
+                  <div style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }} aria-hidden="true">
+                    <label htmlFor="contact-website">Website</label>
+                    <input
+                      id="contact-website"
+                      name="website"
+                      type="text"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={formData.website}
+                      onChange={handleChange}
+                    />
+                  </div>
+
                   <div className="contact-form-group">
                     <label className="contact-label" htmlFor="contact-name">Your Name</label>
                     <input 
                       id="contact-name"
                       name="name"
                       type="text"
+                      maxLength={100}
                       className="contact-input"
                       placeholder="e.g. Alex Morgan"
                       value={formData.name}
@@ -139,6 +179,7 @@ export default function Contact() {
                       name="email"
                       type="email"
                       required
+                      maxLength={254}
                       className="contact-input"
                       placeholder="alex@company.com"
                       value={formData.email}
@@ -170,12 +211,23 @@ export default function Contact() {
                       id="contact-message"
                       name="message"
                       required
+                      minLength={5}
+                      maxLength={3000}
                       className="contact-textarea"
                       placeholder="Tell us what you need help with..."
                       value={formData.message}
                       onChange={handleChange}
                     ></textarea>
                   </div>
+
+                  {hasTurnstileKey && (
+                    <Turnstile
+                      ref={turnstileRef}
+                      action="contact"
+                      onSuccess={(tok) => setTurnstileToken(tok)}
+                      onExpire={() => setTurnstileToken('')}
+                    />
+                  )}
 
                   <button 
                     type="submit" 

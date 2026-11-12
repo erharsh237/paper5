@@ -1,14 +1,32 @@
 import { createClient } from '@supabase/supabase-js'
+import { setCorsHeaders } from './_cors.js'
+import { checkRateLimit } from './_rateLimit.js'
+import { isValidEmail, isHoneypotTriggered, verifyTurnstileToken } from './_formSecurity.js'
 
 export default async function handler(req, res) {
+  setCorsHeaders(req, res)
   res.setHeader('Content-Type', 'application/json')
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end()
+  }
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
+  if (checkRateLimit(req, res, { max: 5, windowMs: 900000 })) {
+    return
+  }
+  if (isHoneypotTriggered(req.body)) {
+    return res.status(400).json({ error: 'Submission rejected by spam protection.' })
+  }
+
+  const turnstileCheck = await verifyTurnstileToken(req, req.body?.turnstileToken)
+  if (!turnstileCheck.ok) {
+    return res.status(turnstileCheck.status || 400).json({ error: turnstileCheck.error })
+  }
 
   const { email } = req.body || {}
-  if (!email) {
-    return res.status(400).json({ error: 'Email parameter is required' })
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ error: 'Please provide a valid email address.' })
   }
 
   const cleanEmail = email.trim().toLowerCase()

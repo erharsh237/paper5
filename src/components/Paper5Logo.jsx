@@ -1,10 +1,11 @@
 import logoPng from '../assets/logo.png'
 
-export default function Paper5Logo({ size = 28, className = "", style = {} }) {
+export default function Paper5Logo({ size = 28, className = "", style = {}, decorative = false, alt = "Paper5" }) {
   return (
     <img 
       src={logoPng} 
-      alt="Paper5 Logo" 
+      alt={decorative ? "" : alt}
+      aria-hidden={decorative ? "true" : undefined}
       width={size} 
       height={size} 
       className={className}

@@ -1,11 +1,11 @@
-import React, { useState } from 'react'
-import MarketingLayout from '../components/MarketingLayout'
+import React, { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'; import MarketingLayout from '../components/MarketingLayout'
 import SEOHead from '../components/SEOHead'
 import { Search, Terminal, BookOpen, Key, Layers, GitPullRequest, FileText, Check, Copy } from 'lucide-react'
 import './DocsPage.css'
 
 export default function DocsPage() {
-  const [activeSection, setActiveSection] = useState('getting-started')
+  const location = useLocation(); const isApiRoute = location.pathname === '/docs/api'; const [activeSection, setActiveSection] = useState(isApiRoute ? 'api-reference' : 'getting-started'); useEffect(() => { setActiveSection(isApiRoute ? 'api-reference' : 'getting-started') }, [isApiRoute])
   const [searchQuery, setSearchQuery] = useState('')
   const [copiedId, setCopiedId] = useState(null)
 
@@ -31,9 +31,9 @@ export default function DocsPage() {
   return (
     <MarketingLayout>
       <SEOHead 
-        title="Developer Documentation & API Reference | Paper5" 
-        description="Comprehensive developer documentation for Paper5: sprint workflows, 1-Click REST API endpoints, GitHub webhooks, and PDF data export."
-        canonicalUrl="https://paper5.co/docs"
+        title={isApiRoute ? "API Reference & Webhooks | Paper5" : "Documentation | Paper5"}
+        description={isApiRoute ? "Developer reference for Paper5 REST API endpoints and 1-click webhooks to automate task updates, sprint milestones, and CI verification events." : "Official Paper5 documentation covering workspace setup, Kanban and Scrum workflows, single-owner task tracking, integrations, and full data export."}
+        canonicalUrl={isApiRoute ? "https://paper5.co/docs/api" : "https://paper5.co/docs"}
       />
 
       <div className="docs-page-wrap">
@@ -65,9 +65,9 @@ export default function DocsPage() {
               <ul className="docs-sidebar-links">
                 {filteredSections.filter(s => s.group === 'Overview').map(s => (
                   <li key={s.id}>
-                    <a 
+                    <a href={`#${s.id}`}
                       className={`docs-sidebar-link ${activeSection === s.id ? 'active' : ''}`}
-                      onClick={() => setActiveSection(s.id)}
+                      onClick={(e) => { e.preventDefault(); setActiveSection(s.id) }}
                     >
                       {s.title}
                     </a>
@@ -81,9 +81,9 @@ export default function DocsPage() {
               <ul className="docs-sidebar-links">
                 {filteredSections.filter(s => s.group === 'Developer Guide').map(s => (
                   <li key={s.id}>
-                    <a 
+                    <a href={`#${s.id}`}
                       className={`docs-sidebar-link ${activeSection === s.id ? 'active' : ''}`}
-                      onClick={() => setActiveSection(s.id)}
+                      onClick={(e) => { e.preventDefault(); setActiveSection(s.id) }}
                     >
                       {s.title}
                     </a>
@@ -97,9 +97,9 @@ export default function DocsPage() {
               <ul className="docs-sidebar-links">
                 {filteredSections.filter(s => s.group === 'Enterprise').map(s => (
                   <li key={s.id}>
-                    <a 
+                    <a href={`#${s.id}`}
                       className={`docs-sidebar-link ${activeSection === s.id ? 'active' : ''}`}
-                      onClick={() => setActiveSection(s.id)}
+                      onClick={(e) => { e.preventDefault(); setActiveSection(s.id) }}
                     >
                       {s.title}
                     </a>

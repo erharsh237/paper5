@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 // removed firebase imports
 import './Auth.css'
+import SEOHead from '../components/SEOHead'
 
 export default function JoinWorkspace() {
   const { user, logout } = useAuth()
@@ -52,6 +53,7 @@ export default function JoinWorkspace() {
 
   return (
     <div className="auth-layout">
+      <SEOHead title="Join Workspace | Paper5" description="Accept your team invitation to join a Paper5 workspace." noIndex />
       <div className="auth-showcase-bg" aria-hidden="true" />
       <div className="auth-form-side">
         <div className="auth-form-container glass-panel" style={{ textAlign: 'center' }}>

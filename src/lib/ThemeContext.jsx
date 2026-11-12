@@ -30,46 +30,36 @@ export const isAppArea = (pathname = '') => {
     '/workspace',
     '/verify',
     '/reset-password',
-    '/auth'
+    '/auth',
+    '/join'
   ]
   if (appRoutes.some(route => currentPath === route || currentPath.startsWith(route + '/'))) {
-    return true
-  }
-
-  // 3. Workspace subpages (e.g. /:workspaceId, /:workspaceId/workflow, /:workspaceId/team, etc.)
-  const marketingRoutes = [
-    '/',
-    '/pricing',
-    '/features',
-    '/about',
-    '/contact',
-    '/product-integrations',
-    '/changelog',
-    '/docs',
-    '/security',
-    '/terms',
-    '/privacy',
-    '/dpa',
-    '/subprocessors',
-    '/legal'
-  ]
-  const isMarketing = marketingRoutes.some(route => currentPath === route || currentPath.startsWith(route + '/'))
-  if (!isMarketing && currentPath !== '/') {
     return true
   }
 
   return false
 }
 
-/**
- * Returns saved theme for the specified context, always defaulting to 'light' (never forcing dark from OS).
- */
 export const getStoredTheme = (isApp) => {
   if (typeof window === 'undefined') return 'light'
   const key = isApp ? APP_THEME_KEY : MARKETING_THEME_KEY
   const saved = localStorage.getItem(key)
   if (saved === 'dark' || saved === 'light') return saved
   return 'light'
+}
+
+function syncThemeCookie(isApp, themeValue) {
+  if (typeof document === 'undefined') return
+  const cookieName = isApp ? 'p5_app_theme' : 'p5_marketing_theme'
+  const isHttps = typeof window !== 'undefined' && window.location?.protocol === 'https:'
+  const parts = [
+    `${cookieName}=${encodeURIComponent(themeValue)}`,
+    'Path=/',
+    'Max-Age=31536000',
+    'SameSite=Lax'
+  ]
+  if (isHttps) parts.push('Secure')
+  document.cookie = parts.join('; ')
 }
 
 const ThemeContext = createContext({
@@ -99,6 +89,7 @@ export function ThemeProvider({ children }) {
     setThemeState(contextTheme)
     document.documentElement.setAttribute('data-theme', contextTheme)
     document.body.setAttribute('data-theme', contextTheme)
+    syncThemeCookie(isApp, contextTheme)
   }, [isApp])
 
   // Apply theme attribute to DOM and save to context-specific storage key
@@ -107,6 +98,7 @@ export function ThemeProvider({ children }) {
     document.body.setAttribute('data-theme', theme)
     const key = isApp ? APP_THEME_KEY : MARKETING_THEME_KEY
     localStorage.setItem(key, theme)
+    syncThemeCookie(isApp, theme)
   }, [theme, isApp])
 
   const toggleTheme = () => {

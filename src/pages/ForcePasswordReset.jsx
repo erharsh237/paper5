@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 import { validatePassword } from '../lib/validation'
 import { safeRedirect } from '../lib/safeRedirect'
+import SEOHead from '../components/SEOHead'
 import './Auth.css'
 
 export default function ForcePasswordReset() {
@@ -175,6 +176,11 @@ export default function ForcePasswordReset() {
       background: 'var(--bg-layer-1, #f9fafb)',
       padding: '20px'
     }}>
+      <SEOHead
+        title="Set Password | Paper5"
+        description="Set a new password to finish activating your Paper5 workspace account."
+        noIndex
+      />
       <div style={{
         background: 'var(--bg-layer-2, #ffffff)',
         padding: '36px 32px',

@@ -165,7 +165,7 @@ export default function Analytics() {
       <nav className="dash-sticky-nav">
         <div className="dash-container dash-nav-inner">
           <Link to={`/${workspaceId}`} className="dash-nav-brand">
-            <Paper5Logo size={22} style={{ marginRight: '6px' }} />
+            <Paper5Logo size={22} style={{ marginRight: '6px' }} decorative />
             <span className="dash-logo-name">Paper5</span>
             <span className="dash-env-tag">{(workspace?.name || 'Workspace').toUpperCase()}</span>
           </Link>

@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { validatePassword } from '../lib/validation'
 import './Auth.css'
 import AlertModal from '../components/ui/AlertModal'
+import SEOHead from '../components/SEOHead'
 
 export default function AuthAction() {
   const [alertMessage, setAlertMessage] = useState(null)
@@ -180,6 +181,11 @@ export default function AuthAction() {
 
   return (
     <div className="auth-layout">
+      <SEOHead
+        title={type === 'recovery' || showPasswordForm ? 'Reset Your Password | Paper5' : 'Email Verification | Paper5'}
+        description="Complete your Paper5 account verification or password reset."
+        noIndex
+      />
       <div className="auth-showcase-bg" aria-hidden="true" />
       <div className="auth-form-side">
         <div className="auth-form-container glass-panel" style={{ textAlign: 'center', maxWidth: '440px', margin: '0 auto' }}>

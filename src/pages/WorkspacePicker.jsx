@@ -6,6 +6,7 @@ import { TEAM_SIZE_OPTIONS, WORKFLOWS, getRecommendedWorkflow, isWorkflowUnlocke
 import { supabase } from '../lib/supabase'
 import PricingModal from '../components/PricingModal'
 import ThemeToggle from '../components/ThemeToggle'
+import SEOHead from '../components/SEOHead'
 import './WorkspacePicker.css'
 
 export default function WorkspacePicker() {
@@ -126,6 +127,14 @@ export default function WorkspacePicker() {
     }
   }
 
+  const workspaceSeo = (
+    <SEOHead
+      title="Select Workspace | Paper5"
+      description="Choose or create a Paper5 workspace for your team."
+      noIndex
+    />
+  )
+
   if (loading) {
     return (
       <div className="workspace-picker-page">
@@ -135,6 +144,7 @@ export default function WorkspacePicker() {
           <div className="wp-orb wp-orb-3" />
           <div className="wp-grid" />
         </div>
+        {workspaceSeo}
         <div className="wp-container" style={{ textAlign: 'center' }}>
           <p style={{ color: '#666', fontSize: '15px' }}>Loading workspaces...</p>
         </div>
@@ -153,6 +163,7 @@ export default function WorkspacePicker() {
           <div className="wp-grid" />
         </div>
         
+        {workspaceSeo}
         <div className="wp-container" style={{ maxWidth: '520px', margin: '0 auto', textAlign: 'center', padding: '60px 24px' }}>
           <div style={{
             width: '64px',
@@ -236,6 +247,7 @@ export default function WorkspacePicker() {
         <div className="wp-grid" />
       </div>
       
+      {workspaceSeo}
       <div className="wp-container">
 
         <div className="wp-header">

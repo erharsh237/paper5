@@ -1,19 +1,30 @@
 import { Link } from 'react-router-dom'
-import { useNavigate } from 'react-router-dom'
 import { useMemo } from 'react'
-import logo from '../assets/logo.png'
+import Paper5Logo from './../components/Paper5Logo'
+import SEOHead from './../components/SEOHead'
+import { getDomainConfig, getMainUrl } from '../lib/domain'
 import './NotFound.css'
 
 const GRID = ['·', '·', '·', '·', 'not_started', 'hit', '·', '·', '·', 'not_started', '·', '·', '·', '·', '·', '·']
 
 export default function NotFound() {
   const cells = useMemo(() => GRID, [])
+  const { isAppSubdomain } = getDomainConfig()
+
+  const NavLinkItem = ({ to, children }) =>
+    isAppSubdomain ? <a href={getMainUrl(to)} className="nf-nav-link">{children}</a> : <Link to={to} className="nf-nav-link">{children}</Link>
 
   return (
     <div className="nf-wrap">
+      <SEOHead
+        title="Page Not Found | Paper5"
+        description="The requested Paper5 page could not be found. Return to the homepage or explore features, documentation, and support."
+        noIndex
+      />
       <div className="nf-card glass-panel">
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '20px', fontWeight: 700, fontFamily: 'var(--mono)', color: 'var(--text-primary)', marginBottom: '20px' }}>
-          Paper5
+          <Paper5Logo size={26} decorative />
+          <span>Paper5</span>
         </div>
 
         <div className="nf-badge">
@@ -23,8 +34,7 @@ export default function NotFound() {
 
         <h1 className="nf-title">This page missed its deadline.</h1>
         <p className="nf-sub">
-          Whatever you were looking for was never assigned to this URL.
-          Still "not started."
+          The page you are looking for does not exist or may have been moved.
         </p>
 
         <div className="nf-grid" role="img" aria-label="A 4 by 4 grid representing this missing page, mostly empty with one marked cell">
@@ -35,11 +45,24 @@ export default function NotFound() {
           ))}
         </div>
 
-        <Link to="/" className="nf-cta">
-          Back to the dashboard →
-        </Link>
+        {isAppSubdomain ? (
+          <a href={getMainUrl('/')} className="nf-cta">
+            Back to Paper5 Home →
+          </a>
+        ) : (
+          <Link to="/" className="nf-cta">
+            Back to Homepage →
+          </Link>
+        )}
 
-        <div className="nf-footnote mono">assigned by nobody · status: gone</div>
+        <nav className="nf-links" aria-label="Helpful navigation links">
+          <NavLinkItem to="/features">Features</NavLinkItem>
+          <NavLinkItem to="/pricing">Pricing</NavLinkItem>
+          <NavLinkItem to="/docs">Documentation</NavLinkItem>
+          <NavLinkItem to="/contact">Contact</NavLinkItem>
+        </nav>
+
+        <div className="nf-footnote mono">status: 404 · page not found</div>
       </div>
     </div>
   )

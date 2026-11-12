@@ -3,15 +3,16 @@ import MarketingLayout from '../components/MarketingLayout'
 import SEOHead from '../components/SEOHead'
 import './MarketingContentPage.css'
 
-export default function MarketingContentPage({ title, lastUpdated, children }) {
-  const slug = title ? title.toLowerCase().replace(/\s+/g, '-') : ''
-  const canonical = `https://paper5.com/${slug}`
+export default function MarketingContentPage({ title, description, canonicalPath, lastUpdated, children }) {
+  const slug = title ? title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : ''
+  const path = canonicalPath || `/${slug}`
+  const canonical = `https://paper5.co${path.startsWith('/') ? path : `/${path}`}`
 
   return (
     <MarketingLayout>
       <SEOHead 
         title={`${title} | Paper5`} 
-        description={`Read official ${title} for Paper5 project management and team accountability workspace.`}
+        description={description || `Read official ${title} updates for the Paper5 connected project management and team accountability workspace.`}
         canonicalUrl={canonical}
       />
       <div className="marketing-content-page">

@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { safeRedirect } from '../lib/safeRedirect'
+import { trackEvent } from '../lib/metrics'
 import { useAuth } from '../lib/AuthContext'
 import './Auth.css'
 import { InlineError, InlineSuccess } from '../components/states'
 import Turnstile from '../components/Turnstile'
 import OtpInput from '../components/OtpInput'
 import { triggerSpamNotice } from '../components/FloatingNotice'
-import ThemeToggle from '../components/ThemeToggle'
+import ThemeToggle from '../components/ThemeToggle'; import SEOHead from '../components/SEOHead'
 
 const maskEmail = (email) => {
   if (!email || !email.includes('@')) return email;
@@ -240,6 +241,7 @@ export default function Signup() {
       }
       
       await finalizeSignup(password, username)
+      trackEvent('sign_up', { method: 'email_otp' })
       setMessage('Account created successfully! Redirecting to onboarding...')
       setTimeout(() => {
         safeRedirect('/workspace')
@@ -257,7 +259,7 @@ export default function Signup() {
   }
 
   return (
-    <div className="auth-layout">
+    <div className="auth-layout"><SEOHead title="Create Account | Paper5" description="Create a free Paper5 workspace account for your team." noIndex />
       <a 
         href="https://paper5.co" 
         className="auth-back-to-website"
@@ -266,7 +268,7 @@ export default function Signup() {
           window.location.href = 'https://paper5.co'
         }}
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         Back to website
       </a>
 

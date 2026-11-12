@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- Main Marketing Pages (paper5.co) -->
+  <!-- Indexable Public Marketing & Documentation Pages (paper5.co) -->
   <url>
     <loc>https://paper5.co/</loc>
     <lastmod>2026-11-12</lastmod>
@@ -9,6 +9,12 @@
   </url>
   <url>
     <loc>https://paper5.co/features</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://paper5.co/pricing</loc>
     <lastmod>2026-11-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
@@ -56,13 +62,13 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://paper5.co/legal/terms</loc>
+    <loc>https://paper5.co/privacy</loc>
     <lastmod>2026-11-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://paper5.co/legal/privacy</loc>
+    <loc>https://paper5.co/legal/terms</loc>
     <lastmod>2026-11-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -75,26 +81,6 @@
   </url>
   <url>
     <loc>https://paper5.co/legal/subprocessors</loc>
-    <lastmod>2026-11-12</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-
-  <!-- Application Entry Points (app.paper5.co) -->
-  <url>
-    <loc>https://app.paper5.co/login</loc>
-    <lastmod>2026-11-12</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://app.paper5.co/signup</loc>
-    <lastmod>2026-11-12</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://app.paper5.co/forgot-password</loc>
     <lastmod>2026-11-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>

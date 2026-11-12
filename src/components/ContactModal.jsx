@@ -1,43 +1,64 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useSubmitRateLimit } from '../hooks/useSubmitRateLimit'
+import { trackEvent } from '../lib/metrics'
+import Turnstile from './Turnstile'
 
 export default function ContactModal({ isOpen, onClose }) {
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
+  const [website, setWebsite] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState(null)
+  const turnstileRef = useRef(null)
+  const hasTurnstileKey = Boolean(import.meta.env.VITE_TURNSTILE_SITE_KEY)
   const { isLockedOut, isHardLocked, cooldownRemaining, startCooldown } = useSubmitRateLimit(30, 5)
 
   if (!isOpen) return null
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (submitting) return
     if (!email.trim() || !message.trim()) return
+    if (message.trim().length < 5) {
+      setError('Please enter a message of at least 5 characters.')
+      return
+    }
 
     setError(null)
     setSubmitting(true)
 
     try {
-      const response = await fetch('https://formspree.io/f/mwvgzpwa', {
+      const response = await fetch('/api/contact', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify({ email, message, source: 'Paper5 Contact Sales' })
+        body: JSON.stringify({
+          email: email.trim(),
+          subject: 'Contact Sales',
+          message: message.trim(),
+          website,
+          turnstileToken,
+          source: 'Paper5 Contact Sales'
+        })
       })
 
+      const data = await response.json().catch(() => ({}))
       if (response.ok) {
         setSubmitted(true)
         setEmail('')
         setMessage('')
+        setWebsite('')
+        trackEvent('contact_submit', { form_source: 'contact_sales_modal', subject: 'Contact Sales' })
       } else {
-        const data = await response.json()
         throw new Error(data.error || 'Failed to send message.')
       }
     } catch (err) {
       console.error('Contact submit error:', err)
+      if (turnstileRef.current) turnstileRef.current.reset()
       setError(err?.message || 'Something went wrong. Please try again.')
     } finally {
       setSubmitting(false)
@@ -67,11 +88,15 @@ export default function ContactModal({ isOpen, onClose }) {
         ) : (
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {error && <div style={{ padding: '10px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', fontSize: '13px', color: '#dc2626' }}>{error}</div>}
+            <div style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }} aria-hidden="true">
+              <input type="text" name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+            </div>
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>Email</label>
               <input
                 type="email"
                 name="email"
+                maxLength={254}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -83,6 +108,8 @@ export default function ContactModal({ isOpen, onClose }) {
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>Message</label>
               <textarea
                 name="message"
+                minLength={5}
+                maxLength={3000}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 required
@@ -91,6 +118,14 @@ export default function ContactModal({ isOpen, onClose }) {
                 placeholder="How can we help you scale?"
               />
             </div>
+            {hasTurnstileKey && (
+              <Turnstile
+                ref={turnstileRef}
+                action="contact_sales"
+                onSuccess={(tok) => setTurnstileToken(tok)}
+                onExpire={() => setTurnstileToken('')}
+              />
+            )}
             <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
               <button type="button" className="btn-ghost" onClick={handleClose} style={{ flex: 1, justifyContent: 'center' }}>Cancel</button>
               {isHardLocked ? (

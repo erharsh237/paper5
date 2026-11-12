@@ -290,7 +290,7 @@ export default function OnboardingWizardModal() {
         {/* Header with Step Indicator */}
         <div style={{ marginBottom: '24px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-            <img src={logo} alt="Paper5 Logo" style={{ height: '32px', width: 'auto' }} />
+            <img src={logo} alt="" aria-hidden="true" style={{ height: '32px', width: 'auto' }} />
             <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', color: '#09090b' }}>
               Paper5 {wsName.trim() ? `| ${wsName.trim()}` : ''}
             </span>

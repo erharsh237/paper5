@@ -8,7 +8,9 @@ import { AuthProvider } from './lib/AuthContext.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import ConnectionStatus from './components/ConnectionStatus.jsx'
 import { safeRedirect } from './lib/safeRedirect.js'
+import { isLocalHost } from './lib/domain.js'
 import { isSafeUrl } from './utils/security.js'
+import { hasAnalyticsConsent } from './lib/privacyPrefs.js'
 import * as Sentry from '@sentry/react'
 import './index.css'
 import './pages/Auth.css'
@@ -44,8 +46,12 @@ export function render(url = '/') {
   return { html, fullHtml, title, description, ogImage }
 }
 
-// Router Security Guard: Enforce same-origin and reject absolute external URLs
+// Router Security Guard: Enforce same-origin, HTTPS in production, and reject unsafe external URLs
 if (typeof window !== 'undefined') {
+  if (import.meta.env.PROD && window.location.protocol === 'http:' && !isLocalHost(window.location.hostname)) {
+    window.location.replace(`https://${window.location.host}${window.location.pathname}${window.location.search}${window.location.hash}`)
+  }
+
   window.addEventListener('vite:preloadError', (event) => {
     event.preventDefault()
     window.location.reload()
@@ -80,15 +86,15 @@ if (typeof window !== 'undefined') {
   }
 
   if (import.meta.env.VITE_SENTRY_DSN) {
+    const analyticsAllowed = hasAnalyticsConsent()
     Sentry.init({
       dsn: import.meta.env.VITE_SENTRY_DSN,
-      integrations: [
-        Sentry.browserTracingIntegration(),
-        Sentry.replayIntegration(),
-      ],
-      tracesSampleRate: 1.0,
-      replaysSessionSampleRate: 0.1,
-      replaysOnErrorSampleRate: 1.0,
+      integrations: analyticsAllowed
+        ? [Sentry.browserTracingIntegration(), Sentry.replayIntegration()]
+        : [],
+      tracesSampleRate: analyticsAllowed ? 0.2 : 0,
+      replaysSessionSampleRate: analyticsAllowed ? 0.1 : 0,
+      replaysOnErrorSampleRate: analyticsAllowed ? 1.0 : 0,
     })
   }
 

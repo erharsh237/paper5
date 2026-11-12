@@ -1,5 +1,5 @@
 import { useScrollReveal } from '../hooks/useScrollReveal'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import MarketingNav from '../components/MarketingNav'
@@ -11,6 +11,7 @@ import ContactModal from '../components/ContactModal'
 import { encryptPlanParam } from '../lib/urlSecurity'
 import { getAppUrl } from '../lib/domain'
 import { safeRedirect } from '../lib/safeRedirect'
+import { trackEvent } from '../lib/metrics'
 import { 
   ArrowRight, 
   Check, 
@@ -125,8 +126,36 @@ export default function Landing() {
   const { user } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+  const pricingTrackedRef = useRef(false)
+
+  useEffect(() => {
+    if (pricingTrackedRef.current) return
+    const firePricingView = () => {
+      if (pricingTrackedRef.current) return
+      pricingTrackedRef.current = true
+      trackEvent('pricing_view', { path: location.pathname })
+    }
+    if (location.pathname === '/pricing' || location.hash === '#pricing') {
+      firePricingView()
+      return
+    }
+    const el = document.getElementById('pricing')
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          firePricingView()
+          observer.disconnect()
+        }
+      },
+      { threshold: 0.25 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [location.pathname, location.hash])
 
   const handleGetStarted = (planId = 'team') => {
+    trackEvent('cta_click', { cta_name: 'get_started', plan: planId })
     const encryptedToken = encryptPlanParam(planId)
     try {
       localStorage.setItem('sprintos_selected_plan', planId)
@@ -157,8 +186,6 @@ export default function Landing() {
   }
 
   useEffect(() => {
-    document.title = "Paper5 | Connected Project Workspace for Small Teams"
-
     if (location.pathname === '/pricing' || location.hash === '#pricing' || window.location.hash === '#pricing') {
       const timer = setTimeout(() => {
         const el = document.getElementById('pricing')
@@ -181,40 +208,50 @@ export default function Landing() {
   const faqs = [
     {
       question: "What is Paper5?",
-      answer: "Paper5 is a project management and team accountability platform designed specifically for small engineering teams and startups (typically 3–10 members). It combines agile sprint planning, single-owner task accountability, connected meeting notes, and native GitHub development sync into one clean, zero-friction workspace."
+      answer: "Paper5 is a project management and team accountability platform designed for small teams and startups. It brings agile task planning, single-owner deadlines, connected meeting notes, team analytics, and GitHub development sync together in one synchronized workspace."
     },
     {
       question: "Who should use Paper5?",
-      answer: "Paper5 is built for technical founders, engineering managers, and small cross-functional product teams. If your team is frustrated by bloated enterprise tools like Jira or scattered spreadsheets and wants a fast, opinionated system with crystal-clear ownership and live GitHub visibility, Paper5 is built for you."
+      answer: "Paper5 is built for small teams, technical founders, product builders, and startups that want clear task ownership and fast daily coordination without heavy enterprise setup or spreadsheet clutter."
     },
     {
-      question: "Is Paper5 suitable for small teams?",
-      answer: "Yes, small teams are our exact sweet spot. Traditional project management software assumes a dedicated full-time Scrum master or project manager. Paper5 is designed for teams of 3–10 members where every person is an active builder who needs clarity on who owns what without administrative busywork."
+      question: "How does Paper5 help small teams and startups?",
+      answer: "Small teams move fast without a full-time project administrator. Paper5 keeps every member aligned with one-owner task accountability, transparent due dates, 1-click blocker alerts, and automated sprint progress visibility."
     },
     {
-      question: "How does Paper5 improve accountability?",
-      answer: "Paper5 enforces single-owner accountability: every task has exactly one accountable owner, a transparent deadline, and verifiable deliverables. When a task is finished, peer proof-of-work verification ensures deliverables are reviewed and verified before marking items complete. If an engineer is stuck, 1-click blocker flagging routes urgent alerts so teammates can swarm immediately."
+      question: "What features are available?",
+      answer: "Paper5 includes agile Kanban and workflow boards, sprint and deadline management, single-owner task assignments with deliverable proof verification, live risk and velocity analytics, connected meeting notes, CSV and printable PDF exports, and optional GitHub, Discord, Slack, Google Calendar, and webhook integrations."
     },
     {
-      question: "Does Paper5 support GitHub?",
-      answer: "Yes! Paper5 features native GitHub integration. You can link repositories, attach pull requests directly to sprint deliverables, monitor continuous integration checks, and automatically close tasks when pull requests merge into main."
+      question: "How can I create a team and invite members?",
+      answer: "Sign up at app.paper5.co, verify your email with the 6-digit code, and follow the workspace onboarding wizard to create your team workspace. From Workspace Settings you can send direct email invitations or share a secure workspace join link so teammates can join as admins or collaborators."
     },
     {
-      question: "Can I invite my team?",
-      answer: "Yes. Workspace owners and admins can invite team members via direct email invitations or shareable secure workspace join links. Team members can join as admins or collaborators, and our Starter plan includes up to 3 seats completely free forever."
+      question: "How do I manage tasks and track deadlines?",
+      answer: "Create tasks from your workspace dashboard or workflow board, assign one accountable owner and deadline, track status changes across stages, flag blockers for teammates when stuck, and verify completed deliverables before closing items."
     },
     {
-      question: "How do I get started?",
-      answer: "Getting started takes under two minutes. Click 'Get Started for Free', create your account with email or OTP, name your workspace, pick your team size and preferred agile methodology (Kanban, Scrum, or Lean), and start organizing your work immediately. No credit card required."
+      question: "Does Paper5 integrate with GitHub?",
+      answer: "Yes. You can connect GitHub repositories, link pull requests to workspace tasks, monitor status updates, and streamline engineering handoffs inside your workspace integrations panel."
+    },
+    {
+      question: "How can I contact support?",
+      answer: "Reach our support team anytime through the Contact page at paper5.co/contact, via the in-app Give Feedback or Contact Sales forms, or by emailing support@paper5.co (and security@paper5.co for security disclosures). We typically respond within 12–24 business hours."
     }
   ]
+
+  const isPricingRoute = location.pathname === '/pricing'
 
   return (
     <div className="landing-page">
       <SEOHead 
-        title="Paper5 | Connected Project Workspace for Small Teams" 
-        description="Paper5 is the operating workspace for small teams and startups. Bring your team's projects, tasks, deadlines, documents and development in one place."
-        canonicalUrl="https://paper5.co"
+        title={isPricingRoute ? "Pricing | Paper5" : "Paper5 | Connected Project Workspace for Small Teams"} 
+        description={
+          isPricingRoute
+            ? "Compare Paper5 Starter, Team, and Scale plans. Start free with core sprint management, task ownership, and GitHub sync with no credit card required."
+            : "Paper5 is the operating workspace for small teams and startups. Bring your team's projects, tasks, deadlines, documents and development in one place."
+        }
+        canonicalUrl={isPricingRoute ? "https://paper5.co/pricing" : "https://paper5.co/"}
       />
       <MarketingNav />
 

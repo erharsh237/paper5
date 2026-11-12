@@ -137,7 +137,7 @@ export default function AccountTierModal() {
         {/* Header */}
         <div style={{ marginBottom: '24px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-            <img src={logo} alt="Paper5 Logo" style={{ height: '32px', width: 'auto' }} />
+            <img src={logo} alt="" aria-hidden="true" style={{ height: '32px', width: 'auto' }} />
             <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', color: '#09090b' }}>Paper5</span>
           </div>
           <h2 style={{ fontSize: '24px', fontWeight: 800, margin: '0 0 8px 0', letterSpacing: '-0.02em', color: '#09090b' }}>

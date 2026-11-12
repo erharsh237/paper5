@@ -12,8 +12,8 @@ export default function AboutUs() {
   return (
     <MarketingLayout>
       <SEOHead 
-        title="About Us & Company Mission | Paper5" 
-        description="Learn about Paper5 and our mission: the zero-friction project management and team accountability workspace for small teams and startups."
+        title="About Paper5 | Our Mission" 
+        description="Learn about Paper5 and our mission to build a zero-friction project workspace where small engineering teams plan sprints and ship work with clarity."
         canonicalUrl="https://paper5.co/about"
       />
 

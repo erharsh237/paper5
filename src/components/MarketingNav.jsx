@@ -6,7 +6,6 @@ import ContactModal from './ContactModal'
 import { ArrowRight, Menu, X, ChevronDown, User, LogOut } from 'lucide-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faHouse, faLayerGroup, faPlug, faTag, faBookOpen, faCircleInfo, faEnvelope, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
-import logo from '../assets/logo.png'
 import Paper5Logo from './Paper5Logo'
 import '../pages/Landing.css'
 import { getDomainConfig, getAppUrl, getMainUrl } from '../lib/domain'
@@ -110,14 +109,14 @@ export default function MarketingNav() {
           {/* Logo & Brand */}
           {isAppSubdomain ? (
             <a href={getMainUrl('/')} className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-              <Paper5Logo size={28} />
+              <Paper5Logo size={28} decorative />
               <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
                 PAPER5
               </span>
             </a>
           ) : (
             <Link to="/" onClick={handleHomeClick} className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-              <Paper5Logo size={28} />
+              <Paper5Logo size={28} decorative />
               <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
                 PAPER5
               </span>
@@ -128,16 +127,28 @@ export default function MarketingNav() {
           <div className="nav-links desktop-only">
             {navLinks.map((item) => (
               item.isAnchor ? (
-                <a
-                  key={item.label}
-                  href={isAppSubdomain ? getMainUrl(item.path) : item.path}
-                  onClick={(e) => handleAnchorClick(e, item.anchorId)}
-                  className={`nav-link-icon-wrap ${isLinkActive(item) ? "active" : ""}`}
-                  aria-label={item.label}
-                >
-                  <FontAwesomeIcon icon={item.icon} className="nav-fa-icon" />
-                  <span className="nav-tooltip" role="tooltip">{item.label}</span>
-                </a>
+                isAppSubdomain ? (
+                  <a
+                    key={item.label}
+                    href={getMainUrl('/pricing')}
+                    className={`nav-link-icon-wrap ${isLinkActive(item) ? "active" : ""}`}
+                    aria-label={item.label}
+                  >
+                    <FontAwesomeIcon icon={item.icon} className="nav-fa-icon" />
+                    <span className="nav-tooltip" role="tooltip">{item.label}</span>
+                  </a>
+                ) : (
+                  <Link
+                    key={item.label}
+                    to="/pricing"
+                    onClick={(e) => handleAnchorClick(e, item.anchorId)}
+                    className={`nav-link-icon-wrap ${isLinkActive(item) ? "active" : ""}`}
+                    aria-label={item.label}
+                  >
+                    <FontAwesomeIcon icon={item.icon} className="nav-fa-icon" />
+                    <span className="nav-tooltip" role="tooltip">{item.label}</span>
+                  </Link>
+                )
               ) : isAppSubdomain ? (
                 <a
                   key={item.label}
@@ -365,16 +376,26 @@ export default function MarketingNav() {
               </Link>
             )}
 
-            <a 
-              href={isAppSubdomain ? getMainUrl('/#pricing') : '/#pricing'} 
-              onClick={(e) => { 
-                if (!isAppSubdomain) handlePricingClick(e); 
-                setIsMobileMenuOpen(false); 
-              }} 
-              className={`mobile-drawer-link ${location.hash === '#pricing' ? 'active' : ''}`}
-            >
-              <span>Pricing</span>
-            </a>
+            {isAppSubdomain ? (
+              <a 
+                href={getMainUrl('/pricing')} 
+                onClick={() => setIsMobileMenuOpen(false)} 
+                className={`mobile-drawer-link ${location.pathname === '/pricing' || location.hash === '#pricing' ? 'active' : ''}`}
+              >
+                <span>Pricing</span>
+              </a>
+            ) : (
+              <Link 
+                to="/pricing" 
+                onClick={(e) => { 
+                  handlePricingClick(e); 
+                  setIsMobileMenuOpen(false); 
+                }} 
+                className={`mobile-drawer-link ${location.pathname === '/pricing' || location.hash === '#pricing' ? 'active' : ''}`}
+              >
+                <span>Pricing</span>
+              </Link>
+            )}
 
             {isAppSubdomain ? (
               <a 

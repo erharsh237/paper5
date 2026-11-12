@@ -2,7 +2,7 @@ import { ThemeProvider } from './lib/ThemeContext'
 import { useLenis } from './hooks/useLenis'
 import ScrollToTop from './components/ScrollToTop'
 import FloatingNotice from './components/FloatingNotice'
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './lib/AuthContext'
 import { WorkspaceProvider, useWorkspace } from './lib/WorkspaceContext'
@@ -50,6 +50,7 @@ const Settings = safeLazy(() => import('./pages/Settings'))
 const Legal = safeLazy(() => import('./pages/Legal'))
 const Privacy = safeLazy(() => import('./pages/Privacy'))
 const Contact = safeLazy(() => import('./pages/Contact'))
+const ThankYou = safeLazy(() => import('./pages/ThankYou'))
 const ForgotPassword = safeLazy(() => import('./pages/ForgotPassword'))
 
 // Marketing Pages
@@ -63,11 +64,21 @@ import NotFound from './pages/NotFound'
 import ErrorPage from './pages/ErrorPage'
 const LegalConsentModal = safeLazy(() => import('./components/LegalConsentModal'))
 const OnboardingWizardModal = safeLazy(() => import('./components/OnboardingWizardModal'))
-import { Analytics as VercelAnalytics } from '@vercel/analytics/react'
+const PrivacyNotice = lazy(() =>
+  import('./components/PrivacyNotice').catch(() => ({ default: () => null }))
+)
+const VercelAnalytics = lazy(() =>
+  import('@vercel/analytics/react')
+    .then((m) => ({ default: m.Analytics }))
+    .catch(() => ({ default: () => null }))
+)
 
 import { getDomainConfig, getAppUrl, getMainUrl } from './lib/domain'
 import { safeRedirect } from './lib/safeRedirect'
 import InitialPreloader from './components/InitialPreloader'
+import SEOHead from './components/SEOHead'
+import { hasAnalyticsConsent, subscribeConsent } from './lib/privacyPrefs'
+import { initGA4, trackPageView } from './lib/metrics'
 import { useLivePresenceTracker } from './hooks/useLivePresence'
 import { Cardio } from 'ldrs/react'
 import 'ldrs/react/Cardio.css'
@@ -137,8 +148,12 @@ function CrossDomainRedirect({ toApp = false, path = '' }) {
     ? getAppUrl(path || window.location.pathname + window.location.search) 
     : getMainUrl(path || window.location.pathname + window.location.search)
   
-  if (target.startsWith('http')) {
-    safeRedirect(target)
+  if (target.startsWith('https://')) {
+    window.location.replace(target)
+    return <PageLoading />
+  }
+  if (target.startsWith('http://') && (target.includes('localhost') || target.includes('127.0.0.1'))) {
+    window.location.replace(target)
     return <PageLoading />
   }
   return <Navigate to={target} replace />
@@ -231,7 +246,12 @@ function WorkspaceGuard({ children }) {
   }
 
   if (isLocked) return <LockedOverlay />
-  return children
+  return (
+    <>
+      <SEOHead title="Workspace | Paper5" description="Private team workspace on Paper5." noIndex />
+      {children}
+    </>
+  )
 }
 
 export default function App() {
@@ -239,7 +259,23 @@ export default function App() {
   useLenis()
   const location = useLocation()
   const { user, userData, loading, isPending2FA } = useAuth()
-  const { isAppSubdomain } = getDomainConfig()
+  const [analyticsConsent, setAnalyticsConsent] = useState(() => hasAnalyticsConsent())
+
+  useEffect(() => {
+    if (analyticsConsent) {
+      initGA4()
+      trackPageView(location.pathname, document.title)
+    }
+  }, [analyticsConsent, location.pathname])
+
+  useEffect(() => {
+    return subscribeConsent((state) => {
+      setAnalyticsConsent(Boolean(state?.analytics))
+    })
+  }, [])
+  const { isAppSubdomain, hostname } = getDomainConfig()
+  const isMarketingRootHost = hostname === 'paper5.co' || hostname === 'www.paper5.co'
+  const allowWorkspaceRoutes = isAppSubdomain || (!isMarketingRootHost && (Boolean(user) || hostname.endsWith('.vercel.app')))
 
   // Legal compliance documents and public marketing routes should NEVER be blocked by Auth loading
   const isLegalRoute = (
@@ -324,6 +360,7 @@ export default function App() {
           <Route path="/dpa" element={<Legal defaultDocId="dpa" />} />
           <Route path="/subprocessors" element={<Legal defaultDocId="subprocessors" />} />
           <Route path="/contact" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <Contact />} />
+          <Route path="/thank-you" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <ThankYou />} />
           <Route path="/about-us" element={<Navigate to="/about" replace />} />
           <Route path="/error" element={<ErrorPage />} />
 
@@ -337,28 +374,30 @@ export default function App() {
           <Route path="/docs/api" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <DocsPage />} />
           <Route path="/security" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <Security />} />
 
-          {/* Workspace paths */}
-          <Route path="/:workspaceId/*" element={
-            requireAuthAndVerification(
-              <WorkspaceProvider>
-                <WorkspaceGuard>
-                  <Suspense fallback={<WorkspaceSubpageLoader />}>
-                    <Routes>
-                      <Route path="" element={<MyDashboard />} />
-                      <Route path="workflow" element={<WorkflowPage />} />
-                      <Route path="team" element={<Dashboard />} />
-                      <Route path="meeting" element={<Meeting />} />
-                      <Route path="analytics" element={<Analytics />} />
-                      <Route path="integrations" element={<Integrations />} />
-                      <Route path="settings" element={<Settings />} />
-                      <Route path="profile" element={<Profile />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </Suspense>
-                </WorkspaceGuard>
-              </WorkspaceProvider>
-            )
-          } />
+          {/* Workspace paths (app subdomain, preview deploys, or authenticated local dev; unknown paths on paper5.co fall through to 404) */}
+          {allowWorkspaceRoutes && (
+            <Route path="/:workspaceId/*" element={
+              requireAuthAndVerification(
+                <WorkspaceProvider>
+                  <WorkspaceGuard>
+                    <Suspense fallback={<WorkspaceSubpageLoader />}>
+                      <Routes>
+                        <Route path="" element={<MyDashboard />} />
+                        <Route path="workflow" element={<WorkflowPage />} />
+                        <Route path="team" element={<Dashboard />} />
+                        <Route path="meeting" element={<Meeting />} />
+                        <Route path="analytics" element={<Analytics />} />
+                        <Route path="integrations" element={<Integrations />} />
+                        <Route path="settings" element={<Settings />} />
+                        <Route path="profile" element={<Profile />} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </Suspense>
+                  </WorkspaceGuard>
+                </WorkspaceProvider>
+              )
+            } />
+          )}
           
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -369,7 +408,14 @@ export default function App() {
           <OnboardingWizardModal />
         </Suspense>
       )}
-      <VercelAnalytics />
+      {analyticsConsent && (
+        <Suspense fallback={null}>
+          <VercelAnalytics />
+        </Suspense>
+      )}
+      <Suspense fallback={null}>
+        <PrivacyNotice />
+      </Suspense>
     </InitialPreloader>
     </ThemeProvider>
   )

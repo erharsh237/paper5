@@ -1,18 +1,16 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import ContactModal from './ContactModal'
 import FeedbackModal from './FeedbackModal'
-import logo from '../assets/logo.png'
 import Paper5Logo from './Paper5Logo'
 import '../pages/Landing.css'
 import { getDomainConfig, getAppUrl, getMainUrl } from '../lib/domain'
-import { safeRedirect } from '../lib/safeRedirect'
+import { openConsentPreferences } from '../lib/privacyPrefs'
 import { ArrowRight, MessageSquare } from 'lucide-react'
 
 export default function MarketingFooter({ hideCTA = false }) {
   const [isContactOpen, setIsContactOpen] = useState(false)
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
-  const navigate = useNavigate()
   const { isAppSubdomain } = getDomainConfig()
 
   const FooterLink = ({ to, children }) => {
@@ -59,12 +57,12 @@ export default function MarketingFooter({ hideCTA = false }) {
         <div className="footer-brand-col">
           {isAppSubdomain ? (
             <a href={getMainUrl('/')} className="landing-brand" style={{ display: 'flex', alignItems: 'center', marginBottom: '14px', textDecoration: 'none' }}>
-              <Paper5Logo size={30} style={{ marginRight: '10px' }} />
+              <Paper5Logo size={30} style={{ marginRight: '10px' }} decorative />
               <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>PAPER5</span>
             </a>
           ) : (
             <Link to="/" className="landing-brand" style={{ display: 'flex', alignItems: 'center', marginBottom: '14px', textDecoration: 'none' }}>
-              <Paper5Logo size={30} style={{ marginRight: '10px' }} />
+              <Paper5Logo size={30} style={{ marginRight: '10px' }} decorative />
               <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>PAPER5</span>
             </Link>
           )}
@@ -74,7 +72,7 @@ export default function MarketingFooter({ hideCTA = false }) {
           </p>
           <div className="footer-socials">
             <a href="https://x.com/paper5hq" target="_blank" rel="noreferrer" aria-label="X (formerly Twitter)">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
             </a>
           </div>
         </div>
@@ -83,7 +81,7 @@ export default function MarketingFooter({ hideCTA = false }) {
           <div className="footer-column">
             <h3>Product</h3>
             <FooterLink to="/features">Features</FooterLink>
-            <a href={isAppSubdomain ? getMainUrl('/#pricing') : '/#pricing'}>Pricing</a>
+            <FooterLink to="/pricing">Pricing</FooterLink>
             <FooterLink to="/product-integrations">Integrations</FooterLink>
             <FooterLink to="/changelog">Changelog</FooterLink>
           </div>
@@ -94,16 +92,17 @@ export default function MarketingFooter({ hideCTA = false }) {
           </div>
           <div className="footer-column">
             <h3>Company</h3>
-            <a href="/about">About</a>
-            <a href="/contact">Contact</a>
+            <FooterLink to="/about">About</FooterLink>
+            <FooterLink to="/contact">Contact</FooterLink>
             <button className="text-link-btn" onClick={() => setIsFeedbackOpen(true)}>Give Feedback</button>
             <button className="text-link-btn" onClick={() => setIsContactOpen(true)}>Contact Support</button>
           </div>
           <div className="footer-column">
             <h3>Legal</h3>
             <FooterLink to="/legal/terms">Terms of Service</FooterLink>
-            <a href="/privacy">Privacy Policy</a>
-            <FooterLink to="/security">Security & Data</FooterLink>
+            <FooterLink to="/privacy">Privacy Policy</FooterLink>
+            <FooterLink to="/security">Security &amp; Data</FooterLink>
+            <button type="button" className="text-link-btn" onClick={openConsentPreferences}>Cookie Preferences</button>
           </div>
         </div>
       </div>
@@ -111,9 +110,9 @@ export default function MarketingFooter({ hideCTA = false }) {
       <div className="footer-bottom">
         <div className="footer-bottom-content">
           <div className="footer-bottom-links">
-            <a href="/about">About</a>
-            <a href="/contact">Contact</a>
-            <a href="/privacy">Privacy Policy</a>
+            <FooterLink to="/about">About</FooterLink>
+            <FooterLink to="/contact">Contact</FooterLink>
+            <FooterLink to="/privacy">Privacy Policy</FooterLink>
           </div>
           <span>&copy; {new Date().getFullYear()} Paper5™. The connected project workspace. All rights reserved.</span>
         </div>
