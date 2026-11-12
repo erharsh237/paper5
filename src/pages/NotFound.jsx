@@ -1,68 +1,87 @@
 import { Link } from 'react-router-dom'
-import { useMemo } from 'react'
-import Paper5Logo from './../components/Paper5Logo'
-import SEOHead from './../components/SEOHead'
+import SEOHead from '../components/SEOHead'
 import { getDomainConfig, getMainUrl } from '../lib/domain'
 import './NotFound.css'
 
-const GRID = ['·', '·', '·', '·', 'not_started', 'hit', '·', '·', '·', 'not_started', '·', '·', '·', '·', '·', '·']
-
 export default function NotFound() {
-  const cells = useMemo(() => GRID, [])
   const { isAppSubdomain } = getDomainConfig()
 
-  const NavLinkItem = ({ to, children }) =>
-    isAppSubdomain ? <a href={getMainUrl(to)} className="nf-nav-link">{children}</a> : <Link to={to} className="nf-nav-link">{children}</Link>
-
   return (
-    <div className="nf-wrap">
+    <div className="lost-404-page">
       <SEOHead
-        title="Page Not Found | Paper5"
-        description="The requested Paper5 page could not be found. Return to the homepage or explore features, documentation, and support."
+        title="404 — Are you lost? | Paper5"
+        description="The page you were looking for is not found. Return to Paper5 home."
         noIndex
       />
-      <div className="nf-card glass-panel">
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '20px', fontWeight: 700, fontFamily: 'var(--mono)', color: 'var(--text-primary)', marginBottom: '20px' }}>
-          <Paper5Logo size={26} decorative />
-          <span>Paper5</span>
+
+      <div className="lost-404-container">
+        {/* Top Header Split: "Are you" on the left, "lost?" on the right */}
+        <div className="lost-404-topbar">
+          <span className="lost-404-heading-left">Are you</span>
+          <span className="lost-404-heading-right">lost?</span>
         </div>
 
-        <div className="nf-badge">
-          <span className="nf-dot" />
-          404 · Overdue
+        {/* Centerpiece 4 [0-polygon] 4 row */}
+        <div className="lost-404-stage">
+          <div className="lost-digit lost-digit-left">4</div>
+
+          <div className="lost-center-icon-wrap" role="img" aria-label="Geometric 404 block with locator dot">
+            {/* Geometric pixel block representing the '0' */}
+            <svg
+              className="lost-center-svg"
+              viewBox="0 0 200 220"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              {/* Stepped blocky polygon outer shell */}
+              <path
+                d="M75 10 H145 V50 H175 V130 H155 V150 H175 V180 H145 V200 H75 V180 H45 V150 H20 V90 H45 V50 H75 V10 Z"
+                fill="#09090b"
+                className="lost-poly-outer"
+              />
+              {/* Stepped inner white cutout */}
+              <path
+                d="M75 42 H135 V85 H145 V145 H125 V168 H75 V145 H52 V85 H75 V42 Z"
+                fill="#ffffff"
+                className="lost-poly-inner"
+              />
+              {/* Accent magenta / hot pink focal circle dot */}
+              <circle
+                cx="136"
+                cy="110"
+                r="18"
+                fill="#e11d48"
+                className="lost-focal-dot"
+              />
+            </svg>
+          </div>
+
+          <div className="lost-digit lost-digit-right">4</div>
         </div>
 
-        <h1 className="nf-title">This page missed its deadline.</h1>
-        <p className="nf-sub">
-          The page you are looking for does not exist or may have been moved.
-        </p>
+        {/* Bottom Framing Brackets & Action Area */}
+        <div className="lost-404-bottom">
+          <span className="lost-bracket lost-bracket-left">[</span>
 
-        <div className="nf-grid" role="img" aria-label="A 4 by 4 grid representing this missing page, mostly empty with one marked cell">
-          {cells.map((c, i) => (
-            <div key={i} className={`nf-cell ${c === 'hit' ? 'nf-cell--hit' : ''}`}>
-              {c === 'hit' ? '✕' : ''}
-            </div>
-          ))}
+          <div className="lost-action-center">
+            <p className="lost-desc">The page you were looking for is not found.</p>
+
+            {isAppSubdomain ? (
+              <a href={getMainUrl('/')} className="lost-cta-btn">
+                <span className="lost-cta-plus">+</span>
+                <span>GO BACK HOME</span>
+              </a>
+            ) : (
+              <Link to="/" className="lost-cta-btn">
+                <span className="lost-cta-plus">+</span>
+                <span>GO BACK HOME</span>
+              </Link>
+            )}
+          </div>
+
+          <span className="lost-bracket lost-bracket-right">]</span>
         </div>
-
-        {isAppSubdomain ? (
-          <a href={getMainUrl('/')} className="nf-cta">
-            Back to Paper5 Home →
-          </a>
-        ) : (
-          <Link to="/" className="nf-cta">
-            Back to Homepage →
-          </Link>
-        )}
-
-        <nav className="nf-links" aria-label="Helpful navigation links">
-          <NavLinkItem to="/features">Features</NavLinkItem>
-          <NavLinkItem to="/pricing">Pricing</NavLinkItem>
-          <NavLinkItem to="/docs">Documentation</NavLinkItem>
-          <NavLinkItem to="/contact">Contact</NavLinkItem>
-        </nav>
-
-        <div className="nf-footnote mono">status: 404 · page not found</div>
       </div>
     </div>
   )
