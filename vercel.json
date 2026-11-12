@@ -14,7 +14,7 @@
     }
   ],
   "rewrites": [
-    { "source": "/((?!api/|assets/|logo\\.png|favicon\\.ico|robots\\.txt|sitemap\\.xml|\\.well-known(?:/.*)?|\\.dev\\.vars|wrangler\\.(?:toml|json|jsonc)|vercel\\.json|\\.vercel(?:/.*)?|\\.env(?:\\..*)?|\\.git(?:/.*)?).*)", "destination": "/index.html" }
+    { "source": "/((?!api/|assets/|logo\\.png|favicon\\.ico|favicon\\.svg|dashboard-mockup\\.jpg|product-film\\.html|llms\\.txt|robots\\.txt|sitemap\\.xml|\\.well-known(?:/.*)?|\\.dev\\.vars|wrangler\\.(?:toml|json|jsonc)|vercel\\.json|\\.vercel(?:/.*)?|\\.env(?:\\..*)?|\\.git(?:/.*)?).*)", "destination": "/index.html" }
   ],
   "headers": [
     {

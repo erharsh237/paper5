@@ -1,18 +1,27 @@
-# Paper5 | SprintOS
+# Paper5
 
-> SprintOS by Paper5 is a high-performance workspace and sprint management platform designed for agile engineering teams to plan sprints, track deadlines, manage meetings, and integrate with GitHub and Discord.
+> Paper5 is the connected project workspace for small teams and startups to plan sprints, track tasks and deadlines, run meetings, and sync development workflows across GitHub and Discord.
 
 ## Core Pages
 
-- [Paper5 Homepage](https://paper5.co/): Official marketing landing page and feature overview.
-- [Features](https://paper5.co/features): Detailed walkthrough of sprint locking, proof of work, and real-time notifications.
+- [Paper5 Homepage](https://paper5.co/): Official marketing landing page and product overview.
+- [Features](https://paper5.co/features): Detailed walkthrough of sprint tracking, proof of work, and real-time notifications.
 - [Integrations](https://paper5.co/product-integrations): Overview of GitHub, Discord, Resend, and API integrations.
-- [Security](https://paper5.co/security): Security architecture, SOC2 compliance, RLS policies, and encryption standards.
 - [Documentation](https://paper5.co/docs): User guides and workspace setup documentation.
 - [API Reference](https://paper5.co/docs/api): Public API endpoints and developer reference.
+- [About](https://paper5.co/about): Company overview and mission.
+- [Security](https://paper5.co/security): Security architecture, RLS policies, and data protection standards.
 - [Changelog](https://paper5.co/changelog): Latest product updates and feature releases.
+- [Contact](https://paper5.co/contact): Sales, support, and general inquiries.
+
+## Legal
+
+- [Terms of Service](https://paper5.co/legal/terms)
+- [Privacy Policy](https://paper5.co/legal/privacy)
+- [Data Processing Agreement](https://paper5.co/legal/dpa)
+- [Subprocessors](https://paper5.co/legal/subprocessors)
 
 ## Application Links
 
-- [SprintOS App Login](https://app.paper5.co/login): Web application sign in page.
-- [SprintOS App Signup](https://app.paper5.co/signup): Web application account creation.
+- [Paper5 App Sign In](https://app.paper5.co/login): Web application sign in page.
+- [Paper5 App Sign Up](https://app.paper5.co/signup): Web application account creation.

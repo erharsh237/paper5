@@ -1,12 +1,14 @@
-# Robots.txt for Paper5 & SprintOS (https://paper5.co & https://app.paper5.co)
+# Robots.txt for Paper5 (https://paper5.co & https://app.paper5.co)
 User-agent: *
 Allow: /
 
-# Private Auth & Password Reset Routes
+# Private Auth, Onboarding & Workspace Selection Routes
 Disallow: /auth/action
 Disallow: /force-password-reset
 Disallow: /reset-password
 Disallow: /verify
+Disallow: /workspace
+Disallow: /join
 
 # XML Sitemap Location
 Sitemap: https://paper5.co/sitemap.xml
