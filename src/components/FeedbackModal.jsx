@@ -5,13 +5,18 @@ import { trackEvent } from '../lib/metrics'
 import Turnstile from './Turnstile'
 import './FeedbackModal.css'
 
+const SENTIMENT_OPTIONS = [
+  { value: '1', emoji: '😰', label: 'Terrible' },
+  { value: '2', emoji: '😔', label: 'Bad' },
+  { value: '3', emoji: '😑', label: 'Medium' },
+  { value: '4', emoji: '🙂', label: 'Good' },
+  { value: '5', emoji: '🥰', label: 'Awesome' }
+]
+
 export default function FeedbackModal({ isOpen, onClose }) {
   const { user } = useAuth()
-  const [category, setCategory] = useState('Feedback')
-  const [rating, setRating] = useState('5')
+  const [rating, setRating] = useState('3')
   const [message, setMessage] = useState('')
-  const [name, setName] = useState(user?.displayName || '')
-  const [email, setEmail] = useState(user?.email || '')
   const [website, setWebsite] = useState('')
   const [turnstileToken, setTurnstileToken] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -23,11 +28,13 @@ export default function FeedbackModal({ isOpen, onClose }) {
 
   if (!isOpen) return null
 
+  const activeMood = SENTIMENT_OPTIONS.find((item) => item.value === rating) || SENTIMENT_OPTIONS[2]
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (submitting) return
     if (!message.trim()) {
-      setError('Please enter your feedback message.')
+      setError('Please add a comment before submitting.')
       return
     }
     if (message.trim().length < 3) {
@@ -43,12 +50,12 @@ export default function FeedbackModal({ isOpen, onClose }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          Accept: 'application/json'
         },
         body: JSON.stringify({
-          name: (name || user?.displayName || 'Anonymous User').trim(),
-          email: (email || user?.email || 'not-provided').trim(),
-          category,
+          name: (user?.displayName || 'Anonymous User').trim(),
+          email: (user?.email || 'not-provided').trim(),
+          category: 'General Feedback',
           rating,
           message: message.trim(),
           website,
@@ -62,7 +69,11 @@ export default function FeedbackModal({ isOpen, onClose }) {
         setSubmitted(true)
         setMessage('')
         setWebsite('')
-        trackEvent('form_submit', { form_source: 'feedback_modal', category })
+        trackEvent('form_submit', {
+          form_source: 'feedback_modal',
+          category: 'General Feedback',
+          rating
+        })
       } else {
         throw new Error(data.error || 'Failed to submit feedback.')
       }
@@ -72,148 +83,148 @@ export default function FeedbackModal({ isOpen, onClose }) {
       setError(err?.message || 'Something went wrong. Please try again.')
     } finally {
       setSubmitting(false)
-      startCooldown() // Start cooldown after every attempt (success or failure)
+      startCooldown()
     }
   }
 
   const handleResetAndClose = () => {
     setSubmitted(false)
     setError(null)
+    setRating('3')
     onClose()
   }
 
   return (
     <div className="feedback-modal-overlay" onClick={handleResetAndClose}>
-      <div className="feedback-modal-card" onClick={(e) => e.stopPropagation()}>
-        <button className="feedback-modal-close" onClick={handleResetAndClose} aria-label="Close modal">
-          &times;
-        </button>
-
-        <div className="feedback-modal-header">
-          <div className="feedback-icon-badge">💬</div>
-          <h2>Share Your Feedback</h2>
-          <p>Help us improve Paper5. We read every single message!</p>
+      <div
+        className="feedback-modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="feedback-modal-heading"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="feedback-topbar">
+          <div className="feedback-topbar-brand">
+            <span className="feedback-topbar-icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+              </svg>
+            </span>
+            <span className="feedback-topbar-title">Feedback</span>
+          </div>
+          <button
+            type="button"
+            className="feedback-modal-close"
+            onClick={handleResetAndClose}
+            aria-label="Close modal"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
         </div>
 
-        {submitted ? (
-          <div className="feedback-success-state">
-            <div className="success-icon">🎉</div>
-            <h3>Thank You!</h3>
-            <p>Your feedback has been delivered to the Paper5 product team.</p>
-            <button className="btn-primary w-full" onClick={handleResetAndClose} style={{ marginTop: '20px' }}>
-              Done
-            </button>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="feedback-form">
-            {error && <div className="feedback-error-banner">{error}</div>}
-
-            <div className="feedback-row-grid">
-              <div className="form-group">
-                <label className="feedback-label">Category</label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="feedback-input"
-                >
-                  <option value="Feature Request">💡 Feature Request</option>
-                  <option value="Bug Report">🐛 Bug Report</option>
-                  <option value="UI/UX Feedback">🎨 UI / UX Feedback</option>
-                  <option value="General Feedback">💬 General Feedback</option>
-                </select>
+        <div className="feedback-modal-body">
+          {submitted ? (
+            <div className="feedback-success-state">
+              <div className="feedback-success-emoji" aria-hidden="true">
+                {activeMood.emoji}
               </div>
-
-              <div className="form-group">
-                <label className="feedback-label">Experience Rating</label>
-                <select
-                  value={rating}
-                  onChange={(e) => setRating(e.target.value)}
-                  className="feedback-input"
-                >
-                  <option value="5">⭐⭐⭐⭐⭐ Excellent (5/5)</option>
-                  <option value="4">⭐⭐⭐⭐ Good (4/5)</option>
-                  <option value="3">⭐⭐⭐ Neutral (3/5)</option>
-                  <option value="2">⭐⭐ Poor (2/5)</option>
-                  <option value="1">⭐ Critical Issue (1/5)</option>
-                </select>
-              </div>
+              <h2 id="feedback-modal-heading">Thank you for your feedback!</h2>
+              <p>Your response has been shared with the Paper5 team to help us improve your experience.</p>
+              <button
+                type="button"
+                className="feedback-submit-btn"
+                onClick={handleResetAndClose}
+                style={{ marginTop: '24px' }}
+              >
+                Done
+              </button>
             </div>
-
-            <div className="form-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <label className="feedback-label" style={{ margin: 0 }}>Your Email</label>
-                <span style={{ fontSize: '11px', color: 'var(--text-secondary, #6b7280)', fontWeight: 500 }}>
-                  🔒 Account Email
-                </span>
+          ) : (
+            <form onSubmit={handleSubmit} className="feedback-form">
+              <div className="feedback-modal-header">
+                <h2 id="feedback-modal-heading">How are you feeling?</h2>
+                <p>Your input is valuable in helping us better understand your needs and tailor our service accordingly.</p>
               </div>
-              <input
-                type="email"
-                value={user?.email || email || ''}
-                readOnly
-                tabIndex={-1}
-                autoComplete="off"
-                className="feedback-input"
-                style={{
-                  background: 'var(--surface-2, #f3f4f6)',
-                  color: 'var(--text-primary, #111827)',
-                  cursor: 'not-allowed',
-                  opacity: 0.9,
-                  borderColor: 'var(--border-subtle, #e5e7eb)',
-                  boxShadow: 'none'
-                }}
-              />
-            </div>
 
-            <div className="form-group">
-              <label className="feedback-label">Your Feedback / Feature Suggestion</label>
+              {error && <div className="feedback-error-banner">{error}</div>}
+
+              <div className="feedback-emoji-track" role="group" aria-label="Experience rating">
+                {SENTIMENT_OPTIONS.map((item) => {
+                  const isSelected = rating === item.value
+                  return (
+                    <div key={item.value} className={`feedback-emoji-slot ${isSelected ? 'selected' : ''}`}>
+                      <button
+                        type="button"
+                        className={`feedback-emoji-btn ${isSelected ? 'selected' : ''}`}
+                        onClick={() => setRating(item.value)}
+                        aria-label={`${item.label} (${item.value} out of 5)`}
+                        aria-pressed={isSelected}
+                      >
+                        <span className="feedback-emoji-glyph" aria-hidden="true">{item.emoji}</span>
+                      </button>
+                      {isSelected && (
+                        <span className="feedback-mood-pill">{item.label}</span>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+
               <div style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }} aria-hidden="true">
-                <input type="text" name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+                <input
+                  type="text"
+                  name="website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                />
               </div>
+
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Tell us what you love or what we can fix..."
+                placeholder="Add a Comment..."
+                aria-label="Add a comment"
                 className="feedback-textarea"
                 rows={4}
                 minLength={3}
                 maxLength={3000}
                 required
               />
-            </div>
 
-            {hasTurnstileKey && (
-              <Turnstile
-                ref={turnstileRef}
-                action="feedback"
-                onSuccess={(tok) => setTurnstileToken(tok)}
-                onExpire={() => setTurnstileToken('')}
-              />
-            )}
+              {hasTurnstileKey && (
+                <Turnstile
+                  ref={turnstileRef}
+                  action="feedback"
+                  onSuccess={(tok) => setTurnstileToken(tok)}
+                  onExpire={() => setTurnstileToken('')}
+                />
+              )}
 
-            <div className="feedback-actions">
-              <button type="button" className="btn-ghost" onClick={handleResetAndClose}>
-                Cancel
-              </button>
               {isHardLocked ? (
-                <button type="button" className="btn-primary" disabled>
+                <button type="button" className="feedback-submit-btn" disabled>
                   Too many attempts
                 </button>
               ) : (
                 <button
                   type="submit"
-                  className="btn-primary"
+                  className="feedback-submit-btn"
                   disabled={submitting || isLockedOut}
                 >
                   {submitting
-                    ? 'Sending...'
+                    ? 'Submitting...'
                     : isLockedOut
                     ? `Wait ${cooldownRemaining}s`
-                    : 'Send Feedback'}
+                    : 'Submit Now'}
                 </button>
               )}
-            </div>
-          </form>
-        )}
+            </form>
+          )}
+        </div>
       </div>
     </div>
   )

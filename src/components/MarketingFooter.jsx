@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import ContactModal from './ContactModal'
 import FeedbackModal from './FeedbackModal'
 import Paper5Logo from './Paper5Logo'
@@ -11,7 +11,9 @@ import { ArrowRight, MessageSquare } from 'lucide-react'
 export default function MarketingFooter({ hideCTA = false }) {
   const [isContactOpen, setIsContactOpen] = useState(false)
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
+  const location = useLocation()
   const { isAppSubdomain } = getDomainConfig()
+  const isHomePage = !isAppSubdomain && (location.pathname === '/' || location.pathname === '')
 
   const FooterLink = ({ to, children }) => {
     if (isAppSubdomain) return <a href={getMainUrl(to)}>{children}</a>
@@ -42,11 +44,11 @@ export default function MarketingFooter({ hideCTA = false }) {
               </button>
               <button 
                 className="btn-ghost btn-lg" 
-                onClick={() => setIsFeedbackOpen(true)}
+                onClick={() => setIsContactOpen(true)}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
               >
                 <MessageSquare size={16} />
-                <span>Give Feedback</span>
+                <span>Contact Team</span>
               </button>
             </div>
           </div>
@@ -94,7 +96,9 @@ export default function MarketingFooter({ hideCTA = false }) {
             <h3>Company</h3>
             <FooterLink to="/about">About</FooterLink>
             <FooterLink to="/contact">Contact</FooterLink>
-            <button className="text-link-btn" onClick={() => setIsFeedbackOpen(true)}>Give Feedback</button>
+            {isHomePage && (
+              <button className="text-link-btn" onClick={() => setIsFeedbackOpen(true)}>Give Feedback</button>
+            )}
             <button className="text-link-btn" onClick={() => setIsContactOpen(true)}>Contact Support</button>
           </div>
           <div className="footer-column">
@@ -119,7 +123,9 @@ export default function MarketingFooter({ hideCTA = false }) {
       </div>
       
       <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
-      <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
+      {isHomePage && (
+        <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
+      )}
     </footer>
   )
 }
