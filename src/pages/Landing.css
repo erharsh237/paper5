@@ -4676,12 +4676,29 @@
 .hero-editorial-headline {
   font-family: 'Playfair Display', Georgia, 'Times New Roman', serif !important;
   font-weight: 700 !important;
-  font-size: clamp(40px, 5.2vw, 68px) !important;
-  line-height: 1.09 !important;
+  font-size: clamp(22px, 4.6vw, 64px) !important;
+  line-height: 1.12 !important;
   letter-spacing: -0.02em !important;
   color: #ffffff !important;
   text-shadow: 0 4px 28px rgba(13, 9, 34, 0.55);
   margin-bottom: 22px !important;
+}
+
+.hero-editorial-headline .hero-stomp-row {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+  align-items: baseline !important;
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+.hero-editorial-headline .stomp-phrase {
+  display: inline-flex !important;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+  align-items: baseline !important;
 }
 
 /* ── Text Shimmer Gradient on Stomp Highlight ── */
@@ -4921,76 +4938,90 @@
 /* ── Mobile & Tablet Responsiveness for Illustrated Editorial Hero ── */
 @media (max-width: 768px) {
   .hero-illustrated-editorial {
-    padding: 64px 20px 52px 20px !important;
+    padding: 64px 20px 48px 20px !important;
     min-height: auto !important;
   }
 
   .hero-editorial-headline {
-    font-size: clamp(32px, 6.4vw, 44px) !important;
-    line-height: 1.12 !important;
-    letter-spacing: -0.025em !important;
+    font-size: clamp(20px, 4.8vw, 36px) !important;
+    line-height: 1.14 !important;
+    letter-spacing: -0.02em !important;
     margin-bottom: 18px !important;
   }
 
+  .hero-illustrated-editorial .hero-cta-group {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 12px !important;
+    width: auto !important;
+  }
+
+  .hero-illustrated-editorial .hero-btn-cta,
+  .hero-illustrated-editorial .hero-btn-explore {
+    width: auto !important;
+    flex: 0 0 auto !important;
+  }
+
   .hero-editorial-dock {
-    margin-top: 40px !important;
+    margin-top: 36px !important;
   }
 }
 
 @media (max-width: 640px) {
   .hero-illustrated-editorial {
-    padding: 48px 16px 40px 16px !important;
+    padding: 44px 16px 36px 16px !important;
     min-height: auto !important;
   }
 
   .hero-editorial-headline {
-    font-size: clamp(26px, 7.2vw, 36px) !important;
-    line-height: 1.15 !important;
-    letter-spacing: -0.025em !important;
+    font-size: clamp(17px, 4.7vw, 24px) !important;
+    line-height: 1.18 !important;
+    letter-spacing: -0.015em !important;
     margin-bottom: 16px !important;
     max-width: 100% !important;
-    word-break: normal !important;
   }
 
-  .hero-stomp-row {
-    row-gap: 4px !important;
-    max-width: 100% !important;
-    justify-content: center !important;
+  .hero-editorial-headline .hero-stomp-row {
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
   }
 
-  .stomp-phrase {
-    flex-wrap: wrap !important;
-    justify-content: center !important;
-    gap: 0.22em !important;
-    max-width: 100% !important;
+  .hero-editorial-headline .stomp-phrase {
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
   }
 
   .hero-illustrated-editorial .hero-subtext {
-    font-size: 15px !important;
+    font-size: 14.5px !important;
     line-height: 1.55 !important;
     max-width: 100% !important;
     padding: 0 4px !important;
-    margin-bottom: 24px !important;
+    margin-bottom: 22px !important;
   }
 
-  .hero-cta-group {
+  .hero-illustrated-editorial .hero-cta-group {
     display: flex !important;
-    flex-direction: column !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
     align-items: center !important;
-    width: 100% !important;
-    gap: 12px !important;
+    gap: 10px !important;
+    width: auto !important;
   }
 
   .hero-pill-btn {
-    width: 100% !important;
-    max-width: 320px !important;
-    padding: 13px 20px !important;
-    font-size: 14.5px !important;
+    width: auto !important;
+    padding: 11px 20px !important;
+    font-size: 14px !important;
     justify-content: center !important;
   }
 
   .hero-illustrated-editorial .hero-microcopy {
     font-size: 12px !important;
+    flex-direction: row !important;
     flex-wrap: wrap !important;
     justify-content: center !important;
     gap: 6px !important;
@@ -4998,7 +5029,7 @@
   }
 
   .hero-editorial-dock {
-    margin-top: 32px !important;
+    margin-top: 28px !important;
     padding: 14px 16px !important;
     border-radius: 14px !important;
     width: 100% !important;
@@ -5017,8 +5048,13 @@
 
 @media (max-width: 380px) {
   .hero-editorial-headline {
-    font-size: clamp(23px, 7.4vw, 28px) !important;
-    letter-spacing: -0.02em !important;
+    font-size: clamp(15px, 4.5vw, 17px) !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  .hero-pill-btn {
+    padding: 10px 16px !important;
+    font-size: 13px !important;
   }
 }
 
