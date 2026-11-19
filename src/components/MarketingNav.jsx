@@ -19,7 +19,17 @@ export default function MarketingNav() {
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [isContactOpen, setIsContactOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
   const location = useLocation()
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 40)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const handleSignIn = () => {
     window.open(getAppUrl('/login'), '_blank', 'noopener,noreferrer')
@@ -97,22 +107,29 @@ export default function MarketingNav() {
     return location.pathname.startsWith(item.path)
   }
 
+  const isLandingPage = (location.pathname === '/' || location.pathname === '') && !location.hash
+  const isOnLandingHero = isLandingPage && !isScrolled
+
   return (
     <>
-      <nav className="landing-nav" role="navigation" aria-label="Main Navigation">
+      <nav 
+        className={`landing-nav ${isOnLandingHero ? 'nav-on-hero' : ''}`} 
+        role="navigation" 
+        aria-label="Main Navigation"
+      >
         <div className="nav-container">
           {/* Logo & Brand */}
           {isAppSubdomain ? (
             <a href={getMainUrl('/')} className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
               <Paper5Logo size={28} decorative />
-              <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
+              <span className="nav-brand-text" style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em' }}>
                 PAPER5
               </span>
             </a>
           ) : (
             <Link to="/" onClick={handleHomeClick} className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
               <Paper5Logo size={28} decorative />
-              <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
+              <span className="nav-brand-text" style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em' }}>
                 PAPER5
               </span>
             </Link>

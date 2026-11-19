@@ -297,6 +297,8 @@ export default function Landing() {
                     <span className="stomp-word" style={{ '--delay': '420ms' }}>
                       <span className="stomp-word-inner">Everything</span>
                     </span>
+                  </span>
+                  <span className="stomp-phrase">
                     <span className="stomp-word" style={{ '--delay': '490ms' }}>
                       <span className="stomp-word-inner">is</span>
                     </span>

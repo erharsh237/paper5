@@ -112,7 +112,49 @@
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   padding: 12px 24px;
-  transition: all 0.2s ease;
+  transition: background-color 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
+}
+
+/* Seamless blend with the dark editorial dawn hero when at top of landing */
+.landing-nav.nav-on-hero {
+  background: rgba(23, 17, 58, 0.78) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.nav-brand-text {
+  color: var(--text-primary);
+  transition: color 0.2s ease;
+}
+
+.landing-nav.nav-on-hero .nav-brand-text,
+.landing-nav.nav-on-hero .nav-brand span {
+  color: #ffffff !important;
+}
+
+.landing-nav.nav-on-hero .nav-link-icon-wrap {
+  color: rgba(255, 255, 255, 0.78) !important;
+}
+
+.landing-nav.nav-on-hero .nav-link-icon-wrap:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+.landing-nav.nav-on-hero .nav-btn-link {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.landing-nav.nav-on-hero .mobile-menu-btn {
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.landing-nav.nav-on-hero .theme-toggle-track {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.24) !important;
 }
 
 .nav-container {
@@ -4874,6 +4916,110 @@
   font-size: 11.5px;
   font-weight: 600;
   color: rgba(248, 250, 252, 0.92);
+}
+
+/* ── Mobile & Tablet Responsiveness for Illustrated Editorial Hero ── */
+@media (max-width: 768px) {
+  .hero-illustrated-editorial {
+    padding: 64px 20px 52px 20px !important;
+    min-height: auto !important;
+  }
+
+  .hero-editorial-headline {
+    font-size: clamp(32px, 6.4vw, 44px) !important;
+    line-height: 1.12 !important;
+    letter-spacing: -0.025em !important;
+    margin-bottom: 18px !important;
+  }
+
+  .hero-editorial-dock {
+    margin-top: 40px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-illustrated-editorial {
+    padding: 48px 16px 40px 16px !important;
+    min-height: auto !important;
+  }
+
+  .hero-editorial-headline {
+    font-size: clamp(26px, 7.2vw, 36px) !important;
+    line-height: 1.15 !important;
+    letter-spacing: -0.025em !important;
+    margin-bottom: 16px !important;
+    max-width: 100% !important;
+    word-break: normal !important;
+  }
+
+  .hero-stomp-row {
+    row-gap: 4px !important;
+    max-width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .stomp-phrase {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 0.22em !important;
+    max-width: 100% !important;
+  }
+
+  .hero-illustrated-editorial .hero-subtext {
+    font-size: 15px !important;
+    line-height: 1.55 !important;
+    max-width: 100% !important;
+    padding: 0 4px !important;
+    margin-bottom: 24px !important;
+  }
+
+  .hero-cta-group {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+    gap: 12px !important;
+  }
+
+  .hero-pill-btn {
+    width: 100% !important;
+    max-width: 320px !important;
+    padding: 13px 20px !important;
+    font-size: 14.5px !important;
+    justify-content: center !important;
+  }
+
+  .hero-illustrated-editorial .hero-microcopy {
+    font-size: 12px !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    margin-top: 14px !important;
+  }
+
+  .hero-editorial-dock {
+    margin-top: 32px !important;
+    padding: 14px 16px !important;
+    border-radius: 14px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .editorial-dock-chips {
+    gap: 6px !important;
+  }
+
+  .editorial-dock-chip {
+    font-size: 11px !important;
+    padding: 4px 10px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .hero-editorial-headline {
+    font-size: clamp(23px, 7.4vw, 28px) !important;
+    letter-spacing: -0.02em !important;
+  }
 }
 
 /* ── Smooth Scroll-Reveal & Entrance Animations for Other Sections ── */
