@@ -9,6 +9,7 @@ import { TEAM_SIZE_OPTIONS, WORKFLOWS, getRecommendedWorkflow } from '../lib/wor
 
 import { decryptPlanParam } from '../lib/urlSecurity'
 import { safeRedirect } from '../lib/safeRedirect'
+import { getDomainConfig } from '../lib/domain'
 import LegalPolicyModal from './LegalPolicyModal'
 
 const TIERS = [
@@ -86,6 +87,9 @@ export default function OnboardingWizardModal() {
   const [agileWorkflow, setAgileWorkflow] = useState('kanban')
 
   // Step 4: Data Storing Consent State (Default Turned Off)
+  const { isAppSubdomain } = getDomainConfig()
+  if (!isAppSubdomain) return null
+
   const [saveData, setSaveData] = useState(false)
   
   const [isPrimaryAdmin, setIsPrimaryAdmin] = useState(false)

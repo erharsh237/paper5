@@ -393,7 +393,7 @@ export default function App() {
         </Routes>
         )}
       </Suspense>
-      {user && user.emailVerified && (
+      {isAppSubdomain && user && user.emailVerified && (
         <Suspense fallback={null}>
           <LegalConsentModal />
           <OnboardingWizardModal />
