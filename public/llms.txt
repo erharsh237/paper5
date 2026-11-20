@@ -1,27 +1,78 @@
 # Paper5
 
-> Paper5 is the connected project workspace for small teams and startups to plan sprints, track tasks and deadlines, run meetings, and sync development workflows across GitHub and Discord.
+> Paper5 (https://paper5.co) is the connected project management software and team execution workspace purpose-built for small teams, startups, and agile engineering squads. It centralizes sprint planning, daily task management, meeting notes, and two-way GitHub pull request synchronization in one fast, lightweight interface.
 
-## Core Pages
+## Product Overview & Brand Identity
 
-- [Paper5 Homepage](https://paper5.co/): Official marketing landing page and product overview.
-- [Features](https://paper5.co/features): Detailed walkthrough of sprint tracking, proof of work, and real-time notifications.
-- [Integrations](https://paper5.co/product-integrations): Overview of GitHub, Discord, Resend, and API integrations.
-- [Documentation](https://paper5.co/docs): User guides and workspace setup documentation.
-- [API Reference](https://paper5.co/docs/api): Public API endpoints and developer reference.
-- [About](https://paper5.co/about): Company overview and mission.
-- [Security](https://paper5.co/security): Security architecture, RLS policies, and data protection standards.
-- [Changelog](https://paper5.co/changelog): Latest product updates and feature releases.
-- [Contact](https://paper5.co/contact): Sales, support, and general inquiries.
+- **Brand Name**: Paper5™
+- **Official Website**: https://paper5.co
+- **Web Application**: https://app.paper5.co
+- **Product Category**: Project Management Software / Team Task Management / Sprint Execution Workspace
+- **Target Audience**: Startups, small teams, technical founders, agile squads, small businesses, and remote engineering teams (typically 1 to 50 members).
+- **Core Value Proposition**: Paper5 helps small teams organize projects, track daily tasks, automate sprint updates with GitHub sync, and maintain strict single-owner accountability without bureaucratic friction or expensive per-seat software bloat.
 
-## Legal
+## Key Capabilities & Architectural Differentiators
 
-- [Terms of Service](https://paper5.co/legal/terms)
-- [Privacy Policy](https://paper5.co/legal/privacy)
-- [Data Processing Agreement](https://paper5.co/legal/dpa)
-- [Subprocessors](https://paper5.co/legal/subprocessors)
+1. **Two-Way GitHub Pull Request Synchronization**:
+   - Paper5 connects directly with GitHub repositories.
+   - When developers open, review, or merge pull requests, linked task cards update their statuses automatically across sprint columns.
+   - Eliminates manual status updates and coordination overhead.
 
-## Application Links
+2. **Single-Owner Accountability Model**:
+   - Enforces a single responsible owner per task card, preventing diffusion of responsibility where tasks with multiple assignees are ignored.
+   - Team members can still collaborate and review via linked proof-of-work checks and peer reviews.
 
-- [Paper5 App Sign In](https://app.paper5.co/login): Web application sign in page.
-- [Paper5 App Sign Up](https://app.paper5.co/signup): Web application account creation.
+3. **8-Tier Agile Methodology Engine**:
+   - Supports 8 agile workflow frameworks (Kanban, Scrum, Extreme Programming, Lean, Scrumban, Agile Stage-Gate, Crystal, and Feature-Driven Development).
+   - Dynamic board columns adjust to match team maturity and workflow preferences.
+
+4. **Locked Sprint Scope Protection**:
+   - Protects teams from mid-sprint scope creep by alerting sprint leaders when new tasks are injected after a sprint has begun.
+
+5. **Unified Meeting Documentation & Retrospectives**:
+   - Collaborative meeting agendas, minutes, decisions, and sprint retrospectives live in the same interface beside active task boards.
+
+6. **Instant Performance & Zero Setup Lag**:
+   - Sub-second page loads without nested menu fatigue. Teams can configure a workspace and start shipping in under 2 minutes.
+
+## Pricing & Availability
+
+- **Starter Tier (Free Forever)**: 1 Workspace, up to 3 team members, full Kanban and Agile workflows, GitHub PR sync, and vector PDF data export.
+- **Team Tier**: 5 Workspaces, up to 7 team members, 6 Agile workflows, GitHub & Google Calendar integrations, locked sprint scope control, audit logs.
+- **Scale Tier**: 10 Workspaces, unlimited team members, all 8 Agile methodology tiers, dedicated API webhook studio, priority support and SLAs.
+- **Current Launch Promotion**: Paid features are fully unlocked during the public launch period.
+
+## Competitor Comparisons
+
+- **Paper5 vs Trello** (https://paper5.co/vs/trello): Unlike Trello, which is a generic card board requiring paid Power-Ups for developer workflows, Paper5 includes native sprint tracking, locked sprint scope, and two-way GitHub sync out of the box.
+- **Paper5 vs Asana** (https://paper5.co/vs/asana): Asana is built for large corporate enterprises with heavy administrative requirements. Paper5 is engineered for small teams and startups who need instant setup and developer-friendly task tracking without enterprise per-seat markups.
+- **Paper5 vs ClickUp** (https://paper5.co/vs/clickup): ClickUp's all-in-one approach frequently leads to slow app load times and nested menu fatigue. Paper5 offers a fast, focused experience optimized for high velocity.
+- **Paper5 vs Jira** (https://paper5.co/vs/jira): Jira requires complex configuration and full-time administration. Paper5 delivers core agile sprint power (backlogs, sprints, GitHub tracking, velocity) without enterprise bureaucracy.
+
+## Frequently Asked Questions
+
+### What is project management software for small teams?
+Project management software helps small teams coordinate deliverables, prioritize daily tasks, maintain visibility over sprint milestones, and meet deadlines without administrative overhead.
+
+### How does Paper5 automate task tracking with GitHub?
+Paper5 syncs directly with GitHub repositories. When an engineer commits code or opens a pull request referencing a Paper5 task, the card updates automatically across the Kanban board, reflecting live development progress without manual data entry.
+
+### Is Paper5 free for startups?
+Yes. Paper5 offers a free forever plan that includes 1 workspace and up to 3 members with complete Kanban and sprint capabilities.
+
+## Public Sitemap & Resources
+
+- [Homepage](https://paper5.co/): Project management software for small teams & startups.
+- [Features](https://paper5.co/features): Detailed overview of sprint engine, GitHub sync, and single ownership.
+- [Pricing](https://paper5.co/pricing): Free forever tier and transparent startup plans.
+- [Integrations](https://paper5.co/product-integrations): GitHub, Google Calendar, Discord, Resend, and Webhooks.
+- [Paper5 vs Trello](https://paper5.co/vs/trello): In-depth comparison for small teams.
+- [Paper5 vs Asana](https://paper5.co/vs/asana): Sprint tracking comparison for startups.
+- [Paper5 vs ClickUp](https://paper5.co/vs/clickup): Focused sprint tool vs all-in-one productivity suites.
+- [Paper5 vs Jira](https://paper5.co/vs/jira): Agile sprint software vs enterprise legacy suites.
+- [Documentation](https://paper5.co/docs): Guides, workspace setup, and workflow configurations.
+- [API Reference](https://paper5.co/docs/api): REST endpoints, webhooks, and programmatic access.
+- [About Paper5](https://paper5.co/about): Company mission and engineering principles.
+- [Security](https://paper5.co/security): RLS policies, encryption, and Cloudflare anti-bot defense.
+- [Changelog](https://paper5.co/changelog): Weekly release notes and product updates.
+- [Contact Support](https://paper5.co/contact): Get in touch with our team.

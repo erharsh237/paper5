@@ -1,16 +1,99 @@
 # Robots.txt for Paper5 (https://paper5.co & https://app.paper5.co)
+# Optimized for Search Engine Optimization (SEO), Answer Engine Optimization (AEO), and Generative Engine Optimization (GEO)
+
+# Global crawler policy
 User-agent: *
 Allow: /
+Allow: /features
+Allow: /integrations
+Allow: /docs
+Allow: /pricing
+Allow: /about
+Allow: /contact
+Allow: /terms
+Allow: /privacy
+Allow: /vs/
+Allow: /assets/
+Allow: /*.js$
+Allow: /*.css$
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.svg$
+Allow: /*.webp$
+Allow: /*.ico$
 
-# Private Auth, Confirmation, Error & Workspace Routes
-Disallow: /auth/action
+# Protect authenticated and sensitive application routes
+Disallow: /api/
+Disallow: /workspace
+Disallow: /workspace/
+Disallow: /join
+Disallow: /join/
+Disallow: /auth/
 Disallow: /force-password-reset
 Disallow: /reset-password
 Disallow: /verify
-Disallow: /workspace
-Disallow: /join
 Disallow: /thank-you
 Disallow: /error
+Disallow: /login
+Disallow: /signup
 
-# XML Sitemap Location
+# AI Search Engine Crawlers (Permitted for real-time citations & search indexes)
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /api/
+Disallow: /workspace/
+Disallow: /auth/
+Disallow: /login
+Disallow: /signup
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /api/
+Disallow: /workspace/
+Disallow: /auth/
+Disallow: /login
+Disallow: /signup
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /api/
+Disallow: /workspace/
+Disallow: /auth/
+Disallow: /login
+Disallow: /signup
+
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+Disallow: /workspace/
+Disallow: /auth/
+Disallow: /login
+Disallow: /signup
+
+User-agent: Bingbot
+Allow: /
+Disallow: /api/
+Disallow: /workspace/
+Disallow: /auth/
+Disallow: /login
+Disallow: /signup
+
+# Generative AI Model Training Crawlers (Distinguished from search indexing)
+User-agent: GPTBot
+Allow: /
+Disallow: /api/
+Disallow: /workspace/
+Disallow: /auth/
+Disallow: /login
+Disallow: /signup
+
+User-agent: CCBot
+Allow: /
+Disallow: /api/
+Disallow: /workspace/
+Disallow: /auth/
+Disallow: /login
+Disallow: /signup
+
+# XML Sitemap
 Sitemap: https://paper5.co/sitemap.xml

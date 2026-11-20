@@ -319,7 +319,7 @@ export default function Signup() {
   }
 
   return (
-    <div className="auth-layout"><SEOHead title="Create Account | Paper5" description="Create a free Paper5 workspace account for your team." />
+    <div className="auth-layout"><SEOHead title="Create Account | Paper5" description="Create a free Paper5 workspace account for your team." noIndex={true} />
       <a 
         href="https://paper5.co" 
         className="auth-back-to-website"

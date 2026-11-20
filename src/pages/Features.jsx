@@ -15,8 +15,8 @@ export default function Features() {
   return (
     <MarketingLayout hideFooterCTA>
       <SEOHead 
-        title="Features | Paper5"
-        description="Explore Paper5 features: sprint tracking, single-owner task accountability, peer proof-of-work verification, live deadline alerts, and meeting documents."
+        title="Features: Team Task Management & Sprint Tracking | Paper5"
+        description="Explore Paper5 project management software features: team task management, agile sprint tracking, single-owner accountability, GitHub PR automation, and meeting docs."
         canonicalUrl="https://paper5.co/features"
       />
 

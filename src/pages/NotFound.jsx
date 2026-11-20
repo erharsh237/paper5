@@ -13,6 +13,7 @@ export default function NotFound() {
       <SEOHead
         title="404 — Are you lost? | Paper5"
         description="The page you were looking for is not found. Return to Paper5."
+        noIndex={true}
       />
 
       <div className="lost-404-container">

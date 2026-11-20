@@ -16,7 +16,10 @@ export default function SEOHead({
   ogImage = DEFAULT_OG_IMAGE,
   ogImageAlt = DEFAULT_OG_IMAGE_ALT,
   ogImageWidth = '1200',
-  ogImageHeight = '630'
+  ogImageHeight = '630',
+  noIndex = false,
+  robots = null,
+  jsonLd = null
 }) {
   useEffect(() => {
     // 1. Update Title
@@ -36,8 +39,9 @@ export default function SEOHead({
       element.setAttribute('content', content)
     }
 
-    // 2. Always maintain index, follow directive across all pages
-    setMeta('name', 'robots', DEFAULT_ROBOTS)
+    // 2. Set Robots Directive
+    const robotsContent = robots || (noIndex ? 'noindex, nofollow' : DEFAULT_ROBOTS)
+    setMeta('name', 'robots', robotsContent)
 
     // 3. Update Meta Description & Social Cards
     if (description) {
@@ -63,7 +67,7 @@ export default function SEOHead({
     setMeta('name', 'twitter:image:alt', ogImageAlt || DEFAULT_OG_IMAGE_ALT)
 
     // 4. Update Canonical Tag
-    const href = canonicalUrl || window.location.href
+    const href = canonicalUrl || window.location.href.split('?')[0].split('#')[0]
     let canonical = document.querySelector('link[rel="canonical"]')
     if (!canonical) {
       canonical = document.createElement('link')
@@ -74,7 +78,27 @@ export default function SEOHead({
 
     setMeta('property', 'og:url', href)
     setMeta('name', 'twitter:url', href)
-  }, [title, description, canonicalUrl, ogType, ogImage, ogImageAlt, ogImageWidth, ogImageHeight])
+
+    // 5. Page-level JSON-LD injection if supplied
+    let scriptTag = document.getElementById('page-jsonld')
+    if (jsonLd) {
+      if (!scriptTag) {
+        scriptTag = document.createElement('script')
+        scriptTag.id = 'page-jsonld'
+        scriptTag.type = 'application/ld+json'
+        document.head.appendChild(scriptTag)
+      }
+      scriptTag.textContent = JSON.stringify(jsonLd)
+    } else if (scriptTag) {
+      scriptTag.remove()
+    }
+
+    return () => {
+      // Clean up page JSON-LD on unmount
+      const existing = document.getElementById('page-jsonld')
+      if (existing) existing.remove()
+    }
+  }, [title, description, canonicalUrl, ogType, ogImage, ogImageAlt, ogImageWidth, ogImageHeight, noIndex, robots, jsonLd])
 
   return null
 }

@@ -44,7 +44,7 @@ export default function VerifyEmail() {
 
   return (
     <div className="auth-layout">
-      <SEOHead title="Verify Email | Paper5" description="Verify your email address to activate your Paper5 account." />
+      <SEOHead title="Verify Email | Paper5" description="Verify your email address to activate your Paper5 account." noIndex={true} />
       <div className="auth-showcase-bg" aria-hidden="true" />
       <div className="auth-form-side">
         <div className="auth-form-container glass-panel" style={{ textAlign: 'center' }}>

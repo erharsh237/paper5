@@ -44,7 +44,7 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="auth-layout"><SEOHead title="Reset Password | Paper5" description="Reset the password for your Paper5 account." />
+    <div className="auth-layout"><SEOHead title="Reset Password | Paper5" description="Reset the password for your Paper5 account." noIndex={true} />
       <a 
         href="https://paper5.co" 
         className="auth-back-to-website"

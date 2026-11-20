@@ -22,8 +22,8 @@ export default function ProductIntegrationsPage() {
   return (
     <MarketingLayout hideFooterCTA>
       <SEOHead 
-        title="Stack Integrations & API Webhook Studio | Paper5" 
-        description="Connect GitHub, Vercel, Discord, Slack, Google Calendar, and 1-Click REST API webhooks natively with Paper5."
+        title="Integrations: Connect GitHub, Google Calendar & Developer Stack | Paper5" 
+        description="Integrate Paper5 project management software with GitHub, Google Calendar, Discord, and REST API webhooks for automated task and sprint workflows."
         canonicalUrl="https://paper5.co/product-integrations"
       />
 

@@ -228,7 +228,7 @@ export default function Login({ accessDenied, denialReason }) {
 
   return (
     <div className="auth-layout">
-      <SEOHead title="Sign In | Paper5" description="Sign in to your Paper5 team workspace." />
+      <SEOHead title="Sign In | Paper5" description="Sign in to your Paper5 team workspace." noIndex={true} />
       <a 
         href="https://paper5.co" 
         className="auth-back-to-website"

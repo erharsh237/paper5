@@ -11,11 +11,44 @@
       ],
       "destination": "https://paper5.co/:path*",
       "statusCode": 301
+    },
+    {
+      "source": "/(workspace|workspace/.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "^(www\\.)?paper5\\.co$"
+        }
+      ],
+      "destination": "https://app.paper5.co/$1",
+      "statusCode": 307
+    },
+    {
+      "source": "/:workspaceId([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/:subpath*",
+      "has": [
+        {
+          "type": "host",
+          "value": "^(www\\.)?paper5\\.co$"
+        }
+      ],
+      "destination": "https://app.paper5.co/:workspaceId/:subpath*",
+      "statusCode": 307
+    },
+    {
+      "source": "/:workspaceId([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})",
+      "has": [
+        {
+          "type": "host",
+          "value": "^(www\\.)?paper5\\.co$"
+        }
+      ],
+      "destination": "https://app.paper5.co/:workspaceId",
+      "statusCode": 307
     }
   ],
   "rewrites": [
     {
-      "source": "/(pricing|features|about|about-us|contact|product-integrations|changelog|docs|docs/api|security|legal|legal/terms|legal/privacy|legal/dpa|legal/subprocessors|terms|privacy|dpa|subprocessors|thank-you|error|500|404|login|signup|forgot-password|verify|join|workspace|auth/action|reset-password)",
+      "source": "/(pricing|features|about|about-us|vs|vs/:tool|contact|product-integrations|changelog|docs|docs/api|security|legal|legal/terms|legal/privacy|legal/dpa|legal/subprocessors|terms|privacy|dpa|subprocessors|thank-you|error|500|404|login|signup|forgot-password|verify|join|workspace|auth/action|reset-password)",
       "destination": "/index.html"
     },
     {
@@ -29,7 +62,7 @@
       "destination": "/index.html"
     },
     {
-      "source": "/:workspaceId/(workflow|team|meeting|analytics|integrations|settings|profile)",
+      "source": "/:workspaceId/:subpath*",
       "has": [
         {
           "type": "host",

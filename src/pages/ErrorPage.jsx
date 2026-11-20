@@ -49,6 +49,7 @@ export default function ErrorPage({ error, errorInfo, resetError }) {
       <SEOHead
         title="500 — Server Error | Paper5"
         description="Our servers ran into an unexpected issue. Don't worry, your workspace data is safe."
+        noIndex={true}
       />
 
       <div className="server-500-container">

@@ -3,15 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
-    <title>Paper5 | Sprint Management & Team Workflow with GitHub Sync</title>
+    <title>Paper5 | Project Management Software for Small Teams & Startups</title>
     
     <!-- Primary SEO Meta Tags -->
-    <meta name="title" content="Paper5 | Sprint Management & Team Workflow with GitHub Sync" />
-    <meta name="description" content="Paper5 is the connected sprint management platform for engineering teams. Automate task progress with GitHub sync, enforce single ownership, and ship without coordination drag. Free during launch." />
-    <meta name="keywords" content="Paper5, project workspace, startup project management, small team productivity, sprint tracking, tasks, deadlines, meeting notes, GitHub integration, developer tools" />
+    <meta name="title" content="Paper5 | Project Management Software for Small Teams & Startups" />
+    <meta name="description" content="Paper5 is the connected project management software for small teams and startups. Organize daily tasks, automate sprint tracking with GitHub sync, and maintain team accountability without coordination drag." />
+    <meta name="keywords" content="project management software for small teams, team task management software, task management tool, project management platform, team collaboration software, task tracking software, startup project management tools, team accountability tools, daily task management" />
     <meta name="author" content="Paper5™" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="language" content="English" />
+
     <!-- Security Headers -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://fonts.googleapis.com https://challenges.cloudflare.com https://va.vercel-scripts.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.emailjs.com https://*.sentry.io https://challenges.cloudflare.com https://va.vercel-scripts.com https://vitals.vercel-insights.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; frame-src 'self' https://challenges.cloudflare.com;" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
@@ -21,22 +22,22 @@
     <!-- Open Graph / Facebook / LinkedIn Social Cards -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://paper5.co" />
-    <meta property="og:site_name" content="Paper5™" />
-    <meta property="og:title" content="Paper5 | Sprint Management & Team Workflow with GitHub Sync" />
-    <meta property="og:description" content="Paper5 is the connected sprint management platform for engineering teams. Automate task progress with GitHub sync, enforce single ownership, and ship without coordination drag. Free during launch." />
+    <meta property="og:site_name" content="Paper5" />
+    <meta property="og:title" content="Paper5 | Project Management Software for Small Teams & Startups" />
+    <meta property="og:description" content="Paper5 helps small teams organize projects, manage daily tasks, automate sprint tracking via GitHub, and maintain accountability through a centralized workspace." />
     <meta property="og:image" content="https://paper5.co/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Paper5 share banner reading Connected Project Workspace for Small Teams" />
+    <meta property="og:image:alt" content="Paper5 Connected Project Workspace for Small Teams and Startups" />
     <meta property="og:locale" content="en_US" />
 
     <!-- Twitter Card Metadata -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="https://paper5.co" />
-    <meta name="twitter:title" content="Paper5 | Connected Project Workspace for Small Teams" />
-    <meta name="twitter:description" content="Paper5 is the operating workspace for small teams and startups. Bring your team's projects, tasks, deadlines, documents and development in one place." />
+    <meta name="twitter:title" content="Paper5 | Project Management Software for Small Teams & Startups" />
+    <meta name="twitter:description" content="Paper5 is the operating workspace for small teams and startups. Bring your team's projects, tasks, deadlines, documents, and code into one place." />
     <meta name="twitter:image" content="https://paper5.co/og-image.png" />
-    <meta name="twitter:image:alt" content="Paper5 share banner reading Connected Project Workspace for Small Teams" />
+    <meta name="twitter:image:alt" content="Paper5 Project Management Platform for Teams" />
     <link rel="canonical" href="https://paper5.co/" />
 
     <!-- Favicon & Touch Icons -->
@@ -49,10 +50,9 @@
     <!-- Performance & Preconnect Non-Blocking Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Font loaded programmatically to avoid inline onload handler (CSP compliance) -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Outfit:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Playfair+Display:wght@600;700&display=swap" crossorigin="anonymous">
 
-    <!-- Schema.org JSON-LD Structured Data for Search Engine Rich Snippets -->
+    <!-- Schema.org JSON-LD Structured Data: Organization, WebSite, SoftwareApplication, FAQPage -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -62,56 +62,166 @@
           "@id": "https://paper5.co/#organization",
           "name": "Paper5",
           "url": "https://paper5.co",
-          "logo": "https://paper5.co/logo.png",
-          "description": "Paper5 is a software technology studio building next-generation engineering execution and developer productivity platforms.",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://paper5.co/logo.png",
+            "width": "512",
+            "height": "512"
+          },
+          "description": "Paper5 is a software technology company building the connected project management and team execution workspace for small teams and startups.",
           "sameAs": [
             "https://x.com/paper5hq",
             "https://github.com/paper5hq"
           ]
         },
         {
-          "@type": "SoftwareApplication",
-          "@id": "https://paper5.co/#software",
+          "@type": "WebSite",
+          "@id": "https://paper5.co/#website",
+          "url": "https://paper5.co",
           "name": "Paper5",
-          "operatingSystem": "Web, Cloud",
-          "applicationCategory": "DeveloperApplication",
-          "url": "https://app.paper5.co",
+          "description": "Project management software and team task collaboration platform for small teams and startups.",
           "publisher": {
             "@id": "https://paper5.co/#organization"
           },
-          "description": "Paper5 is the connected project management and team accountability workspace for small teams and startups.",
+          "inLanguage": "en-US"
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://paper5.co/#software",
+          "name": "Paper5",
+          "operatingSystem": "Web, Cloud, Windows, macOS, Linux, iOS, Android",
+          "applicationCategory": "BusinessApplication",
+          "applicationSubCategory": "Project Management Software",
+          "url": "https://paper5.co",
+          "installUrl": "https://app.paper5.co/signup",
+          "publisher": {
+            "@id": "https://paper5.co/#organization"
+          },
+          "description": "Paper5 is the connected project management software designed for small teams and startups to organize projects, manage daily tasks, automate sprint tracking with GitHub sync, and maintain clear team accountability.",
+          "featureList": [
+            "Real-time GitHub Pull Request and Commit Synchronization",
+            "Kanban and Agile Sprint Management",
+            "Single-Owner Task Assignment for Absolute Accountability",
+            "Team Daily Task Tracking and Velocity Metrics",
+            "Meeting Notes and Collaborative Documentation",
+            "Multi-Workspace Management with Role-Based Access Control",
+            "Cloudflare Protected Enterprise Security"
+          ],
           "offers": {
             "@type": "Offer",
             "price": "0",
             "priceCurrency": "USD",
-            "availability": "https://schema.org/InStock"
+            "availability": "https://schema.org/InStock",
+            "description": "Starter Plan is free forever for small teams and startups."
           }
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://paper5.co/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What is Paper5?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Paper5 is a modern project management software and team collaboration platform designed specifically for small teams, startups, and agile engineering squads. It unifies sprint planning, daily task management, meeting notes, and two-way GitHub synchronization into a lightweight, high-velocity workspace."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How does Paper5 help small teams manage daily tasks?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Paper5 provides an intuitive visual board where tasks have single strict ownership, explicit sprint commitments, and real-time status transitions. By linking daily tasks directly to developer Pull Requests, teams eliminate manual status reports and coordination drag."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How is Paper5 different from Jira, Trello, or Asana?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Unlike bloated enterprise tools like Jira that require full-time administrators, or disconnected tools like Trello that lack native developer workflows, Paper5 is built for high speed. It couples lightweight Kanban simplicity with automated GitHub PR linking, sprint scope locking, and unified meeting notes."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is Paper5 free to use for startups?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, Paper5 provides a generous Starter tier that is free forever, including 1 workspace, up to 3 team members, Kanban workflows, vector PDF data exports, and GitHub PR synchronization."
+              }
+            }
+          ]
         }
       ]
     }
     </script>
   </head>
   <body>
+    <!-- Root Container: Contains crawlable semantic HTML fallback for search engine bots and AI scrapers before hydration -->
     <div id="root">
-      <div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; gap: 14px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <img src="/logo.png" alt="" width="32" height="32" style="width: 32px; height: 32px; object-fit: contain; flex-shrink: 0;" />
-          <span style="font-size: 20px; font-weight: 800; letter-spacing: -0.03em; color: #09090b;">PAPER5</span>
-        </div>
-        <div style="width: 24px; height: 24px; border: 2.5px solid #e2e8f0; border-top-color: #4f46e5; border-radius: 50%; animation: p5spin 0.7s linear infinite;"></div>
-        <style>@keyframes p5spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
-      </div>
+      <main style="max-width: 960px; margin: 0 auto; padding: 48px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #18181b; line-height: 1.6;">
+        <header style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; border-bottom: 1px solid #e4e4e7; padding-bottom: 20px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <img src="/logo.png" alt="Paper5 Project Management Software" width="36" height="36" style="width: 36px; height: 36px; object-fit: contain;" />
+            <strong style="font-size: 24px; font-weight: 800; letter-spacing: -0.03em;">Paper5</strong>
+          </div>
+          <nav style="display: flex; gap: 20px;">
+            <a href="/features" style="color: #4f46e5; text-decoration: none; font-weight: 600;">Features</a>
+            <a href="/pricing" style="color: #4f46e5; text-decoration: none; font-weight: 600;">Pricing</a>
+            <a href="/docs" style="color: #4f46e5; text-decoration: none; font-weight: 600;">Documentation</a>
+            <a href="/vs/trello" style="color: #4f46e5; text-decoration: none; font-weight: 600;">Paper5 vs Trello</a>
+            <a href="/vs/asana" style="color: #4f46e5; text-decoration: none; font-weight: 600;">Paper5 vs Asana</a>
+            <a href="/vs/clickup" style="color: #4f46e5; text-decoration: none; font-weight: 600;">Paper5 vs ClickUp</a>
+            <a href="/about" style="color: #4f46e5; text-decoration: none; font-weight: 600;">About</a>
+            <a href="https://app.paper5.co/login" style="color: #18181b; text-decoration: none; font-weight: 600;">Sign In</a>
+          </nav>
+        </header>
+
+        <article>
+          <h1 style="font-size: 42px; line-height: 1.15; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 16px; color: #09090b;">
+            Project Management Software for Small Teams & Startups
+          </h1>
+          <p style="font-size: 20px; color: #52525b; margin-bottom: 32px;">
+            Paper5 is the centralized team task management and sprint execution platform. Organize daily tasks, automate sprint tracking with GitHub sync, and maintain team accountability without coordination drag.
+          </p>
+
+          <section style="margin-bottom: 40px;">
+            <h2 style="font-size: 26px; font-weight: 700; margin-bottom: 16px; color: #09090b;">Why Small Teams Choose Paper5</h2>
+            <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 12px;">
+              <li><strong>Team Task Management Software:</strong> Plan, assign, and track tasks with strict single ownership to ensure accountability.</li>
+              <li><strong>Real-Time GitHub Synchronization:</strong> Automate ticket progression as pull requests are opened, reviewed, and merged.</li>
+              <li><strong>Lightweight Sprint Planning:</strong> Protect sprint scope and eliminate endless status meetings with asynchronous velocity insights.</li>
+              <li><strong>Collaborative Documentation:</strong> Keep meeting notes, project specs, and sprint retrospectives directly beside execution boards.</li>
+            </ul>
+          </section>
+
+          <section style="margin-bottom: 40px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px;">
+            <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 12px; color: #09090b;">Frequently Asked Questions</h2>
+            <div style="margin-bottom: 16px;">
+              <h3 style="font-size: 17px; font-weight: 600; margin-bottom: 4px;">What is project management software for small teams?</h3>
+              <p style="margin: 0; color: #52525b;">Project management software helps small teams coordinate deliverables, prioritize tasks, maintain transparency, and hit deadlines without administrative overhead.</p>
+            </div>
+            <div style="margin-bottom: 16px;">
+              <h3 style="font-size: 17px; font-weight: 600; margin-bottom: 4px;">How does Paper5 compare to Jira and Trello?</h3>
+              <p style="margin: 0; color: #52525b;">Paper5 bridges the gap between Trello's visual simplicity and Jira's technical depth. It provides automated GitHub workflows, sprint management, and docs in one clean interface without complex configuration.</p>
+            </div>
+          </section>
+        </article>
+      </main>
     </div>
+
     <noscript>
       <div style="padding: 32px; max-width: 800px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #18181b;">
         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 24px;">
-          <img src="/logo.png" alt="" width="32" height="32" style="width: 32px; height: 32px; object-fit: contain; flex-shrink: 0;" />
+          <img src="/logo.png" alt="Paper5 Logo" width="32" height="32" style="width: 32px; height: 32px; object-fit: contain; flex-shrink: 0;" />
           <span style="font-size: 20px; font-weight: 800; letter-spacing: -0.03em;">PAPER5</span>
         </div>
-        <h1>Paper5 | Connected Project Workspace for Small Teams</h1>
+        <h1>Paper5 | Project Management Software for Small Teams</h1>
         <p>Paper5 is the operating workspace for small teams and startups. Bring your team's projects, tasks, deadlines, documents, and sprints together in one synchronized workspace.</p>
         <nav style="display: flex; gap: 16px; margin: 24px 0;">
           <a href="/features" style="color: #4f46e5; font-weight: 600;">Features</a>
+          <a href="/pricing" style="color: #4f46e5; font-weight: 600;">Pricing</a>
           <a href="/docs" style="color: #4f46e5; font-weight: 600;">Documentation</a>
           <a href="/about" style="color: #4f46e5; font-weight: 600;">About</a>
           <a href="/contact" style="color: #4f46e5; font-weight: 600;">Contact</a>

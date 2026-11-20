@@ -199,11 +199,11 @@ export default function Landing() {
   return (
     <div className="landing-page">
       <SEOHead 
-        title={isPricingRoute ? "Pricing | Paper5" : "Paper5 | Sprint Management & Team Workflow with GitHub Sync"} 
+        title={isPricingRoute ? "Pricing | Paper5" : "Paper5 | Project Management Software for Small Teams & Startups"} 
         description={
           isPricingRoute
-            ? "Compare Paper5 Starter, Team, and Scale plans. Free during launch with core sprint management, single ownership, and GitHub sync with no credit card required."
-            : "Paper5 is the connected sprint management platform for engineering teams. Automate task progress with GitHub sync, enforce single ownership, and ship without coordination drag. Free during launch."
+            ? "Compare Paper5 Starter, Team, and Scale plans. Free forever tier available with core sprint and team task management, single ownership accountability, and GitHub sync."
+            : "Paper5 is the connected project management software for small teams and startups. Organize daily tasks, automate sprint tracking with GitHub sync, and maintain team accountability without coordination drag."
         }
         canonicalUrl={isPricingRoute ? "https://paper5.co/pricing" : "https://paper5.co/"}
       />

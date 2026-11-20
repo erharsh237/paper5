@@ -132,6 +132,7 @@ export default function WorkspacePicker() {
     <SEOHead
       title="Select Workspace | Paper5"
       description="Choose or create a Paper5 workspace for your team."
+      noIndex={true}
     />
   )
 

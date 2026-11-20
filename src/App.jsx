@@ -60,6 +60,7 @@ const ForgotPassword = safeLazy('forgotPassword')
 // Marketing Pages
 const Features = safeLazy('features')
 const AboutUs = safeLazy('about')
+const ComparisonPage = safeLazy('comparison')
 const ProductIntegrations = safeLazy('productIntegrations')
 const DocsPage = safeLazy('docs')
 const Changelog = safeLazy('changelog')
@@ -313,10 +314,14 @@ export default function App() {
           <Route path="/auth/action" element={<AuthAction />} />
           <Route path="/reset-password" element={<AuthAction />} />
           <Route path="/workspace" element={
-            loading ? <RouteSkeleton /> :
-            !user || isPending2FA ? <Navigate to="/login" replace /> :
-            !user.emailVerified ? <Navigate to="/verify" replace /> :
-            <WorkspacePicker />
+            !isAppSubdomain && isMarketingRootHost ? (
+              <CrossDomainRedirect toApp={true} path="/workspace" />
+            ) : (
+              loading ? <RouteSkeleton /> :
+              !user || isPending2FA ? <Navigate to="/login" replace /> :
+              !user.emailVerified ? <Navigate to="/verify" replace /> :
+              <WorkspacePicker />
+            )
           } />
           <Route path="/login" element={user && user.emailVerified && !isPending2FA ? <Navigate to="/workspace" replace /> : <Login />} />
           <Route path="/signup" element={<Signup />} />
@@ -349,14 +354,16 @@ export default function App() {
           <Route path="/pricing" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} path="/#pricing" /> : <Landing />} />
           <Route path="/features" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <Features />} />
           <Route path="/about" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <AboutUs />} />
+          <Route path="/vs" element={<Navigate to="/vs/trello" replace />} />
+          <Route path="/vs/:tool" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <ComparisonPage />} />
           <Route path="/product-integrations" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <ProductIntegrations />} />
           <Route path="/changelog" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <Changelog />} />
           <Route path="/docs" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <DocsPage />} />
           <Route path="/docs/api" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <DocsPage />} />
           <Route path="/security" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <Security />} />
 
-          {/* Workspace paths (app subdomain, preview deploys, or authenticated local dev; unknown paths on paper5.co fall through to 404) */}
-          {allowWorkspaceRoutes && (
+          {/* Workspace paths: On app.paper5.co render workspace; on paper5.co redirect to app.paper5.co */}
+          {allowWorkspaceRoutes ? (
             <Route path="/:workspaceId/*" element={
               requireAuthAndVerification(
                 <WorkspaceProvider>
@@ -378,6 +385,8 @@ export default function App() {
                 </WorkspaceProvider>
               )
             } />
+          ) : (
+            <Route path="/:workspaceId/*" element={<CrossDomainRedirect toApp={true} />} />
           )}
           
           <Route path="*" element={<NotFound />} />

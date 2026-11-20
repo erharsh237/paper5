@@ -114,6 +114,10 @@ export default function MarketingFooter({ hideCTA = false }) {
             <h3>Resources</h3>
             <FooterLink to="/docs">Documentation</FooterLink>
             <FooterLink to="/docs/api">API Reference</FooterLink>
+            <FooterLink to="/vs/trello">Paper5 vs Trello</FooterLink>
+            <FooterLink to="/vs/asana">Paper5 vs Asana</FooterLink>
+            <FooterLink to="/vs/clickup">Paper5 vs ClickUp</FooterLink>
+            <FooterLink to="/vs/jira">Paper5 vs Jira</FooterLink>
           </div>
           <div className="footer-column">
             <h3>Company</h3>
