@@ -508,51 +508,38 @@ async function handleGetMembers(req, res, supabaseAdmin, workspaceId, serviceKey
     const userIds = (members || []).map(m => m.user_id).filter(Boolean)
     const userDetailsMap = new Map()
 
-    if (userIds.length > 0) {
-      try {
-        const { data: usersData } = await supabaseAdmin
-          .from('users')
-          .select('id, email, full_name, avatar_url')
-          .in('id', userIds)
-        for (const u of (usersData || [])) {
-          if (u.id) userDetailsMap.set(u.id, u)
-        }
-      } catch (_) {}
+    // Parallelize user metadata, profiles, and workspace settings queries
+    const [usersRes, profRes, wsRes] = await Promise.all([
+      userIds.length > 0 
+        ? supabaseAdmin.from('users').select('id, email, full_name, avatar_url').in('id', userIds)
+        : Promise.resolve({ data: [] }),
+      userIds.length > 0
+        ? supabaseAdmin.from('profiles').select('id, email, name, photoURL').in('id', userIds)
+        : Promise.resolve({ data: [] }),
+      supabaseAdmin.from('workspaces').select('settings').eq('id', workspaceId).maybeSingle()
+    ])
+
+    for (const u of (usersRes?.data || [])) {
+      if (u.id) userDetailsMap.set(u.id, u)
     }
 
-    if (userIds.length > 0) {
-      try {
-        const { data: profData } = await supabaseAdmin
-          .from('profiles')
-          .select('id, email, name, photoURL')
-          .in('id', userIds)
-        for (const p of (profData || [])) {
-          if (p.id) {
-            const existing = userDetailsMap.get(p.id) || {}
-            userDetailsMap.set(p.id, {
-              ...existing,
-              email: existing.email || p.email,
-              full_name: existing.full_name || p.name,
-              avatar_url: existing.avatar_url || p.photoURL
-            })
-          }
-        }
-      } catch (_) {}
+    for (const p of (profRes?.data || [])) {
+      if (p.id) {
+        const existing = userDetailsMap.get(p.id) || {}
+        userDetailsMap.set(p.id, {
+          ...existing,
+          email: existing.email || p.email,
+          full_name: existing.full_name || p.name,
+          avatar_url: existing.avatar_url || p.photoURL
+        })
+      }
     }
 
     let memberPermsMap = {}
-    let wsData = null
-    try {
-      const { data } = await supabaseAdmin
-        .from('workspaces')
-        .select('settings')
-        .eq('id', workspaceId)
-        .maybeSingle()
-      wsData = data
-      if (wsData?.settings?.member_permissions) {
-        memberPermsMap = wsData.settings.member_permissions
-      }
-    } catch (_) {}
+    const wsData = wsRes?.data || null
+    if (wsData?.settings?.member_permissions) {
+      memberPermsMap = wsData.settings.member_permissions
+    }
 
     const isCallerAdmin = authRes.isAdmin
     const callerUid = authRes.user.id

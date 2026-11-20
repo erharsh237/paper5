@@ -102,7 +102,7 @@ export function subscribeDeadlines(workspaceId, teamIdOrCallback, callbackOrPage
     if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
       fetchList()
     }
-  }, 3000)
+  }, 60000)
 
   return () => {
     isSubscribed = false

@@ -59,8 +59,8 @@ export default defineConfig({
   },
   build: {
     sourcemap: false,
-    target: ['es2015', 'chrome60', 'edge79', 'firefox68', 'safari12'],
-    cssTarget: ['chrome60', 'edge79', 'firefox68', 'safari12'],
+    target: 'es2020',
+    cssTarget: 'es2020',
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
@@ -72,8 +72,17 @@ export default defineConfig({
             if (id.includes('@supabase')) {
               return 'vendor-supabase'
             }
+            if (id.includes('recharts') || id.includes('d3-')) {
+              return 'vendor-charts'
+            }
+            if (id.includes('framer-motion')) {
+              return 'vendor-motion'
+            }
             if (id.includes('lucide-react') || id.includes('@fortawesome')) {
               return 'vendor-icons'
+            }
+            if (id.includes('date-fns')) {
+              return 'vendor-date'
             }
             if (id.includes('@sentry')) {
               return 'vendor-sentry'

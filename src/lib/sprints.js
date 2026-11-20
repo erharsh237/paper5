@@ -69,7 +69,7 @@ export function subscribeSprints(workspaceId, teamIdOrCallback, maybeCallback) {
     if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
       fetchList()
     }
-  }, 3000)
+  }, 60000)
 
   return () => {
     isSubscribed = false

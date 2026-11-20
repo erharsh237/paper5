@@ -136,7 +136,7 @@ export function subscribeEventNotes(workspaceId, teamId, callback) {
 
   const heartbeat = setInterval(() => {
     if (typeof document !== 'undefined' && !document.hidden) fetchList()
-  }, 3000)
+  }, 60000)
 
   return () => {
     isSubscribed = false

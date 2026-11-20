@@ -272,7 +272,7 @@ export function subscribeWorkspaceMembers(workspaceId, callback) {
     if (typeof document !== 'undefined' && !document.hidden && isSubscribed) {
       fetchList()
     }
-  }, 3000)
+  }, 60000)
 
   return () => {
     isSubscribed = false
@@ -360,7 +360,7 @@ export function subscribeInvites(workspaceId, callback) {
     if (typeof document !== 'undefined' && !document.hidden && isSubscribed) {
       fetchList()
     }
-  }, 3000)
+  }, 60000)
 
   return () => {
     isSubscribed = false

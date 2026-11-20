@@ -63,10 +63,13 @@ export function WorkspaceProvider({ children }) {
     setLoadingWorkspace(true);
     setWorkspaceError(null);
 
+    let checkedInvitesOnce = false
+
     const fetchAll = async () => {
       try {
-        // Step 1: Accept any pending invites via serverless API (uses service role key to bypass RLS)
-        if (user?.email) {
+        // Step 1: Accept any pending invites once on mount via serverless API (uses service role key to bypass RLS)
+        if (user?.email && !checkedInvitesOnce) {
+          checkedInvitesOnce = true
           try {
             await fetch('/api/accept-invite', {
               method: 'POST',
@@ -213,12 +216,12 @@ export function WorkspaceProvider({ children }) {
       document.addEventListener('visibilitychange', onVisibilityOrFocus)
     }
 
-    // 3-second continuous background sync heartbeat (active while tab is open)
+    // Resilient background sync heartbeat (active while tab is open, Realtime WebSocket handles live changes)
     const heartbeatTimer = setInterval(() => {
       if (typeof document !== 'undefined' && !document.hidden) {
         fetchAll()
       }
-    }, 3000)
+    }, 60000)
 
     fetchAll()
 
