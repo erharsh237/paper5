@@ -153,11 +153,28 @@ export function AuthProvider({ children }) {
         setUserData(data)
         setLoading(false)
 
-        // Try to auto-redeem any pending invites for this user
+        // Try to auto-redeem any pending invites for this user via serverless engine
         if (data) {
+          const cleanEmail = u.email ? u.email.trim().toLowerCase() : ''
+          if (cleanEmail && (!data.billing_plan_id || data.billing_plan_id === 'unselected' || data.billing_plan_id === 'none')) {
+            fetch('/api/accept-invite', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: cleanEmail, userId: u.id })
+            }).then(r => r.json()).then(inviteRes => {
+              if (inviteRes?.workspaceId) {
+                setUserData(prev => ({
+                  ...(prev || {}),
+                  billing_plan_id: 'member',
+                  billingPlanId: 'member'
+                }))
+              }
+            }).catch(() => {})
+          }
+
           supabase.rpc('redeem_my_invites').then(({ error }) => {
             if (error) console.error('Auto-redeem failed:', error)
-          })
+          }).catch(() => {})
         }
       }
       
@@ -295,24 +312,35 @@ export function AuthProvider({ children }) {
     return clean || 'An unexpected error occurred. Please try again.'
   }
 
-  const checkUsername = async (username) => {
+  const checkUsername = async (username, excludeUserId = user?.id) => {
     const clean = (username || '').trim().toLowerCase()
     if (!clean || clean.length < 3) return false
     
-    // 1. Try DB RPC first
+    // 1. Try DB RPC first if available
     try {
       const { data, error } = await supabase.rpc('check_username_available', { uname: clean })
-      if (!error && typeof data === 'boolean') return data
+      if (!error && typeof data === 'boolean') {
+        if (!data && excludeUserId) {
+          // If RPC returned false, verify if it was taken by the current user themselves
+          const { data: ownUser } = await supabase.from('users').select('id').eq('id', excludeUserId).ilike('username', clean).maybeSingle()
+          if (ownUser) return true
+        }
+        return data
+      }
     } catch (_) {}
 
     // 2. Direct lookup on users table
     try {
-      const { data: existingUser } = await supabase
+      let query = supabase
         .from('users')
         .select('id')
         .ilike('username', clean)
-        .maybeSingle()
 
+      if (excludeUserId) {
+        query = query.neq('id', excludeUserId)
+      }
+
+      const { data: existingUser } = await query.maybeSingle()
       return !existingUser
     } catch (_) {
       return true
@@ -320,7 +348,6 @@ export function AuthProvider({ children }) {
   }
 
   const sendSignupOtp = async (email) => {
-    triggerSpamNotice()
     setAuthError(null)
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -330,6 +357,7 @@ export function AuthProvider({ children }) {
       setAuthError(getFriendlyError(error))
       throw error
     }
+    triggerSpamNotice()
   }
 
   const verifyOtp = async (email, token) => {
@@ -360,8 +388,8 @@ export function AuthProvider({ children }) {
     setAuthError(null)
     const cleanUsername = (username || '').trim().toLowerCase()
 
-    // Enforce uniqueness validation before completing registration
-    const isAvail = await checkUsername(cleanUsername)
+    // Enforce uniqueness validation before completing registration, excluding current user ID
+    const isAvail = await checkUsername(cleanUsername, user?.id)
     if (!isAvail) {
       const err = new Error('This username is already taken. Please choose another username.')
       setAuthError(err.message)
@@ -427,41 +455,41 @@ export function AuthProvider({ children }) {
       const email = await resolveEmailFromUsername(identifier)
       const cleanE = email.trim().toLowerCase()
       
-      // 1. Check if user is logging in with an invitation temporary password
-      const { data: inviteMatch } = await supabase
-        .from('invites')
-        .select('*')
-        .ilike('email', cleanE)
-        .maybeSingle()
+      // 1. Standard sign in with Supabase Auth (hashed with bcrypt/Argon2)
+      let { error, data } = await supabase.auth.signInWithPassword({ email: cleanE, password })
 
-      if (inviteMatch && (!inviteMatch.password_hint || inviteMatch.password_hint === password)) {
-        try {
-          // Pre-register account in Auth with temporary password & password reset flag
-          await supabase.auth.signUp({
-            email: cleanE,
-            password: password,
-            options: {
-              data: {
-                must_change_password: true,
-                invited_workspace_id: inviteMatch.workspace_id,
-                invited_role: inviteMatch.role
+      // If user has a pending invite but has not registered their Auth credentials yet:
+      if (error && (error.message?.includes('Invalid login credentials') || error.message?.includes('User not found'))) {
+        const { data: inviteMatch } = await supabase
+          .from('invites')
+          .select('*')
+          .ilike('email', cleanE)
+          .maybeSingle()
+
+        if (inviteMatch) {
+          try {
+            const signUpRes = await supabase.auth.signUp({
+              email: cleanE,
+              password: password,
+              options: {
+                data: {
+                  must_change_password: true,
+                  invited_workspace_id: inviteMatch.workspace_id,
+                  invited_role: inviteMatch.role
+                }
+              }
+            })
+            if (!signUpRes.error && signUpRes.data?.user) {
+              const loginRetry = await supabase.auth.signInWithPassword({ email: cleanE, password })
+              if (!loginRetry.error && loginRetry.data) {
+                setUserData(prev => ({ ...(prev || {}), requiresPasswordReset: true }))
+                return { ...loginRetry.data, requiresPasswordReset: true, isInviteDirectLogin: true }
               }
             }
-          })
-        } catch (signUpErr) {
-          console.warn('Pre-signup notice:', signUpErr)
-        }
-
-        // Direct sign in with temporary password
-        const loginRes = await supabase.auth.signInWithPassword({ email: cleanE, password })
-        if (!loginRes.error && loginRes.data) {
-          setUserData(prev => ({ ...(prev || {}), requiresPasswordReset: true }))
-          return { ...loginRes.data, requiresPasswordReset: true, isInviteDirectLogin: true }
+          } catch (_) {}
         }
       }
 
-      // 2. Standard sign in
-      const { error, data } = await supabase.auth.signInWithPassword({ email: cleanE, password })
       if (error) {
         setAuthError(getFriendlyError(error))
         throw error
@@ -474,7 +502,6 @@ export function AuthProvider({ children }) {
   }
 
   const sendLoginOtp = async (identifier) => {
-    triggerSpamNotice()
     setAuthError(null)
     try {
       const email = await resolveEmailFromUsername(identifier)
@@ -486,6 +513,7 @@ export function AuthProvider({ children }) {
         setAuthError(getFriendlyError(error))
         throw error
       }
+      triggerSpamNotice()
       return email
     } catch (error) {
       setAuthError(getFriendlyError(error))

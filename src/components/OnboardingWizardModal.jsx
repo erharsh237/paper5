@@ -34,7 +34,7 @@ const TIERS = [
     badge: 'Launch Special - Recommended',
     recommended: true,
     price: '₹0',
-    originalPrice: '₹2,499/mo',
+    originalPrice: '₹200/mo',
     subtext: '100% Unlocked during Launch',
     workspaces: '5 Workspaces',
     seats: 'Up to 7 Seats',
@@ -52,7 +52,7 @@ const TIERS = [
     name: 'Scale',
     badge: 'High-Velocity Engineering',
     price: '₹0',
-    originalPrice: '₹6,499/mo',
+    originalPrice: '₹500/mo',
     subtext: '100% Unlocked during Launch',
     workspaces: '10 Workspaces',
     seats: 'Unlimited Seats',
@@ -118,22 +118,37 @@ export default function OnboardingWizardModal() {
       try {
         const cleanEmail = user.email ? user.email.trim().toLowerCase() : ''
 
-        // 1. Check workspace memberships
+        // 1. First, check & auto-accept any pending invitations via elevated serverless API
+        if (cleanEmail || user.id) {
+          try {
+            const resp = await fetch('/api/accept-invite', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: cleanEmail, userId: user.id })
+            })
+            const apiRes = await resp.json()
+            if (apiRes?.workspaceId) {
+              if (isMounted) setIsPrimaryAdmin(false)
+              if (updateUserData) updateUserData({ billing_plan_id: 'member' })
+              if (location.pathname === '/workspace' || location.pathname === '/') {
+                navigate(`/${apiRes.workspaceId}`, { replace: true })
+              }
+              return
+            }
+          } catch (_) {}
+        }
+
+        // 2. Check workspace memberships
         const { data: memberships } = await supabase
           .from('workspace_members')
           .select('role, workspace_id')
           .eq('user_id', user.id)
 
-        // 2. Check pending invitations
-        const { data: invites } = await supabase
-          .from('invites')
-          .select('id')
-          .ilike('email', cleanEmail)
-
-        const { data: legacyInvites } = await supabase
-          .from('workspace_invites')
-          .select('id')
-          .ilike('email', cleanEmail)
+        // 3. Check pending invitations
+        const [{ data: invites }, { data: legacyInvites }] = await Promise.all([
+          supabase.from('invites').select('id, workspace_id').ilike('email', cleanEmail),
+          supabase.from('workspace_invites').select('id, workspace_id').ilike('email', cleanEmail)
+        ])
 
         const isInvitedOrMember = 
           (memberships && memberships.length > 0) || 
@@ -142,14 +157,14 @@ export default function OnboardingWizardModal() {
           Boolean(user.user_metadata?.invited_workspace_id)
 
         if (isInvitedOrMember) {
-          // Check if the user is explicitly the creator of any workspace
+          // Check if the user is explicitly the owner of any workspace
           const { data: ownedWs } = await supabase
             .from('workspaces')
             .select('id')
-            .eq('created_by', user.id)
+            .eq('owner_id', user.id)
 
           if (!ownedWs || ownedWs.length === 0) {
-            // User is an invited team member — NOT primary workspace creator!
+            // User is an invited team member — NEVER primary workspace creator!
             if (isMounted) setIsPrimaryAdmin(false)
             if (!userData?.billing_plan_id || userData.billing_plan_id === 'unselected' || userData.billing_plan_id === 'none') {
               await ensureUserRecordExists(user.id, user.email, {
@@ -162,11 +177,15 @@ export default function OnboardingWizardModal() {
               }).eq('id', user.id)
               if (updateUserData) updateUserData({ billing_plan_id: 'member' })
             }
+            const targetWsId = memberships?.[0]?.workspace_id || invites?.[0]?.workspace_id
+            if (targetWsId && (location.pathname === '/workspace' || location.pathname === '/')) {
+              navigate(`/${targetWsId}`, { replace: true })
+            }
             return
           }
         }
 
-        // User is the FIRST ADMIN creator of a workspace if no member/invite status matches
+        // User is the FIRST ADMIN creator of a workspace only if no member/invite status matches
         if (isMounted) setIsPrimaryAdmin(true)
       } catch (err) {
         console.error('Failed to check primary admin role:', err)
@@ -184,6 +203,7 @@ export default function OnboardingWizardModal() {
     user && 
     userData &&
     isPrimaryAdmin === true &&
+    userData.billing_plan_id !== 'member' &&
     (!userData.billing_plan_id || userData.billing_plan_id === 'none' || userData.billing_plan_id === 'unselected' || !userData.legal_accepted_at)
   )
 

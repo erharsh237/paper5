@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
+import { authenticateUser } from './_auth.js'
+import { sanitizeError } from './_errors.js'
 
 export default async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json')
@@ -11,16 +13,22 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing workspaceId, userId, or email parameter' })
   }
 
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://sdbglndhjkqhkphzqmum.supabase.co'
+  const rawUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY
   const activeKey = serviceKey || anonKey
 
-  if (!activeKey) {
+  if (!rawUrl || !activeKey) {
     return res.status(500).json({ error: 'Supabase credentials missing' })
   }
 
-  const supabaseAdmin = createClient(supabaseUrl, activeKey)
+  const supabaseUrl = rawUrl.replace(/["']/g, '').trim()
+  const supabaseAdmin = createClient(supabaseUrl, activeKey.replace(/["']/g, '').trim())
+
+  const authRes = await authenticateUser(req, supabaseAdmin)
+  if (authRes.error) {
+    return res.status(authRes.status || 401).json({ error: authRes.error })
+  }
 
   try {
     // 1. Fetch current workspace settings
@@ -144,7 +152,7 @@ export default async function handler(req, res) {
       deletionRequests
     })
   } catch (err) {
-    console.error('Request account deletion error:', err)
-    return res.status(500).json({ error: err.message || 'Failed to submit account deletion request' })
+    console.error('Request account deletion error:', err?.message || err)
+    return res.status(500).json({ error: sanitizeError(err, 'Failed to submit account deletion request') })
   }
 }

@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { getAuthHeaders } from './authHeaders'
 
 export async function logAudit(workspaceId, action, resource, metadata = {}) {
   try {
@@ -169,9 +170,11 @@ export function subscribeWorkspaceMembers(workspaceId, callback) {
 
       // 1. Try serverless API first (uses service role key to get real emails, full names, and permissions)
       try {
+        const authHeaders = await getAuthHeaders()
         const res = await fetch(`/api/workspace-members?workspaceId=${encodeURIComponent(workspaceId)}`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          headers: authHeaders,
           body: JSON.stringify({ action: 'fetch_members', workspaceId }),
           signal: abortController.signal
         })
@@ -432,9 +435,11 @@ export async function ensureUserRecordExists(uid, email, metadata = {}) {
     // 4. Serverless admin fallback if client upsert failed or force requested
     if (upsertErr || force || metadata.fallbackToApi) {
       try {
+        const authHeaders = await getAuthHeaders()
         const res = await fetch('/api/ensure-user', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          headers: authHeaders,
           body: JSON.stringify({
             userId: uid,
             email: cleanEmail,
@@ -445,9 +450,11 @@ export async function ensureUserRecordExists(uid, email, metadata = {}) {
         if (json.success && json.user) return json.user
       } catch (apiErr) {
         try {
+          const authHeaders = await getAuthHeaders()
           const res2 = await fetch('/api/workspace-members', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            headers: authHeaders,
             body: JSON.stringify({
               action: 'ensure_user',
               userId: uid,
@@ -533,9 +540,11 @@ export async function updateWorkspaceSettings(workspaceId, patch) {
     const { error } = await supabase.from('workspaces').update(mappedPatch).eq('id', workspaceId)
     if (error) throw error
   } catch (err) {
+    const authHeaders = await getAuthHeaders()
     const res = await fetch('/api/workspace-members', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      headers: authHeaders,
       body: JSON.stringify({
         action: 'update_workspace_settings',
         workspaceId,
@@ -549,9 +558,11 @@ export async function updateWorkspaceSettings(workspaceId, patch) {
 
 export async function removeMember(workspaceId, memberUid) {
   try {
+    const authHeaders = await getAuthHeaders()
     const res = await fetch('/api/workspace-members', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      headers: authHeaders,
       body: JSON.stringify({
         action: 'remove_member',
         workspaceId,
@@ -567,9 +578,11 @@ export async function removeMember(workspaceId, memberUid) {
 
 export async function changeMemberRole(workspaceId, memberUid, newRole) {
   try {
+    const authHeaders = await getAuthHeaders()
     const res = await fetch('/api/workspace-members', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      headers: authHeaders,
       body: JSON.stringify({ action: 'update_role', workspaceId, memberId: memberUid, role: newRole })
     })
     if (res.ok) return
@@ -598,9 +611,11 @@ export async function cancelInvite(workspaceId, inviteId, email = null) {
   // 2. Completely remove the pre-provisioned Auth account and temp credentials if user is not in any workspace
   if (cleanEmail) {
     try {
+      const authHeaders = await getAuthHeaders()
       await fetch('/api/delete-user', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        headers: authHeaders,
         body: JSON.stringify({ email: cleanEmail, workspaceId, fullDelete: true })
       })
     } catch (err) {
@@ -617,9 +632,11 @@ export async function createInvite(workspaceId, email, role, permissions = [], p
   // 1. Try serverless API first (uses admin service key to create invite or add existing member directly)
   let apiRes = null
   try {
+    const authHeaders = await getAuthHeaders()
     const res = await fetch('/api/workspace-members', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      headers: authHeaders,
       body: JSON.stringify({
         action: 'create_invite',
         workspaceId,
@@ -648,7 +665,6 @@ export async function createInvite(workspaceId, email, role, permissions = [], p
       role: role || 'member',
       permissions: Array.isArray(permissions) ? permissions : [],
       invited_by: inviterId,
-      password_hint: password || null,
       sent_count: sendEmail ? 1 : 0,
       created_at: new Date().toISOString()
     }).select().maybeSingle()
@@ -677,15 +693,16 @@ export async function createInvite(workspaceId, email, role, permissions = [], p
   let emailStatus = null
   if (sendEmail) {
     try {
+      const authHeaders = await getAuthHeaders()
       const emailResp = await fetch('/api/send-invite', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        headers: authHeaders,
         body: JSON.stringify({
           email: cleanEmail,
           workspaceId,
           role,
-          permissions,
-          password
+          permissions
         })
       })
       const emailJson = await emailResp.json()
@@ -724,9 +741,11 @@ export async function updateMemberPermissions(workspaceId, userId, permissions, 
 
   // 2. Serverless API update (runs as service admin to bypass RLS and persist)
   try {
+    const authHeaders = await getAuthHeaders()
     const res = await fetch('/api/workspace-members', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      headers: authHeaders,
       body: JSON.stringify({
         action: 'update_permissions',
         workspaceId,

@@ -155,15 +155,16 @@ export async function handleForgotPassword(req, res) {
   }
 
   const cleanEmail = email.trim().toLowerCase()
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://sdbglndhjkqhkphzqmum.supabase.co'
+  const rawUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY
   const resendApiKey = process.env.RESEND_API_KEY || process.env.VITE_RESEND_API_KEY
 
-  if (!serviceKey) {
+  if (!rawUrl || !serviceKey) {
     return res.status(500).json({ error: 'Server configuration error' })
   }
 
-  const supabaseAdmin = createClient(supabaseUrl, serviceKey)
+  const supabaseUrl = rawUrl.replace(/["']/g, '').trim()
+  const supabaseAdmin = createClient(supabaseUrl, serviceKey.replace(/["']/g, '').trim())
 
   try {
     const { data: userProfile } = await supabaseAdmin
@@ -313,6 +314,8 @@ function parseCookieTheme(req) {
 
 export function handleNotFound(req, res) {
   const initialTheme = parseCookieTheme(req)
+  const host = (req.headers?.['x-forwarded-host'] || req.headers?.host || '').toLowerCase()
+  const isAppSubdomain = host.startsWith('app.') || host.includes('app.localhost')
 
   res.statusCode = 404
   res.setHeader('Content-Type', 'text/html; charset=utf-8')
@@ -555,10 +558,22 @@ export function handleNotFound(req, res) {
 
       <div class="lost-action-center">
         <p class="lost-desc">The page you were looking for is not found.</p>
+        ${isAppSubdomain ? `
+        <div style="display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;">
+          <a href="/workspace" class="lost-cta-btn">
+            <span class="lost-cta-plus">+</span>
+            <span>RETURN TO WORKSPACE</span>
+          </a>
+          <a href="https://paper5.co" class="lost-cta-btn" style="background-color:transparent;color:inherit !important;border:1.5px solid rgba(125,125,125,0.3);box-shadow:none;">
+            <span>VISIT MAIN SITE</span>
+          </a>
+        </div>
+        ` : `
         <a href="/" class="lost-cta-btn">
           <span class="lost-cta-plus">+</span>
           <span>GO BACK HOME</span>
         </a>
+        `}
       </div>
 
       <span class="lost-bracket lost-bracket-right">]</span>
@@ -884,4 +899,107 @@ export function handleServerError(req, res, err) {
   </div>
 </body>
 </html>`)
+}
+
+export async function handleCheckAccount(req, res) {
+  setCorsHeaders(req, res)
+  if (req.method === 'OPTIONS') return res.status(200).end()
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' })
+
+  if (checkRateLimit(req, res, { max: 60, windowMs: 60000 })) return
+
+  let body = req.body || {}
+  if (typeof body === 'string') {
+    try { body = JSON.parse(body) } catch (_) { body = {} }
+  }
+
+  const email = (body.email || '').trim().toLowerCase()
+  const username = (body.username || '').trim().toLowerCase()
+
+  const rawUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY
+    || process.env.VITE_SUPABASE_ANON_KEY
+
+  if (!rawUrl || !serviceKey) {
+    return res.status(200).json({ emailExists: false, usernameAvailable: true, isInvited: false })
+  }
+
+  const supabaseUrl = rawUrl.replace(/["']/g, '').trim()
+  const activeKey = serviceKey.replace(/["']/g, '').trim()
+  const supabaseAdmin = createClient(supabaseUrl, activeKey)
+
+  let emailExists = false
+  let usernameAvailable = true
+  let isInvited = false
+  let workspaceId = null
+  let existingUsername = null
+
+  // 1. Check if email already has an account
+  if (email) {
+    try {
+      const { data: userRow } = await supabaseAdmin
+        .from('users')
+        .select('id, email, username')
+        .ilike('email', email)
+        .maybeSingle()
+
+      if (userRow && userRow.id) {
+        emailExists = true
+        existingUsername = userRow.username
+      } else {
+        try {
+          const { data: listRes } = await supabaseAdmin.auth.admin.listUsers()
+          const matched = (listRes?.users || []).find(u => (u.email || '').trim().toLowerCase() === email)
+          if (matched) {
+            emailExists = true
+            existingUsername = matched.user_metadata?.username || null
+          }
+        } catch (_) {}
+      }
+    } catch (_) {}
+
+    // Check if email has pending invites or is an existing workspace member
+    try {
+      const [{ data: inv1 }, { data: inv2 }] = await Promise.all([
+        supabaseAdmin.from('invites').select('workspace_id').ilike('email', email).maybeSingle(),
+        supabaseAdmin.from('workspace_invites').select('workspace_id').ilike('email', email).maybeSingle()
+      ])
+      const invite = inv1 || inv2
+      if (invite?.workspace_id) {
+        isInvited = true
+        workspaceId = invite.workspace_id
+      }
+    } catch (_) {}
+  }
+
+  // 2. Check if username is already taken
+  if (username) {
+    try {
+      const { data: unameRow } = await supabaseAdmin
+        .from('users')
+        .select('id, email')
+        .ilike('username', username)
+        .maybeSingle()
+
+      if (unameRow && unameRow.id) {
+        // If the username belongs to this exact email, don't flag as taken by someone else
+        if (email && unameRow.email && unameRow.email.toLowerCase() === email) {
+          usernameAvailable = true
+        } else {
+          usernameAvailable = false
+        }
+      }
+    } catch (_) {
+      usernameAvailable = true
+    }
+  }
+
+  return res.status(200).json({
+    emailExists,
+    usernameAvailable,
+    isInvited,
+    workspaceId,
+    existingUsername
+  })
 }

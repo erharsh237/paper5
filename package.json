@@ -30,8 +30,6 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
-    "@reticlehq/react": "^2.2.1",
-    "@reticlehq/vite-plugin": "^2.2.1",
     "@vitejs/plugin-react": "^6.0.4",
     "vite": "^8.1.5"
   }

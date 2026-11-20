@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useAuth } from '../lib/AuthContext'
 import { useSubmitRateLimit } from '../hooks/useSubmitRateLimit'
 import { trackEvent } from '../lib/metrics'
@@ -94,7 +95,18 @@ export default function FeedbackModal({ isOpen, onClose }) {
     onClose()
   }
 
-  return (
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') handleResetAndClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen])
+
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
     <div className="feedback-modal-overlay" onClick={handleResetAndClose}>
       <div
         className="feedback-modal-card"
@@ -226,6 +238,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

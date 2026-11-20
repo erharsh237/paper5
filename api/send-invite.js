@@ -1,4 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
+import { authenticateUser, verifyWorkspaceAccess } from './_auth.js'
+import { checkRateLimit } from './_rateLimit.js'
+import { sanitizeError } from './_errors.js'
 
 // Unified Serverless Email Engine (Workspace Invites, Deadline Assignments, Blocker Alerts)
 export default async function handler(req, res) {
@@ -6,17 +9,42 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' })
   }
 
+  if (checkRateLimit(req, res, { max: 30, windowMs: 60000 })) return
+
+  const rawUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY
+  const anonKey = process.env.VITE_SUPABASE_ANON_KEY
+  const activeKey = serviceKey || anonKey
+
+  if (!rawUrl || !activeKey) {
+    return res.status(500).json({ error: 'Supabase credentials missing' })
+  }
+
+  const supabaseUrl = rawUrl.replace(/["']/g, '').trim()
+  const supabaseAdmin = createClient(supabaseUrl, activeKey.replace(/["']/g, '').trim())
+
   const body = req.body || {}
-  const { type, email, toEmail, toName, role, workspaceName, title, description, dueDate, priority, assignedBy, blockerReason, blockerUser, appUrl } = body
+  const { type, email, toEmail, toName, role, workspaceName, workspaceId, title, description, dueDate, priority, assignedBy, blockerReason, blockerUser, appUrl } = body
   const cleanEmail = (email || toEmail || '').trim().toLowerCase()
 
   if (!cleanEmail) {
     return res.status(400).json({ error: 'Missing required parameter: email' })
   }
 
+  // Prevent email bomb / unauthenticated spamming attacks: Caller MUST be authenticated
+  if (workspaceId) {
+    const wsAuth = await verifyWorkspaceAccess(req, supabaseAdmin, workspaceId)
+    if (wsAuth.error) {
+      return res.status(wsAuth.status || 403).json({ error: wsAuth.error })
+    }
+  } else {
+    const userAuth = await authenticateUser(req, supabaseAdmin)
+    if (userAuth.error) {
+      return res.status(userAuth.status || 401).json({ error: userAuth.error })
+    }
+  }
+
   const resendApiKey = process.env.RESEND_API_KEY || process.env.VITE_RESEND_API_KEY
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://sdbglndhjkqhkphzqmum.supabase.co'
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY
   const targetUrl = appUrl || 'https://app.paper5.co'
 
   let subject = ''
@@ -62,59 +90,74 @@ export default async function handler(req, res) {
       </body>
       </html>
     `
-  } 
-  // 2. Blocker Alert Email
-  else if (type === 'blocker' || blockerReason) {
-    subject = `🚨 [SprintOS Alert] Task Blocked: "${title || 'Task'}"`
-    textBody = `Task Blocked Alert\n\nTask: ${title || 'Untitled Task'}\nReported by: ${blockerUser || 'Team Member'}\nBlocker Reason: ${blockerReason || 'Unspecified'}\n\nView details: ${targetUrl}`
+  }
+  // 2. Blocker Flagged Email
+  else if (type === 'blocker') {
+    const reporterName = blockerUser || assignedBy || 'A team member'
+    subject = `🚨 [SprintOS] Blocker Flagged: "${title || 'Task'}"`
+    textBody = `Blocker Flagged\n\n${reporterName} flagged a blocker on "${title || 'Task'}".\n\nReason: ${blockerReason || 'No blocker reason provided.'}\n\nResolve or view details: ${targetUrl}`
     htmlBody = `
       <!DOCTYPE html>
       <html>
-      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc; color: #0f172a; padding: 24px;">
-        <div style="max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 32px; border: 1px solid #e2e8f0;">
-          <div style="display:inline-block; background:#fee2e2; color:#b91c1c; padding:4px 10px; border-radius:9999px; font-weight:700; font-size:12px;">CRITICAL BLOCKER</div>
-          <h2 style="font-size: 18px; font-weight: 800; margin: 12px 0;">Task marked as Blocked</h2>
-          <p style="font-size: 14px; color: #334155;">A blocker was flagged on <strong>"${title || 'Untitled Task'}"</strong> by <strong>${blockerUser || 'Team Member'}</strong>.</p>
-          <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:16px; margin:16px 0; color:#991b1b; font-size:14px;">
-            <strong>Blocker Reason:</strong><br>${blockerReason || 'No reason provided.'}
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc; color: #0f172a; margin: 0; padding: 24px; }
+          .container { max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 32px; border: 1px solid #fecaca; }
+          .badge { display: inline-block; background: #fee2e2; color: #b91c1c; padding: 4px 10px; border-radius: 9999px; font-weight: 700; font-size: 12px; margin-bottom: 12px; }
+          .title { font-size: 18px; font-weight: 800; color: #991b1b; margin: 0 0 12px 0; }
+          .card { background: #fff1f2; border-radius: 8px; padding: 16px; margin: 16px 0; border: 1px solid #fecdd3; }
+          .btn { display: inline-block; background: #dc2626; color: #ffffff !important; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; font-size: 14px; margin-top: 16px; text-align: center; }
+          .footer { font-size: 12px; color: #94a3b8; margin-top: 28px; border-top: 1px solid #f1f5f9; padding-top: 14px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="badge">BLOCKER ALERT</div>
+          <h2 class="title">A blocker has been reported</h2>
+          <p style="font-size: 14px; color: #334155;"><strong>${reporterName}</strong> reported an obstacle on <strong>"${title || 'Untitled Task'}"</strong>.</p>
+          <div class="card">
+            <strong style="color: #991b1b;">Blocker Reason:</strong>
+            <p style="margin: 8px 0 0 0; font-size: 14px; color: #4c0519;">${blockerReason || 'No details provided.'}</p>
           </div>
-          <a href="${targetUrl}" style="display:inline-block; background:#dc2626; color:#ffffff; text-decoration:none; padding:12px 24px; border-radius:8px; font-weight:700; font-size:14px;">Resolve Blocker &rarr;</a>
+          <a href="${targetUrl}" class="btn" style="color:#fff;">View Blocker on Dashboard &rarr;</a>
+          <div class="footer">SprintOS Alert Engine &bull; <a href="https://app.paper5.co" style="color: #64748b;">app.paper5.co</a></div>
         </div>
       </body>
       </html>
     `
   }
-  // 3. Workspace Invite Email (Default)
+  // 3. Workspace Invitation Email
   else {
-    const targetJoinUrl = `https://app.paper5.co/signup?email=${encodeURIComponent(cleanEmail)}`
-    subject = `You've been invited to join ${workspaceName || 'a workspace'} on SprintOS`
-    textBody = `Workspace Invitation\n\nYou have been invited to join ${workspaceName || 'Workspace'} as a ${role || 'Member'} on SprintOS.\n\nAccept your invitation: ${targetJoinUrl}`
+    const inviteLink = `${targetUrl}/join?email=${encodeURIComponent(cleanEmail)}`
+    subject = `You've been invited to join ${workspaceName || 'a team workspace'} on SprintOS`
+    textBody = `You've been invited to join ${workspaceName || 'a workspace'} on SprintOS as ${role || 'member'}.\n\nClick the link below to accept your invitation:\n${inviteLink}\n\nSign in to get started.`
     htmlBody = `
       <!DOCTYPE html>
       <html>
-      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc; color: #0f172a; padding: 24px;">
-        <div style="max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 32px; border: 1px solid #e2e8f0;">
-          <h2 style="font-size: 20px; font-weight: 700; margin: 0 0 16px 0;">Workspace Invitation</h2>
-          <p style="font-size: 14px; color: #334155;">You have been invited to join <strong>${workspaceName || 'Workspace'}</strong> as a <strong>${role || 'Member'}</strong> on SprintOS.</p>
-          <div style="background: #f8fafc; border-radius: 8px; padding: 16px; margin: 20px 0; border: 1px solid #e2e8f0;">
-            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 600;">Invited Email</div>
-            <div style="font-size: 14px; font-weight: 600; color: #0f172a; margin-bottom: 8px;">${cleanEmail}</div>
-            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 600;">Assigned Role</div>
-            <div style="font-size: 14px; font-weight: 600; color: #0f172a;">${role || 'Member'}</div>
-          </div>
-          <a href="${targetJoinUrl}" style="display:inline-block; background:#4f46e5; color:#ffffff; text-decoration:none; padding:12px 24px; border-radius:8px; font-weight:600; font-size:14px;">Accept Invitation & Join Workspace &rarr;</a>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc; color: #0f172a; margin: 0; padding: 24px; }
+          .container { max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 32px; border: 1px solid #e2e8f0; }
+          .badge { display: inline-block; background: #e0e7ff; color: #4338ca; padding: 4px 10px; border-radius: 9999px; font-weight: 700; font-size: 12px; margin-bottom: 12px; }
+          .title { font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0; }
+          .desc { font-size: 14px; color: #475569; line-height: 1.6; margin: 0 0 20px 0; }
+          .btn { display: inline-block; background: #4f46e5; color: #ffffff !important; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; font-size: 14px; margin: 16px 0; text-align: center; }
+          .footer { font-size: 12px; color: #94a3b8; margin-top: 28px; border-top: 1px solid #f1f5f9; padding-top: 14px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="badge">WORKSPACE INVITATION</div>
+          <h2 class="title">Join ${workspaceName || 'your team'} on SprintOS</h2>
+          <p class="desc">You've been invited to collaborate in <strong>${workspaceName || 'a private workspace'}</strong> as a <strong>${role || 'member'}</strong>.</p>
+          <a href="${inviteLink}" class="btn" style="color: #ffffff;">Accept Invitation &rarr;</a>
+          <div class="footer">SprintOS Team Orchestration &bull; <a href="https://app.paper5.co" style="color: #64748b;">app.paper5.co</a></div>
         </div>
       </body>
       </html>
     `
-
-    if (supabaseUrl && serviceKey) {
-      try {
-        const supabaseAdmin = createClient(supabaseUrl, serviceKey)
-        await supabaseAdmin.from('notifications').delete().ilike('forEmail', cleanEmail).catch(() => {})
-        await supabaseAdmin.from('notifications').delete().ilike('for_email', cleanEmail).catch(() => {})
-      } catch (_) {}
-    }
   }
 
   let emailSent = false

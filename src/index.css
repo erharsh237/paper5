@@ -13,6 +13,15 @@ input, textarea, [contenteditable="true"], [contenteditable="true"] * {
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 84px;
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  margin: 0;
+  padding: 0;
 }
 
 /* Ensure Lenis does not fight browser native smooth scroll or fixed container height */
@@ -114,9 +123,9 @@ a, button, input, select, textarea, [role="button"] {
 
 :root {
   /* Core Colors - Strict Black, White & Neutral Gray */
-  --bg-void: #ffffff;
-  --bg-layer: #ffffff;
-  --bg-layer-2: #f4f5f7;
+  --bg-void: #f4f1ed;
+  --bg-layer: #f4f1ed;
+  --bg-layer-2: #eae5de;
   --bg-panel: #ffffff;
   --bg-inset: rgba(0, 0, 0, 0.02);
   
@@ -128,15 +137,19 @@ a, button, input, select, textarea, [role="button"] {
   --text-secondary: #27272a;
   --text-tertiary: #52525b;
 
-  /* Strict Black Buttons & Accents */
-  --accent: #000000;
-  --accent-hover: #18181b;
-  --accent-dim: rgba(0, 0, 0, 0.05);
+  /* Primary Linear/Vercel Accent Token (Customizable single accent) */
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-light: #3b82f6;
+  --accent-subtle: rgba(37, 99, 235, 0.08);
+  --accent-border: rgba(37, 99, 235, 0.25);
+  --accent-glow: rgba(37, 99, 235, 0.35);
+  --accent-dim: rgba(37, 99, 235, 0.05);
   
-  --accent-signal: #000000;
-  --accent-warn: #27272a;
+  --accent-signal: #2563eb;
+  --accent-warn: #d97706;
   --accent-critical: #ef4444;
-  --accent-info: #000000;
+  --accent-info: #2563eb;
 
   /* Typography */
   --mono: 'JetBrains Mono', 'Fira Code', monospace;
@@ -617,12 +630,16 @@ a {
   --text-secondary: #d4d4d8;
   --text-tertiary: #a1a1aa;
 
-  --accent: #ffffff;
-  --accent-hover: #e4e4e7;
-  --accent-dim: rgba(255, 255, 255, 0.08);
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  --accent-light: #60a5fa;
+  --accent-subtle: rgba(59, 130, 246, 0.12);
+  --accent-border: rgba(59, 130, 246, 0.35);
+  --accent-glow: rgba(59, 130, 246, 0.4);
+  --accent-dim: rgba(59, 130, 246, 0.08);
 
-  --accent-signal: #ffffff;
-  --accent-warn: #e4e4e7;
+  --accent-signal: #3b82f6;
+  --accent-warn: #fbbf24;
   --accent-critical: #f87171;
   --accent-info: #38bdf8;
 }

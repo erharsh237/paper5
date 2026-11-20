@@ -6,12 +6,12 @@
    ========================================================================== */
 
 :root {
-  --p5-canvas: #ffffff;
-  --p5-surface: #fafaf9;
+  --p5-canvas: #f4f1ed;
+  --p5-surface: #eae5de;
   --p5-surface-elevated: #ffffff;
-  --p5-inset: #f4f4f2;
-  --p5-hairline: #e4e4e7;
-  --p5-hairline-strong: #d4d4d8;
+  --p5-inset: #ebe6df;
+  --p5-hairline: #e3ded6;
+  --p5-hairline-strong: #d1cbc0;
   --p5-ink: #09090b;
   --p5-ink-muted: #52525b;
   --p5-ink-subtle: #71717a;
@@ -96,9 +96,9 @@ main > section:not(.hero-illustrated-editorial),
 .legal-page h1,
 .wp-header h1,
 .dash-page-header h1 {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-weight: 700;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.035em;
   color: var(--p5-ink);
 }
 

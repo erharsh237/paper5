@@ -60,13 +60,30 @@ export default function WorkflowPage() {
     return getWorkflowById(wfId) || getWorkflowById('scrum')
   }, [workspace?.settings?.agile_workflow])
 
-  const filtered = useMemo(() => {
+  // Multi-tenant data isolation: regular users see only their assigned or created tasks
+  const visibleDeadlines = useMemo(() => {
+    if (isAdmin || workspaceRole === 'owner') return deadlines
+    const myUid = user?.id || user?.uid
+    const myEmail = (user?.email || '').trim().toLowerCase()
+    const myName = (user?.displayName || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || '').trim().toLowerCase()
     return deadlines.filter(d => {
+      const dEmail = (d.assigneeEmail || d.assignee_email || '').trim().toLowerCase()
+      const dName = (d.assigneeName || d.assignee_name || '').trim().toLowerCase()
+      const emailMatch = dEmail && myEmail && (dEmail === myEmail || dEmail.includes(myEmail) || myEmail.includes(dEmail))
+      const idMatch = d.assigneeId && myUid && (d.assigneeId === myUid)
+      const nameMatch = myName && dName && (dName === myName || (dName.includes(myName) && myName.length > 2))
+      const creatorMatch = d.createdBy === myUid || (d.created_by && d.created_by === myUid)
+      return emailMatch || idMatch || nameMatch || creatorMatch
+    })
+  }, [deadlines, isAdmin, workspaceRole, user])
+
+  const filtered = useMemo(() => {
+    return visibleDeadlines.filter(d => {
       if (statusFilter !== 'all' && d.status !== statusFilter) return false
-      if (search.trim() && !d.title.toLowerCase().includes(search.toLowerCase())) return false
+      if (search.trim() && !d.title?.toLowerCase().includes(search.toLowerCase())) return false
       return true
     })
-  }, [deadlines, statusFilter, search])
+  }, [visibleDeadlines, statusFilter, search])
 
   const kanbanColumns = useMemo(() => {
     if (!activeWorkflow || !activeWorkflow.columns) return []

@@ -54,7 +54,11 @@ export default defineConfig({
       'Cross-Origin-Opener-Policy': 'same-origin',
     },
   },
+  oxc: {
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
+  },
   build: {
+    sourcemap: false,
     target: ['es2015', 'chrome60', 'edge79', 'firefox68', 'safari12'],
     cssTarget: ['chrome60', 'edge79', 'firefox68', 'safari12'],
     chunkSizeWarningLimit: 600,

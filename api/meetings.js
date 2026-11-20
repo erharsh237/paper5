@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { setCorsHeaders } from './_cors.js'
 import { checkRateLimit } from './_rateLimit.js'
+import { verifyWorkspaceAccess } from './_auth.js'
+import { sanitizeError } from './_errors.js'
 
 function parseBody(req) {
   if (req.body && typeof req.body === 'object') return req.body
@@ -18,22 +20,28 @@ export default async function handler(req, res) {
     return res.status(200).end()
   }
 
-  if (checkRateLimit(req, res, { max: 60, windowMs: 60000 })) return
+  if (checkRateLimit(req, res, { max: 120, windowMs: 60000 })) return
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://sdbglndhjkqhkphzqmum.supabase.co'
+  const rawUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY
   const activeKey = serviceKey || anonKey
 
-  if (!activeKey) return res.status(500).json({ error: 'Supabase credentials missing' })
+  if (!rawUrl || !activeKey) return res.status(500).json({ error: 'Supabase credentials missing' })
 
-  const supabaseAdmin = createClient(supabaseUrl, activeKey)
+  const supabaseUrl = rawUrl.replace(/["']/g, '').trim()
+  const supabaseAdmin = createClient(supabaseUrl, activeKey.replace(/["']/g, '').trim())
   const body = parseBody(req)
   const { action, workspaceId, eventId, notesObj } = body || {}
 
   if (!workspaceId) return res.status(400).json({ error: 'Missing workspaceId' })
+
+  const authRes = await verifyWorkspaceAccess(req, supabaseAdmin, workspaceId)
+  if (authRes.error) {
+    return res.status(authRes.status || 403).json({ error: authRes.error })
+  }
 
   try {
     if (action === 'save_event_note') {
@@ -64,7 +72,7 @@ export default async function handler(req, res) {
 
     return res.status(400).json({ error: 'Unknown action' })
   } catch (err) {
-    console.error('API meetings error:', err)
-    return res.status(500).json({ error: err.message || 'Failed to process meeting note action' })
+    console.error('API meetings error:', err?.message || err)
+    return res.status(500).json({ error: sanitizeError(err, 'Failed to process meeting action') })
   }
 }

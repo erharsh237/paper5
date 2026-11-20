@@ -89,16 +89,33 @@ export default function Dashboard() {
     return { total, done, inProgress, pct }
   }, [sprintDeadlines])
 
+  // Multi-tenant isolation: non-admins see only their own assigned or created tasks
+  const visibleDeadlines = useMemo(() => {
+    if (isAdmin || isOwner) return deadlines
+    const myUid = user?.id || user?.uid
+    const myEmail = (user?.email || '').trim().toLowerCase()
+    const myName = (user?.displayName || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || '').trim().toLowerCase()
+    return deadlines.filter(d => {
+      const dEmail = (d.assigneeEmail || d.assignee_email || '').trim().toLowerCase()
+      const dName = (d.assigneeName || d.assignee_name || '').trim().toLowerCase()
+      const emailMatch = dEmail && myEmail && (dEmail === myEmail || dEmail.includes(myEmail) || myEmail.includes(dEmail))
+      const idMatch = d.assigneeId && myUid && (d.assigneeId === myUid)
+      const nameMatch = myName && dName && (dName === myName || (dName.includes(myName) && myName.length > 2))
+      const creatorMatch = d.createdBy === myUid || (d.created_by && d.created_by === myUid)
+      return emailMatch || idMatch || nameMatch || creatorMatch
+    })
+  }, [deadlines, isAdmin, isOwner, user])
+
   const stats = useMemo(() => {
-    const active = deadlines.filter(d => d.status !== 'done')
+    const active = visibleDeadlines.filter(d => d.status !== 'done')
     const overdue = active.filter(d => getUrgency(d.dueDate, d.status) === 'overdue')
     const dueSoon = active.filter(d => ['critical', 'warn'].includes(getUrgency(d.dueDate, d.status)))
-    const done = deadlines.filter(d => d.status === 'done')
-    return { total: deadlines.length, active: active.length, overdue: overdue.length, dueSoon: dueSoon.length, done: done.length }
-  }, [deadlines])
+    const done = visibleDeadlines.filter(d => d.status === 'done')
+    return { total: visibleDeadlines.length, active: active.length, overdue: overdue.length, dueSoon: dueSoon.length, done: done.length }
+  }, [visibleDeadlines])
 
   const filtered = useMemo(() => {
-    return deadlines.filter(d => {
+    return visibleDeadlines.filter(d => {
       if (selectedPeriodFilter && Array.isArray(selectedPeriodFilter.taskIds)) {
         if (!selectedPeriodFilter.taskIds.includes(d.id)) return false
       }
@@ -107,7 +124,7 @@ export default function Dashboard() {
       if (search.trim() && !d.title?.toLowerCase().includes(search.toLowerCase())) return false
       return true
     })
-  }, [deadlines, statusFilter, assigneeFilter, search, selectedPeriodFilter])
+  }, [visibleDeadlines, statusFilter, assigneeFilter, search, selectedPeriodFilter])
 
   // 5 Canonical Kanban Columns
   const kanbanColumns = useMemo(() => {

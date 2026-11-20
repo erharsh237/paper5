@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { setCorsHeaders } from './_cors.js'
+import { authenticateUser, verifyWorkspaceAccess } from './_auth.js'
+import { sanitizeError } from './_errors.js'
+import { logAdminAction } from './_audit.js'
 
 function parseBody(req) {
   if (req.body && typeof req.body === 'object') return req.body
@@ -17,12 +20,12 @@ export default async function handler(req, res) {
     return res.status(200).end()
   }
   
-  const rawUrl = process.env.VITE_SUPABASE_URL || 'https://sdbglndhjkqhkphzqmum.supabase.co'
+  const rawUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY
   const rawKey = serviceKey || anonKey
 
-  if (!rawKey) {
+  if (!rawUrl || !rawKey) {
     return res.status(500).json({ error: 'Supabase credentials missing' })
   }
 
@@ -30,7 +33,7 @@ export default async function handler(req, res) {
   const activeKey = rawKey.replace(/["']/g, '').trim()
   const supabaseAdmin = createClient(supabaseUrl, activeKey)
 
-  // POST: Update Member Role or Permissions
+  // POST: Member Administration or Profile Sync
   if (req.method === 'POST') {
     const body = await parseBody(req)
     const { action, workspaceId, memberId, role, permissions, patch } = body || {}
@@ -41,6 +44,15 @@ export default async function handler(req, res) {
       const targetEmail = (body.email || '').trim().toLowerCase()
       if (!targetUid) {
         return res.status(400).json({ error: 'Missing userId' })
+      }
+
+      // Verify caller is authenticating as themselves
+      const callerAuth = await authenticateUser(req, supabaseAdmin)
+      if (callerAuth.error) {
+        return res.status(callerAuth.status || 401).json({ error: callerAuth.error })
+      }
+      if (callerAuth.user.id !== targetUid) {
+        return res.status(403).json({ error: 'Forbidden: You cannot modify other user identities.' })
       }
 
       try {
@@ -93,17 +105,32 @@ export default async function handler(req, res) {
         }
 
         if (insertErr) {
-          return res.status(500).json({ error: insertErr.message, code: insertErr.code })
+          return res.status(500).json({ error: sanitizeError(insertErr) })
         }
 
         return res.status(200).json({ success: true, user: inserted })
       } catch (err) {
-        return res.status(500).json({ error: err.message || 'Failed to ensure user' })
+        return res.status(500).json({ error: sanitizeError(err, 'Failed to ensure user') })
       }
     }
 
     if (!workspaceId) {
-      return res.status(400).json({ error: 'Missing workspaceId', receivedBody: body })
+      return res.status(400).json({ error: 'Missing workspaceId' })
+    }
+
+    // Handle read action via POST
+    if (action === 'fetch_members') {
+      const authRes = await verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { requireAdmin: false })
+      if (authRes.error) {
+        return res.status(authRes.status || 403).json({ error: authRes.error })
+      }
+      return await handleGetMembers(req, res, supabaseAdmin, workspaceId, serviceKey, authRes)
+    }
+
+    // All modification actions REQUIRE workspace admin or owner privileges
+    const authRes = await verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { requireAdmin: true })
+    if (authRes.error) {
+      return res.status(authRes.status || 403).json({ error: authRes.error })
     }
 
     try {
@@ -141,7 +168,7 @@ export default async function handler(req, res) {
           }
         }
         
-        // If user already exists in the system, add directly as member!
+        // If user already exists in the system, add directly as member
         if (matchedUid) {
           let insertError = null
           try {
@@ -184,6 +211,14 @@ export default async function handler(req, res) {
           try { await supabaseAdmin.from('invites').delete().eq('workspace_id', workspaceId).eq('email', targetEmail) } catch (_) {}
           try { await supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', workspaceId).eq('email', targetEmail) } catch (_) {}
           
+          await logAdminAction(supabaseAdmin, {
+            workspaceId,
+            actorId: authRes.user.id,
+            action: 'member.add',
+            resource: 'workspace_members',
+            metadata: { targetUserId: matchedUid, email: targetEmail, role: role || 'member' }
+          })
+
           return res.status(200).json({ success: true, addedAsMember: true, userId: matchedUid, email: targetEmail, insertError })
         }
         
@@ -201,6 +236,8 @@ export default async function handler(req, res) {
           created_at: new Date().toISOString()
         }).select().maybeSingle()
 
+        if (invErr) throw invErr
+
         try {
           await supabaseAdmin.from('workspace_invites').insert({
             workspace_id: workspaceId,
@@ -209,6 +246,14 @@ export default async function handler(req, res) {
             created_at: new Date().toISOString()
           })
         } catch (_) {}
+
+        await logAdminAction(supabaseAdmin, {
+          workspaceId,
+          actorId: authRes.user.id,
+          action: 'invite.create',
+          resource: 'invites',
+          metadata: { email: targetEmail, role: role || 'member' }
+        })
 
         return res.status(200).json({ success: true, pendingInvite: true, invite: inviteRow || { email: targetEmail, role: role || 'member' } })
       }
@@ -219,40 +264,41 @@ export default async function handler(req, res) {
           .update(patch || {})
           .eq('id', workspaceId)
         if (error) throw error
+
+        await logAdminAction(supabaseAdmin, {
+          workspaceId,
+          actorId: authRes.user.id,
+          action: 'workspace.update_settings',
+          resource: 'workspaces',
+          metadata: { updatedFields: Object.keys(patch || {}) }
+        })
+
         return res.status(200).json({ success: true })
       }
 
       if (action === 'force_delete') {
         if (!memberId) return res.status(400).json({ error: 'Missing memberId' })
-        // Temporarily elevate to owner so count(*) > 1
-        await supabaseAdmin
-          .from('workspace_members')
-          .update({ role: 'owner' })
-          .eq('workspace_id', workspaceId)
-          .eq('user_id', memberId)
-
-        await supabaseAdmin
-          .from('workspace_members')
-          .update({ role: 'owner' })
-          .eq('workspace_id', workspaceId)
-          .eq('user_id', '48b3e98d-8acf-450f-9d32-966df188946d')
-
         const delRes = await supabaseAdmin
           .from('workspace_members')
           .delete()
           .eq('workspace_id', workspaceId)
           .eq('user_id', memberId)
 
-        return res.status(200).json({
-          delRes
+        await logAdminAction(supabaseAdmin, {
+          workspaceId,
+          actorId: authRes.user.id,
+          action: 'member.force_delete',
+          resource: 'workspace_members',
+          metadata: { targetMemberId: memberId }
         })
+
+        return res.status(200).json({ delRes })
       }
 
       if (action === 'update_permissions') {
         const cleanPerms = Array.isArray(permissions) ? permissions : []
         const memberEmail = body.email ? body.email.trim().toLowerCase() : null
 
-        // 1. Persist to workspaces.settings.member_permissions (JSONB)
         try {
           const { data: ws } = await supabaseAdmin
             .from('workspaces')
@@ -267,7 +313,6 @@ export default async function handler(req, res) {
             memberPerms[memberEmail] = cleanPerms
           }
 
-          // Also look up email if not directly provided
           if (!memberEmail) {
             try {
               const { data: uData } = await supabaseAdmin.from('users').select('email').eq('id', memberId).maybeSingle()
@@ -285,7 +330,6 @@ export default async function handler(req, res) {
           console.warn('workspaces settings member_permissions update error:', wsErr.message)
         }
 
-        // 2. Also attempt update on workspace_members table directly
         try {
           await supabaseAdmin
             .from('workspace_members')
@@ -293,6 +337,14 @@ export default async function handler(req, res) {
             .eq('workspace_id', workspaceId)
             .eq('user_id', memberId)
         } catch (_) {}
+
+        await logAdminAction(supabaseAdmin, {
+          workspaceId,
+          actorId: authRes.user.id,
+          action: 'member.update_permissions',
+          resource: 'workspace_members',
+          metadata: { targetMemberId: memberId, permissionsCount: cleanPerms.length }
+        })
 
         return res.status(200).json({ success: true, permissions: cleanPerms })
       }
@@ -302,7 +354,6 @@ export default async function handler(req, res) {
         const targetUserIds = new Set()
         if (memberId && !memberId.includes('@')) targetUserIds.add(memberId)
 
-        // Resolve auth/profile user IDs
         if (cleanEmail) {
           try {
             const { data: uData } = await supabaseAdmin.from('users').select('id').ilike('email', cleanEmail)
@@ -324,7 +375,7 @@ export default async function handler(req, res) {
 
         const idsList = Array.from(targetUserIds)
 
-        // 1. Clean up workspaces.settings.members, member_permissions, deletion_requests
+        // 1. Clean up workspaces.settings
         try {
           const { data: ws } = await supabaseAdmin.from('workspaces').select('settings').eq('id', workspaceId).maybeSingle()
           const currentSettings = { ...(ws?.settings || {}) }
@@ -352,14 +403,6 @@ export default async function handler(req, res) {
             currentSettings.member_permissions = perms
           }
 
-          if (currentSettings.deletion_requests) {
-            const reqs = { ...currentSettings.deletion_requests }
-            for (const id of idsList) { if (reqs[id]) { delete reqs[id]; settingsChanged = true } }
-            if (memberId && reqs[memberId]) { delete reqs[memberId]; settingsChanged = true }
-            if (cleanEmail && reqs[cleanEmail]) { delete reqs[cleanEmail]; settingsChanged = true }
-            currentSettings.deletion_requests = reqs
-          }
-
           if (settingsChanged) {
             await supabaseAdmin.from('workspaces').update({ settings: currentSettings }).eq('id', workspaceId)
           }
@@ -373,48 +416,19 @@ export default async function handler(req, res) {
           try { await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', workspaceId).eq('user_id', id) } catch (_) {}
         }
 
-        // 3. Check if user is still a member in any other workspace
-        let isMemberOfOtherWorkspaces = false
-        try {
-          const { data: otherMems } = await supabaseAdmin
-            .from('workspace_members')
-            .select('workspace_id')
-            .in('user_id', idsList.length > 0 ? idsList : [memberId].filter(Boolean))
-          if (otherMems && otherMems.length > 0) {
-            isMemberOfOtherWorkspaces = true
-          }
-        } catch (_) {}
-
-        // If user belongs to NO other workspaces, purge global user records and Auth account
-        if (!isMemberOfOtherWorkspaces) {
-          for (const id of idsList) {
-            try { await supabaseAdmin.from('profiles').delete().eq('id', id) } catch (_) {}
-            try { await supabaseAdmin.from('users').delete().eq('id', id) } catch (_) {}
-          }
-          if (cleanEmail) {
-            try { await supabaseAdmin.from('profiles').delete().ilike('email', cleanEmail) } catch (_) {}
-            try { await supabaseAdmin.from('users').delete().ilike('email', cleanEmail) } catch (_) {}
-            try { await supabaseAdmin.from('invites').delete().ilike('email', cleanEmail) } catch (_) {}
-            try { await supabaseAdmin.from('workspace_invites').delete().ilike('email', cleanEmail) } catch (_) {}
-            try { await supabaseAdmin.from('notifications').delete().ilike('forEmail', cleanEmail) } catch (_) {}
-          }
-
-          if (serviceKey) {
-            for (const id of idsList) {
-              try { await supabaseAdmin.auth.admin.deleteUser(id) } catch (aErr) { console.warn('Auth delete notice:', aErr.message) }
-            }
-            if (memberId && !idsList.includes(memberId) && !memberId.includes('@')) {
-              try { await supabaseAdmin.auth.admin.deleteUser(memberId) } catch (_) {}
-            }
-          }
-        }
+        await logAdminAction(supabaseAdmin, {
+          workspaceId,
+          actorId: authRes.user.id,
+          action: 'member.remove',
+          resource: 'workspace_members',
+          metadata: { targetMemberId: memberId, email: cleanEmail }
+        })
 
         return res.status(200).json({
           success: true,
           deleted: true,
           memberId,
-          deletedUserIds: idsList,
-          retainedForOtherWorkspaces: isMemberOfOtherWorkspaces
+          deletedUserIds: idsList
         })
       }
 
@@ -427,6 +441,15 @@ export default async function handler(req, res) {
           .eq('user_id', memberId)
 
         if (error) throw error
+
+        await logAdminAction(supabaseAdmin, {
+          workspaceId,
+          actorId: authRes.user.id,
+          action: 'member.update_role',
+          resource: 'workspace_members',
+          metadata: { targetMemberId: memberId, newRole: cleanRole }
+        })
+
         return res.status(200).json({ success: true, role: cleanRole })
       }
 
@@ -443,38 +466,37 @@ export default async function handler(req, res) {
           try { await supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', workspaceId).eq('email', cleanEmail) } catch (_) {}
         }
 
-        // Clean up pre-provisioned auth user if they belong to no other workspaces
-        if (cleanEmail && serviceKey) {
-          try {
-            const { data: authList } = await supabaseAdmin.auth.admin.listUsers()
-            const existing = (authList?.users || []).find(u => u.email?.toLowerCase() === cleanEmail)
-            if (existing) {
-              const { data: mems } = await supabaseAdmin.from('workspace_members').select('id').eq('user_id', existing.id)
-              if (!mems || mems.length === 0) {
-                await supabaseAdmin.auth.admin.deleteUser(existing.id)
-                await supabaseAdmin.from('users').delete().eq('id', existing.id)
-                await supabaseAdmin.from('profiles').delete().eq('id', existing.id)
-              }
-            }
-          } catch (e) {
-            console.warn('cancel_invite auth purge notice:', e)
-          }
-        }
+        await logAdminAction(supabaseAdmin, {
+          workspaceId,
+          actorId: authRes.user.id,
+          action: 'invite.cancel',
+          resource: 'invites',
+          metadata: { email: cleanEmail, inviteId }
+        })
 
         return res.status(200).json({ success: true, cancelled: true })
       }
     } catch (postErr) {
-      console.error('Update member error:', postErr)
-      return res.status(500).json({ error: postErr.message || 'Failed to update member' })
+      console.error('Update member error:', postErr?.message || postErr)
+      return res.status(500).json({ error: sanitizeError(postErr, 'Failed to update member') })
     }
   }
 
-  // GET: Fetch All Members with Real Emails and Full Names
+  // GET: Fetch Members
   const workspaceId = req.query.workspaceId || req.body?.workspaceId
   if (!workspaceId) {
     return res.status(400).json({ error: 'Missing workspaceId parameter' })
   }
 
+  const authRes = await verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { requireAdmin: false })
+  if (authRes.error) {
+    return res.status(authRes.status || 403).json({ error: authRes.error })
+  }
+
+  return await handleGetMembers(req, res, supabaseAdmin, workspaceId, serviceKey, authRes)
+}
+
+async function handleGetMembers(req, res, supabaseAdmin, workspaceId, serviceKey, authRes) {
   try {
     const { data: members, error: memErr } = await supabaseAdmin
       .from('workspace_members')
@@ -486,7 +508,6 @@ export default async function handler(req, res) {
     const userIds = (members || []).map(m => m.user_id).filter(Boolean)
     const userDetailsMap = new Map()
 
-    // 1. Fetch from users table
     if (userIds.length > 0) {
       try {
         const { data: usersData } = await supabaseAdmin
@@ -499,7 +520,6 @@ export default async function handler(req, res) {
       } catch (_) {}
     }
 
-    // 2. Fetch from profiles table
     if (userIds.length > 0) {
       try {
         const { data: profData } = await supabaseAdmin
@@ -520,28 +540,6 @@ export default async function handler(req, res) {
       } catch (_) {}
     }
 
-    // 3. For any remaining missing emails, query auth.admin if service key is available
-    if (serviceKey && typeof supabaseAdmin.auth?.admin?.getUserById === 'function') {
-      for (const uid of userIds) {
-        const existing = userDetailsMap.get(uid)
-        if (!existing || !existing.email) {
-          try {
-            const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(uid)
-            if (authUser?.user) {
-              const u = authUser.user
-              userDetailsMap.set(uid, {
-                id: uid,
-                email: u.email,
-                full_name: u.user_metadata?.full_name || u.user_metadata?.name || existing?.full_name || null,
-                avatar_url: u.user_metadata?.avatar_url || existing?.avatar_url || null
-              })
-            }
-          } catch (_) {}
-        }
-      }
-    }
-
-    // Fetch workspace settings to retrieve member_permissions map
     let memberPermsMap = {}
     let wsData = null
     try {
@@ -556,14 +554,20 @@ export default async function handler(req, res) {
       }
     } catch (_) {}
 
-    // Build enriched member records
+    const isCallerAdmin = authRes.isAdmin
+    const callerUid = authRes.user.id
+
     const enrichedMembers = (members || []).map(m => {
       const u = userDetailsMap.get(m.user_id) || {}
-      const email = u.email || m.email || null
+      const rawEmail = u.email || m.email || null
       const fullName = u.full_name || m.full_name || null
-      const cleanEmail = (email || '').toLowerCase().trim()
-      const displayLabel = fullName || email || (email ? email.split('@')[0] : `Member (${(m.user_id || '').slice(0, 6)})`)
+      const cleanEmail = (rawEmail || '').toLowerCase().trim()
+      const displayLabel = fullName || (rawEmail ? rawEmail.split('@')[0] : `Member (${(m.user_id || '').slice(0, 6)})`)
       const perms = memberPermsMap[m.user_id] || (cleanEmail ? memberPermsMap[cleanEmail] : null) || (Array.isArray(m.permissions) ? m.permissions : [])
+
+      // Privacy Isolation: Only admins see all members' real email addresses.
+      // Non-admin members see display name and only their own email address.
+      const safeEmail = isCallerAdmin || m.user_id === callerUid ? rawEmail : null
 
       return {
         id: m.user_id,
@@ -571,8 +575,8 @@ export default async function handler(req, res) {
         workspaceId: m.workspace_id,
         role: m.role || 'member',
         permissions: Array.isArray(perms) ? perms : [],
-        email: email,
-        name: fullName || email || displayLabel,
+        email: safeEmail,
+        name: fullName || displayLabel,
         fullName: fullName,
         displayLabel: displayLabel,
         avatarUrl: u.avatar_url || null,
@@ -580,138 +584,9 @@ export default async function handler(req, res) {
       }
     })
 
-    // Auto-convert pending invites if their user account now exists
-    try {
-      const { data: pendingInvites } = await supabaseAdmin
-        .from('invites')
-        .select('*')
-        .eq('workspace_id', workspaceId)
-
-      if (Array.isArray(pendingInvites) && pendingInvites.length > 0) {
-        for (const inv of pendingInvites) {
-          const invEmail = (inv.email || '').trim().toLowerCase()
-          if (!invEmail) continue
-
-          let matchedUserId = null
-          let matchedName = null
-          let matchedAvatar = null
-
-          // A. Check userDetailsMap (pre-fetched auth/profile details)
-          for (const [uid, u] of userDetailsMap.entries()) {
-            if (u.email && u.email.trim().toLowerCase() === invEmail) {
-              matchedUserId = uid
-              matchedName = u.full_name || u.name
-              matchedAvatar = u.avatar_url
-              break
-            }
-          }
-
-          // B. Check users table
-          if (!matchedUserId) {
-            const { data: matchedUsers } = await supabaseAdmin
-              .from('users')
-              .select('id, email, name, full_name, avatar_url')
-              .ilike('email', invEmail)
-              .limit(1)
-
-            if (matchedUsers && matchedUsers[0]) {
-              matchedUserId = matchedUsers[0].id
-              matchedName = matchedUsers[0].name || matchedUsers[0].full_name
-              matchedAvatar = matchedUsers[0].avatar_url
-            }
-          }
-
-          // C. Check profiles table
-          if (!matchedUserId) {
-            const { data: matchedProfiles } = await supabaseAdmin
-              .from('profiles')
-              .select('id, email, name, photoURL')
-              .ilike('email', invEmail)
-              .limit(1)
-
-            if (matchedProfiles && matchedProfiles[0]) {
-              matchedUserId = matchedProfiles[0].id
-              matchedName = matchedProfiles[0].name
-              matchedAvatar = matchedProfiles[0].photoURL
-            }
-          }
-
-          // D. Check auth admin listUsers
-          if (!matchedUserId && serviceKey && typeof supabaseAdmin.auth?.admin?.listUsers === 'function') {
-            try {
-              const { data: listRes } = await supabaseAdmin.auth.admin.listUsers()
-              const matchedAuthUser = (listRes?.users || []).find(u => (u.email || '').trim().toLowerCase() === invEmail)
-              if (matchedAuthUser) {
-                matchedUserId = matchedAuthUser.id
-                matchedName = matchedAuthUser.user_metadata?.full_name || matchedAuthUser.user_metadata?.name
-                matchedAvatar = matchedAuthUser.user_metadata?.avatar_url
-              }
-            } catch (_) {}
-          }
-
-          if (matchedUserId) {
-            // Upsert workspace_members
-            try {
-              await supabaseAdmin.from('workspace_members').upsert({
-                workspace_id: workspaceId,
-                user_id: matchedUserId,
-                role: inv.role || 'member',
-                permissions: Array.isArray(inv.permissions) ? inv.permissions : []
-              }, { onConflict: 'workspace_id,user_id' })
-            } catch (_) {}
-
-            // Delete pending invite by id AND email from all invite tables
-            try { await supabaseAdmin.from('invites').delete().eq('id', inv.id) } catch (_) {}
-            try { await supabaseAdmin.from('invites').delete().eq('workspace_id', workspaceId).eq('email', invEmail) } catch (_) {}
-            try { await supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', workspaceId).eq('email', invEmail) } catch (_) {}
-
-            // Add to enrichedMembers list if not already present
-            if (!enrichedMembers.some(m => m.id === matchedUserId || (m.email && m.email.toLowerCase() === invEmail))) {
-              enrichedMembers.push({
-                id: matchedUserId,
-                userId: matchedUserId,
-                workspaceId,
-                role: inv.role || 'member',
-                permissions: Array.isArray(inv.permissions) ? inv.permissions : [],
-                email: invEmail,
-                name: matchedName || invEmail,
-                displayLabel: matchedName || invEmail.split('@')[0],
-                avatarUrl: matchedAvatar || null,
-                joinedAt: new Date().toISOString()
-              })
-            }
-          }
-        }
-      }
-    } catch (autoErr) {
-      console.warn('Auto convert invite notice:', autoErr)
-    }
-
-    // Merge any members stored in workspace settings
-    if (Array.isArray(wsData?.settings?.members)) {
-      for (const sm of wsData.settings.members) {
-        const smEmail = (sm.email || '').trim().toLowerCase()
-        const smId = sm.id || sm.userId
-        if (smEmail && !enrichedMembers.some(m => (m.email && m.email.toLowerCase() === smEmail) || (smId && m.id === smId))) {
-          enrichedMembers.push({
-            id: smId || smEmail,
-            userId: smId || null,
-            workspaceId,
-            role: sm.role || 'member',
-            permissions: Array.isArray(sm.permissions) ? sm.permissions : [],
-            email: sm.email,
-            name: sm.name || sm.email,
-            displayLabel: sm.name || sm.email.split('@')[0],
-            avatarUrl: sm.avatarUrl || null,
-            joinedAt: sm.joinedAt || new Date().toISOString()
-          })
-        }
-      }
-    }
-
     return res.status(200).json({ success: true, members: enrichedMembers })
   } catch (err) {
-    console.error('workspace-members API error:', err)
-    return res.status(500).json({ error: err.message || 'Failed to fetch members' })
+    console.error('workspace-members API error:', err?.message || err)
+    return res.status(500).json({ error: sanitizeError(err, 'Failed to fetch members') })
   }
 }

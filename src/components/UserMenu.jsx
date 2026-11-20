@@ -136,13 +136,6 @@ export default function UserMenu() {
 
             <div style={{ margin: '4px 0', borderTop: '1px solid var(--border-soft, #EAECF6)' }} />
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px' }}>
-              <span style={{ fontSize: '12.5px', fontWeight: 500, color: 'var(--text-secondary, #6E7091)' }}>Theme Mode</span>
-              <ThemeToggle />
-            </div>
-
-            <div style={{ margin: '4px 0', borderTop: '1px solid var(--border-soft, #EAECF6)' }} />
-
             <button 
               className="nav-more-item nav-more-item--danger" 
               onClick={() => { setOpen(false); logout(); }}

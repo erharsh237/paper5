@@ -1,17 +1,18 @@
 import { Link } from 'react-router-dom'
 import SEOHead from '../components/SEOHead'
 import { getDomainConfig, getMainUrl } from '../lib/domain'
+import { useAuth } from '../lib/AuthContext'
 import './NotFound.css'
 
 export default function NotFound() {
   const { isAppSubdomain } = getDomainConfig()
+  const { user } = useAuth() || {}
 
   return (
     <div className="lost-404-page">
       <SEOHead
         title="404 — Are you lost? | Paper5"
-        description="The page you were looking for is not found. Return to Paper5 home."
-        noIndex
+        description="The page you were looking for is not found. Return to Paper5."
       />
 
       <div className="lost-404-container">
@@ -68,10 +69,15 @@ export default function NotFound() {
             <p className="lost-desc">The page you were looking for is not found.</p>
 
             {isAppSubdomain ? (
-              <a href={getMainUrl('/')} className="lost-cta-btn">
-                <span className="lost-cta-plus">+</span>
-                <span>GO BACK HOME</span>
-              </a>
+              <div className="lost-actions-row">
+                <Link to={user ? "/workspace" : "/login"} className="lost-cta-btn">
+                  <span className="lost-cta-plus">+</span>
+                  <span>{user ? 'RETURN TO WORKSPACE' : 'SIGN IN TO PAPER5'}</span>
+                </Link>
+                <a href={getMainUrl('/')} className="lost-cta-btn lost-cta-btn--secondary">
+                  <span>GO TO MAIN SITE</span>
+                </a>
+              </div>
             ) : (
               <Link to="/" className="lost-cta-btn">
                 <span className="lost-cta-plus">+</span>

@@ -191,8 +191,18 @@ export default function Profile() {
   async function handlePicChange(e) {
     const file = e.target.files?.[0]
     if (!file) return
+
+    const ALLOWED_PIC_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    const hasValidExt = /\.(jpe?g|png|webp|gif)$/i.test(file.name)
+    if (!ALLOWED_PIC_TYPES.includes(file.type) || !hasValidExt) {
+      setError('Invalid image format. Only JPG, PNG, WEBP, or GIF are allowed.')
+      e.target.value = ''
+      return
+    }
+
     if (file.size > MAX_PIC_MB * 1024 * 1024) {
       setError(`Image file must be under ${MAX_PIC_MB}MB.`)
+      e.target.value = ''
       return
     }
     setError('')
@@ -220,8 +230,22 @@ export default function Profile() {
   async function handleResumeChange(e) {
     const file = e.target.files?.[0]
     if (!file) return
+
+    const ALLOWED_RESUME_TYPES = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ]
+    const hasValidResumeExt = /\.(pdf|docx?)$/i.test(file.name)
+    if ((file.type && !ALLOWED_RESUME_TYPES.includes(file.type)) || !hasValidResumeExt) {
+      setError('Invalid resume format. Only PDF and Word documents (.pdf, .doc, .docx) are permitted.')
+      e.target.value = ''
+      return
+    }
+
     if (file.size > 10 * 1024 * 1024) {
       setError('Resume file must be under 10MB.')
+      e.target.value = ''
       return
     }
     setError('')
@@ -230,8 +254,9 @@ export default function Profile() {
       reader.onload = async () => {
         const resumeUrl = reader.result
         const uid = user?.id || user?.email
-        await uploadResume(workspaceId, uid, resumeUrl, file.name)
-        setProfile(prev => ({ ...prev, resumeURL: resumeUrl, resumeName: file.name }))
+        const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100)
+        await uploadResume(workspaceId, uid, resumeUrl, sanitizedName)
+        setProfile(prev => ({ ...prev, resumeURL: resumeUrl, resumeName: sanitizedName }))
         setSavedFlash(true)
         setTimeout(() => setSavedFlash(false), 3000)
       }

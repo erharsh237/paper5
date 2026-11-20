@@ -211,6 +211,37 @@
   transform: translateY(0);
 }
 
+.lost-cta-btn--secondary {
+  background-color: transparent;
+  color: #09090b !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.16);
+  box-shadow: none;
+}
+
+.lost-cta-btn--secondary:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .lost-cta-btn--secondary {
+  color: #f4f4f5 !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .lost-cta-btn--secondary:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.lost-actions-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 .lost-cta-plus {
   font-size: 14px;
   font-weight: 800;

@@ -117,6 +117,10 @@ function WorkspaceGuard({ children }) {
 
   if (loadingWorkspace) return <WorkspaceSkeleton showHeader />
   
+  if (workspaceError === 'Workspace not found' || (!workspace && !workspaceError)) {
+    return <NotFound />
+  }
+
   if (workspaceError || !workspace || !workspaceRole) {
     return <Navigate to="/workspace" replace />
   }
@@ -206,6 +210,15 @@ function WorkspaceGuard({ children }) {
   )
 }
 
+function AdminGuard({ children }) {
+  const { workspaceId, isAdmin, isOwner, canManageSettings, loadingWorkspace } = useWorkspace()
+  if (loadingWorkspace) return <WorkspaceSkeleton showHeader />
+  if (!isAdmin && !isOwner && !canManageSettings) {
+    return <Navigate to={`/${workspaceId}`} replace />
+  }
+  return children
+}
+
 export default function App() {
   useLivePresenceTracker()
   useLenis()
@@ -256,7 +269,13 @@ export default function App() {
     location.pathname === '/security'
   ))
 
-  if (loading && !isPublicMarketingRoute) {
+  const isPublicStandaloneRoute = isPublicMarketingRoute || (
+    location.pathname === '/404' ||
+    location.pathname === '/error' ||
+    location.pathname === '/500'
+  )
+
+  if (loading && !isPublicStandaloneRoute) {
     return <RouteSkeleton />
   }
 
@@ -322,6 +341,7 @@ export default function App() {
           <Route path="/contact" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <Contact />} />
           <Route path="/thank-you" element={isAppSubdomain ? <CrossDomainRedirect toApp={false} /> : <ThankYou />} />
           <Route path="/about-us" element={<Navigate to="/about" replace />} />
+          <Route path="/404" element={<NotFound />} />
           <Route path="/error" element={<ErrorPage />} />
           <Route path="/500" element={<ErrorPage />} />
 
@@ -349,7 +369,7 @@ export default function App() {
                         <Route path="meeting" element={<Meeting />} />
                         <Route path="analytics" element={<Analytics />} />
                         <Route path="integrations" element={<Integrations />} />
-                        <Route path="settings" element={<Settings />} />
+                        <Route path="settings" element={<AdminGuard><Settings /></AdminGuard>} />
                         <Route path="profile" element={<Profile />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>

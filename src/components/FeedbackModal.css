@@ -18,11 +18,13 @@
   position: relative;
   width: 100%;
   max-width: 440px;
+  max-height: min(640px, calc(100vh - 40px));
+  overflow-y: auto;
+  margin: auto;
   background: #ffffff;
   border: 1px solid #eef0f4;
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.14);
   border-radius: 18px;
-  overflow: hidden;
   color: #111827;
   animation: feedbackPopUp 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

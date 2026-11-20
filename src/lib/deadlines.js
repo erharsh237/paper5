@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { getAuthHeaders } from './authHeaders'
 
 export const DEADLINES_DEFAULT_PAGE_SIZE = 100
 
@@ -120,9 +121,11 @@ export function subscribeDeadlines(workspaceId, teamIdOrCallback, callbackOrPage
 }
 
 async function callDeadlineApi(action, payload) {
+  const headers = await getAuthHeaders()
   const res = await fetch('/api/deadlines', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    headers,
     body: JSON.stringify({ action, ...payload })
   })
   const json = await res.json()

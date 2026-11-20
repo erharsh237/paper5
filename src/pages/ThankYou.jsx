@@ -32,7 +32,6 @@ export default function ThankYou() {
       <SEOHead
         title="Thank You | Paper5"
         description="Confirmation page for Paper5 inquiries."
-        noIndex
       />
 
       <div style={{ minHeight: '65vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 20px' }}>

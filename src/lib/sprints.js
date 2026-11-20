@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { getAuthHeaders } from './authHeaders'
 
 function notifySprintChange() {
   if (typeof window !== 'undefined') {
@@ -88,9 +89,11 @@ export function subscribeSprints(workspaceId, teamIdOrCallback, maybeCallback) {
 }
 
 async function callSprintApi(action, payload) {
+  const headers = await getAuthHeaders()
   const res = await fetch('/api/sprints', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    headers,
     body: JSON.stringify({ action, ...payload })
   })
   const json = await res.json()

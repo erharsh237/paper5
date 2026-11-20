@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
+import { authenticateUser, verifyWorkspaceAccess } from './_auth.js'
+import { sanitizeError } from './_errors.js'
 
 function parseBody(req) {
   if (req.body && typeof req.body === 'object') return req.body
@@ -14,25 +16,46 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
+  const rawUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY
+  const anonKey = process.env.VITE_SUPABASE_ANON_KEY
+
+  const activeKey = serviceKey || anonKey
+  if (!rawUrl || !activeKey) {
+    return res.status(500).json({ error: 'Supabase configuration missing' })
+  }
+
+  const supabaseUrl = rawUrl.replace(/["']/g, '').trim()
+  const supabaseAdmin = createClient(supabaseUrl, activeKey.replace(/["']/g, '').trim())
+
   const body = parseBody(req)
   const { userId, email, memberId, workspaceId, fullDelete = true } = body || {}
   const targetId = userId || memberId
   const cleanEmail = email ? email.trim().toLowerCase() : ''
 
   if (!targetId && !cleanEmail) {
-    return res.status(400).json({ error: 'Missing userId, memberId or email parameter', receivedBody: body })
+    return res.status(400).json({ error: 'Missing userId, memberId or email parameter' })
   }
 
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://sdbglndhjkqhkphzqmum.supabase.co'
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY
-  const anonKey = process.env.VITE_SUPABASE_ANON_KEY
-
-  const activeKey = serviceKey || anonKey
-  if (!activeKey) {
-    return res.status(500).json({ error: 'Supabase configuration missing' })
+  // 1. Authenticate caller
+  const authRes = await authenticateUser(req, supabaseAdmin)
+  if (authRes.error) {
+    return res.status(authRes.status || 401).json({ error: authRes.error })
   }
 
-  const supabaseAdmin = createClient(supabaseUrl, activeKey)
+  // 2. Authorization check:
+  // Is caller deleting themselves?
+  const isSelf = (targetId && targetId === authRes.user.id) || (cleanEmail && cleanEmail === authRes.user.email?.toLowerCase())
+  if (!isSelf) {
+    // If not deleting themselves, they MUST be a workspace admin/owner of workspaceId
+    if (!workspaceId) {
+      return res.status(403).json({ error: 'Access denied: Workspace ID required for administrative user deletion.' })
+    }
+    const wsAuth = await verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { requireAdmin: true })
+    if (wsAuth.error) {
+      return res.status(wsAuth.status || 403).json({ error: wsAuth.error })
+    }
+  }
 
   try {
     const targetUserIds = new Set()
@@ -64,124 +87,74 @@ export default async function handler(req, res) {
 
     const idsList = Array.from(targetUserIds)
 
-    // 2. Clean workspace settings (members array, permissions, deletion requests)
+    // 2. Clean up workspaces metadata (members array, permissions, deletion requests)
     try {
-      let query = supabaseAdmin.from('workspaces').select('id, settings')
-      if (workspaceId) {
-        query = query.eq('id', workspaceId)
-      }
-      const { data: wsList } = await query
-      for (const w of (wsList || [])) {
-        if (!w.id) continue
+      const { data: wsList } = await supabaseAdmin.from('workspaces').select('id, settings')
+      for (const ws of (wsList || [])) {
+        if (!ws.settings) continue
         let settingsChanged = false
-        const currentSettings = { ...(w.settings || {}) }
+        const currentSettings = { ...ws.settings }
 
-        // Clean settings.members array
         if (Array.isArray(currentSettings.members)) {
-          const filteredMembers = currentSettings.members.filter(m => {
+          const filtered = currentSettings.members.filter(m => {
             const mId = m.id || m.userId
             const mEmail = (m.email || '').trim().toLowerCase()
-            if (mId && idsList.includes(mId)) return false
+            if (mId && (idsList.includes(mId) || mId === targetId)) return false
             if (mEmail && cleanEmail && mEmail === cleanEmail) return false
             return true
           })
-          if (filteredMembers.length !== currentSettings.members.length) {
-            currentSettings.members = filteredMembers
+          if (filtered.length !== currentSettings.members.length) {
+            currentSettings.members = filtered
             settingsChanged = true
           }
         }
 
-        // Clean settings.member_permissions
-        if (currentSettings.member_permissions && typeof currentSettings.member_permissions === 'object') {
+        if (currentSettings.member_permissions) {
           const perms = { ...currentSettings.member_permissions }
-          for (const id of idsList) {
-            if (perms[id]) { delete perms[id]; settingsChanged = true }
-          }
-          if (cleanEmail && perms[cleanEmail]) {
-            delete perms[cleanEmail]
-            settingsChanged = true
-          }
+          for (const id of idsList) { if (perms[id]) { delete perms[id]; settingsChanged = true } }
+          if (targetId && perms[targetId]) { delete perms[targetId]; settingsChanged = true }
+          if (cleanEmail && perms[cleanEmail]) { delete perms[cleanEmail]; settingsChanged = true }
           currentSettings.member_permissions = perms
         }
 
-        // Clean settings.deletion_requests
-        if (currentSettings.deletion_requests && typeof currentSettings.deletion_requests === 'object') {
+        if (currentSettings.deletion_requests) {
           const reqs = { ...currentSettings.deletion_requests }
-          for (const id of idsList) {
-            if (reqs[id]) { delete reqs[id]; settingsChanged = true }
-          }
-          if (cleanEmail && reqs[cleanEmail]) {
-            delete reqs[cleanEmail]
-            settingsChanged = true
-          }
+          for (const id of idsList) { if (reqs[id]) { delete reqs[id]; settingsChanged = true } }
+          if (targetId && reqs[targetId]) { delete reqs[targetId]; settingsChanged = true }
+          if (cleanEmail && reqs[cleanEmail]) { delete reqs[cleanEmail]; settingsChanged = true }
           currentSettings.deletion_requests = reqs
         }
 
         if (settingsChanged) {
-          await supabaseAdmin.from('workspaces').update({ settings: currentSettings }).eq('id', w.id)
+          await supabaseAdmin.from('workspaces').update({ settings: currentSettings }).eq('id', ws.id)
         }
-      }
-    } catch (wsCleanErr) {
-      console.warn('Workspace settings cleanup warning:', wsCleanErr)
-    }
-
-    // 3. Delete from workspace_members table
-    if (workspaceId) {
-      for (const id of idsList) {
-        try {
-          await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', workspaceId).eq('user_id', id)
-        } catch (_) {}
-      }
-    } else {
-      for (const id of idsList) {
-        try {
-          await supabaseAdmin.from('workspace_members').delete().eq('user_id', id)
-        } catch (_) {}
-      }
-    }
-
-    // 4. Delete workspace-specific invites
-    if (workspaceId) {
-      if (cleanEmail) {
-        try { await supabaseAdmin.from('invites').delete().eq('workspace_id', workspaceId).ilike('email', cleanEmail) } catch (_) {}
-        try { await supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', workspaceId).ilike('email', cleanEmail) } catch (_) {}
-      }
-    } else {
-      if (cleanEmail) {
-        try { await supabaseAdmin.from('invites').delete().ilike('email', cleanEmail) } catch (_) {}
-        try { await supabaseAdmin.from('workspace_invites').delete().ilike('email', cleanEmail) } catch (_) {}
-      }
-    }
-
-    // 5. Check if user is still an active member of ANY OTHER workspace
-    let isMemberOfOtherWorkspaces = false
-    try {
-      const { data: otherMems } = await supabaseAdmin
-        .from('workspace_members')
-        .select('workspace_id')
-        .in('user_id', idsList.length > 0 ? idsList : [targetId].filter(Boolean))
-      if (otherMems && otherMems.length > 0) {
-        isMemberOfOtherWorkspaces = true
       }
     } catch (_) {}
 
-    // If user is STILL a member in other workspaces (e.g. test2), PRESERVE their global Auth and profile!
-    if (isMemberOfOtherWorkspaces) {
-      return res.status(200).json({
-        success: true,
-        message: 'User removed from workspace; global account preserved for remaining workspaces',
-        removedFromWorkspace: true,
-        retainedForOtherWorkspaces: true,
-        deletedUserIds: idsList
-      })
+    // 3. Delete from workspace_members table
+    if (targetId) {
+      try { await supabaseAdmin.from('workspace_members').delete().eq('user_id', targetId) } catch (_) {}
+    }
+    for (const id of idsList) {
+      try { await supabaseAdmin.from('workspace_members').delete().eq('user_id', id) } catch (_) {}
     }
 
-    // 6. If user belongs to 0 other workspaces, clean notifications, profiles, users, and Auth
+    // 4. Delete invites matching email
+    if (cleanEmail) {
+      try { await supabaseAdmin.from('invites').delete().ilike('email', cleanEmail) } catch (_) {}
+      try { await supabaseAdmin.from('workspace_invites').delete().ilike('email', cleanEmail) } catch (_) {}
+    }
+
+    // 5. Delete audit logs, notifications, sessions
+    for (const id of idsList) {
+      try { await supabaseAdmin.from('notifications').delete().eq('user_id', id) } catch (_) {}
+      try { await supabaseAdmin.from('audit_logs').delete().eq('actor_id', id) } catch (_) {}
+    }
     if (cleanEmail) {
       try { await supabaseAdmin.from('notifications').delete().ilike('forEmail', cleanEmail) } catch (_) {}
-      try { await supabaseAdmin.from('notifications').delete().ilike('for_email', cleanEmail) } catch (_) {}
     }
 
+    // 6. Delete from profiles and users tables
     for (const id of idsList) {
       try { await supabaseAdmin.from('profiles').delete().eq('id', id) } catch (_) {}
       try { await supabaseAdmin.from('users').delete().eq('id', id) } catch (_) {}
@@ -215,7 +188,7 @@ export default async function handler(req, res) {
       authError
     })
   } catch (err) {
-    console.error('Delete user error:', err)
-    return res.status(500).json({ error: err.message || 'Failed to delete account' })
+    console.error('Delete user error:', err?.message || err)
+    return res.status(500).json({ error: sanitizeError(err, 'Failed to delete account') })
   }
 }

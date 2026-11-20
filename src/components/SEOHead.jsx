@@ -16,8 +16,7 @@ export default function SEOHead({
   ogImage = DEFAULT_OG_IMAGE,
   ogImageAlt = DEFAULT_OG_IMAGE_ALT,
   ogImageWidth = '1200',
-  ogImageHeight = '630',
-  noIndex = false
+  ogImageHeight = '630'
 }) {
   useEffect(() => {
     // 1. Update Title
@@ -37,8 +36,8 @@ export default function SEOHead({
       element.setAttribute('content', content)
     }
 
-    // 2. Update Robots Directive
-    setMeta('name', 'robots', noIndex ? 'noindex, nofollow' : DEFAULT_ROBOTS)
+    // 2. Always maintain index, follow directive across all pages
+    setMeta('name', 'robots', DEFAULT_ROBOTS)
 
     // 3. Update Meta Description & Social Cards
     if (description) {
@@ -63,23 +62,19 @@ export default function SEOHead({
     setMeta('name', 'twitter:image', ogImage || DEFAULT_OG_IMAGE)
     setMeta('name', 'twitter:image:alt', ogImageAlt || DEFAULT_OG_IMAGE_ALT)
 
-    // 4. Update Canonical Tag (unless noIndex where keeping clean current URL or omitting)
+    // 4. Update Canonical Tag
     const href = canonicalUrl || window.location.href
     let canonical = document.querySelector('link[rel="canonical"]')
-    if (noIndex && !canonicalUrl) {
-      if (canonical) canonical.remove()
-    } else {
-      if (!canonical) {
-        canonical = document.createElement('link')
-        canonical.setAttribute('rel', 'canonical')
-        document.head.appendChild(canonical)
-      }
-      canonical.setAttribute('href', href)
+    if (!canonical) {
+      canonical = document.createElement('link')
+      canonical.setAttribute('rel', 'canonical')
+      document.head.appendChild(canonical)
     }
+    canonical.setAttribute('href', href)
 
     setMeta('property', 'og:url', href)
     setMeta('name', 'twitter:url', href)
-  }, [title, description, canonicalUrl, ogType, ogImage, ogImageAlt, ogImageWidth, ogImageHeight, noIndex])
+  }, [title, description, canonicalUrl, ogType, ogImage, ogImageAlt, ogImageWidth, ogImageHeight])
 
   return null
 }

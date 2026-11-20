@@ -163,7 +163,6 @@ export default function Login({ accessDenied, denialReason }) {
       let rateLimitSecs = 60
       try {
         await sendLoginOtp(userEmail)
-        triggerSpamNotice()
       } catch (otpErr) {
         console.warn('OTP dispatch notice:', otpErr)
         const msg = otpErr?.message || (typeof otpErr === 'string' ? otpErr : '')
@@ -229,7 +228,7 @@ export default function Login({ accessDenied, denialReason }) {
 
   return (
     <div className="auth-layout">
-      <SEOHead title="Sign In | Paper5" description="Sign in to your Paper5 team workspace." noIndex />
+      <SEOHead title="Sign In | Paper5" description="Sign in to your Paper5 team workspace." />
       <a 
         href="https://paper5.co" 
         className="auth-back-to-website"
@@ -353,7 +352,6 @@ export default function Login({ accessDenied, denialReason }) {
                 type="button" 
                 className="auth-submit-btn" 
                 onClick={() => {
-                  triggerSpamNotice()
                   handlePasswordLogin()
                 }} 
                 disabled={loading || !identifier || !password || step === 2}
@@ -375,9 +373,8 @@ export default function Login({ accessDenied, denialReason }) {
                   <button 
                     type="button" 
                     onClick={() => {
-                      triggerSpamNotice()
                       setCooldown(60)
-                      sendLoginOtp(verifiedEmail)
+                      sendLoginOtp(verifiedEmail).catch(() => {})
                     }} 
                     disabled={loading || cooldown > 0}
                     style={{ background: 'none', border: 'none', color: cooldown > 0 ? '#999' : 'var(--accent-primary, #10b981)', fontSize: '12px', cursor: cooldown > 0 ? 'not-allowed' : 'pointer', padding: 0, fontWeight: 600 }}

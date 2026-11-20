@@ -9,13 +9,26 @@ dist-ssr
 build
 *.tsbuildinfo
 
-# Secret & Environment Files (CRITICAL: Never commit secrets)
+# Secret & Environment Files (CRITICAL: Never commit secrets, API keys, or certificates)
 .env
+.env*
+*.env
 .env.local
 .env.*.local
 .env.development
 .env.production
 .env.staging
+*.key
+*.pem
+*.cert
+*.crt
+*.pfx
+*.p12
+service-account*.json
+credentials*.json
+*.secret
+secrets.*
+passwords.*
 
 # Editor & IDE Files
 .vscode/*
@@ -76,4 +89,3 @@ wrangler.jsonc
 bla.config.json
 *.bla.log
 bla-*.json
-

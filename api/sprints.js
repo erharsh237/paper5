@@ -1,6 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 import { setCorsHeaders } from './_cors.js'
 import { checkRateLimit } from './_rateLimit.js'
+import { verifyWorkspaceAccess } from './_auth.js'
+import { sanitizeError } from './_errors.js'
+import { logAdminAction } from './_audit.js'
+import { sanitizeText } from './_formSecurity.js'
 
 function parseBody(req) {
   if (req.body && typeof req.body === 'object') return req.body
@@ -18,27 +22,35 @@ export default async function handler(req, res) {
     return res.status(200).end()
   }
 
-  if (checkRateLimit(req, res, { max: 60, windowMs: 60000 })) return
+  if (checkRateLimit(req, res, { max: 120, windowMs: 60000 })) return
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://sdbglndhjkqhkphzqmum.supabase.co'
+  const rawUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY
   const activeKey = serviceKey || anonKey
 
-  if (!activeKey) {
+  if (!rawUrl || !activeKey) {
     return res.status(500).json({ error: 'Supabase credentials missing' })
   }
 
-  const supabaseAdmin = createClient(supabaseUrl, activeKey)
+  const supabaseUrl = rawUrl.replace(/["']/g, '').trim()
+  const supabaseAdmin = createClient(supabaseUrl, activeKey.replace(/["']/g, '').trim())
   const body = parseBody(req)
   const { action, workspaceId, id, sprintData, patch, teamId, sprintId } = body || {}
 
   if (!workspaceId) {
     return res.status(400).json({ error: 'Missing workspaceId' })
+  }
+
+  // Sprints are managerial: deleting, locking, closing require workspace admin privileges
+  const requireAdmin = ['delete_sprint', 'lock_sprint', 'unlock_sprint', 'close_sprint', 'reopen_sprint'].includes(action)
+  const authRes = await verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { requireAdmin })
+  if (authRes.error) {
+    return res.status(authRes.status || 403).json({ error: authRes.error })
   }
 
   try {
@@ -47,7 +59,7 @@ export default async function handler(req, res) {
         workspace_id: workspaceId,
         team_id: teamId || null,
         number: sprintData?.number,
-        goal: sprintData?.goal || '',
+        goal: sanitizeText(sprintData?.goal || '', { maxLen: 1000 }),
         start_date: sprintData?.startDate || sprintData?.start_date,
         end_date: sprintData?.endDate || sprintData?.end_date,
         status: sprintData?.status || 'active',
@@ -59,7 +71,11 @@ export default async function handler(req, res) {
     }
 
     if (action === 'update_sprint') {
-      const { error } = await supabaseAdmin.from('sprints').update(patch).eq('id', id).eq('workspace_id', workspaceId)
+      const sanitizedPatch = { ...patch }
+      if (typeof sanitizedPatch.goal === 'string') {
+        sanitizedPatch.goal = sanitizeText(sanitizedPatch.goal, { maxLen: 1000 })
+      }
+      const { error } = await supabaseAdmin.from('sprints').update(sanitizedPatch).eq('id', id).eq('workspace_id', workspaceId)
       if (error) throw error
       return res.status(200).json({ success: true })
     }
@@ -70,42 +86,96 @@ export default async function handler(req, res) {
       } catch (_) {}
       const { error } = await supabaseAdmin.from('sprints').delete().eq('id', id).eq('workspace_id', workspaceId)
       if (error) throw error
+
+      await logAdminAction(supabaseAdmin, {
+        workspaceId,
+        actorId: authRes.user.id,
+        action: 'sprint.delete',
+        resource: 'sprints',
+        metadata: { sprintId: id }
+      })
+
       return res.status(200).json({ success: true })
     }
 
     if (action === 'set_active_sprint') {
       const { error } = await supabaseAdmin.from('sprints').update({ status: 'active' }).eq('id', sprintId || id).eq('workspace_id', workspaceId)
       if (error) throw error
+
+      await logAdminAction(supabaseAdmin, {
+        workspaceId,
+        actorId: authRes.user.id,
+        action: 'sprint.set_active',
+        resource: 'sprints',
+        metadata: { sprintId: sprintId || id }
+      })
+
       return res.status(200).json({ success: true })
     }
 
     if (action === 'close_sprint') {
       const { error } = await supabaseAdmin.from('sprints').update({ status: 'completed' }).eq('id', id).eq('workspace_id', workspaceId)
       if (error) throw error
+
+      await logAdminAction(supabaseAdmin, {
+        workspaceId,
+        actorId: authRes.user.id,
+        action: 'sprint.close',
+        resource: 'sprints',
+        metadata: { sprintId: id }
+      })
+
       return res.status(200).json({ success: true })
     }
 
     if (action === 'reopen_sprint') {
       const { error } = await supabaseAdmin.from('sprints').update({ status: 'active' }).eq('id', id).eq('workspace_id', workspaceId)
       if (error) throw error
+
+      await logAdminAction(supabaseAdmin, {
+        workspaceId,
+        actorId: authRes.user.id,
+        action: 'sprint.reopen',
+        resource: 'sprints',
+        metadata: { sprintId: id }
+      })
+
       return res.status(200).json({ success: true })
     }
 
     if (action === 'lock_sprint') {
       const { error } = await supabaseAdmin.from('sprints').update({ locked: true }).eq('id', id).eq('workspace_id', workspaceId)
       if (error) throw error
+
+      await logAdminAction(supabaseAdmin, {
+        workspaceId,
+        actorId: authRes.user.id,
+        action: 'sprint.lock',
+        resource: 'sprints',
+        metadata: { sprintId: id }
+      })
+
       return res.status(200).json({ success: true })
     }
 
     if (action === 'unlock_sprint') {
       const { error } = await supabaseAdmin.from('sprints').update({ locked: false }).eq('id', id).eq('workspace_id', workspaceId)
       if (error) throw error
+
+      await logAdminAction(supabaseAdmin, {
+        workspaceId,
+        actorId: authRes.user.id,
+        action: 'sprint.unlock',
+        resource: 'sprints',
+        metadata: { sprintId: id }
+      })
+
       return res.status(200).json({ success: true })
     }
 
     return res.status(400).json({ error: 'Unknown action' })
   } catch (err) {
-    console.error('API sprints error:', err)
-    return res.status(500).json({ error: err.message || 'Failed to process sprint action' })
+    console.error('API sprints error:', err?.message || err)
+    return res.status(500).json({ error: sanitizeError(err, 'Failed to process sprint action') })
   }
 }

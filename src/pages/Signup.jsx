@@ -60,6 +60,8 @@ export default function Signup() {
   const [loading, setLoading] = useState(false)
 
   const [message, setMessage] = useState('')
+  const [existingEmailAccount, setExistingEmailAccount] = useState(false)
+  const [checkingAccount, setCheckingAccount] = useState(false)
   const [cooldown, setCooldown] = useState(0)
   const [failedAttempts, setFailedAttempts] = useState(0)
   const [lockoutTimer, setLockoutTimer] = useState(0)
@@ -70,16 +72,43 @@ export default function Signup() {
   const [turnstileToken, setTurnstileToken] = useState(null)
   const turnstileRef = useRef(null)
 
+  const handleCheckEmail = async (overrideEmail) => {
+    const targetEmail = (overrideEmail || email || '').trim().toLowerCase()
+    if (!targetEmail || !targetEmail.includes('@') || targetEmail.length < 5) return
+    try {
+      setCheckingAccount(true)
+      const res = await fetch('/api/public?action=check-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: targetEmail })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data?.emailExists) {
+          setExistingEmailAccount(true)
+          setMessage('An account with this email already exists. Please sign in instead.')
+        } else {
+          setExistingEmailAccount(false)
+          setMessage(prev => prev.includes('already exists') ? '' : prev)
+        }
+      }
+    } catch (_) {
+    } finally {
+      setCheckingAccount(false)
+    }
+  }
+
   useEffect(() => {
     if (decryptedPlan) {
       localStorage.setItem('sprintos_selected_plan', decryptedPlan)
     }
     const queryEmail = searchParams.get('email')
-    if (queryEmail) {
+    if (queryEmail && !email) {
       const clean = queryEmail.trim().toLowerCase()
       setEmail(clean)
       const base = clean.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '')
-      if (base) setUsername(base)
+      if (base && !username) setUsername(base)
+      handleCheckEmail(clean)
     }
   }, [decryptedPlan, searchParams])
 
@@ -175,10 +204,35 @@ export default function Signup() {
         setLoading(false)
         return
       }
+
+      // 1. Account existence check: verify email and username via secure serverless endpoint
+      try {
+        const checkRes = await fetch('/api/public?action=check-account', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim().toLowerCase(), username: username.trim().toLowerCase() })
+        })
+        if (checkRes.ok) {
+          const checkData = await checkRes.json()
+          if (checkData?.emailExists) {
+            setExistingEmailAccount(true)
+            setMessage('An account with this email already exists. Please sign in instead.')
+            setLoading(false)
+            return
+          }
+          if (checkData?.usernameAvailable === false) {
+            setMessage('This username is already taken. Please choose another username.')
+            setLoading(false)
+            return
+          }
+        }
+      } catch (checkErr) {
+        console.warn('Account check pre-flight notice:', checkErr)
+      }
       
       const isAvailable = await checkUsername(username)
       if (!isAvailable) {
-        setMessage('This username is already taken.')
+        setMessage('This username is already taken. Please choose another username.')
         setLoading(false)
         return
       }
@@ -242,13 +296,19 @@ export default function Signup() {
       
       await finalizeSignup(password, username)
       trackEvent('sign_up', { method: 'email_otp' })
-      setMessage('Account created successfully! Redirecting to onboarding...')
+      setMessage('Account created successfully! Redirecting to workspace...')
       setTimeout(() => {
         safeRedirect('/workspace')
       }, 500)
     } catch (err) {
       console.error(err)
-      setMessage(getFriendlyError(err))
+      const errStr = err?.message || ''
+      if (errStr.includes('already taken') || errStr.includes('username')) {
+        setStep(1)
+        setMessage('This username is already taken. Please choose another username.')
+      } else {
+        setMessage(getFriendlyError(err))
+      }
     } finally {
       setLoading(false)
     }
@@ -259,7 +319,7 @@ export default function Signup() {
   }
 
   return (
-    <div className="auth-layout"><SEOHead title="Create Account | Paper5" description="Create a free Paper5 workspace account for your team." noIndex />
+    <div className="auth-layout"><SEOHead title="Create Account | Paper5" description="Create a free Paper5 workspace account for your team." />
       <a 
         href="https://paper5.co" 
         className="auth-back-to-website"
@@ -311,6 +371,24 @@ export default function Signup() {
               ) : (
                 <div style={{ marginBottom: 16 }}>
                   <InlineError error={activeMsg.replace(/^Error:\s*/i, '')} />
+                  {activeMsg.toLowerCase().includes('already exists') && (
+                    <div style={{ marginTop: '10px' }}>
+                      <Link 
+                        to={`/login?email=${encodeURIComponent(email)}`}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          color: 'var(--accent-primary, #4f46e5)',
+                          fontWeight: 700,
+                          fontSize: '13px',
+                          textDecoration: 'none'
+                        }}
+                      >
+                        Sign in to your account &rarr;
+                      </Link>
+                    </div>
+                  )}
                 </div>
               )
             })()
@@ -343,38 +421,82 @@ export default function Signup() {
                     className="auth-input"
                     placeholder="you@company.com"
                     value={email}
-                    onChange={e => setEmail(e.target.value)}
+                    onChange={e => {
+                      setEmail(e.target.value)
+                      if (existingEmailAccount) setExistingEmailAccount(false)
+                    }}
+                    onBlur={() => handleCheckEmail()}
                     required
                   />
                 </div>
 
-                <div style={{ marginTop: '24px' }}>
-                  <button 
-                    type="button" 
-                    className="auth-submit-btn" 
-                    onClick={() => {
-                      triggerSpamNotice()
-                      handleSendOtp()
-                    }} 
-                    disabled={loading || !username || !email || lockoutTimer > 0}
-                    style={lockoutTimer > 0 ? { opacity: 0.5, cursor: 'not-allowed', background: '#9ca3af', borderColor: '#9ca3af' } : {}}
-                  >
-                    {loading 
-                      ? 'Sending Code...' 
-                      : lockoutTimer > 0 
-                        ? `Try again in ${Math.floor(lockoutTimer / 60)}m ${lockoutTimer % 60}s` 
-                        : 'Verify Email with OTP'}
-                  </button>
-                </div>
+                {existingEmailAccount ? (
+                  <div style={{ marginTop: '20px', padding: '16px', background: 'rgba(79, 70, 229, 0.05)', borderRadius: '10px', border: '1px solid var(--accent-primary, #4f46e5)', textAlign: 'center' }}>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                      Account Already Exists
+                    </div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-secondary, #64748b)', marginBottom: '14px' }}>
+                      An account with <strong>{email}</strong> already exists. Please sign in to access your workspace.
+                    </div>
+                    <Link 
+                      to={`/login?email=${encodeURIComponent(email)}`}
+                      className="auth-submit-btn"
+                      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textDecoration: 'none', height: '42px', fontSize: '14px' }}
+                    >
+                      Sign In With This Email &rarr;
+                    </Link>
+                  </div>
+                ) : (
+                  <div style={{ marginTop: '24px' }}>
+                    <button 
+                      type="button" 
+                      className="auth-submit-btn" 
+                      onClick={() => {
+                        handleSendOtp()
+                      }} 
+                      disabled={loading || checkingAccount || !username || !email || lockoutTimer > 0}
+                      style={lockoutTimer > 0 ? { opacity: 0.5, cursor: 'not-allowed', background: '#9ca3af', borderColor: '#9ca3af' } : {}}
+                    >
+                      {loading 
+                        ? 'Sending Code...' 
+                        : checkingAccount
+                          ? 'Checking Account...'
+                          : lockoutTimer > 0 
+                            ? `Try again in ${Math.floor(lockoutTimer / 60)}m ${lockoutTimer % 60}s` 
+                            : 'Verify Email with OTP'}
+                    </button>
+                  </div>
+                )}
               </>
             )}
 
             {/* Step 2: 6-Digit Verification Code */}
             {step === 2 && (
               <>
-                <div className="auth-input-group" style={{ marginBottom: '16px', padding: '12px', background: 'var(--bg-layer-2, #f9fafb)', borderRadius: '8px', border: '1px solid var(--border-subtle, #e5e7eb)' }}>
-                  <div style={{ fontSize: '12px', color: 'var(--text-tertiary, #6b7280)', marginBottom: '2px' }}>Account Details</div>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>@{username} • {email}</div>
+                <div className="auth-input-group" style={{ marginBottom: '16px', padding: '12px 14px', background: 'var(--bg-layer-2, #f9fafb)', borderRadius: '8px', border: '1px solid var(--border-subtle, #e5e7eb)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary, #6b7280)', marginBottom: '2px', fontWeight: 600 }}>Account Details</div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>@{username} • {email}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMessage('')
+                      setStep(1)
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: '1px solid var(--border-subtle, #d1d5db)',
+                      borderRadius: '6px',
+                      color: 'var(--text-primary)',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      padding: '4px 10px'
+                    }}
+                  >
+                    Change
+                  </button>
                 </div>
 
                 <div className="auth-input-group">
@@ -383,9 +505,8 @@ export default function Signup() {
                     <button 
                       type="button" 
                       onClick={() => {
-                      triggerSpamNotice()
-                      handleSendOtp()
-                    }} 
+                        handleSendOtp()
+                      }} 
                       disabled={loading || cooldown > 0}
                       style={{ background: 'none', border: 'none', color: cooldown > 0 ? '#999' : 'var(--accent-primary, #10b981)', fontSize: '12px', cursor: cooldown > 0 ? 'not-allowed' : 'pointer', padding: 0, fontWeight: 600 }}
                     >
@@ -444,11 +565,32 @@ export default function Signup() {
             {/* Step 3: Password Creation */}
             {step === 3 && (
               <>
-                <div className="auth-input-group" style={{ marginBottom: '16px', padding: '12px', background: 'var(--bg-layer-2, #f9fafb)', borderRadius: '8px', border: '1px solid var(--border-subtle, #e5e7eb)' }}>
-                  <div style={{ fontSize: '12px', color: 'var(--text-tertiary, #6b7280)', marginBottom: '2px' }}>Verified Account</div>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span>✓</span> @{username} ({email})
+                <div className="auth-input-group" style={{ marginBottom: '16px', padding: '12px 14px', background: 'var(--bg-layer-2, #f9fafb)', borderRadius: '8px', border: '1px solid var(--border-subtle, #e5e7eb)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary, #6b7280)', marginBottom: '2px', fontWeight: 600 }}>Verified Account</div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>✓</span> @{username} ({email})
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMessage('')
+                      setStep(1)
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: '1px solid var(--border-subtle, #d1d5db)',
+                      borderRadius: '6px',
+                      color: 'var(--text-primary)',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      padding: '4px 10px'
+                    }}
+                  >
+                    Change
+                  </button>
                 </div>
 
                 <div className="auth-input-group">

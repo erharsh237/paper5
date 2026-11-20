@@ -18,8 +18,8 @@ export default function VerifyEmail() {
     if (!pendingEmail) return
     setLoading(true)
     try {
-      triggerSpamNotice()
       await resendVerification(pendingEmail)
+      triggerSpamNotice()
       setMessage('Verification email sent! Check your inbox.')
     } catch (err) {
       console.error(err)
@@ -44,7 +44,7 @@ export default function VerifyEmail() {
 
   return (
     <div className="auth-layout">
-      <SEOHead title="Verify Email | Paper5" description="Verify your email address to activate your Paper5 account." noIndex />
+      <SEOHead title="Verify Email | Paper5" description="Verify your email address to activate your Paper5 account." />
       <div className="auth-showcase-bg" aria-hidden="true" />
       <div className="auth-form-side">
         <div className="auth-form-container glass-panel" style={{ textAlign: 'center' }}>
@@ -84,3 +84,5 @@ export default function VerifyEmail() {
     </div>
   )
 }
+
+

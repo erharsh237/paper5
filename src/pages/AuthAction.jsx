@@ -184,7 +184,6 @@ export default function AuthAction() {
       <SEOHead
         title={type === 'recovery' || showPasswordForm ? 'Reset Your Password | Paper5' : 'Email Verification | Paper5'}
         description="Complete your Paper5 account verification or password reset."
-        noIndex
       />
       <div className="auth-showcase-bg" aria-hidden="true" />
       <div className="auth-form-side">

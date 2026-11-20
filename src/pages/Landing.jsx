@@ -1,128 +1,114 @@
+import React, { useState, useEffect, useRef } from 'react'
 import { useScrollReveal } from '../hooks/useScrollReveal'
-import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import MarketingNav from '../components/MarketingNav'
 import MarketingFooter from '../components/MarketingFooter'
-import { AnimatedGridBackgroundSection } from '../components/AnimatedGridBackground'
+import AetherFlowHero from '../components/AetherFlowHero'
 import SEOHead from '../components/SEOHead'
 import AlertModal from '../components/ui/AlertModal'
 import ContactModal from '../components/ContactModal'
-import { encryptPlanParam } from '../lib/urlSecurity'
 import { getAppUrl } from '../lib/domain'
-import { safeRedirect } from '../lib/safeRedirect'
 import { trackEvent } from '../lib/metrics'
+import { smoothScrollTo, scrollToHome, scrollToPricing } from '../lib/smoothScroll'
 import { 
   ArrowRight, 
   Check, 
+  X,
   Layers, 
   Clock, 
   AlertTriangle, 
-  FileText, 
   GitPullRequest, 
-  Code2, 
   Calendar, 
   Users, 
   ShieldCheck, 
-  ExternalLink,
-  MessageSquare,
   Zap,
-  CheckCircle2,
-  Lock,
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
-  FolderX,
-  ClockAlert,
-  MessagesSquare,
-  FolderGit2,
-  Rocket,
-  Compass,
-  AlertCircle,
-  Sparkles,
-  Workflow,
-  Plus,
-  Eye,
-  Terminal,
-  HelpCircle,
-  Download,
-  Shield,
-  Database,
-  Activity,
-  Sliders
+  Rocket, 
+  CheckCircle2, 
+  Lock, 
+  ChevronDown, 
+  AlertCircle, 
+  Eye, 
+  Terminal, 
+  HelpCircle, 
+  Download, 
+  Shield, 
+  Database, 
+  Activity, 
+  Sliders, 
+  TrendingUp,
+  MessageSquare
 } from 'lucide-react'
 import './Landing.css'
+
+// ============================================================================
+// PRICING CONFIGURATION
+// ============================================================================
+const PLANS = {
+  starter: {
+    id: 'starter',
+    name: 'Starter',
+    target: 'For solo developers and small squads establishing initial sprint cadence.',
+    futurePrice: null,
+    period: 'Free forever plan',
+    launchPrice: '₹0',
+    popular: false,
+    ctaText: 'Start for Free',
+    features: [
+      '1 Active Workspace',
+      'Up to 3 squad members',
+      'Sprint boards & custom workflows',
+      'GitHub commit & pull request tracking',
+      'Personal focus dashboard',
+      'Community developer support'
+    ]
+  },
+  team: {
+    id: 'team',
+    name: 'Team',
+    target: 'For growing product squads that need clear ownership, risk radar, and automated sync.',
+    futurePrice: '₹200',
+    period: '/ month after launch',
+    launchPrice: '₹0',
+    popular: true,
+    ctaText: 'Claim Team Access',
+    features: [
+      'Everything in Starter, plus:',
+      'Up to 5 workspaces and 10 squad members',
+      'Locked sprint boundary control',
+      'Deliverable staging preview & test sign-off',
+      'Proactive roadblock radar with squad alerts',
+      'Connected meeting decisions & sync digests'
+    ]
+  },
+  scale: {
+    id: 'scale',
+    name: 'Scale',
+    target: 'For multi-squad teams requiring custom methodologies, audit reporting, and API access.',
+    futurePrice: '₹500',
+    period: '/ month after launch',
+    launchPrice: '₹0',
+    popular: false,
+    ctaText: 'Claim Scale Access',
+    features: [
+      'Everything in Team, plus:',
+      'Unlimited workspaces and squad members',
+      'All agile frameworks (Spotify squads, SAFe)',
+      'REST API access with live tokens',
+      'Compliance audit logs & printable vector PDF briefs',
+      'Priority developer support'
+    ]
+  }
+}
 
 export default function Landing() {
   useScrollReveal()
   const [alertMessage, setAlertMessage] = useState(null)
   const [isContactOpen, setIsContactOpen] = useState(false)
-  const [openFaq, setOpenFaq] = useState(0) // Default first FAQ item open
-  const [activeFeatureSlide, setActiveFeatureSlide] = useState(0)
-  const [isFeaturePaused, setIsFeaturePaused] = useState(false)
-  const [touchStartX, setTouchStartX] = useState(null)
-  const [touchEndX, setTouchEndX] = useState(null)
-  const [stompTriggered, setStompTriggered] = useState(false)
-  const [stompKey, setStompKey] = useState(0)
-
-  // Auto-scroll feature cards continuously; pause on hover or touch
-  useEffect(() => {
-    if (isFeaturePaused) return
-    const interval = setInterval(() => {
-      setActiveFeatureSlide((prev) => (prev === 5 ? 0 : prev + 1))
-    }, 4500)
-    return () => clearInterval(interval)
-  }, [isFeaturePaused])
-
-  useEffect(() => {
-    setStompTriggered(false)
-    const timer = setTimeout(() => {
-      setStompTriggered(true)
-    }, 120)
-    return () => clearTimeout(timer)
-  }, [stompKey])
-
-  const replayStomp = () => {
-    setStompTriggered(false)
-    setStompKey(k => k + 1)
-  }
-
-  const featureTabs = [
-    { id: 0, num: '01', label: 'Agile Kanban' },
-    { id: 1, num: '02', label: 'Single Ownership' },
-    { id: 2, num: '03', label: 'Live Risk Radar' },
-    { id: 3, num: '04', label: 'Meeting Memory' },
-    { id: 4, num: '05', label: 'GitHub Native' },
-    { id: 5, num: '06', label: 'Audit & Exports' }
-  ]
-
-  const handlePrevSlide = () => {
-    setActiveFeatureSlide((prev) => (prev === 0 ? 5 : prev - 1))
-  }
-
-  const handleNextSlide = () => {
-    setActiveFeatureSlide((prev) => (prev === 5 ? 0 : prev + 1))
-  }
-
-  const handleTouchStart = (e) => {
-    setTouchStartX(e.targetTouches[0].clientX)
-  }
-
-  const handleTouchMove = (e) => {
-    setTouchEndX(e.targetTouches[0].clientX)
-  }
-
-  const handleTouchEnd = () => {
-    if (touchStartX === null || touchEndX === null) return
-    const diff = touchStartX - touchEndX
-    if (diff > 45) {
-      handleNextSlide()
-    } else if (diff < -45) {
-      handlePrevSlide()
-    }
-    setTouchStartX(null)
-    setTouchEndX(null)
-  }
+  const [openFaq, setOpenFaq] = useState(0)
+  const [activeFeatureTab, setActiveFeatureTab] = useState('github')
+  const [mobileActivePillar, setMobileActivePillar] = useState(0)
+  const [activeOriginIndex, setActiveOriginIndex] = useState(0)
   const { user } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
@@ -132,71 +118,44 @@ export default function Landing() {
     if (pricingTrackedRef.current) return
     const firePricingView = () => {
       if (pricingTrackedRef.current) return
-      pricingTrackedRef.current = true
-      trackEvent('pricing_view', { path: location.pathname })
-    }
-    if (location.pathname === '/pricing' || location.hash === '#pricing') {
-      firePricingView()
-      return
-    }
-    const el = document.getElementById('pricing')
-    if (!el || typeof IntersectionObserver === 'undefined') return
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          firePricingView()
-          observer.disconnect()
+      const pricingEl = document.getElementById('pricing')
+      if (pricingEl) {
+        const rect = pricingEl.getBoundingClientRect()
+        if (rect.top < window.innerHeight && rect.bottom >= 0) {
+          trackEvent('pricing_view', { source: 'landing_scroll' })
+          pricingTrackedRef.current = true
         }
-      },
-      { threshold: 0.25 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [location.pathname, location.hash])
+      }
+    }
+    window.addEventListener('scroll', firePricingView, { passive: true })
+    firePricingView()
+    return () => window.removeEventListener('scroll', firePricingView)
+  }, [])
 
   const handleGetStarted = (planId = 'team') => {
-    trackEvent('cta_click', { cta_name: 'get_started', plan: planId })
-    const encryptedToken = encryptPlanParam(planId)
-    try {
-      localStorage.setItem('sprintos_selected_plan', planId)
-    } catch (_) {}
-    const target = getAppUrl(`/signup?p=${encryptedToken}`)
-    window.open(target, '_blank', 'noopener,noreferrer')
+    trackEvent('get_started_click', { plan: planId, source: 'landing_hero' })
+    window.open(getAppUrl('/signup'), '_blank', 'noopener,noreferrer')
   }
 
   const handlePlanClick = (planId) => {
-    handleGetStarted(planId)
+    trackEvent('pricing_plan_click', { plan: planId, source: 'landing_pricing' })
+    window.open(getAppUrl(`/signup?plan=${planId}`), '_blank', 'noopener,noreferrer')
   }
 
   const scrollToSection = (e, sectionId) => {
     if (e) e.preventDefault()
-    const el = document.getElementById(sectionId)
-    if (el) {
-      if (window.__lenis) {
-        window.__lenis.scrollTo(el, { 
-          offset: -84, 
-          duration: 1.25, 
-          easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) 
-        })
-      } else {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }
-      window.history.pushState('', document.title, `#${sectionId}`)
-    }
+    smoothScrollTo(sectionId, { offset: -84, duration: 850 })
+    window.history.pushState('', document.title, `#${sectionId}`)
   }
 
   useEffect(() => {
-    if (location.pathname === '/pricing' || location.hash === '#pricing' || window.location.hash === '#pricing') {
+    const isPricingTarget = location.pathname === '/pricing' || location.hash === '#pricing'
+    const targetId = isPricingTarget ? 'pricing' : (location.hash ? location.hash.replace('#', '') : null)
+
+    if (targetId) {
       const timer = setTimeout(() => {
-        const el = document.getElementById('pricing')
-        if (el) {
-          if (window.__lenis) {
-            window.__lenis.scrollTo(el, { offset: -84, duration: 1.35, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) })
-          } else {
-            el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-          }
-        }
-      }, 150)
+        smoothScrollTo(targetId, { offset: -84, duration: 900 })
+      }, 120)
       return () => clearTimeout(timer)
     }
   }, [location.pathname, location.hash])
@@ -205,38 +164,33 @@ export default function Landing() {
     setOpenFaq(prev => (prev === index ? -1 : index))
   }
 
+  const featureTabs = [
+    { id: 'github', label: 'GitHub Auto-Sync', icon: GitPullRequest },
+    { id: 'scope', label: 'Sprint Boundary Control', icon: Lock },
+    { id: 'owner', label: 'Single Ownership', icon: ShieldCheck },
+    { id: 'radar', label: 'Roadblock Radar', icon: Activity }
+  ]
+
   const faqs = [
     {
       question: "What is Paper5?",
-      answer: "Paper5 is a project management and team accountability platform designed for small teams and startups. It brings agile task planning, single-owner deadlines, connected meeting notes, team analytics, and GitHub development sync together in one synchronized workspace."
+      answer: "Paper5 is a project management and team workflow platform built for small engineering teams. It unites sprint planning, single-owner deliverables, roadblock notifications, and native GitHub development into one synchronized workspace."
     },
     {
-      question: "Who should use Paper5?",
-      answer: "Paper5 is built for small teams, technical founders, product builders, and startups that want clear task ownership and fast daily coordination without heavy enterprise setup or spreadsheet clutter."
+      question: "How does GitHub synchronization work?",
+      answer: "Paper5 connects directly to your GitHub repositories. When pull requests merge, linked sprint deliverables automatically advance to completed status with test logs and deploy staging links attached."
     },
     {
-      question: "How does Paper5 help small teams and startups?",
-      answer: "Small teams move fast without a full-time project administrator. Paper5 keeps every member aligned with one-owner task accountability, transparent due dates, 1-click blocker alerts, and automated sprint progress visibility."
+      question: "Why does Paper5 enforce single-owner deliverables?",
+      answer: "Shared tickets with multiple assignees create bystander apathy and missed deadlines. Paper5 requires exactly one engineer per deliverable, ensuring unambiguous ownership and direct responsibility for shipping."
     },
     {
-      question: "What features are available?",
-      answer: "Paper5 includes agile Kanban and workflow boards, sprint and deadline management, single-owner task assignments with deliverable proof verification, live risk and velocity analytics, connected meeting notes, CSV and printable PDF exports, and optional GitHub, Discord, Slack, Google Calendar, and webhook integrations."
+      question: "What happens when the public launch period ends?",
+      answer: "All accounts created during the public launch will receive at least 30 days advance notice before any pricing changes take effect, with the option to remain on a grandfathered free tier."
     },
     {
-      question: "How can I create a team and invite members?",
-      answer: "Sign up at app.paper5.co, verify your email with the 6-digit code, and follow the workspace onboarding wizard to create your team workspace. From Workspace Settings you can send direct email invitations or share a secure workspace join link so teammates can join as admins or collaborators."
-    },
-    {
-      question: "How do I manage tasks and track deadlines?",
-      answer: "Create tasks from your workspace dashboard or workflow board, assign one accountable owner and deadline, track status changes across stages, flag blockers for teammates when stuck, and verify completed deliverables before closing items."
-    },
-    {
-      question: "Does Paper5 integrate with GitHub?",
-      answer: "Yes. You can connect GitHub repositories, link pull requests to workspace tasks, monitor status updates, and streamline engineering handoffs inside your workspace integrations panel."
-    },
-    {
-      question: "How can I contact support?",
-      answer: "Reach our support team anytime through the Contact page at paper5.co/contact, via the in-app Give Feedback or Contact Sales forms, or by emailing support@paper5.co (and security@paper5.co for security disclosures). We typically respond within 12–24 business hours."
+      question: "How is our team data secured?",
+      answer: "Your projects are stored in PostgreSQL protected by Row-Level Security (RLS) policies at the database layer. All data is encrypted with AES-256 at rest and TLS 1.3 in transit, with optional TOTP two-factor authentication."
     }
   ]
 
@@ -245,11 +199,11 @@ export default function Landing() {
   return (
     <div className="landing-page">
       <SEOHead 
-        title={isPricingRoute ? "Pricing | Paper5" : "Paper5 | Connected Project Workspace for Small Teams"} 
+        title={isPricingRoute ? "Pricing | Paper5" : "Paper5 | Sprint Management & Team Workflow with GitHub Sync"} 
         description={
           isPricingRoute
-            ? "Compare Paper5 Starter, Team, and Scale plans. Start free with core sprint management, task ownership, and GitHub sync with no credit card required."
-            : "Paper5 is the operating workspace for small teams and startups. Bring your team's projects, tasks, deadlines, documents and development in one place."
+            ? "Compare Paper5 Starter, Team, and Scale plans. Free during launch with core sprint management, single ownership, and GitHub sync with no credit card required."
+            : "Paper5 is the connected sprint management platform for engineering teams. Automate task progress with GitHub sync, enforce single ownership, and ship without coordination drag. Free during launch."
         }
         canonicalUrl={isPricingRoute ? "https://paper5.co/pricing" : "https://paper5.co/"}
       />
@@ -257,801 +211,218 @@ export default function Landing() {
 
       <main>
         {/* ════════════════════════════════════════════════════════════════
-            1. HERO SECTION (Illustrated Editorial Dawn)
-            Editorial Serif Headline, Pill CTAs, Custom Dawn Studio Scene & Milestone Dock
+            1. HERO SECTION (DARK)
+            Aether Flow Interactive Constellation Particle Mesh
             ════════════════════════════════════════════════════════════════ */}
-        <section className="hero-section hero-illustrated-editorial" id="hero">
-          <div className="hero-editorial-bg-img" aria-hidden="true" />
-          <div className="hero-editorial-scrim" aria-hidden="true" />
+        <AetherFlowHero 
+          onGetStarted={() => handleGetStarted('team')}
+          onExplore={(e) => scrollToSection(e, 'origin')}
+        />
 
-          <div className="hero-editorial-inner">
-            <div className="hero-content">
-              {/* Main Headline with Editorial Kinetic Reveal Animation */}
-              <h1 
-                key={stompKey}
-                className={`hero-headline hero-stomp-headline hero-editorial-headline ${stompTriggered ? 'is-active' : ''}`}
-                aria-label="Your projects. Your people. Everything is in sync"
-                onClick={replayStomp}
-                title="Click to replay headline animation"
+        
+
+        {/* ════════════════════════════════════════════════════════════════
+            3. PROBLEM & OUTCOME SECTION (DARK)
+            "Less Chasing. More Building." — Operational Shift Comparison
+            ════════════════════════════════════════════════════════════════ */}
+        
+        {/* ════════════════════════════════════════════════════════════════
+            2. THE ORIGIN & PURPOSE SECTION (DARK)
+            "Why We Built Paper5"
+            ════════════════════════════════════════════════════════════════ */}
+        <section id="origin" className="origin-purpose-section" aria-label="Origin and Purpose">
+          <div className="section-container">
+            <div className="origin-header">
+              <span className="origin-kicker">THE ORIGIN AND PURPOSE</span>
+              <h2 className="origin-title">Why We Built Paper5</h2>
+            </div>
+
+            {/* Mobile Tab Switcher */}
+            <div className="origin-mobile-tabs mobile-only" role="tablist" aria-label="Origin Story Beats">
+              <button 
+                type="button"
+                role="tab"
+                aria-selected={activeOriginIndex === 0}
+                className={`origin-tab-btn ${activeOriginIndex === 0 ? 'active' : ''}`}
+                onClick={() => setActiveOriginIndex(0)}
               >
-                <div className="hero-stomp-row">
-                  <span className="stomp-phrase">
-                    <span className="stomp-word" style={{ '--delay': '60ms' }}>
-                      <span className="stomp-word-inner">Your</span>
-                    </span>
-                    <span className="stomp-word" style={{ '--delay': '140ms' }}>
-                      <span className="stomp-word-inner">projects.</span>
-                    </span>
-                  </span>
-                  <span className="stomp-phrase">
-                    <span className="stomp-word" style={{ '--delay': '240ms' }}>
-                      <span className="stomp-word-inner">Your</span>
-                    </span>
-                    <span className="stomp-word" style={{ '--delay': '320ms' }}>
-                      <span className="stomp-word-inner">people.</span>
-                    </span>
-                  </span>
-                </div>
-                <div className="hero-stomp-row stomp-highlight">
-                  <span className="stomp-phrase">
-                    <span className="stomp-word" style={{ '--delay': '420ms' }}>
-                      <span className="stomp-word-inner">Everything</span>
-                    </span>
-                    <span className="stomp-word" style={{ '--delay': '490ms' }}>
-                      <span className="stomp-word-inner">is</span>
-                    </span>
-                    <span className="stomp-word" style={{ '--delay': '560ms' }}>
-                      <span className="stomp-word-inner">in</span>
-                    </span>
-                    <span className="stomp-word stomp-word-final" style={{ '--delay': '640ms' }}>
-                      <span className="stomp-word-inner">sync.</span>
-                    </span>
-                  </span>
-                </div>
-              </h1>
-
-              {/* Supporting Subheadline */}
-              <p className="hero-subtext">
-                Bring your projects, tasks, and team accountability together in one workspace. Give everyone the clarity to know what needs to happen and who owns it.
-              </p>
-
-              {/* CTA Action Group */}
-              <div className="hero-cta-group">
-                <button 
-                  className="btn-primary btn-lg hero-btn-cta hero-pill-btn" 
-                  onClick={() => handleGetStarted('team')}
-                >
-                  <span>Get Started for Free</span>
-                  <ArrowRight size={18} />
-                </button>
-                <a 
-                  href="#overview"
-                  onClick={(e) => scrollToSection(e, 'overview')}
-                  className="btn-ghost btn-lg hero-btn-explore hero-pill-btn"
-                >
-                  <span>Explore the Platform</span>
-                </a>
-              </div>
-
-              {/* Supporting Microcopy */}
-              <div className="hero-microcopy">
-                <span>Free forever tier available</span>
-                <span className="microcopy-dot">•</span>
-                <span>No credit card required</span>
-                <span className="microcopy-dot">•</span>
-                <span>Setup in under 2 minutes</span>
-              </div>
+                <span className="origin-tab-dot disconnect-dot" />
+                <span>The Disconnect</span>
+              </button>
+              <button 
+                type="button"
+                role="tab"
+                aria-selected={activeOriginIndex === 1}
+                className={`origin-tab-btn ${activeOriginIndex === 1 ? 'active' : ''}`}
+                onClick={() => setActiveOriginIndex(1)}
+              >
+                <span className="origin-tab-dot breaking-dot" />
+                <span>The Breaking Point</span>
+              </button>
+              <button 
+                type="button"
+                role="tab"
+                aria-selected={activeOriginIndex === 2}
+                className={`origin-tab-btn ${activeOriginIndex === 2 ? 'active' : ''}`}
+                onClick={() => setActiveOriginIndex(2)}
+              >
+                <span className="origin-tab-dot resolution-dot" />
+                <span>The Resolution</span>
+              </button>
             </div>
 
-            {/* Frosted Glass Sprint Milestone Scrubber Dock */}
-            <div className="hero-editorial-dock" aria-label="Sprint progress snapshot">
-              <div className="editorial-dock-header">
-                <span className="editorial-dock-title">Sprint 14</span>
-                <span className="editorial-dock-sep">•</span>
-                <span className="editorial-dock-metric">72% Shipped</span>
-              </div>
-              <div className="editorial-dock-track" role="progressbar" aria-valuenow={72} aria-valuemin={0} aria-valuemax={100}>
-                <div className="editorial-dock-fill" style={{ width: '72%' }}>
-                  <span className="editorial-dock-thumb" />
-                </div>
-              </div>
-              <div className="editorial-dock-chips">
-                <span className="editorial-dock-chip">
-                  <CheckCircle2 size={13} />
-                  <span>Deliverables Verified</span>
-                </span>
-                <span className="editorial-dock-chip">
-                  <Users size={13} />
-                  <span>Single Owner Active</span>
-                </span>
-                <span className="editorial-dock-chip">
-                  <GitPullRequest size={13} />
-                  <span>GitHub Synced</span>
-                </span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ════════════════════════════════════════════════════════════════
-            2. THE PROBLEM SECTION (Section 3)
-            "Your Team Isn't Unproductive. Your Workflow Is Disconnected."
-            ════════════════════════════════════════════════════════════════ */}
-        <section id="problem" className="problem-section reveal-on-scroll">
-          <div className="section-container">
-            <div className="section-header">
-              <span className="section-kicker">| THE PROBLEM FACING SMALL TEAMS</span>
-              <h2 className="section-title">
-                Your Team Isn't Unproductive.<br />
-                Your Workflow Is Disconnected.
-              </h2>
-              <p className="section-description">
-                When project information is scattered across chat apps, spreadsheets, and disconnected tools, small teams spend more time coordinating than building.
-              </p>
-            </div>
-
-            <div className="problem-split-layout reveal-stagger">
-              {/* Left Column: Problem Breakdown Vectors */}
-              <div className="problem-vectors-column">
-                <div className="problem-vector-item">
-                  <div className="vector-icon-wrap"><FolderX size={20} /></div>
-                  <div className="vector-content">
-                    <div className="vector-header">
-                      <span className="vector-num">01</span>
-                      <h4>Scattered Tasks & Fragmented Context</h4>
-                    </div>
-                    <p>Tasks live in spreadsheets, architecture decisions in Slack threads, and links buried in DMs. Context is lost on every handoff.</p>
-                  </div>
-                </div>
-
-                <div className="problem-vector-item">
-                  <div className="vector-icon-wrap"><Users size={20} /></div>
-                  <div className="vector-content">
-                    <div className="vector-header">
-                      <span className="vector-num">02</span>
-                      <h4>Ambiguous "Team" Ownership</h4>
-                    </div>
-                    <p>When tasks are vaguely assigned to "the squad", no single contributor feels clear accountability. Deliverables slip unnoticed.</p>
-                  </div>
-                </div>
-
-                <div className="problem-vector-item">
-                  <div className="vector-icon-wrap"><MessagesSquare size={20} /></div>
-                  <div className="vector-content">
-                    <div className="vector-header">
-                      <span className="vector-num">03</span>
-                      <h4>The "Quick Sync" Status Meeting Tax</h4>
-                    </div>
-                    <p>Founders rely on daily roll-calls and Slack pings just to find out who is doing what, shredding deep engineering focus time.</p>
-                  </div>
-                </div>
-
-                <div className="problem-vector-item">
-                  <div className="vector-icon-wrap"><ClockAlert size={20} /></div>
-                  <div className="vector-content">
-                    <div className="vector-header">
-                      <span className="vector-num">04</span>
-                      <h4>Surprise Eleventh-Hour Deadline Slips</h4>
-                    </div>
-                    <p>Blockers remain buried until the eve of release, leaving zero runway to adjust scope or swarm to unblock developers.</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column: Diagnostic Workweek Audit Card */}
-              <div className="problem-audit-column">
-                <div className="diagnostic-audit-card">
-                  <div className="audit-card-head">
-                    <div className="audit-pulse-badge">
-                      <span className="pulse-dot" />
-                      <span>DISCONNECTION AUDIT • TYPICAL 5-DEV SQUAD</span>
-                    </div>
-                    <span className="audit-tag">Weekly Overhead</span>
-                  </div>
-
-                  <div className="audit-hero-stat">
-                    <div className="stat-big-number">14.5 hrs</div>
-                    <div className="stat-label">Lost per engineer every single week to fragmented coordination</div>
-                  </div>
-
-                  <div className="audit-friction-meters">
-                    <div className="friction-meter-item">
-                      <div className="friction-label-row">
-                        <span>Status Update Roundtables</span>
-                        <strong>4.2 hrs/wk</strong>
-                      </div>
-                      <div className="meter-track">
-                        <div className="meter-fill red" style={{ width: '42%' }} />
-                      </div>
-                    </div>
-
-                    <div className="friction-meter-item">
-                      <div className="friction-label-row">
-                        <span>Searching for Specs & Links in Chat</span>
-                        <strong>3.8 hrs/wk</strong>
-                      </div>
-                      <div className="meter-track">
-                        <div className="meter-fill amber" style={{ width: '38%' }} />
-                      </div>
-                    </div>
-
-                    <div className="friction-meter-item">
-                      <div className="friction-label-row">
-                        <span>Waiting on Unassigned Reviews</span>
-                        <strong>4.1 hrs/wk</strong>
-                      </div>
-                      <div className="meter-track">
-                        <div className="meter-fill orange" style={{ width: '41%' }} />
-                      </div>
-                    </div>
-
-                    <div className="friction-meter-item">
-                      <div className="friction-label-row">
-                        <span>Silent Blocker Resolution Surprises</span>
-                        <strong>2.4 hrs/wk</strong>
-                      </div>
-                      <div className="meter-track">
-                        <div className="meter-fill yellow" style={{ width: '24%' }} />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="audit-card-footer">
-                    <div className="audit-conclusion">
-                      <span className="conclusion-badge">Total Loss</span>
-                      <span>Over <strong>72+ engineering hours</strong> wasted every sprint on disconnects.</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ════════════════════════════════════════════════════════════════
-            3. THE SOLUTION SECTION (Section 4)
-            "One Workspace. Complete Team Visibility."
-            ════════════════════════════════════════════════════════════════ */}
-        <section id="overview" className="solution-section reveal-on-scroll">
-          <div className="section-container">
-            <div className="section-header">
-              <span className="section-kicker">| THE PAPER5 SOLUTION</span>
-              <h2 className="section-title">
-                One Workspace. Complete Team Visibility.
-              </h2>
-              <p className="section-description">
-                Paper5 unites project organization, single-owner task accountability, meeting decisions, and GitHub development into one unified command center.
-              </p>
-            </div>
-
-            <div className="solution-bento-grid reveal-stagger">
-              {/* Bento Tile 1: Large Anchor Philosophy Tile */}
-              <div className="bento-tile bento-tile-large">
-                <div className="bento-tile-badge">
-                  <ShieldCheck size={16} />
-                  <span>01 • CORE PHILOSOPHY</span>
-                </div>
-                <h3>Single-Owner Accountability</h3>
-                <p>
-                  Every deliverable has exactly one accountable owner, an explicit deadline, and peer verification before it's marked done. No more diffuse "team" responsibilities or ambiguity.
+            <div className="origin-narrative-grid">
+              {/* Column 1: The Disconnect */}
+              <div className={`origin-column disconnect ${activeOriginIndex === 0 ? 'mobile-visible' : 'mobile-hidden'}`}>
+                <div className="origin-column-rule disconnect-rule" />
+                <span className="origin-column-kicker disconnect-kicker">THE DISCONNECT</span>
+                <h3 className="origin-column-title">Work was scattered across disconnected tools</h3>
+                <p className="origin-column-text">
+                  Our sprints lived in spreadsheets, architecture debates in chat threads, and pull request links in direct messages. Every handoff lost vital context and slowed team velocity.
                 </p>
-                <div className="bento-proof-preview">
-                  <div className="proof-preview-top">
-                    <span className="proof-tag-ready">Deliverable Ready for Review</span>
-                    <span className="proof-tag-verified-pill"><Check size={12} /> Verification Required</span>
-                  </div>
-                  <div className="proof-task-name">"PostgreSQL Connection Pooling & SSL Migration"</div>
-                  <div className="proof-meta-strip">
-                    <div className="proof-owner-chip">
-                      <span className="owner-avatar-pill">PK</span>
-                      <span>Owner: <strong>Paras K. (Lead)</strong></span>
-                    </div>
-                    <span className="proof-due-date">Due Tomorrow</span>
-                  </div>
-                  <div className="proof-checklist-box">
-                    <div className="chk-line"><Check size={13} color="#10b981" /> <span>Staging environment verified on port 6543</span></div>
-                    <div className="chk-line"><Check size={13} color="#10b981" /> <span>All 18/18 integration tests passing</span></div>
-                    <div className="chk-line"><Check size={13} color="#10b981" /> <span>Approved & signed off by Alex M.</span></div>
-                  </div>
-                </div>
               </div>
 
-              {/* Bento Side Stack: Two Complementary Tiles */}
-              <div className="bento-side-stack">
-                {/* Bento Tile 2: Live Visibility */}
-                <div className="bento-tile bento-tile-compact">
-                  <div className="bento-tile-badge">
-                    <Activity size={16} />
-                    <span>02 • LIVE VISIBILITY</span>
-                  </div>
-                  <h4>Live Operational Visibility</h4>
-                  <p>
-                    Know what's in progress, what's blocked, and what's ready to ship without asking for status reports or scheduling 30-minute check-in calls.
-                  </p>
-                  <div className="bento-metric-strip">
-                    <div className="bento-progress-header">
-                      <span>Sprint 14 Velocity</span>
-                      <strong style={{ color: '#10b981' }}>72% Shipped</strong>
-                    </div>
-                    <div className="bento-progress-track">
-                      <div className="bento-progress-fill" style={{ width: '72%' }} />
-                    </div>
-                    <div className="bento-status-chips">
-                      <span className="status-chip-green"><Check size={11} /> 0 Unresolved Blockers</span>
-                      <span className="status-chip-blue">Live GitHub Sync</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bento Tile 3: Zero Overhead */}
-                <div className="bento-tile bento-tile-compact">
-                  <div className="bento-tile-badge">
-                    <Zap size={16} />
-                    <span>03 • VELOCITY</span>
-                  </div>
-                  <h4>Zero Administrative Overhead</h4>
-                  <p>
-                    A lightweight, keyboard-friendly interface designed for small engineering teams. Spend your days writing software, not configuring complex tickets.
-                  </p>
-                  <div className="bento-speed-pills">
-                    <div className="speed-pill">
-                      <kbd>⌘K</kbd> <span>Global Command Palette</span>
-                    </div>
-                    <div className="speed-pill">
-                      <span className="latency-dot" /> <span>38ms Average API Latency</span>
-                    </div>
-                    <div className="speed-pill">
-                      <span>⚡ Setup in &lt; 2 Minutes</span>
-                    </div>
-                  </div>
-                </div>
+              {/* Column 2: The Breaking Point */}
+              <div className={`origin-column breaking-point ${activeOriginIndex === 1 ? 'mobile-visible' : 'mobile-hidden'}`}>
+                <div className="origin-column-rule breaking-point-rule" />
+                <span className="origin-column-kicker breaking-point-kicker">THE BREAKING POINT</span>
+                <h3 className="origin-column-title">Diffuse ownership caused silent deadline slips</h3>
+                <p className="origin-column-text">
+                  Deliverables were vaguely assigned to the whole squad, so nobody took personal accountability. Sprints slipped quietly while daily status meetings drained engineering focus.
+                </p>
               </div>
+
+              {/* Column 3: The Resolution */}
+              <div className={`origin-column resolution ${activeOriginIndex === 2 ? 'mobile-visible' : 'mobile-hidden'}`}>
+                <div className="origin-column-rule resolution-rule" />
+                <span className="origin-column-kicker resolution-kicker">THE RESOLUTION</span>
+                <h3 className="origin-column-title">One synchronized workspace with single ownership</h3>
+                <p className="origin-column-text">
+                  We created Paper5 to bring task planning, meeting decisions, and GitHub development into one unified system with strict single owner clarity and instant blocker visibility.
+                </p>
+              </div>
+            </div>
+
+            {/* Mobile Swipe / Step Dots */}
+            <div className="origin-mobile-dots mobile-only" aria-hidden="true">
+              <button type="button" aria-label="Step 1" className={`origin-dot ${activeOriginIndex === 0 ? 'active' : ''}`} onClick={() => setActiveOriginIndex(0)} />
+              <button type="button" aria-label="Step 2" className={`origin-dot ${activeOriginIndex === 1 ? 'active' : ''}`} onClick={() => setActiveOriginIndex(1)} />
+              <button type="button" aria-label="Step 3" className={`origin-dot ${activeOriginIndex === 2 ? 'active' : ''}`} onClick={() => setActiveOriginIndex(2)} />
             </div>
           </div>
         </section>
 
-        {/* ════════════════════════════════════════════════════════════════
-            4. CORE FEATURES SECTION (Section 5)
-            Actual implemented Paper5 features with real UI previews
-            ════════════════════════════════════════════════════════════════ */}
-        <section id="features" className="features-showcase-section reveal-on-scroll">
+        <section id="problem" className="editorial-pillars-section" aria-label="Core Operational Shift">
           <div className="section-container">
-            <div className="section-header">
-              <span className="section-kicker">| CORE PLATFORM CAPABILITIES</span>
-              <h2 className="section-title">
-                Built for Execution. Designed for Accountability.
-              </h2>
+            <div className="section-header pillars-section-header">
+              <span className="section-kicker">PROBLEM & OUTCOME</span>
+              <h2 className="section-title">Less Chasing. More Building.</h2>
               <p className="section-description">
-                Every feature in Paper5 exists to answer two fundamental questions: what needs to happen next, and who owns it?
+                Eliminate status roundtables, manual ticket triage, and diffuse accountability. Replace coordination drag with direct single ownership and automated visibility.
               </p>
             </div>
 
-            {/* Slider Viewport with Auto-Scroll (Hover to Pause) */}
-            <div 
-              className="features-slider-viewport"
-              onMouseEnter={() => setIsFeaturePaused(true)}
-              onMouseLeave={() => setIsFeaturePaused(false)}
-              onTouchStart={(e) => {
-                setIsFeaturePaused(true)
-                handleTouchStart(e)
-              }}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={() => {
-                handleTouchEnd()
-                setTimeout(() => setIsFeaturePaused(false), 2500)
-              }}
-            >
-              <div 
-                className="features-slider-track"
-                style={{ transform: `translateX(-${activeFeatureSlide * 100}%)` }}
+            {/* Mobile Pillar Switcher Tabs */}
+            <div className="pillars-mobile-tabs mobile-only" role="tablist" aria-label="Operational Pillars">
+              <button 
+                type="button"
+                role="tab"
+                aria-selected={mobileActivePillar === 0}
+                className={`pillar-tab-btn ${mobileActivePillar === 0 ? 'active' : ''}`}
+                onClick={() => setMobileActivePillar(0)}
               >
-                {/* Slide 1: Agile Sprint & Kanban Engine */}
-                <div 
-                  className="feature-slide" 
-                  role="tabpanel" 
-                  id="feature-panel-0" 
-                  aria-labelledby="feature-tab-0"
-                  aria-hidden={activeFeatureSlide !== 0}
-                >
-                  <div className="feature-block-card">
-                    <div className="feature-block-info">
-                      <div className="feature-num-badge">01</div>
-                      <h3>Agile Sprint & Kanban Engine</h3>
-                      <p className="feature-summary">
-                        Structured workflows designed for 3–10 member teams without bureaucratic overhead.
-                      </p>
-                      <p className="feature-detail">
-                        Choose from Kanban, Scrum, or Lean workflows tailored specifically to your squad's rhythm. Manage sprint scope, view live WIP limits, and keep tasks flowing smoothly toward release.
-                      </p>
-                      <ul className="feature-benefits-list">
-                        <li><CheckCircle2 size={16} /> <span><strong>Tailored Agile Frameworks:</strong> Pre-configured workflows ready out of the box.</span></li>
-                        <li><CheckCircle2 size={16} /> <span><strong>Locked Sprint Scope:</strong> Prevent mid-cycle creep and maintain velocity.</span></li>
-                        <li><CheckCircle2 size={16} /> <span><strong>Instant Blocker Swarms:</strong> Flag stuck tasks so teammates assist immediately.</span></li>
-                      </ul>
-                    </div>
-                    <div className="feature-block-visual">
-                      <div className="mock-board-card">
-                        <div className="mock-board-header">
-                          <span>Sprint 14 • Core Workflow</span>
-                          <span className="pill-tag-verified">Scrum Active</span>
-                        </div>
-                        <div className="mock-board-columns">
-                          <div className="mock-column">
-                            <div className="mock-col-name">In Progress (2)</div>
-                            <div className="mock-task-card active-card">
-                              <div className="mock-task-tag">Core DB</div>
-                              <div className="mock-task-title">PostgreSQL connection pooling</div>
-                              <div className="mock-task-footer">
-                                <span className="avatar-xs avatar-paras">PK</span>
-                                <span>Due in 2d</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="mock-column">
-                            <div className="mock-col-name">Verified Done (4)</div>
-                            <div className="mock-task-card done-card">
-                              <div className="mock-task-tag">Security</div>
-                              <div className="mock-task-title">2FA Authenticator Setup</div>
-                              <div className="mock-task-footer">
-                                <Check size={12} color="#16a34a" />
-                                <span>Verified</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Slide 2: Single-Owner Accountability & Proof of Work */}
-                <div 
-                  className="feature-slide" 
-                  role="tabpanel" 
-                  id="feature-panel-1" 
-                  aria-labelledby="feature-tab-1"
-                  aria-hidden={activeFeatureSlide !== 1}
-                >
-                  <div className="feature-block-card">
-                    <div className="feature-block-info">
-                      <div className="feature-num-badge">02</div>
-                      <h3>Single-Owner Accountability & Proof of Work</h3>
-                      <p className="feature-summary">
-                        Eliminate vague group assignments. Every deliverable has one accountable owner.
-                      </p>
-                      <p className="feature-detail">
-                        Paper5 enforces clear ownership on every card. When work is completed, contributors submit verifiable deliverables (PR link, staging URL, or test proof) for peer verification before the card enters Done.
-                      </p>
-                      <ul className="feature-benefits-list">
-                        <li><CheckCircle2 size={16} /> <span><strong>Explicit Task Ownership:</strong> Clear responsibility on every single deliverable.</span></li>
-                        <li><CheckCircle2 size={16} /> <span><strong>Verifiable Proof Checklist:</strong> Test results, PR links, and review sign-offs.</span></li>
-                        <li><CheckCircle2 size={16} /> <span><strong>Peer Sign-Off:</strong> High-trust verification by technical leads or peers.</span></li>
-                      </ul>
-                    </div>
-                    <div className="feature-block-visual">
-                      <div className="mock-proof-card">
-                        <div className="mock-proof-head">
-                          <div>
-                            <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Deliverable Verification</div>
-                            <div className="mock-card-highlight">Stripe Webhook Idempotency</div>
-                          </div>
-                          <span className="proof-tag-pending">Pending Review</span>
-                        </div>
-                        <div className="mock-proof-body">
-                          <div className="proof-item">
-                            <CheckCircle2 size={14} color="#16a34a" />
-                            <span>Integration test suite passing (18/18 tests)</span>
-                          </div>
-                          <div className="proof-item">
-                            <CheckCircle2 size={14} color="#16a34a" />
-                            <span>GitHub PR #42 approved by Alex M.</span>
-                          </div>
-                          <div className="proof-item">
-                            <CheckCircle2 size={14} color="#16a34a" />
-                            <span>Staging environment verified on Vercel preview</span>
-                          </div>
-                        </div>
-                        <div className="mock-proof-footer">
-                          <span className="btn-primary btn-sm" style={{ padding: '6px 14px', fontSize: '12px' }}>Verify & Complete</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Slide 3: Live Deadlines & Risk Alerts */}
-                <div 
-                  className="feature-slide" 
-                  role="tabpanel" 
-                  id="feature-panel-2" 
-                  aria-labelledby="feature-tab-2"
-                  aria-hidden={activeFeatureSlide !== 2}
-                >
-                  <div className="feature-block-card">
-                    <div className="feature-block-info">
-                      <div className="feature-num-badge">03</div>
-                      <h3>Live Deadlines & Risk Alerts</h3>
-                      <p className="feature-summary">
-                        Proactive warnings that highlight potential slippage before deadlines pass.
-                      </p>
-                      <p className="feature-detail">
-                        Paper5 continuously tracks task velocity, remaining days in the sprint, and unassigned dependencies to calculate real-time delivery risk. Never be caught off-guard by a surprise release delay.
-                      </p>
-                      <ul className="feature-benefits-list">
-                        <li><CheckCircle2 size={16} /> <span><strong>Predictive Risk Alerts:</strong> Identify stalling tasks 3 to 5 days before deadlines.</span></li>
-                        <li><CheckCircle2 size={16} /> <span><strong>Milestone Countdown:</strong> Visual countdown timers kept visible across your workspace.</span></li>
-                        <li><CheckCircle2 size={16} /> <span><strong>Automated Email & Webhook Alerts:</strong> Urgent notifications sent when deadlines approach.</span></li>
-                      </ul>
-                    </div>
-                    <div className="feature-block-visual">
-                      <div className="mock-risk-card">
-                        <div className="risk-metric-header">
-                          <div>
-                            <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>Sprint Velocity Accuracy</div>
-                            <div className="mock-metric-val">94%</div>
-                          </div>
-                          <span className="risk-badge-low">Low Slippage Risk</span>
-                        </div>
-                        <div className="risk-task-alert">
-                          <AlertTriangle size={16} color="#d97706" />
-                          <div>
-                            <strong>Attention Needed:</strong> "Custom Domain DNS" is due in 48h and marked as Blocked.
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Slide 4: Connected Meeting Docs & Decision Logs */}
-                <div 
-                  className="feature-slide" 
-                  role="tabpanel" 
-                  id="feature-panel-3" 
-                  aria-labelledby="feature-tab-3"
-                  aria-hidden={activeFeatureSlide !== 3}
-                >
-                  <div className="feature-block-card">
-                    <div className="feature-block-info">
-                      <div className="feature-num-badge">04</div>
-                      <h3>Connected Meeting Docs & Decision Logs</h3>
-                      <p className="feature-summary">
-                        Preserve meeting decisions and link them directly to sprint deliverables.
-                      </p>
-                      <p className="feature-detail">
-                        Stop letting critical architecture decisions vanish in Slack threads. Paper5's Meeting space lets you document standups, sprint retrospectives, and architecture choices with permanent links to tasks.
-                      </p>
-                      <ul className="feature-benefits-list">
-                        <li><CheckCircle2 size={16} /> <span><strong>Structured Standup Digests:</strong> Weekly summaries and retrospective logs.</span></li>
-                        <li><CheckCircle2 size={16} /> <span><strong>Action Item Sync:</strong> Meeting tasks turn immediately into sprint cards.</span></li>
-                        <li><CheckCircle2 size={16} /> <span><strong>Permanent Project Memory:</strong> Preserve context for every new contributor.</span></li>
-                      </ul>
-                    </div>
-                    <div className="feature-block-visual">
-                      <div className="mock-doc-card">
-                        <div className="mock-doc-header">
-                          <FileText size={16} color="#2563eb" />
-                          <span>Sprint 14 Architecture Decisions</span>
-                        </div>
-                        <div className="mock-doc-body">
-                          <p><strong>Decision:</strong> Route all high-frequency deadline reads through transaction pooler on port 6543.</p>
-                          <div className="mock-action-box">
-                            <div style={{ fontSize: '11px', fontWeight: 600, color: '#059669', marginBottom: '4px' }}>Linked Sprint Task:</div>
-                            <div className="mock-action-text">"PostgreSQL Connection Pooling" — Owner: Paras K.</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Slide 5: Native GitHub Integration */}
-                <div 
-                  className="feature-slide" 
-                  role="tabpanel" 
-                  id="feature-panel-4" 
-                  aria-labelledby="feature-tab-4"
-                  aria-hidden={activeFeatureSlide !== 4}
-                >
-                  <div className="feature-block-card">
-                    <div className="feature-block-info">
-                      <div className="feature-num-badge">05</div>
-                      <h3>Native GitHub Workflow Integration</h3>
-                      <p className="feature-summary">
-                        Connect your repository so code activity automatically updates project status.
-                      </p>
-                      <p className="feature-detail">
-                        Attach pull requests directly to sprint cards. When a pull request is approved, CI checks pass, and code merges into main, Paper5 automatically transitions the deliverable to Done.
-                      </p>
-                      <ul className="feature-benefits-list">
-                        <li><CheckCircle2 size={16} /> <span><strong>Direct PR & Commit Linking:</strong> Track pull request progress on the sprint card.</span></li>
-                        <li><CheckCircle2 size={16} /> <span><strong>Automated Task Closing:</strong> Merged PRs update task states without manual clicks.</span></li>
-                        <li><CheckCircle2 size={16} /> <span><strong>Live CI Check Status:</strong> Inspect test run statuses right on the board.</span></li>
-                      </ul>
-                    </div>
-                    <div className="feature-block-visual">
-                      <div className="mock-gh-card">
-                        <div className="mock-gh-header">
-                          <span className="tool-icon">🐙</span>
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: '13px' }}>GitHub Sync • Main Branch</div>
-                            <div style={{ fontSize: '11.5px', color: '#64748b' }}>paper5/sprint-core</div>
-                          </div>
-                          <span className="tool-badge-live" style={{ marginLeft: 'auto' }}>Synced</span>
-                        </div>
-                        <div className="mock-gh-event">
-                          <GitPullRequest size={14} color="#2563eb" />
-                          <span>PR #44: "Connection pooling" merged by Paras K.</span>
-                        </div>
-                        <div className="mock-gh-action">
-                          <CheckCircle2 size={14} color="#16a34a" />
-                          <span>Task "PostgreSQL Pooling" auto-closed on merge</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Slide 6: 1-Click Printable PDF & Audit Exports */}
-                <div 
-                  className="feature-slide" 
-                  role="tabpanel" 
-                  id="feature-panel-5" 
-                  aria-labelledby="feature-tab-5"
-                  aria-hidden={activeFeatureSlide !== 5}
-                >
-                  <div className="feature-block-card">
-                    <div className="feature-block-info">
-                      <div className="feature-num-badge">06</div>
-                      <h3>1-Click Printable PDF & Audit Exports</h3>
-                      <p className="feature-summary">
-                        Complete data ownership. Export printable summaries and CSV audits anytime.
-                      </p>
-                      <p className="feature-detail">
-                        Never worry about proprietary lock-in. With one click, export crisp vector PDF summaries of your workspace, team workload reports, and full CSV exports for compliance, stakeholders, or records.
-                      </p>
-                      <ul className="feature-benefits-list">
-                        <li><CheckCircle2 size={16} /> <span><strong>Vector PDF Summaries:</strong> Ready to print or share with external clients.</span></li>
-                        <li><CheckCircle2 size={16} /> <span><strong>Full CSV & JSON Backups:</strong> Complete structured data export anytime.</span></li>
-                        <li><CheckCircle2 size={16} /> <span><strong>100% Data Ownership:</strong> Your data belongs to you without vendor lock-in.</span></li>
-                      </ul>
-                    </div>
-                    <div className="feature-block-visual">
-                      <div className="mock-export-card">
-                        <div className="export-card-head">
-                          <Download size={18} />
-                          <span>Workspace Export Studio</span>
-                        </div>
-                        <div className="export-options-list">
-                          <div className="export-opt-item">
-                            <FileText size={14} color="#dc2626" />
-                            <div><strong>Printable Vector PDF Report</strong><div className="export-sub">Full sprint recap with task breakdown</div></div>
-                          </div>
-                          <div className="export-opt-item">
-                            <Database size={14} color="#059669" />
-                            <div><strong>CSV Compliance & Audit Log</strong><div className="export-sub">Raw timestamped record of all deliverables</div></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                <Eye size={15} />
+                <span>Clarity & Alignment</span>
+              </button>
+              <button 
+                type="button"
+                role="tab"
+                aria-selected={mobileActivePillar === 1}
+                className={`pillar-tab-btn ${mobileActivePillar === 1 ? 'active' : ''}`}
+                onClick={() => setMobileActivePillar(1)}
+              >
+                <Rocket size={15} />
+                <span>Execution & Speed</span>
+              </button>
             </div>
 
-            {/* Slider Dots Indicator */}
-            <div className="features-slider-dots">
-              {featureTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  aria-label={`Go to slide ${tab.num}: ${tab.label}`}
-                  className={`slider-dot ${activeFeatureSlide === tab.id ? 'active' : ''}`}
-                  onClick={() => setActiveFeatureSlide(tab.id)}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ════════════════════════════════════════════════════════════════
-            5. BENEFITS SECTION (Section 6)
-            "Less Chasing. More Building."
-            ════════════════════════════════════════════════════════════════ */}
-        <section id="benefits" className="benefits-section reveal-on-scroll">
-          <div className="section-container">
-            <div className="section-header">
-              <span className="section-kicker">| THE OUTCOME FOR YOUR TEAM</span>
-              <h2 className="section-title">
-                Less Chasing. More Building.
-              </h2>
-              <p className="section-description">
-                When responsibilities are clear and work is verified, your team moves faster with radically less coordination overhead.
-              </p>
-            </div>
-
-            {/* Top Stat Ticker */}
-            <div className="benefits-stats-bar">
-              <div className="benefit-stat-item">
-                <div className="stat-value">0</div>
-                <div className="stat-caption">Status roll-call meetings needed per week</div>
-              </div>
-              <div className="benefit-stat-item">
-                <div className="stat-value">100%</div>
-                <div className="stat-caption">Single-owner clarity on every task deliverable</div>
-              </div>
-              <div className="benefit-stat-item">
-                <div className="stat-value">&lt; 2m</div>
-                <div className="stat-caption">Frictionless onboarding with zero tool training</div>
-              </div>
-              <div className="benefit-stat-item">
-                <div className="stat-value">+38%</div>
-                <div className="stat-caption">More uninterrupted weekly engineering build time</div>
-              </div>
-            </div>
-
-            {/* Two-Column Editorial Value Ledger */}
-            <div className="benefits-ledger-grid reveal-stagger">
-              {/* Column 1: Operational Clarity */}
-              <div className="ledger-column">
-                <div className="ledger-column-head">
-                  <span className="ledger-col-tag">CLARITY & ALIGNMENT</span>
-                  <h3>Know the Score Without Asking</h3>
+            <div className="pillars-grid">
+              {/* Left Pillar: Clarity & Alignment */}
+              <div className={`pillar-column ${mobileActivePillar === 0 ? 'mobile-visible' : 'mobile-hidden'}`}>
+                <div className="desktop-only">
+                  <span className="pillar-kicker">CLARITY & ALIGNMENT</span>
+                  <h2 className="pillar-title">Know the Score Without Asking</h2>
+                  <div className="pillar-rule" />
                 </div>
-                <div className="ledger-items-list">
-                  <div className="ledger-row">
-                    <div className="ledger-icon-wrap"><Eye size={18} /></div>
-                    <div className="ledger-info">
-                      <h4>Instant Roster Visibility</h4>
+
+                <div className="pillar-items">
+                  <div className="pillar-item">
+                    <div className="pillar-icon-box">
+                      <Eye size={17} />
+                    </div>
+                    <div className="pillar-text">
+                      <h3>Instant Roster Visibility</h3>
                       <p>See live active tasks, verified deliverables, and owners across the squad without interrupting engineers with status questions.</p>
                     </div>
                   </div>
 
-                  <div className="ledger-row">
-                    <div className="ledger-icon-wrap"><Clock size={18} /></div>
-                    <div className="ledger-info">
-                      <h4>Eliminate Coordination Roundtables</h4>
+                  <div className="pillar-item">
+                    <div className="pillar-icon-box">
+                      <Clock size={17} />
+                    </div>
+                    <div className="pillar-text">
+                      <h3>Eliminate Coordination Roundtables</h3>
                       <p>Replace 30-minute status roundtables and daily standup roll-calls with a transparent command center that always mirrors reality.</p>
                     </div>
                   </div>
 
-                  <div className="ledger-row">
-                    <div className="ledger-icon-wrap"><ShieldCheck size={18} /></div>
-                    <div className="ledger-info">
-                      <h4>True Ownership & Pride in Shipping</h4>
+                  <div className="pillar-item">
+                    <div className="pillar-icon-box">
+                      <ShieldCheck size={17} />
+                    </div>
+                    <div className="pillar-text">
+                      <h3>True Ownership & Pride in Shipping</h3>
                       <p>Every deliverable has one explicit owner who feels pride and clear responsibility for submitting verified proof of work.</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Column 2: Shipping Velocity */}
-              <div className="ledger-column">
-                <div className="ledger-column-head">
-                  <span className="ledger-col-tag">EXECUTION & SPEED</span>
-                  <h3>Build Faster With Zero Drag</h3>
+              {/* Right Pillar: Execution & Speed */}
+              <div className={`pillar-column ${mobileActivePillar === 1 ? 'mobile-visible' : 'mobile-hidden'}`}>
+                <div className="desktop-only">
+                  <span className="pillar-kicker">EXECUTION & SPEED</span>
+                  <h2 className="pillar-title">Build Faster With Zero Drag</h2>
+                  <div className="pillar-rule" />
                 </div>
-                <div className="ledger-items-list">
-                  <div className="ledger-row">
-                    <div className="ledger-icon-wrap"><AlertTriangle size={18} /></div>
-                    <div className="ledger-info">
-                      <h4>Identify Bottlenecks Days Earlier</h4>
+
+                <div className="pillar-items">
+                  <div className="pillar-item">
+                    <div className="pillar-icon-box">
+                      <AlertTriangle size={17} />
+                    </div>
+                    <div className="pillar-text">
+                      <h3>Identify Bottlenecks Days Earlier</h3>
                       <p>Flagged blockers broadcast instant notifications so teammates can swarm and resolve obstacles days before release deadlines.</p>
                     </div>
                   </div>
 
-                  <div className="ledger-row">
-                    <div className="ledger-icon-wrap"><Layers size={18} /></div>
-                    <div className="ledger-info">
-                      <h4>Unified Tasks, Specs & GitHub Code</h4>
+                  <div className="pillar-item">
+                    <div className="pillar-icon-box">
+                      <Layers size={17} />
+                    </div>
+                    <div className="pillar-text">
+                      <h3>Unified Tasks, Specs & GitHub Code</h3>
                       <p>Architecture decisions, standup digests, and GitHub pull requests live together so vital context is never lost across disjointed tools.</p>
                     </div>
                   </div>
 
-                  <div className="ledger-row">
-                    <div className="ledger-icon-wrap"><Rocket size={18} /></div>
-                    <div className="ledger-info">
-                      <h4>Spend Time Executing, Not Managing</h4>
+                  <div className="pillar-item">
+                    <div className="pillar-icon-box">
+                      <Rocket size={17} />
+                    </div>
+                    <div className="pillar-text">
+                      <h3>Spend Time Executing, Not Managing</h3>
                       <p>Reclaim hours every week to build, design, test, and ship software that delivers real customer value.</p>
                     </div>
                   </div>
@@ -1062,73 +433,332 @@ export default function Landing() {
         </section>
 
         {/* ════════════════════════════════════════════════════════════════
-            6. HOW IT WORKS SECTION (Section 7)
-            3 Simple Steps with Visual Diagram
+            4. CORE CAPABILITIES SECTION (LIGHT)
+            "Code Merges. Tasks Close." — Tabbed Platform Showcase (No Carousel)
             ════════════════════════════════════════════════════════════════ */}
-        <section id="how-it-works" className="how-it-works-section reveal-on-scroll">
+        <section id="features" className="features-showcase-section ">
+          <div className="section-container">
+            <div className="section-header features-compact-header">
+              <span className="section-kicker">CORE PLATFORM CAPABILITIES</span>
+              <h2 className="section-title">
+                Code Merges. Tasks Close.
+              </h2>
+              <p className="section-description">
+                Engineers work in their terminal and Git branches. Pull requests advance sprint deliverables automatically with staging proof attached.
+              </p>
+            </div>
+
+            {/* Static Clean Tab Navigation */}
+            <div className="features-tab-nav" role="tablist" aria-label="Feature Tabs">
+              {featureTabs.map((tab) => {
+                const IconComponent = tab.icon
+                const isActive = activeFeatureTab === tab.id
+                return (
+                  <button
+                    key={tab.id}
+                    role="tab"
+                    id={`tab-${tab.id}`}
+                    aria-selected={isActive}
+                    aria-controls={`panel-${tab.id}`}
+                    className={`feature-tab-btn ${isActive ? 'active' : ''}`}
+                    onClick={() => setActiveFeatureTab(tab.id)}
+                  >
+                    <IconComponent size={16} />
+                    <span>{tab.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Tabbed Interactive Feature Viewport */}
+            <div className="features-tab-content">
+              {/* Tab 1: GitHub Auto-Sync */}
+              {activeFeatureTab === 'github' && (
+                <div className="feature-panel-card" role="tabpanel" id="panel-github" aria-labelledby="tab-github">
+                  <div className="panel-narrative">
+                    <span className="panel-kicker">GITHUB NATIVE SYNCHRONIZATION</span>
+                    <h3 className="panel-title">Your Code is the Source of Truth.</h3>
+                    <p className="panel-desc">
+                      Link branch commits and pull requests directly to sprint goals so deliverables close the moment code merges into staging.
+                    </p>
+                    <div className="panel-benefits-list">
+                      <div className="panel-benefit-row">
+                        <Check size={16} className="text-accent" />
+                        <span>Automatic deliverable state changes when PRs are approved and merged.</span>
+                      </div>
+                      <div className="panel-benefit-row">
+                        <Check size={16} className="text-accent" />
+                        <span>Staging preview links and CI test summaries recorded automatically.</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="panel-preview-visual">
+                    <div className="visual-terminal-box">
+                      <div className="terminal-header">
+                        <div className="terminal-dots">
+                          <span className="dot red" />
+                          <span className="dot yellow" />
+                          <span className="dot green" />
+                        </div>
+                        <span className="terminal-title">git status & paper5 webhook</span>
+                      </div>
+                      <div className="terminal-body">
+                        <div className="term-line"><span className="term-cmd">$ git checkout</span> -b feat/payment-webhooks</div>
+                        <div className="term-line"><span className="term-cmd">$ git commit</span> -m "feat: handle stripe webhook idempotency"</div>
+                        <div className="term-line term-success"><Check size={12} /> Pull Request #142 opened: Ready for review</div>
+                        <div className="term-line term-highlight">
+                          <span className="term-badge">PAPER5 SYNC</span> Deliverable #del_pay_42 linked & updated
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 2: Sprint Scope Control */}
+              {activeFeatureTab === 'scope' && (
+                <div className="feature-panel-card" role="tabpanel" id="panel-scope" aria-labelledby="tab-scope">
+                  <div className="panel-narrative">
+                    <span className="panel-kicker">SPRINT BOUNDARY CONTROL</span>
+                    <h3 className="panel-title">Lock Sprint Scope. Defend Engineering Focus.</h3>
+                    <p className="panel-desc">
+                      Committed deliverables lock once a sprint kicks off. New requests automatically queue for the next cycle instead of interrupting active development.
+                    </p>
+                    <div className="panel-benefits-list">
+                      <div className="panel-benefit-row">
+                        <Check size={16} className="text-accent" />
+                        <span>Prevent mid-cycle scope expansion and unplanned interruptions.</span>
+                      </div>
+                      <div className="panel-benefit-row">
+                        <Check size={16} className="text-accent" />
+                        <span>Dedicated backlog intake keeps active sprint velocity predictable.</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="panel-preview-visual">
+                    <div className="visual-surface-box">
+                      <div className="surface-header">
+                        <div className="surface-title"><Lock size={14} /> Active Sprint Boundary</div>
+                        <span className="surface-status-tag">Locked</span>
+                      </div>
+                      <div className="surface-body">
+                        <div className="surface-task-item">
+                          <span className="task-dot active" />
+                          <span className="task-name">Payment Webhook Processing</span>
+                          <span className="task-owner">Alex Chen</span>
+                        </div>
+                        <div className="surface-task-item">
+                          <span className="task-dot" />
+                          <span className="task-name">Database Index Optimization</span>
+                          <span className="task-owner">Sarah Lin</span>
+                        </div>
+                        <div className="surface-queue-alert">
+                          <AlertCircle size={14} />
+                          <span>Mid-cycle stakeholder request automatically queued for Sprint 14</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 3: Single Ownership */}
+              {activeFeatureTab === 'owner' && (
+                <div className="feature-panel-card" role="tabpanel" id="panel-owner" aria-labelledby="tab-owner">
+                  <div className="panel-narrative">
+                    <span className="panel-kicker">ACCOUNTABLE EXECUTION</span>
+                    <h3 className="panel-title">One Accountable Owner Per Deliverable.</h3>
+                    <p className="panel-desc">
+                      Diffuse multi-assignee tickets are eliminated. Every deliverable specifies a single responsible engineer who attaches staging test proof.
+                    </p>
+                    <div className="panel-benefits-list">
+                      <div className="panel-benefit-row">
+                        <Check size={16} className="text-accent" />
+                        <span>Clear personal responsibility prevents bystander apathy.</span>
+                      </div>
+                      <div className="panel-benefit-row">
+                        <Check size={16} className="text-accent" />
+                        <span>Definition of done requires verified test and preview evidence.</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="panel-preview-visual">
+                    <div className="visual-surface-box">
+                      <div className="surface-header">
+                        <div className="surface-title"><ShieldCheck size={14} /> Deliverable Sign-Off</div>
+                        <span className="surface-status-tag green">Ready to Close</span>
+                      </div>
+                      <div className="surface-body">
+                        <div className="surface-owner-row">
+                          <span className="owner-label">Single Owner:</span>
+                          <span className="owner-val">Elena Rostova</span>
+                        </div>
+                        <div className="surface-checklist">
+                          <div className="check-row"><Check size={13} color="#16a34a" /> CI Automated test suite passing (14/14)</div>
+                          <div className="check-row"><Check size={13} color="#16a34a" /> Staging environment preview verified</div>
+                          <div className="check-row"><Check size={13} color="#16a34a" /> Architecture PR merged by tech lead</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 4: Roadblock Radar */}
+              {activeFeatureTab === 'radar' && (
+                <div className="feature-panel-card" role="tabpanel" id="panel-radar" aria-labelledby="tab-radar">
+                  <div className="panel-narrative">
+                    <span className="panel-kicker">PROACTIVE RISK DETECTION</span>
+                    <h3 className="panel-title">Spot Roadblocks Days Ahead. Predictable Releases.</h3>
+                    <p className="panel-desc">
+                      Flagged blockers immediately broadcast notifications across the squad so teammates swarm and resolve obstacles long before release deadlines.
+                    </p>
+                    <div className="panel-benefits-list">
+                      <div className="panel-benefit-row">
+                        <Check size={16} className="text-accent" />
+                        <span>Elevate stalled dependencies and third-party API issues instantly.</span>
+                      </div>
+                      <div className="panel-benefit-row">
+                        <Check size={16} className="text-accent" />
+                        <span>Maintain release confidence without surprising stakeholders on launch day.</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="panel-preview-visual">
+                    <div className="visual-surface-box">
+                      <div className="surface-header">
+                        <div className="surface-title"><Activity size={14} /> Sprint Health Radar</div>
+                        <span className="surface-status-tag amber">1 Blocked Item</span>
+                      </div>
+                      <div className="surface-body">
+                        <div className="surface-radar-alert">
+                          <div className="alert-head">
+                            <AlertTriangle size={14} color="#d97706" />
+                            <strong>Stripe Webhook Rate Limit Dependency</strong>
+                          </div>
+                          <p>Alex Chen flagged a rate limit block. Squad teammates notified to swarm API credentials.</p>
+                        </div>
+                        <div className="surface-metric-pills">
+                          <div className="metric-pill"><span className="label">Pace</span> <span className="val">On Track</span></div>
+                          <div className="metric-pill"><span className="label">Confidence</span> <span className="val">High</span></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* ════════════════════════════════════════════════════════════════
+            5. ONBOARDING WORKFLOW SECTION (DARK)
+            "Up and Running in Under Two Minutes." — The ONE setup-time claim
+            ════════════════════════════════════════════════════════════════ */}
+        <section id="how-it-works" className="how-it-works-section ">
           <div className="section-container">
             <div className="section-header">
-              <span className="section-kicker">| ONBOARDING WORKFLOW</span>
+              <span className="section-kicker">ONBOARDING PIPELINE</span>
               <h2 className="section-title">
                 Up and Running in Under Two Minutes.
               </h2>
               <p className="section-description">
-                A friction-free setup designed for small teams that need to focus on building, not tool administration.
+                A streamlined, friction-free deployment designed for small engineering teams that prioritize shipping over tool maintenance.
               </p>
             </div>
 
-            <div className="workflow-timeline-track reveal-stagger">
-              {/* Step 1 */}
-              <div className="timeline-milestone">
-                <div className="milestone-node-header">
-                  <div className="milestone-badge">01</div>
-                  <div className="milestone-connector-line" />
+            <div className="workflow-cards-grid ">
+              {/* Card 1: Workspace & Agile Cadence */}
+              <div className="workflow-card">
+                <div className="workflow-card-top">
+                  <div className="workflow-card-icon">
+                    <Sliders size={17} />
+                  </div>
+                  <span className="workflow-card-phase">WORKSPACE CONFIGURATION</span>
                 </div>
-                <div className="milestone-body">
-                  <h3>Name Workspace & Pick Agile Flow</h3>
+                <div className="workflow-card-content">
+                  <h3>Select Team Cadence</h3>
                   <p>
-                    Set up your workspace in 30 seconds. Choose from Kanban, Scrum, or Lean frameworks pre-configured for squads of 3–10 members.
+                    Deploy your squad environment with pre-calibrated sprint cycles and automated WIP constraints.
                   </p>
-                  <div className="milestone-action-chip">
-                    <span className="chip-active">✓ Kanban</span>
-                    <span>Scrum</span>
-                    <span>Lean</span>
+                </div>
+                <div className="workflow-micro-ui">
+                  <div className="micro-ui-header">
+                    <span className="micro-label">Framework Profile</span>
+                    <span className="micro-badge-neutral">Active</span>
+                  </div>
+                  <div className="micro-segmented-control">
+                    <span className="segment-item active">Kanban</span>
+                    <span className="segment-item">Scrum</span>
+                    <span className="segment-item">Lean</span>
+                  </div>
+                  <div className="micro-meta-row">
+                    <span className="meta-key">Sprint Cadence</span>
+                    <span className="meta-val">Continuous Flow</span>
                   </div>
                 </div>
               </div>
 
-              {/* Step 2 */}
-              <div className="timeline-milestone">
-                <div className="milestone-node-header">
-                  <div className="milestone-badge">02</div>
-                  <div className="milestone-connector-line" />
+              {/* Card 2: Git & Identity Sync */}
+              <div className="workflow-card">
+                <div className="workflow-card-top">
+                  <div className="workflow-card-icon">
+                    <GitPullRequest size={17} />
+                  </div>
+                  <span className="workflow-card-phase">SQUAD & REPO AUTHORIZATION</span>
                 </div>
-                <div className="milestone-body">
-                  <h3>Invite Squad & Connect GitHub</h3>
+                <div className="workflow-card-content">
+                  <h3>Invite Squad & Authorize Repo</h3>
                   <p>
-                    Bring in your engineers with frictionless email OTP. Authenticate your GitHub repo in one click for automated PR & commit sync.
+                    Bring in engineers through passwordless email OTP and link your repository in one step.
                   </p>
-                  <div className="milestone-action-chip repo-chip">
-                    <span>🐙 paper5/core</span>
-                    <span className="chip-status-dot" />
-                    <span style={{ color: '#10b981', fontWeight: 600 }}>Active Sync</span>
+                </div>
+                <div className="workflow-micro-ui">
+                  <div className="micro-ui-header">
+                    <span className="micro-label">GitHub Integration</span>
+                    <span className="micro-badge-green">Connected</span>
+                  </div>
+                  <div className="micro-code-snippet">
+                    <span className="code-repo">repo: paper5/web-client</span>
+                    <span className="code-branch">ref: refs/heads/main</span>
+                  </div>
+                  <div className="micro-meta-row">
+                    <span className="meta-key">Auto Sync</span>
+                    <span className="meta-val">Commits & Pull Requests</span>
                   </div>
                 </div>
               </div>
 
-              {/* Step 3 */}
-              <div className="timeline-milestone">
-                <div className="milestone-node-header">
-                  <div className="milestone-badge">03</div>
+              {/* Card 3: Single Ownership & Proof of Work */}
+              <div className="workflow-card">
+                <div className="workflow-card-top">
+                  <div className="workflow-card-icon">
+                    <ShieldCheck size={17} />
+                  </div>
+                  <span className="workflow-card-phase">DELIVERABLE SIGN-OFF</span>
                 </div>
-                <div className="milestone-body">
-                  <h3>Assign Single Owners & Ship Proof</h3>
+                <div className="workflow-card-content">
+                  <h3>Ship With Verifiable Proof</h3>
                   <p>
-                    Every deliverable gets one accountable owner. Contributors verify staging links and test results before work is peer-approved as Done.
+                    Assign one accountable owner per deliverable. Work closes once staging links and tests are validated.
                   </p>
-                  <div className="milestone-action-chip proof-chip">
-                    <Check size={13} color="#10b981" />
-                    <span>Peer Verified Proof • Shipped</span>
+                </div>
+                <div className="workflow-micro-ui">
+                  <div className="micro-ui-header">
+                    <span className="micro-label">Deliverable Gate</span>
+                    <span className="micro-badge-green">Validated</span>
+                  </div>
+                  <div className="micro-proof-item">
+                    <span className="proof-title">Auth Middleware Cookies</span>
+                    <span className="proof-sub">PR merged • Staging verified</span>
+                  </div>
+                  <div className="micro-meta-row">
+                    <span className="meta-key">Gate Status</span>
+                    <span className="meta-val">Peer Approved & Shipped</span>
                   </div>
                 </div>
               </div>
@@ -1137,194 +767,73 @@ export default function Landing() {
         </section>
 
         {/* ════════════════════════════════════════════════════════════════
-            7. INTEGRATIONS SECTION (Section 8)
-            GitHub, Slack, Discord, Calendar, REST API Studio
+            6. INTEGRATIONS SECTION (LIGHT)
+            GitHub (one-line), Slack, Discord, Calendar, REST API Studio
             ════════════════════════════════════════════════════════════════ */}
-        <section id="integrations" className="integrations-section reveal-on-scroll">
+        <section id="integrations" className="integrations-section ">
           <div className="section-container">
             <div className="section-header">
-              <span className="section-kicker">| DEVELOPER INTEGRATIONS</span>
+              <span className="section-kicker">DEVELOPER INTEGRATIONS</span>
               <h2 className="section-title">
                 Connects Seamlessly with Your Existing Stack.
               </h2>
               <p className="section-description">
-                Paper5 connects your development activity with project management so your tools stay in sync without manual ticket updates.
+                Bring your communication, calendar, code repositories, and custom automations into one command center.
               </p>
             </div>
 
-            <div className="integrations-split-layout reveal-stagger">
-              {/* Left Column: Stack Roster */}
-              <div className="integrations-roster-column">
-                <div className="integration-roster-item">
-                  <div className="roster-icon-wrap"><FolderGit2 size={22} /></div>
-                  <div className="roster-info">
-                    <div className="roster-title-row">
-                      <h4>GitHub Native Sync</h4>
-                      <span className="roster-status-pill live">Live & Native</span>
-                    </div>
-                    <p>Link pull requests, track commits, and auto-close deliverables when PRs merge into main.</p>
-                  </div>
-                </div>
-
-                <div className="integration-roster-item">
-                  <div className="roster-icon-wrap"><MessageSquare size={22} /></div>
-                  <div className="roster-info">
-                    <div className="roster-title-row">
-                      <h4>Slack & Discord Webhooks</h4>
-                      <span className="roster-status-pill webhook">Webhooks</span>
-                    </div>
-                    <p>Broadcast blocker alerts and milestone wins directly into your chosen team channels.</p>
-                  </div>
-                </div>
-
-                <div className="integration-roster-item">
-                  <div className="roster-icon-wrap"><Calendar size={22} /></div>
-                  <div className="roster-info">
-                    <div className="roster-title-row">
-                      <h4>Google Calendar & Meet</h4>
-                      <span className="roster-status-pill live">GIS OAuth</span>
-                    </div>
-                    <p>Sync meeting notes, sprint planning dates, and milestone releases natively with Google Identity.</p>
-                  </div>
-                </div>
-
-                <div className="integration-roster-item">
-                  <div className="roster-icon-wrap"><Zap size={22} /></div>
-                  <div className="roster-info">
-                    <div className="roster-title-row">
-                      <h4>1-Click REST API Studio</h4>
-                      <span className="roster-status-pill api">REST Engine</span>
-                    </div>
-                    <p>Provision instant API tokens (<code>sp_live_...</code>) for CI/CD automation and custom reporting.</p>
-                  </div>
+            <div className="integrations-cards-grid ">
+              {/* 1. GitHub Native Sync (Kept as one-line item per instructions) */}
+              <div className="integration-app-card">
+                <div className="app-card-icon"><GitPullRequest size={20} /></div>
+                <div className="app-card-info">
+                  <h4>GitHub Native Sync</h4>
+                  <p>Real-time branch commit tracking, automated PR status updates, and deploy link syncing.</p>
                 </div>
               </div>
 
-              {/* Right Column: Live Interactive Developer Terminal */}
-              <div className="integrations-terminal-column">
-                <div className="dev-terminal-card">
-                  <div className="terminal-header-bar">
-                    <div className="terminal-dots">
-                      <span className="t-dot red" />
-                      <span className="t-dot yellow" />
-                      <span className="t-dot green" />
-                    </div>
-                    <span className="terminal-title">curl — Paper5 Webhook & REST API</span>
-                    <span className="terminal-lang-badge">BASH</span>
-                  </div>
-
-                  <div className="terminal-body-code">
-                    <div className="code-comment"># Trigger deliverable verification from GitHub Actions</div>
-                    <div className="code-line"><span className="code-cmd">curl</span> -X POST https://paper5.co/api/v1/deliverables/verify \</div>
-                    <div className="code-line indent">-H <span className="code-str">"Authorization: Bearer sp_live_9f8a...4b12"</span> \</div>
-                    <div className="code-line indent">-H <span className="code-str">"Content-Type: application/json"</span> \</div>
-                    <div className="code-line indent">-d <span className="code-str">'{'{'}</span></div>
-                    <div className="code-line double-indent"><span className="code-key">"deliverable_id"</span>: <span className="code-str">"del_postgres_pooling"</span>,</div>
-                    <div className="code-line double-indent"><span className="code-key">"pr_url"</span>: <span className="code-str">"https://github.com/paper5/core/pull/42"</span>,</div>
-                    <div className="code-line double-indent"><span className="code-key">"tests_passed"</span>: <span className="code-num">18</span>,</div>
-                    <div className="code-line double-indent"><span className="code-key">"status"</span>: <span className="code-str">"VERIFIED_DONE"</span></div>
-                    <div className="code-line indent"><span className="code-str">{'}'}'</span></div>
-                  </div>
-
-                  <div className="terminal-response-strip">
-                    <div className="response-status">
-                      <span className="status-code">HTTP 200 OK</span>
-                      <span className="latency-time">⚡ 38ms</span>
-                    </div>
-                    <div className="response-message">Deliverable #del_postgres_pooling marked as verified &amp; moved to Done</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ textAlign: 'center', marginTop: '36px' }}>
-              <Link to="/product-integrations" className="btn-ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                <span>View Full Integrations Documentation</span>
-                <ArrowRight size={14} />
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* ════════════════════════════════════════════════════════════════
-            8. SOCIAL PROOF & TRUST ARCHITECTURE (Section 9)
-            Engineered for Focus. Built on Transparency. (No fake testimonials)
-            ════════════════════════════════════════════════════════════════ */}
-        <section id="trust" className="trust-architecture-section reveal-on-scroll">
-          <div className="section-container">
-            <div className="section-header">
-              <span className="section-kicker">| ENGINEERING PHILOSOPHY & SECURITY</span>
-              <h2 className="section-title">
-                Engineered for Focus. Built on Transparency.
-              </h2>
-              <p className="section-description">
-                We believe software tools should accelerate execution, not create administrative burden. Here are the principles that govern how Paper5 is built.
-              </p>
-            </div>
-
-            <div className="trust-blueprint-layout reveal-stagger">
-              {/* Left Column: Security Blueprint Banner */}
-              <div className="trust-blueprint-card">
-                <div className="blueprint-badge">
-                  <ShieldCheck size={18} />
-                  <span>ARCHITECTURE & DATA INTEGRITY</span>
-                </div>
-                <h3>Cryptographic Tenant Isolation by Design</h3>
-                <p>
-                  Security isn't an afterthought or an enterprise addon in Paper5. Your data isolation is mathematically guaranteed at the database engine level.
-                </p>
-
-                <div className="blueprint-guarantees-list">
-                  <div className="guarantee-row">
-                    <CheckCircle2 size={16} color="#10b981" />
-                    <div>
-                      <strong>PostgreSQL Row-Level Security (RLS)</strong>
-                      <span>Policies enforce tenant boundaries at the query execution level.</span>
-                    </div>
-                  </div>
-
-                  <div className="guarantee-row">
-                    <CheckCircle2 size={16} color="#10b981" />
-                    <div>
-                      <strong>Zero Third-Party Trackers or Data Selling</strong>
-                      <span>No advertising pixels, no behavioral trackers. Your workflow is private.</span>
-                    </div>
-                  </div>
-
-                  <div className="guarantee-row">
-                    <CheckCircle2 size={16} color="#10b981" />
-                    <div>
-                      <strong>AES-256 at Rest & TLS 1.3 in Transit</strong>
-                      <span>Industry standard cryptographic safeguards on all stored data.</span>
-                    </div>
-                  </div>
+              {/* 2. Slack Workspace Feed */}
+              <div className="integration-app-card">
+                <div className="app-card-icon"><MessageSquare size={20} /></div>
+                <div className="app-card-info">
+                  <h4>Slack Broadcasts</h4>
+                  <p>Post automated sprint kickoffs, blocker swarms, and daily digest summaries directly to channels.</p>
                 </div>
               </div>
 
-              {/* Right Column: Spec Ledger */}
-              <div className="trust-specs-grid">
-                <div className="spec-item">
-                  <div className="spec-icon-box"><Download size={20} /></div>
-                  <h4>100% Data Sovereignty</h4>
-                  <p>Export printable vector PDFs and complete raw CSV compliance audits with a single click anytime.</p>
+              {/* 3. Discord Engineering Swarms */}
+              <div className="integration-app-card">
+                <div className="app-card-icon"><Users size={20} /></div>
+                <div className="app-card-info">
+                  <h4>Discord Webhooks</h4>
+                  <p>Stream real-time sprint events and deliverable sign-offs to your technical community channels.</p>
                 </div>
+              </div>
 
-                <div className="spec-item">
-                  <div className="spec-icon-box"><Zap size={20} /></div>
-                  <h4>Sub-50ms Query Latency</h4>
-                  <p>Transaction connection pooling on port 6543 ensures instantaneous board loads and smooth drag-and-drop.</p>
+              {/* 4. Google Calendar Milestone Sync */}
+              <div className="integration-app-card">
+                <div className="app-card-icon"><Calendar size={20} /></div>
+                <div className="app-card-info">
+                  <h4>Google Calendar Sync</h4>
+                  <p>Synchronize release deadlines and sprint milestones directly with engineering team calendars.</p>
                 </div>
+              </div>
 
-                <div className="spec-item">
-                  <div className="spec-icon-box"><Lock size={20} /></div>
-                  <h4>Two-Factor Authentication</h4>
-                  <p>TOTP multi-factor security compatible with Google Authenticator, 1Password, and Authy.</p>
+              {/* 5. Linear Migration Importer */}
+              <div className="integration-app-card">
+                <div className="app-card-icon"><Layers size={20} /></div>
+                <div className="app-card-info">
+                  <h4>Linear Workspace Importer</h4>
+                  <p>One-click migration utility to import existing issue hierarchies, labels, and backlogs without loss.</p>
                 </div>
+              </div>
 
-                <div className="spec-item">
-                  <div className="spec-icon-box"><Database size={20} /></div>
-                  <h4>Zero Administrative Burden</h4>
-                  <p>Engineered so you never need a certified Jira admin just to run a sprint or invite a developer.</p>
+              {/* 6. REST API Studio */}
+              <div className="integration-app-card">
+                <div className="app-card-icon"><Terminal size={20} /></div>
+                <div className="app-card-info">
+                  <h4>REST API Studio</h4>
+                  <p>Programmatic curl access to query sprints, trigger deliverable checks, and export team telemetry.</p>
                 </div>
               </div>
             </div>
@@ -1332,159 +841,195 @@ export default function Landing() {
         </section>
 
         {/* ════════════════════════════════════════════════════════════════
-            9. PRICING SECTION (Section 10)
-            Starter (Free), Team (Recommended), Scale
+            7. SECURITY ARCHITECTURE (DARK)
+            Compact 4-Item Icon Grid with Plain-Language Sentences
             ════════════════════════════════════════════════════════════════ */}
-        <section id="pricing" className="pricing-section reveal-on-scroll">
+        <section id="trust" className="trust-architecture-section ">
           <div className="section-container">
             <div className="section-header">
-              <span className="section-kicker">| TRANSPARENT PRICING</span>
+              <span className="section-kicker">ENGINEERING INTEGRITY & SECURITY</span>
               <h2 className="section-title">
-                Simple, Transparent Pricing. Free During Launch.
+                Cryptographic Tenant Isolation & Security
               </h2>
-              <p className="section-description">
-                Experience the complete connected workspace with all features unlocked during our launch phase. No credit card required. Pick the plan that fits your squad.
+              <p className="section-subtitle-plain">
+                Your squad's projects and code metadata are mathematically segregated in PostgreSQL, so cross-tenant data access is strictly prevented.
+              </p>
+              <p className="section-description-plain">
+                In plain terms: Every team's projects and code data live in their own private, locked database partition, protected by banking-grade encryption at rest and in transit.
               </p>
             </div>
 
-            <div className="pricing-grid reveal-stagger">
+            {/* Compact 4-Item Icon Grid */}
+            <div className="security-compact-grid ">
+              <div className="security-card">
+                <div className="security-card-icon"><Shield size={20} /></div>
+                <h4>Tenant Isolation</h4>
+                <p>PostgreSQL Row-Level Security policies mathematically partition every workspace at query time.</p>
+              </div>
+
+              <div className="security-card">
+                <div className="security-card-icon"><Lock size={20} /></div>
+                <h4>End-to-End Encryption</h4>
+                <p>Standard AES-256 cryptographic storage at rest and TLS 1.3 protocol encryption for all data in transit.</p>
+              </div>
+
+              <div className="security-card">
+                <div className="security-card-icon"><CheckCircle2 size={20} /></div>
+                <h4>Two-Factor Authentication</h4>
+                <p>TOTP multi-factor security compatible with Google Authenticator, 1Password, and hardware tokens.</p>
+              </div>
+
+              <div className="security-card">
+                <div className="security-card-icon"><Download size={20} /></div>
+                <h4>Complete Data Ownership</h4>
+                <p>Download full workspace exports in raw CSV or printable vector PDF format anytime with no lock-in.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ════════════════════════════════════════════════════════════════
+            8. PRICING SECTION (LIGHT)
+            Transparent Plans • Free During Launch • Structured Tiers
+            ════════════════════════════════════════════════════════════════ */}
+        <section id="pricing" className="pricing-section ">
+          <div className="section-container">
+            <div className="section-header">
+              <span className="section-kicker">TRANSPARENT PRICING</span>
+              <h2 className="section-title">
+                Simple Plans. Free During Launch.
+              </h2>
+              <p className="section-description">
+                Experience the complete connected workspace with all features unlocked during our public launch. Pick the plan that fits your squad.
+              </p>
+            </div>
+
+            <div className="pricing-grid ">
               {/* Starter Tier */}
               <div className="pricing-card">
                 <div className="tier-header">
-                  <div className="tier-name">Starter</div>
-                  <p className="tier-target">For solo founders and tiny indie teams establishing initial workflows.</p>
+                  <div className="tier-name">{PLANS.starter.name}</div>
+                  <p className="tier-target">{PLANS.starter.target}</p>
                 </div>
                 <div className="tier-price-box">
-                  <span className="amount">Free</span>
-                  <span className="period">/ forever</span>
+                  <div className="tier-future-strikethrough">
+                    <span style={{ fontWeight: 700, color: '#16a34a', fontSize: '13px', display: 'inline-block' }}>
+                      Free Forever Plan
+                    </span>
+                  </div>
+                  <div className="tier-launch-active">
+                    <span className="currency">₹</span>
+                    <span className="amount">0</span>
+                    <span className="period">/ month • forever</span>
+                  </div>
                 </div>
                 <button 
                   className="btn-ghost w-full"
                   onClick={() => handlePlanClick('starter')}
                 >
-                  Get Started for Free
+                  {PLANS.starter.ctaText}
                 </button>
                 <ul className="tier-features">
-                  <li><strong>1</strong> Workspace included</li>
-                  <li>Up to <strong>3</strong> Team Members</li>
-                  <li>Core Agile Workflows (Kanban & Ad-hoc)</li>
-                  <li>GitHub Repository Sync</li>
-                  <li>Personal Focus Dashboard</li>
-                  <li>Basic Sprint & Deadline Tracking</li>
-                  <li>Community Support</li>
+                  {PLANS.starter.features.map((feat, i) => (
+                    <li key={i}>{feat}</li>
+                  ))}
                 </ul>
               </div>
 
               {/* Team Tier (Recommended) */}
               <div className="pricing-card recommended">
-                <div className="recommended-badge">Recommended • Launch Special</div>
+                <div className="recommended-badge">Recommended • Launch Access</div>
                 <div className="tier-header">
-                  <div className="tier-name">Team</div>
-                  <p className="tier-target">For growing startups that need to collaborate, assign owners, and integrate.</p>
+                  <div className="tier-name">{PLANS.team.name}</div>
+                  <p className="tier-target">{PLANS.team.target}</p>
                 </div>
                 <div className="tier-price-box">
-                  <span className="currency">₹</span>
-                  <span className="amount">0</span>
-                  <span className="period">/ month during launch</span>
+                  <div className="tier-future-strikethrough">
+                    <span className="struck-price">{PLANS.team.futurePrice}</span>
+                    <span className="future-period">{PLANS.team.period}</span>
+                  </div>
+                  <div className="tier-launch-active">
+                    <span className="currency">₹</span>
+                    <span className="amount">0</span>
+                    <span className="period">during launch</span>
+                  </div>
                 </div>
                 <button 
                   className="btn-primary w-full"
                   onClick={() => handlePlanClick('team')}
                 >
-                  Get Started for Free
+                  {PLANS.team.ctaText}
                 </button>
                 <ul className="tier-features">
-                  <li>Up to <strong>5</strong> Workspaces</li>
-                  <li>Up to <strong>7</strong> Team Members</li>
-                  <li>Advanced Agile Workflows (Scrum, XP, Lean, Scrumban)</li>
-                  <li>GitHub & Google Calendar Integrations</li>
-                  <li>Locked Sprint Scope Control</li>
-                  <li>Proof of Work Peer Verification</li>
-                  <li>Connected Meeting Notes & Sync Digests</li>
-                  <li>Instant Blocker Email & Slack Notifications</li>
+                  {PLANS.team.features.map((feat, i) => (
+                    <li key={i} className={i === 0 ? 'tier-feature-lead' : ''}>{feat}</li>
+                  ))}
                 </ul>
               </div>
 
               {/* Scale Tier */}
               <div className="pricing-card">
                 <div className="tier-header">
-                  <div className="tier-name">Scale</div>
-                  <p className="tier-target">For teams requiring advanced integrations, automation, and larger scale.</p>
+                  <div className="tier-name">{PLANS.scale.name}</div>
+                  <p className="tier-target">{PLANS.scale.target}</p>
                 </div>
                 <div className="tier-price-box">
-                  <span className="currency">₹</span>
-                  <span className="amount">0</span>
-                  <span className="period">/ month during launch</span>
+                  <div className="tier-future-strikethrough">
+                    <span className="struck-price">{PLANS.scale.futurePrice}</span>
+                    <span className="future-period">{PLANS.scale.period}</span>
+                  </div>
+                  <div className="tier-launch-active">
+                    <span className="currency">₹</span>
+                    <span className="amount">0</span>
+                    <span className="period">during launch</span>
+                  </div>
                 </div>
                 <button 
                   className="btn-ghost w-full"
                   onClick={() => handlePlanClick('scale')}
                 >
-                  Get Started for Free
+                  {PLANS.scale.ctaText}
                 </button>
                 <ul className="tier-features">
-                  <li>Up to <strong>10</strong> Workspaces</li>
-                  <li><strong>Unlimited</strong> Team Members</li>
-                  <li>All <strong>8</strong> Agile Workflows (Spotify Model & SAFe Enterprise)</li>
-                  <li>All Stack Integrations (GitHub, Slack, Discord, Calendar)</li>
-                  <li>1-Click REST API Studio (<code>sp_live_...</code>)</li>
-                  <li>Printable Vector PDF Workspace Reports & CSV Audit Logs</li>
-                  <li>Advanced Team Velocity & Risk Analytics</li>
-                  <li>Priority Developer Support</li>
+                  {PLANS.scale.features.map((feat, i) => (
+                    <li key={i} className={i === 0 ? 'tier-feature-lead' : ''}>{feat}</li>
+                  ))}
                 </ul>
               </div>
             </div>
 
-            <div className="pricing-footnote">
-              * During our public launch period, all plans are available at ₹0/month to empower startups without upfront friction. Workspace member limits are enforced within the application.
-            </div>
-
-            <div className="pricing-guarantee-ribbon">
-              <div className="ribbon-item">
-                <Check size={14} color="#10b981" />
-                <span>No Credit Card Required</span>
-              </div>
-              <div className="ribbon-sep">•</div>
-              <div className="ribbon-item">
-                <Check size={14} color="#10b981" />
-                <span>Instant Workspace Setup (&lt; 2 mins)</span>
-              </div>
-              <div className="ribbon-sep">•</div>
-              <div className="ribbon-item">
-                <Check size={14} color="#10b981" />
-                <span>Full Access During Public Launch</span>
-              </div>
-              <div className="ribbon-sep">•</div>
-              <div className="ribbon-item">
-                <Check size={14} color="#10b981" />
-                <span>1-Click Complete Data Export Anytime</span>
-              </div>
+            {/* Clear Launch Policy Note */}
+            {/* TODO: replace with finalized policy when launch pricing transitions */}
+            <div className="pricing-launch-policy-box">
+              <p>
+                <strong>What happens when launch ends?</strong> All workspaces registered during the public launch will receive at least 30 days advance notice before any billing begins, with an option to stay on a grandfathered free tier.
+              </p>
             </div>
           </div>
         </section>
 
         {/* ════════════════════════════════════════════════════════════════
-            10. FAQ SECTION (Section 11)
-            Asymmetric Two-Column Support Hub with Accordion
+            9. FAQ & CLOSING CTA SECTION (DARK)
+            Concise Questions + Single Contact Link + Primary Final Action
             ════════════════════════════════════════════════════════════════ */}
-        <section id="faq" className="faq-section reveal-on-scroll">
+        <section id="faq" className="faq-section ">
           <div className="section-container">
             <div className="faq-two-col-layout">
-              {/* Left Column: Sticky Header & Direct Support Card */}
+              {/* Left Column: Sticky Header & Single Contact Link */}
               <div className="faq-intro-column">
                 <div className="sticky-faq-content">
-                  <span className="section-kicker">| QUESTIONS & ANSWERS</span>
+                  <span className="section-kicker">QUESTIONS & ANSWERS</span>
                   <h2 className="section-title">
                     Frequently Asked Questions.
                   </h2>
                   <p className="section-description">
-                    Everything you need to know about Paper5, onboarding, security, and agile methodologies.
+                    Everything you need to know about Paper5, GitHub development workflows, and team onboarding.
                   </p>
 
                   <div className="faq-contact-card">
-                    <div className="contact-card-icon"><HelpCircle size={24} /></div>
-                    <h4>Have a specific question?</h4>
-                    <p>Our core engineering team is happy to discuss architecture, custom integrations, or team setup.</p>
+                    <div className="contact-card-icon"><HelpCircle size={22} /></div>
+                    <h4>Have a specific architecture question?</h4>
+                    <p>Our core engineering team is available to discuss custom workflows and squad setups.</p>
                     <button 
                       type="button" 
                       className="btn-ghost btn-sm"
@@ -1527,50 +1072,41 @@ export default function Landing() {
         </section>
 
         {/* ════════════════════════════════════════════════════════════════
-            11. FINAL CLOSING CTA SECTION (Section 12)
-            "Bring Clarity to the Way Your Team Works."
+            10. FULL-WIDTH CLOSING FINAL CTA SECTION
+            Edge-to-edge black background from left to right + redesigned button
             ════════════════════════════════════════════════════════════════ */}
-        <section className="final-cta-section reveal-on-scroll">
-          <div className="final-cta-container">
-            <div className="final-cta-kicker">
-              | Get Started in Under 2 Minutes
-            </div>
-            <h2 className="final-cta-headline">
-              Bring Clarity to the Way Your Team Works.
-            </h2>
-            <p className="final-cta-subheadline">
-              Give your team one place to organize work, own responsibilities, and move projects forward.
-            </p>
-            <div className="final-cta-buttons">
-              <button 
-                className="btn-primary btn-lg" 
-                onClick={() => handleGetStarted('team')}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-              >
-                <span>Get Started with Paper5</span>
-                <ArrowRight size={18} />
-              </button>
-              <button 
-                className="btn-ghost btn-lg" 
-                onClick={() => setIsContactOpen(true)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-              >
-                <MessageSquare size={16} />
-                <span>Contact Team</span>
-              </button>
-            </div>
-            <div className="final-cta-microcopy">
-              <span>Free tier available</span>
-              <span>•</span>
-              <span>No credit card required</span>
-              <span>•</span>
-              <span>Instant workspace setup</span>
+        <section className="final-cta-full-section" aria-label="Ready to Ship with Clarity">
+          <div className="section-container">
+            <div className="final-cta-content">
+              <div className="final-cta-kicker">
+                READY TO SHIP WITH CLARITY
+              </div>
+              <h2 className="final-cta-headline">
+                Bring Clarity to the Way Your Team Works.
+              </h2>
+              <p className="final-cta-subheadline">
+                Give your squad one place to organize sprints, own deliverables, and ship code without coordination drag.
+              </p>
+              <div className="final-cta-action-row">
+                <button 
+                  className="final-cta-action-btn" 
+                  onClick={() => handleGetStarted('team')}
+                >
+                  <span>Start Building Free</span>
+                  <ArrowRight size={18} className="final-cta-btn-arrow" />
+                </button>
+              </div>
+              <div className="final-cta-trust-strip">
+                <span>Free during launch</span>
+                <span className="dot-sep" aria-hidden="true">•</span>
+                <span>No credit card required</span>
+              </div>
             </div>
           </div>
         </section>
       </main>
 
-      {/* 12. FOOTER (Section 13) */}
+      {/* FOOTER */}
       <MarketingFooter hideCTA={true} />
 
       {/* Modals */}

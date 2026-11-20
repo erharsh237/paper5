@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { getAuthHeaders } from './authHeaders'
 import { createNotification, playBellChimeSound } from './notifications'
 
 export const AGENDA_STEPS = [
@@ -175,9 +176,11 @@ export async function saveEventNote(workspaceId, teamId, eventId, notesObj, curr
 
   // 2. Persist via serverless API (uses service key to bypass RLS)
   try {
+    const authHeaders = await getAuthHeaders()
     await fetch('/api/meetings', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      headers: authHeaders,
       body: JSON.stringify({
         action: 'save_event_note',
         workspaceId,
@@ -247,9 +250,11 @@ export async function deleteEventNote(workspaceId, teamId, eventId) {
 
   // Persist via serverless API
   try {
+    const authHeaders = await getAuthHeaders()
     await fetch('/api/meetings', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      headers: authHeaders,
       body: JSON.stringify({
         action: 'delete_event_note',
         workspaceId,

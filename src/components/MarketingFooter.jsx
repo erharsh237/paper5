@@ -7,6 +7,7 @@ import '../pages/Landing.css'
 import { getDomainConfig, getAppUrl, getMainUrl } from '../lib/domain'
 import { openConsentPreferences } from '../lib/privacyPrefs'
 import { prefetchRoute } from '../lib/routePrefetch'
+import { scrollToPricing } from '../lib/smoothScroll'
 import { ArrowRight, MessageSquare } from 'lucide-react'
 
 export default function MarketingFooter({ hideCTA = false }) {
@@ -16,11 +17,12 @@ export default function MarketingFooter({ hideCTA = false }) {
   const { isAppSubdomain } = getDomainConfig()
   const isHomePage = !isAppSubdomain && (location.pathname === '/' || location.pathname === '')
 
-  const FooterLink = ({ to, children }) => {
-    if (isAppSubdomain) return <a href={getMainUrl(to)}>{children}</a>
+  const FooterLink = ({ to, children, onClick }) => {
+    if (isAppSubdomain) return <a href={getMainUrl(to)} onClick={onClick}>{children}</a>
     return (
       <Link
         to={to}
+        onClick={onClick}
         onMouseEnter={() => prefetchRoute(to)}
         onFocus={() => prefetchRoute(to)}
         onTouchStart={() => prefetchRoute(to)}
@@ -93,7 +95,18 @@ export default function MarketingFooter({ hideCTA = false }) {
           <div className="footer-column">
             <h3>Product</h3>
             <FooterLink to="/features">Features</FooterLink>
-            <FooterLink to="/pricing">Pricing</FooterLink>
+            <FooterLink 
+              to="/#pricing" 
+              onClick={(e) => {
+                if (isHomePage || location.pathname === '/pricing') {
+                  e.preventDefault()
+                  scrollToPricing({ duration: 900 })
+                  window.history.pushState('', document.title, '/#pricing')
+                }
+              }}
+            >
+              Pricing
+            </FooterLink>
             <FooterLink to="/product-integrations">Integrations</FooterLink>
             <FooterLink to="/changelog">Changelog</FooterLink>
           </div>

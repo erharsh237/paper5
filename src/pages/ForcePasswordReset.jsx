@@ -179,7 +179,6 @@ export default function ForcePasswordReset() {
       <SEOHead
         title="Set Password | Paper5"
         description="Set a new password to finish activating your Paper5 workspace account."
-        noIndex
       />
       <div style={{
         background: 'var(--bg-layer-2, #ffffff)',

@@ -3,7 +3,8 @@ import {
   handleFeedback,
   handleForgotPassword,
   handleNotFound,
-  handleServerError
+  handleServerError,
+  handleCheckAccount
 } from './_publicHandlers.js'
 
 const ACTION_HANDLERS = {
@@ -12,7 +13,8 @@ const ACTION_HANDLERS = {
   'forgot-password': handleForgotPassword,
   'not-found': handleNotFound,
   '500': handleServerError,
-  'server-error': handleServerError
+  'server-error': handleServerError,
+  'check-account': handleCheckAccount
 }
 
 /**
@@ -28,6 +30,7 @@ function resolveAction(req) {
   if (pathname === '/api/contact') return 'contact'
   if (pathname === '/api/feedback') return 'feedback'
   if (pathname === '/api/forgot-password') return 'forgot-password'
+  if (pathname === '/api/check-account') return 'check-account'
   if (pathname === '/api/500' || pathname === '/500') return '500'
   return 'not-found'
 }

@@ -5,12 +5,22 @@ import { useAuth } from '../lib/AuthContext'
 import ContactModal from './ContactModal'
 import { ArrowRight, Menu, X, ChevronDown, User, LogOut } from 'lucide-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faHouse, faLayerGroup, faPlug, faTag, faBookOpen, faCircleInfo, faEnvelope, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
+import { 
+  faHouse, 
+  faLayerGroup, 
+  faPlug, 
+  faTag, 
+  faBookOpen, 
+  faCircleInfo, 
+  faEnvelope, 
+  faShieldHalved 
+} from '@fortawesome/free-solid-svg-icons'
 import Paper5Logo from './Paper5Logo'
 import '../pages/Landing.css'
 import { getDomainConfig, getAppUrl, getMainUrl } from '../lib/domain'
 import { safeRedirect } from '../lib/safeRedirect'
 import { prefetchRoute } from '../lib/routePrefetch'
+import { smoothScrollTo, scrollToHome, scrollToPricing } from '../lib/smoothScroll'
 
 export default function MarketingNav() {
   const { user, logout } = useAuth()
@@ -20,11 +30,13 @@ export default function MarketingNav() {
   const [isContactOpen, setIsContactOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
+  const [isPastHero, setIsPastHero] = useState(false)
   const location = useLocation()
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 40)
+      setIsPastHero(window.scrollY > 460)
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
     handleScroll()
@@ -40,43 +52,44 @@ export default function MarketingNav() {
   }
 
   const handleHomeClick = (e) => {
-    if (location.pathname === '/' || location.pathname === '') {
+    const isLandingOrPricing = location.pathname === '/' || location.pathname === '' || location.pathname === '/pricing'
+    if (isLandingOrPricing) {
       if (e) e.preventDefault()
-      if (window.__lenis) {
-        window.__lenis.scrollTo(0, {
-          duration: 0.75,
-          easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
-        })
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-      }
-      if (window.location.hash) {
-        window.history.pushState('', document.title, window.location.pathname)
-      }
-    }
-  }
-
-  const handleAnchorClick = (e, anchorId) => {
-    if (location.pathname === '/' || location.pathname === '') {
-      if (e) e.preventDefault()
-      const el = document.getElementById(anchorId)
-      if (el) {
-        if (window.__lenis) {
-          window.__lenis.scrollTo(el, {
-            offset: -84,
-            duration: 1.25,
-            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
-          })
-        } else {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }
-        window.history.pushState('', document.title, `#${anchorId}`)
+      scrollToHome({ duration: 850 })
+      if (window.location.hash || location.pathname === '/pricing') {
+        window.history.pushState('', document.title, '/')
       }
     }
   }
 
   const handlePricingClick = (e) => {
-    handleAnchorClick(e, 'pricing')
+    const isLandingOrPricing = location.pathname === '/' || location.pathname === '' || location.pathname === '/pricing'
+    if (isLandingOrPricing) {
+      if (e) e.preventDefault()
+      scrollToPricing({ duration: 900 })
+      if (window.location.hash !== '#pricing') {
+        window.history.pushState('', document.title, '/#pricing')
+      }
+    } else {
+      if (e) e.preventDefault()
+      navigate('/#pricing')
+    }
+  }
+
+  const handleAnchorClick = (e, anchorId) => {
+    if (anchorId === 'pricing') {
+      handlePricingClick(e)
+      return
+    }
+    const isLandingOrPricing = location.pathname === '/' || location.pathname === '' || location.pathname === '/pricing'
+    if (isLandingOrPricing) {
+      if (e) e.preventDefault()
+      smoothScrollTo(anchorId, { offset: -84, duration: 850 })
+      window.history.pushState('', document.title, `#${anchorId}`)
+    } else {
+      if (e) e.preventDefault()
+      navigate(`/#${anchorId}`)
+    }
   }
 
   useEffect(() => {
@@ -102,8 +115,8 @@ export default function MarketingNav() {
   ]
 
   const isLinkActive = (item) => {
-    if (item.isAnchor) return location.hash === `#${item.anchorId}`
-    if (item.exact) return location.pathname === '/' && !location.hash
+    if (item.isAnchor) return location.hash === `#${item.anchorId || 'pricing'}`
+    if (item.exact) return (location.pathname === '/' || location.pathname === '') && !location.hash
     return location.pathname.startsWith(item.path)
   }
 
@@ -113,66 +126,72 @@ export default function MarketingNav() {
   return (
     <>
       <nav 
-        className={`landing-nav ${isOnLandingHero ? 'nav-on-hero' : ''}`} 
+        className="landing-nav" 
         role="navigation" 
         aria-label="Main Navigation"
       >
         <div className="nav-container">
           {/* Logo & Brand */}
           {isAppSubdomain ? (
-            <a href={getMainUrl('/')} className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+            <a href={getMainUrl('/')} className="nav-brand">
               <Paper5Logo size={28} decorative />
-              <span className="nav-brand-text" style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em' }}>
+              <span className="nav-brand-text">
                 PAPER5
               </span>
             </a>
           ) : (
-            <Link to="/" onClick={handleHomeClick} className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+            <Link to="/" onClick={handleHomeClick} className="nav-brand">
               <Paper5Logo size={28} decorative />
-              <span className="nav-brand-text" style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em' }}>
+              <span className="nav-brand-text">
                 PAPER5
               </span>
             </Link>
           )}
 
-          {/* Desktop Icon Navigation */}
-          <div className="nav-links desktop-only">
-            {navLinks.map((item) => (
-              item.isAnchor ? (
-                isAppSubdomain ? (
+          {/* Desktop Icon Navigation with Tooltips */}
+          <div className="nav-links desktop-only" role="menubar" aria-label="Main Navigation">
+            {navLinks.map((item) => {
+              const linkContent = (
+                <>
+                  <FontAwesomeIcon icon={item.icon} className="nav-fa-icon" />
+                  <span className="nav-tooltip" role="tooltip">{item.label}</span>
+                </>
+              )
+
+              if (item.isAnchor) {
+                return isAppSubdomain ? (
                   <a
                     key={item.label}
-                    href={getMainUrl('/pricing')}
+                    href={getMainUrl(item.path)}
                     className={`nav-link-icon-wrap ${isLinkActive(item) ? "active" : ""}`}
                     aria-label={item.label}
+                    title={item.label}
                   >
-                    <FontAwesomeIcon icon={item.icon} className="nav-fa-icon" />
-                    <span className="nav-tooltip" role="tooltip">{item.label}</span>
+                    {linkContent}
                   </a>
                 ) : (
-                  <Link
+                  <a
                     key={item.label}
-                    to="/pricing"
-                    onMouseEnter={() => prefetchRoute('/pricing')}
-                    onFocus={() => prefetchRoute('/pricing')}
-                    onTouchStart={() => prefetchRoute('/pricing')}
+                    href={item.path}
                     onClick={(e) => handleAnchorClick(e, item.anchorId)}
                     className={`nav-link-icon-wrap ${isLinkActive(item) ? "active" : ""}`}
                     aria-label={item.label}
+                    title={item.label}
                   >
-                    <FontAwesomeIcon icon={item.icon} className="nav-fa-icon" />
-                    <span className="nav-tooltip" role="tooltip">{item.label}</span>
-                  </Link>
+                    {linkContent}
+                  </a>
                 )
-              ) : isAppSubdomain ? (
+              }
+
+              return isAppSubdomain ? (
                 <a
                   key={item.label}
                   href={getMainUrl(item.path)}
                   className={`nav-link-icon-wrap ${isLinkActive(item) ? "active" : ""}`}
                   aria-label={item.label}
+                  title={item.label}
                 >
-                  <FontAwesomeIcon icon={item.icon} className="nav-fa-icon" />
-                  <span className="nav-tooltip" role="tooltip">{item.label}</span>
+                  {linkContent}
                 </a>
               ) : (
                 <Link
@@ -184,18 +203,14 @@ export default function MarketingNav() {
                   onClick={item.path === '/' ? handleHomeClick : undefined}
                   className={`nav-link-icon-wrap ${isLinkActive(item) ? "active" : ""}`}
                   aria-label={item.label}
+                  title={item.label}
                 >
-                  <FontAwesomeIcon icon={item.icon} className="nav-fa-icon" />
-                  <span className="nav-tooltip" role="tooltip">{item.label}</span>
+                  {linkContent}
                 </Link>
               )
-            ))}
+            })}
           </div>
 
-          {/* Mobile Theme Toggle */}
-          <div className="mobile-only-toggle mobile-only">
-            <ThemeToggle />
-          </div>
           <div className="nav-actions desktop-only">
             <ThemeToggle />
             {user ? (
@@ -304,7 +319,7 @@ export default function MarketingNav() {
                   Sign In
                 </button>
                 <button 
-                  className="btn-primary btn-sm nav-btn-signup"
+                  className={`btn-primary btn-sm nav-btn-signup ${isPastHero ? 'nav-sticky-cta' : ''}`}
                   onClick={handleGetStarted}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 18px', fontSize: '13.5px' }}
                 >
@@ -315,14 +330,17 @@ export default function MarketingNav() {
             )}
           </div>
 
-          {/* Mobile Hamburger Toggle */}
-          <button 
-            className="mobile-menu-btn" 
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
-          >
-            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+          {/* Mobile Right Controls: Theme Toggle + Hamburger Toggle */}
+          <div className="mobile-nav-controls mobile-only">
+            <ThemeToggle />
+            <button 
+              className="mobile-menu-btn" 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+            >
+              {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -404,7 +422,7 @@ export default function MarketingNav() {
               </a>
             ) : (
               <Link 
-                to="/pricing" 
+                to="/#pricing" 
                 onClick={(e) => { 
                   handlePricingClick(e); 
                   setIsMobileMenuOpen(false); 
@@ -525,7 +543,7 @@ export default function MarketingNav() {
                   style={{ justifyContent: 'center', padding: '12px' }} 
                   onClick={() => { handleGetStarted(); setIsMobileMenuOpen(false); }}
                 >
-                  Get Started for Free &rarr;
+                  Get Started &rarr;
                 </button>
                 <button 
                   className="btn-ghost w-full center-text" 

@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { setCorsHeaders } from './_cors.js'
+import { authenticateUser } from './_auth.js'
+import { sanitizeError } from './_errors.js'
 
 function parseBody(req) {
   if (req.body && typeof req.body === 'object') return req.body
@@ -21,12 +23,12 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
   
-  const rawUrl = process.env.VITE_SUPABASE_URL || 'https://sdbglndhjkqhkphzqmum.supabase.co'
+  const rawUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY
   const rawKey = serviceKey || anonKey
 
-  if (!rawKey) {
+  if (!rawUrl || !rawKey) {
     return res.status(500).json({ error: 'Supabase credentials missing' })
   }
 
@@ -43,6 +45,15 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing userId in request body' })
     }
 
+    // Authenticate caller to verify ownership of identity
+    const authRes = await authenticateUser(req, supabaseAdmin)
+    if (authRes.error) {
+      return res.status(authRes.status || 401).json({ error: authRes.error })
+    }
+    if (authRes.user.id !== targetUid) {
+      return res.status(403).json({ error: 'Forbidden: You cannot modify other user records.' })
+    }
+
     // 1. Check if user already exists in public.users
     const { data: existing } = await supabaseAdmin
       .from('users')
@@ -57,18 +68,16 @@ export default async function handler(req, res) {
         if (body.billing_status) updateData.billing_status = body.billing_status
         if (body.legal_accepted_version) updateData.legal_accepted_version = body.legal_accepted_version
         if (body.legal_accepted_at) updateData.legal_accepted_at = body.legal_accepted_at
-        
         await supabaseAdmin.from('users').update(updateData).eq('id', targetUid)
       }
       return res.status(200).json({ success: true, user: existing })
     }
 
-    // 2. Compute unique username
+    // 2. Generate a valid unique username if none provided
     let username = body.username || (targetEmail ? targetEmail.split('@')[0].replace(/[^a-z0-9_]/g, '') : `user_${targetUid.slice(0, 6)}`)
-    if (!username || username.length < 3) {
-      username = `user_${targetUid.slice(0, 6)}`
-    }
+    if (!username || username.length < 3) username = `user_${targetUid.slice(0, 6)}`
 
+    // 3. Upsert user record
     const payload = {
       id: targetUid,
       email: targetEmail,
@@ -85,6 +94,7 @@ export default async function handler(req, res) {
       .select('*')
       .maybeSingle()
 
+    // 4. Retry with randomized username suffix on conflict
     if (insertErr && (insertErr.code === '23505' || insertErr.message?.includes('unique') || insertErr.message?.includes('username'))) {
       payload.username = `${username.slice(0, 14)}_${targetUid.slice(0, 5)}`
       const retryRes = await supabaseAdmin
@@ -97,13 +107,12 @@ export default async function handler(req, res) {
     }
 
     if (insertErr) {
-      console.error('api/ensure-user insert error:', insertErr)
-      return res.status(500).json({ error: insertErr.message, code: insertErr.code })
+      return res.status(500).json({ error: sanitizeError(insertErr) })
     }
 
     return res.status(200).json({ success: true, user: inserted })
   } catch (err) {
-    console.error('api/ensure-user handler exception:', err)
-    return res.status(500).json({ error: err.message || 'Server error' })
+    console.error('ensure-user API error:', err?.message || err)
+    return res.status(500).json({ error: sanitizeError(err, 'Failed to ensure user') })
   }
 }
