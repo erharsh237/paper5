@@ -27,8 +27,6 @@ export default function FeedbackModal({ isOpen, onClose }) {
   const hasTurnstileKey = Boolean(import.meta.env.VITE_TURNSTILE_SITE_KEY)
   const { isLockedOut, isHardLocked, cooldownRemaining, startCooldown } = useSubmitRateLimit(30, 5)
 
-  if (!isOpen) return null
-
   const activeMood = SENTIMENT_OPTIONS.find((item) => item.value === rating) || SENTIMENT_OPTIONS[2]
 
   const handleSubmit = async (e) => {
@@ -104,7 +102,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isOpen])
 
-  if (typeof document === 'undefined') return null
+  if (!isOpen || typeof document === 'undefined') return null
 
   return createPortal(
     <div className="feedback-modal-overlay" onClick={handleResetAndClose}>
