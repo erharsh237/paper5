@@ -5,6 +5,7 @@ import { Suspense, lazy, useEffect, useState, useSyncExternalStore } from 'react
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './lib/AuthContext'
 import { WorkspaceProvider, useWorkspace } from './lib/WorkspaceContext'
+import WorkspaceBentoLayout from './components/WorkspaceBentoLayout'
 import LockedOverlay from './components/LockedOverlay'
 // Auto-reloads page if a Vercel deploy replaced older JS bundle filenames
 function safeLazy(routeKey, { trackLoading = true } = {}) {
@@ -367,17 +368,19 @@ export default function App() {
                 <WorkspaceProvider>
                   <WorkspaceGuard>
                     <Suspense fallback={<WorkspaceSkeleton showHeader />}>
-                      <Routes>
-                        <Route path="" element={<MyDashboard />} />
-                        <Route path="workflow" element={<WorkflowPage />} />
-                        <Route path="team" element={<Dashboard />} />
-                        <Route path="meeting" element={<Meeting />} />
-                        <Route path="analytics" element={<Analytics />} />
-                        <Route path="integrations" element={<Integrations />} />
-                        <Route path="settings" element={<AdminGuard><Settings /></AdminGuard>} />
-                        <Route path="profile" element={<Profile />} />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
+                      <WorkspaceBentoLayout>
+                        <Routes>
+                          <Route path="" element={<MyDashboard />} />
+                          <Route path="workflow" element={<WorkflowPage />} />
+                          <Route path="team" element={<Dashboard />} />
+                          <Route path="meeting" element={<Meeting />} />
+                          <Route path="analytics" element={<Analytics />} />
+                          <Route path="integrations" element={<Integrations />} />
+                          <Route path="settings" element={<AdminGuard><Settings /></AdminGuard>} />
+                          <Route path="profile" element={<Profile />} />
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </WorkspaceBentoLayout>
                     </Suspense>
                   </WorkspaceGuard>
                 </WorkspaceProvider>

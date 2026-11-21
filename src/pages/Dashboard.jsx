@@ -10,7 +10,6 @@ import NewDeadlineModal from '../components/NewDeadlineModal'
 import NewSprintModal from '../components/NewSprintModal'
 import WorkloadPanel from '../components/WorkloadPanel'
 import NotificationBell from '../components/NotificationBell'
-import NavTabs from '../components/NavTabs'
 import UserMenu from '../components/UserMenu'
 import { useWorkspace } from '../lib/WorkspaceContext'
 import { Link } from 'react-router-dom'
@@ -337,24 +336,6 @@ export default function Dashboard() {
 
   return (
     <div className="dash-root">
-      {/* ── 1. STICKY TOP NAV ── */}
-      <nav className="dash-sticky-nav">
-        <div className="dash-container dash-nav-inner">
-          <Link to={`/${workspaceId}`} className="dash-nav-brand">
-            <Paper5Logo size={22} style={{ marginRight: '6px' }} decorative />
-            <span className="dash-logo-name">Paper5</span>
-            <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
-          </Link>
-
-          <NavTabs />
-
-          <div className="dash-nav-actions">
-            <NotificationBell currentUser={user} />
-            <UserMenu />
-          </div>
-        </div>
-      </nav>
-
       {/* ── MAIN BODY ── */}
       <main className="dash-container" style={{ paddingBottom: '48px' }}>
         

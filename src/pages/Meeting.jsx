@@ -5,7 +5,6 @@ import { subscribeSprints } from '../lib/sprints'
 import { subscribeMembers } from '../lib/deadlines'
 import { subscribeEventNotes, saveEventNote, deleteEventNote } from '../lib/meetings'
 import NotificationBell from '../components/NotificationBell'
-import NavTabs from '../components/NavTabs'
 import ReflectionPanel from '../components/ReflectionPanel'
 import UserMenu from '../components/UserMenu'
 import CalendarWidget from '../components/CalendarWidget'
@@ -131,23 +130,6 @@ export default function Meeting() {
 
   return (
     <div className="dash-root">
-      <nav className="dash-sticky-nav">
-        <div className="dash-container dash-nav-inner">
-          <Link to={`/${workspaceId}`} className="dash-nav-brand">
-            <Paper5Logo size={22} style={{ marginRight: '6px' }} decorative />
-            <span className="dash-logo-name">Paper5</span>
-            <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
-          </Link>
-
-          <NavTabs />
-
-          <div className="dash-nav-actions">
-            <NotificationBell currentUser={user} />
-            <UserMenu />
-          </div>
-        </div>
-      </nav>
-
       <main className="dash-container" style={{ paddingBottom: '48px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'stretch' }}>
           

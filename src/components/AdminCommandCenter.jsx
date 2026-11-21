@@ -45,9 +45,11 @@ import {
   ChevronRight,
   Sparkles
 } from 'lucide-react'
+import { useWorkspaceBento } from './WorkspaceBentoLayout'
 import './AdminCommandCenter.css'
 
 export default function AdminCommandCenter({ onSwitchToPersonal }) {
+  const bentoLayout = useWorkspaceBento()
   const { workspaceId, workspace, isAdmin, isOwner, onlineUserIds: contextOnlineUserIds, onlineCount: contextOnlineCount } = useWorkspace()
   const { user } = useAuth()
 
@@ -111,10 +113,12 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
     window.addEventListener('sprintos:data-sync', handleSync)
     window.addEventListener('sprintos:deadlines-updated', handleSync)
     window.addEventListener('sprintos:sprints-updated', handleSync)
+    window.addEventListener('p5:workspace-updated', handleSync)
     return () => {
       window.removeEventListener('sprintos:data-sync', handleSync)
       window.removeEventListener('sprintos:deadlines-updated', handleSync)
       window.removeEventListener('sprintos:sprints-updated', handleSync)
+      window.removeEventListener('p5:workspace-updated', handleSync)
     }
   }, [fetchOverview])
 
@@ -312,208 +316,25 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
   // Computed Velocity Rate
   const completedRate = overview.overallProductivity || 0
 
-  return (
-    <div className="bento-canvas">
-      <div className="bento-shell">
-        {/* ─────────────────────────────────────────────────────────────
-             LEFT VERTICAL ICON DOCK (Identical to Fenco & Quixotic Mocks)
-        ───────────────────────────────────────────────────────────── */}
-        <aside className="bento-left-dock">
-          <div className="dock-top-group">
-            <div className="dock-brand-icon" title="Paper5 Workspace">
-              <Paper5Logo size={22} decorative />
-            </div>
+  const renderDashboardStage = () => (
+    <>
+      {/* Feedback Notices */}
+      {actionSuccess && (
+        <div className="bento-alert success">
+          <CheckCircle2 size={16} />
+          <span>{actionSuccess}</span>
+        </div>
+      )}
+      {actionError && (
+        <div className="bento-alert error">
+          <AlertTriangle size={16} />
+          <span>{actionError}</span>
+        </div>
+      )}
 
-            <nav className="dock-nav-items">
-              <button
-                type="button"
-                className={`dock-btn ${activeTab === 'tasks' ? 'active' : ''}`}
-                onClick={() => setActiveTab('tasks')}
-                aria-label="Master Task Grid"
-              >
-                <LayoutGrid size={19} />
-                <span className="dock-tooltip">Master Tasks (⌘1)</span>
-              </button>
-
-              <button
-                type="button"
-                className={`dock-btn ${activeTab === 'projects' ? 'active' : ''}`}
-                onClick={() => setActiveTab('projects')}
-                aria-label="Projects & Sprints"
-              >
-                <FolderGit2 size={19} />
-                <span className="dock-tooltip">Projects &amp; Sprints (⌘2)</span>
-              </button>
-
-              <button
-                type="button"
-                className={`dock-btn ${activeTab === 'team' ? 'active' : ''}`}
-                onClick={() => setActiveTab('team')}
-                aria-label="Team Workload"
-              >
-                <Users2 size={19} />
-                <span className="dock-tooltip">Team Workload (⌘3)</span>
-              </button>
-
-              <button
-                type="button"
-                className={`dock-btn ${activeTab === 'audit' ? 'active' : ''}`}
-                onClick={() => setActiveTab('audit')}
-                aria-label="Activity & Audit Logs"
-              >
-                <Activity size={19} />
-                <span className="dock-tooltip">Activity &amp; Audit (⌘4)</span>
-              </button>
-
-              <button
-                type="button"
-                className="dock-btn"
-                onClick={() => (window.location.href = `/${workspaceId}/settings`)}
-                aria-label="Workspace Settings"
-              >
-                <Shield size={19} />
-                <span className="dock-tooltip">Workspace Settings</span>
-              </button>
-            </nav>
-          </div>
-
-          <div className="dock-bottom-group">
-            <button
-              type="button"
-              className="dock-btn"
-              onClick={onSwitchToPersonal}
-              aria-label="Personal Focus View"
-            >
-              <CheckSquare size={19} />
-              <span className="dock-tooltip">Personal Focus View</span>
-            </button>
-            <button
-              type="button"
-              className="dock-btn"
-              onClick={fetchOverview}
-              aria-label="Refresh Workspace Telemetry"
-            >
-              <RefreshCw size={18} className={loading ? 'spin' : ''} />
-              <span className="dock-tooltip">Refresh Telemetry</span>
-            </button>
-          </div>
-        </aside>
-
-        {/* ─────────────────────────────────────────────────────────────
-             MAIN STAGE
-        ───────────────────────────────────────────────────────────── */}
-        <main className="bento-main-stage">
-          {/* ── TOP HEADER ── */}
-          <header className="bento-top-header">
-            <div>
-              <div className="bento-workspace-tag-row">
-                <span className="bento-workspace-badge">
-                  {(workspace?.name || 'WORKSPACE').toUpperCase()}
-                </span>
-                <span className="bento-plan-badge">
-                  {(workspace?.plan || 'PRO').toUpperCase()}
-                </span>
-              </div>
-              <h1 className="bento-greeting">
-                Hello, <span>{adminFirstName}</span>
-              </h1>
-              <p className="bento-subtext">
-                View and govern your workspace operations, projects &amp; team deliverables.
-              </p>
-            </div>
-
-            {/* Right Topbar Tools: Team Capsule, Actions, User */}
-            <div className="bento-topbar-right">
-              {/* Team Members Horizontal Capsule (Direct from Mock #1 Fenco) */}
-              {teamWorkload.length > 0 && (
-                <div
-                  className="bento-team-capsule"
-                  onClick={() => setActiveTab('team')}
-                  title="View Team Workload & Live Presence"
-                >
-                  <span className="bento-live-pulse-dot" />
-                  <span className="bento-online-count-lbl">{onlineCount} Online</span>
-                  <div className="bento-team-avatars-row">
-                    {teamWorkload.slice(0, 6).map((m, idx) => {
-                      const isOnline = isMemberOnline(m)
-                      return (
-                        <div
-                          key={m.userId || idx}
-                          className={`bento-member-circle-avatar ${isOnline ? 'online' : ''}`}
-                          title={`${m.name} (${m.role}) — ${isOnline ? 'Online now' : 'Offline'}`}
-                          style={{
-                            background: m.avatarUrl ? `url(${m.avatarUrl}) center/cover` : ['#4f46e5', '#0284c7', '#10b981', '#f59e0b', '#8b5cf6'][idx % 5]
-                          }}
-                        >
-                          {!m.avatarUrl && m.name.charAt(0).toUpperCase()}
-                        </div>
-                      )
-                    })}
-                    {teamWorkload.length > 6 && (
-                      <span className="bento-team-overflow">+{teamWorkload.length - 6}</span>
-                    )}
-                  </div>
-                  <ChevronRight size={14} color="#94a3b8" />
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <button
-                type="button"
-                className="bento-pill-action-btn"
-                onClick={handleExportCSV}
-                title="Export Tasks to CSV"
-              >
-                <Download size={14} />
-                <span>Export CSV</span>
-              </button>
-
-              <button
-                type="button"
-                className="bento-pill-action-btn primary"
-                onClick={() => setIsNewProjectOpen(true)}
-              >
-                <Plus size={14} />
-                <span>New Project</span>
-              </button>
-
-              <button
-                type="button"
-                className="bento-pill-action-btn dark"
-                onClick={() => setIsNewTaskOpen(true)}
-              >
-                <CheckSquare size={14} />
-                <span>New Task</span>
-              </button>
-
-              <button
-                type="button"
-                className="bento-pill-action-btn personal"
-                onClick={onSwitchToPersonal}
-                title="Switch to Personal View"
-              >
-                <span>Personal View &rarr;</span>
-              </button>
-            </div>
-          </header>
-
-          {/* Feedback Notices */}
-          {actionSuccess && (
-            <div className="bento-alert success">
-              <CheckCircle2 size={16} />
-              <span>{actionSuccess}</span>
-            </div>
-          )}
-          {actionError && (
-            <div className="bento-alert error">
-              <AlertTriangle size={16} />
-              <span>{actionError}</span>
-            </div>
-          )}
-
-          {/* ─────────────────────────────────────────────────────────────
-               ROW 1: BENTO TELEMETRY CARDS (Direct from Fenco & Quixotic Mocks)
-          ───────────────────────────────────────────────────────────── */}
+      {/* ─────────────────────────────────────────────────────────────
+           ROW 1: BENTO TELEMETRY CARDS (Direct from Fenco & Quixotic Mocks)
+      ───────────────────────────────────────────────────────────── */}
           <section className="bento-kpi-row">
             {/* Card 1: Workspace Output / Task Statistics */}
             <div className="bento-card">
@@ -1153,38 +974,225 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
               Configure Settings &rarr;
             </Link>
           </div>
+
+          {/* Modals */}
+          {isNewTaskOpen && (
+            <NewDeadlineModal
+              members={teamWorkload}
+              currentUser={user}
+              activeSprint={projects.find((p) => p.status === 'active')}
+              sprints={projects}
+              onClose={() => setIsNewTaskOpen(false)}
+              onCreated={() => fetchOverview()}
+            />
+          )}
+
+          {isNewProjectOpen && (
+            <CreateProjectModal
+              existingCount={projects.length}
+              members={teamWorkload}
+              onClose={() => setIsNewProjectOpen(false)}
+              onCreated={() => fetchOverview()}
+            />
+          )}
+
+          {taskToReassign && (
+            <ReassignTaskModal
+              task={taskToReassign}
+              members={teamWorkload}
+              onClose={() => setTaskToReassign(null)}
+              onUpdated={() => fetchOverview()}
+            />
+          )}
+    </>
+  )
+
+  if (bentoLayout) {
+    return (
+      <div className="bento-overview-content" style={{ display: 'flex', flexDirection: 'column', gap: '28px', width: '100%' }}>
+        {renderDashboardStage()}
+      </div>
+    )
+  }
+
+  return (
+    <div className="bento-canvas">
+      <div className="bento-shell">
+        <aside className="bento-left-dock">
+          <div className="dock-top-group">
+            <div className="dock-brand-icon" title="Paper5 Workspace">
+              <Paper5Logo size={22} decorative />
+            </div>
+
+            <nav className="dock-nav-items">
+              <button
+                type="button"
+                className={`dock-btn ${activeTab === 'tasks' ? 'active' : ''}`}
+                onClick={() => setActiveTab('tasks')}
+                aria-label="Master Task Grid"
+              >
+                <LayoutGrid size={19} />
+                <span className="dock-tooltip">Master Tasks (⌘1)</span>
+              </button>
+
+              <button
+                type="button"
+                className={`dock-btn ${activeTab === 'projects' ? 'active' : ''}`}
+                onClick={() => setActiveTab('projects')}
+                aria-label="Projects & Sprints"
+              >
+                <FolderGit2 size={19} />
+                <span className="dock-tooltip">Projects &amp; Sprints (⌘2)</span>
+              </button>
+
+              <button
+                type="button"
+                className={`dock-btn ${activeTab === 'team' ? 'active' : ''}`}
+                onClick={() => setActiveTab('team')}
+                aria-label="Team Workload"
+              >
+                <Users2 size={19} />
+                <span className="dock-tooltip">Team Workload (⌘3)</span>
+              </button>
+
+              <button
+                type="button"
+                className={`dock-btn ${activeTab === 'audit' ? 'active' : ''}`}
+                onClick={() => setActiveTab('audit')}
+                aria-label="Activity & Audit Logs"
+              >
+                <Activity size={19} />
+                <span className="dock-tooltip">Activity &amp; Audit (⌘4)</span>
+              </button>
+
+              <button
+                type="button"
+                className="dock-btn"
+                onClick={() => (window.location.href = `/${workspaceId}/settings`)}
+                aria-label="Workspace Settings"
+              >
+                <Shield size={19} />
+                <span className="dock-tooltip">Workspace Settings</span>
+              </button>
+            </nav>
+          </div>
+
+          <div className="dock-bottom-group">
+            <button
+              type="button"
+              className="dock-btn"
+              onClick={onSwitchToPersonal}
+              aria-label="Personal Focus View"
+            >
+              <CheckSquare size={19} />
+              <span className="dock-tooltip">Personal Focus View</span>
+            </button>
+            <button
+              type="button"
+              className="dock-btn"
+              onClick={fetchOverview}
+              aria-label="Refresh Workspace Telemetry"
+            >
+              <RefreshCw size={18} className={loading ? 'spin' : ''} />
+              <span className="dock-tooltip">Refresh Telemetry</span>
+            </button>
+          </div>
+        </aside>
+
+        <main className="bento-main-stage">
+          <header className="bento-top-header">
+            <div>
+              <div className="bento-workspace-tag-row">
+                <span className="bento-workspace-badge">
+                  {(workspace?.name || 'WORKSPACE').toUpperCase()}
+                </span>
+                <span className="bento-plan-badge">
+                  {(workspace?.plan || 'PRO').toUpperCase()}
+                </span>
+              </div>
+              <h1 className="bento-greeting">
+                Hello, <span>{adminFirstName}</span>
+              </h1>
+              <p className="bento-subtext">
+                View and govern your workspace operations, projects &amp; team deliverables.
+              </p>
+            </div>
+
+            <div className="bento-topbar-right">
+              {teamWorkload.length > 0 && (
+                <div
+                  className="bento-team-capsule"
+                  onClick={() => setActiveTab('team')}
+                  title="View Team Workload & Live Presence"
+                >
+                  <span className="bento-live-pulse-dot" />
+                  <span className="bento-online-count-lbl">{onlineCount} Online</span>
+                  <div className="bento-team-avatars-row">
+                    {teamWorkload.slice(0, 6).map((m, idx) => {
+                      const isOnline = isMemberOnline(m)
+                      return (
+                        <div
+                          key={m.userId || idx}
+                          className={`bento-member-circle-avatar ${isOnline ? 'online' : ''}`}
+                          title={`${m.name} (${m.role}) — ${isOnline ? 'Online now' : 'Offline'}`}
+                          style={{
+                            background: m.avatarUrl ? `url(${m.avatarUrl}) center/cover` : ['#4f46e5', '#0284c7', '#10b981', '#f59e0b', '#8b5cf6'][idx % 5]
+                          }}
+                        >
+                          {!m.avatarUrl && m.name.charAt(0).toUpperCase()}
+                        </div>
+                      )
+                    })}
+                    {teamWorkload.length > 6 && (
+                      <span className="bento-team-overflow">+{teamWorkload.length - 6}</span>
+                    )}
+                  </div>
+                  <ChevronRight size={14} color="#94a3b8" />
+                </div>
+              )}
+
+              <button
+                type="button"
+                className="bento-pill-action-btn"
+                onClick={handleExportCSV}
+                title="Export Tasks to CSV"
+              >
+                <Download size={14} />
+                <span>Export CSV</span>
+              </button>
+
+              <button
+                type="button"
+                className="bento-pill-action-btn primary"
+                onClick={() => setIsNewProjectOpen(true)}
+              >
+                <Plus size={14} />
+                <span>New Project</span>
+              </button>
+
+              <button
+                type="button"
+                className="bento-pill-action-btn dark"
+                onClick={() => setIsNewTaskOpen(true)}
+              >
+                <CheckSquare size={14} />
+                <span>New Task</span>
+              </button>
+
+              <button
+                type="button"
+                className="bento-pill-action-btn personal"
+                onClick={onSwitchToPersonal}
+                title="Switch to Personal View"
+              >
+                <span>Personal View &rarr;</span>
+              </button>
+            </div>
+          </header>
+
+          {renderDashboardStage()}
         </main>
       </div>
-
-      {/* Modals */}
-      {isNewTaskOpen && (
-        <NewDeadlineModal
-          members={teamWorkload}
-          currentUser={user}
-          activeSprint={projects.find((p) => p.status === 'active')}
-          sprints={projects}
-          onClose={() => setIsNewTaskOpen(false)}
-          onCreated={() => fetchOverview()}
-        />
-      )}
-
-      {isNewProjectOpen && (
-        <CreateProjectModal
-          existingCount={projects.length}
-          members={teamWorkload}
-          onClose={() => setIsNewProjectOpen(false)}
-          onCreated={() => fetchOverview()}
-        />
-      )}
-
-      {taskToReassign && (
-        <ReassignTaskModal
-          task={taskToReassign}
-          members={teamWorkload}
-          onClose={() => setTaskToReassign(null)}
-          onUpdated={() => fetchOverview()}
-        />
-      )}
     </div>
   )
 }

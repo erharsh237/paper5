@@ -1,0 +1,117 @@
+/* ==============================================================================
+   PAPER5 SAAS - WORKSPACE BENTO LAYOUT STYLING
+   Enforces Modern Bento Shell across all workspace routes, eliminating old UI.
+   ============================================================================== */
+
+/* 1. Physically eradicate the old sticky navbar across every page */
+.dash-sticky-nav {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  pointer-events: none !important;
+}
+
+/* 2. Bento Route Body & Children Resets */
+.bento-route-body {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  animation: bentoFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes bentoFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* User topbar group */
+.bento-topbar-user-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 6px;
+}
+
+/* 3. Strip legacy full-page wrappers when rendered inside Bento Shell */
+.bento-route-body .dash-root {
+  min-height: auto !important;
+  background: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+  font-family: inherit !important;
+}
+
+.bento-route-body .dash-container {
+  padding: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.bento-route-body .dash-greeting {
+  display: none !important;
+}
+
+.bento-route-body .dash-page-header {
+  padding: 0 0 20px 0 !important;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 24px !important;
+}
+
+.bento-route-body .settings-page {
+  min-height: auto !important;
+  background: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+}
+
+.bento-route-body .settings-container {
+  padding: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.bento-route-body .integrations-page {
+  min-height: auto !important;
+  background: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+}
+
+.bento-route-body .integrations-container {
+  padding: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.bento-route-body .profile-page-root {
+  min-height: auto !important;
+  background: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+}
+
+.bento-route-body .profile-content-container {
+  padding: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+.bento-route-body .analytics-root {
+  min-height: auto !important;
+  background: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+}

@@ -6,7 +6,6 @@ import { subscribeIntegrationConfig, saveIntegrationConfig, subscribeIntegration
 import { loadGis } from '../lib/integrations/googleCalendar'
 import { subscribeEventNotes, saveEventNote, deleteEventNote } from '../lib/meetings'
 
-import NavTabs from '../components/NavTabs'
 import UserMenu from '../components/UserMenu'
 import Breadcrumbs from '../components/Breadcrumbs'
 import { useWorkspace } from '../lib/WorkspaceContext'
@@ -221,21 +220,6 @@ export default function Integrations() {
 
   return (
     <div className="dash-root">
-      <nav className="dash-sticky-nav">
-        <div className="dash-container dash-nav-inner">
-          <Link to={`/${workspaceId}`} className="dash-nav-brand">
-            <span className="dash-logo-name">Paper5</span>
-            <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
-          </Link>
-
-          <NavTabs />
-
-          <div className="dash-nav-actions">
-            <UserMenu />
-          </div>
-        </div>
-      </nav>
-
       <main className="dash-container" style={{ paddingBottom: '48px' }}>
         <p className="integrations-intro">
           These are live — Discord/Slack actually post, GitHub actually reads your repo, Vercel actually checks

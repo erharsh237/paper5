@@ -20,7 +20,6 @@ import { getAuthHeaders } from '../lib/authHeaders'
 
 import Breadcrumbs from '../components/Breadcrumbs'
 import { safeRedirect } from '../lib/safeRedirect'
-import NavTabs from '../components/NavTabs'
 import UserMenu from '../components/UserMenu'
 import PricingModal from '../components/PricingModal'
 import InvoicesModal from '../components/InvoicesModal'
@@ -1053,22 +1052,7 @@ export default function Settings() {
 
   return (
     <div className="dash-root">
-      <nav className="dash-sticky-nav">
-        <div className="dash-container dash-nav-inner">
-          <Link to={`/${workspaceId}`} className="dash-nav-brand">
-            <span className="dash-logo-name">Paper5</span>
-            <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
-          </Link>
-
-          <NavTabs />
-
-          <div className="dash-nav-actions">
-            <UserMenu />
-          </div>
-        </div>
-      </nav>
-
-      <main className="dash-container" style={{ maxWidth: '1000px', padding: '32px 32px 64px' }}>
+      <main className="dash-container" style={{ maxWidth: '1000px', padding: '16px 0 64px' }}>
         <div className="settings-layout">
           {/* Sidebar Nav */}
           <aside className="settings-sidebar">

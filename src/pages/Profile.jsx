@@ -4,7 +4,6 @@ import { useAuth } from '../lib/AuthContext'
 import { subscribeProfile, saveProfile, saveAim, getAimLockStatus, uploadPhoto, uploadResume, deleteResume } from '../lib/profile'
 import { resetTourSeen } from '../lib/onboarding'
 
-import NavTabs from '../components/NavTabs'
 import Breadcrumbs from '../components/Breadcrumbs'
 import UserMenu from '../components/UserMenu'
 import CalendarWidget from '../components/CalendarWidget'
@@ -297,21 +296,6 @@ export default function Profile() {
 
   return (
     <div className="dash-root">
-      <nav className="dash-sticky-nav">
-        <div className="dash-container dash-nav-inner">
-          <Link to={`/${workspaceId}`} className="dash-nav-brand">
-            <span className="dash-logo-name">Paper5</span>
-            <span className="dash-env-tag">{(workspace?.name || 'TEST').toUpperCase()}</span>
-          </Link>
-
-          <NavTabs />
-
-          <div className="dash-nav-actions">
-            <UserMenu />
-          </div>
-        </div>
-      </nav>
-
       <main className="dash-container" style={{ paddingBottom: '48px' }}>
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '16px' }}>
           <button type="button" className="btn-ghost btn-sm" onClick={handleRetakeTour}>
