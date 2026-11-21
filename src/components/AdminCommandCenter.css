@@ -65,7 +65,7 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
-   1. LEFT VERTICAL ICON DOCK WITH EXPAND-ON-HOVER & LABELS
+   1. LEFT VERTICAL ICON DOCK - PERMANENTLY FIXED TO VIEWPORT
 ───────────────────────────────────────────────────────────── */
 .bento-left-dock {
   width: 66px;
@@ -79,20 +79,11 @@
   flex-shrink: 0;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
   height: calc(100vh - 48px);
-  position: sticky;
+  position: fixed;
   top: 24px;
-  z-index: 50;
-  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), padding 0.22s ease;
-  overflow: hidden;
-}
-
-@media (min-width: 901px) {
-  .bento-left-dock:hover,
-  .bento-left-dock:focus-within {
-    width: 196px;
-    align-items: flex-start;
-    padding: 22px 14px;
-  }
+  left: 28px;
+  z-index: 100;
+  overflow: visible;
 }
 
 @media (max-width: 900px) {
@@ -166,37 +157,11 @@
   position: relative;
   text-decoration: none;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow: hidden;
   white-space: nowrap;
 }
 
-@media (min-width: 901px) {
-  .bento-left-dock:hover .dock-btn,
-  .bento-left-dock:focus-within .dock-btn {
-    width: 100%;
-    justify-content: flex-start;
-    padding: 0 12px;
-    gap: 12px;
-  }
-}
-
 .dock-label {
-  display: none;
-  font-size: var(--p5-font-sm, 13px);
-  font-weight: 500;
-  color: inherit;
-  opacity: 0;
-  transform: translateX(-4px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-@media (min-width: 901px) {
-  .bento-left-dock:hover .dock-label,
-  .bento-left-dock:focus-within .dock-label {
-    display: inline-block;
-    opacity: 1;
-    transform: translateX(0);
-  }
+  display: none !important;
 }
 
 .dock-btn:hover {
@@ -232,15 +197,8 @@
   visibility: hidden;
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
-  z-index: 100;
+  z-index: 200;
   border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-@media (min-width: 901px) {
-  .bento-left-dock:hover .dock-tooltip,
-  .bento-left-dock:focus-within .dock-tooltip {
-    display: none !important;
-  }
 }
 
 .dock-tooltip::before {
@@ -287,6 +245,13 @@
   flex-direction: column;
   gap: 22px;
   min-width: 0;
+  margin-left: 94px;
+}
+
+@media (max-width: 900px) {
+  .bento-main-stage {
+    margin-left: 0;
+  }
 }
 
 /* ── Top Header ── */
