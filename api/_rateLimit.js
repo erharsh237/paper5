@@ -23,6 +23,13 @@ setInterval(() => {
  * @returns {boolean} true if request was rate-limited (429 returned), false if allowed to proceed
  */
 export function checkRateLimit(req, res, { max = 60, windowMs = 60000 } = {}) {
+  // Allow authorized load testing / security audits with secret header
+  const loadTestSecret = process.env.LOAD_TEST_SECRET
+  if (loadTestSecret && req.headers?.['x-load-test-secret'] === loadTestSecret) {
+    res.setHeader('X-RateLimit-Bypass', 'authorized-load-test')
+    return false
+  }
+
   const forwarded = req.headers['x-forwarded-for']
   const ip = (typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : '') ||
              req.headers['x-real-ip'] ||
