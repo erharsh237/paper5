@@ -50,17 +50,18 @@ export function smoothScrollTo(target, options = {}) {
 
   // If target element found
   if (targetEl) {
-    const rect = targetEl.getBoundingClientRect()
-    const targetY = Math.max(0, window.pageYOffset + rect.top + offset)
+    // 1. Direct scrollIntoView (reliable across all DOM containers)
+    targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
+    // 2. Window coordinate scrollTo with header offset clearance
     try {
+      const rect = targetEl.getBoundingClientRect()
+      const targetY = Math.max(0, window.pageYOffset + rect.top + offset)
       window.scrollTo({
         top: targetY,
         behavior: 'smooth'
       })
-    } catch {
-      targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
+    } catch {}
 
     if (onComplete) setTimeout(onComplete, 600)
     return
