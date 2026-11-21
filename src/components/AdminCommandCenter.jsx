@@ -270,6 +270,20 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
     }
   }
 
+  // Keyboard Shortcuts (⌘1, ⌘2, ⌘3, ⌘4)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
+        if (e.key === '1') { e.preventDefault(); setActiveTab('tasks') }
+        if (e.key === '2') { e.preventDefault(); setActiveTab('projects') }
+        if (e.key === '3') { e.preventDefault(); setActiveTab('team') }
+        if (e.key === '4') { e.preventDefault(); setActiveTab('audit') }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   // Computed Velocity Rate
   const completedRate = overview.overallProductivity || 0
 
@@ -290,45 +304,50 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
                 type="button"
                 className={`dock-btn ${activeTab === 'tasks' ? 'active' : ''}`}
                 onClick={() => setActiveTab('tasks')}
-                title="Master Task Grid"
+                aria-label="Master Task Grid"
               >
                 <LayoutGrid size={19} />
+                <span className="dock-tooltip">Master Tasks (⌘1)</span>
               </button>
 
               <button
                 type="button"
                 className={`dock-btn ${activeTab === 'projects' ? 'active' : ''}`}
                 onClick={() => setActiveTab('projects')}
-                title="Projects & Sprints"
+                aria-label="Projects & Sprints"
               >
                 <FolderGit2 size={19} />
+                <span className="dock-tooltip">Projects &amp; Sprints (⌘2)</span>
               </button>
 
               <button
                 type="button"
                 className={`dock-btn ${activeTab === 'team' ? 'active' : ''}`}
                 onClick={() => setActiveTab('team')}
-                title="Team Workload"
+                aria-label="Team Workload"
               >
                 <Users2 size={19} />
+                <span className="dock-tooltip">Team Workload (⌘3)</span>
               </button>
 
               <button
                 type="button"
                 className={`dock-btn ${activeTab === 'audit' ? 'active' : ''}`}
                 onClick={() => setActiveTab('audit')}
-                title="Activity & Audit Logs"
+                aria-label="Activity & Audit Logs"
               >
                 <Activity size={19} />
+                <span className="dock-tooltip">Activity &amp; Audit (⌘4)</span>
               </button>
 
               <button
                 type="button"
                 className="dock-btn"
                 onClick={() => (window.location.href = `/${workspaceId}/settings`)}
-                title="Workspace Settings"
+                aria-label="Workspace Settings"
               >
                 <Shield size={19} />
+                <span className="dock-tooltip">Workspace Settings</span>
               </button>
             </nav>
           </div>
@@ -338,17 +357,19 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
               type="button"
               className="dock-btn"
               onClick={onSwitchToPersonal}
-              title="Personal Focus View"
+              aria-label="Personal Focus View"
             >
               <CheckSquare size={19} />
+              <span className="dock-tooltip">Personal Focus View</span>
             </button>
             <button
               type="button"
               className="dock-btn"
               onClick={fetchOverview}
-              title="Refresh Workspace Telemetry"
+              aria-label="Refresh Workspace Telemetry"
             >
               <RefreshCw size={18} className={loading ? 'spin' : ''} />
+              <span className="dock-tooltip">Refresh Telemetry</span>
             </button>
           </div>
         </aside>

@@ -3,30 +3,30 @@
 ───────────────────────────────────────────────────────────── */
 
 :root {
-  --bg: #F3F4FA;
+  --bg: #fbfbf9;
   --surface: #FFFFFF;
-  --surface-2: #EEF0F9;
-  --border: #E1E3F0;
-  --border-soft: #EAECF6;
-  --text: #1C1D2B;
-  --muted: #6E7091;
-  --muted-2: #A3A5C2;
+  --surface-2: #F4F4F5;
+  --border: #E4E4E7;
+  --border-soft: #F4F4F5;
+  --text: #18181B;
+  --muted: #71717A;
+  --muted-2: #A1A1AA;
   --accent: #4F46E5;
-  --accent-dim: #E8E6FB;
-  --blue: #3D6FD6;
-  --amber: #C4791A;
-  --red: #D14343;
-  --violet: #7C5CE0;
-  --green: #1A9959;
-  --green-dim: #E6F5EE;
+  --accent-dim: #EEF2FF;
+  --blue: #0284C7;
+  --amber: #D97706;
+  --red: #DC2626;
+  --violet: #7C3AED;
+  --green: #059669;
+  --green-dim: #ECFDF5;
 
-  --card-shadow: 0 1px 2px rgba(30, 32, 80, 0.04), 0 4px 16px rgba(30, 32, 80, 0.05);
-  --card-shadow-hover: 0 2px 4px rgba(30, 32, 80, 0.06), 0 8px 28px rgba(30, 32, 80, 0.09);
-  --radius-card: 14px;
-  --radius-pill: 100px;
-  --radius-btn: 10px;
+  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  --card-shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.06);
+  --radius-card: 22px;
+  --radius-pill: 9999px;
+  --radius-btn: 9999px;
 
-  --font-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
 
@@ -64,10 +64,11 @@ body[data-theme="dark"] {
 }
 
 .dash-container {
-  max-width: 1320px;
+  max-width: 100%;
   width: 100%;
-  margin: 0 auto;
-  padding: 0 32px;
+  margin: 0;
+  padding: 0 36px;
+  box-sizing: border-box;
 }
 
 .dash-surface-card {
@@ -75,10 +76,11 @@ body[data-theme="dark"] {
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-card);
   box-shadow: var(--card-shadow);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition: box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .dash-surface-card:hover {
+  transform: translateY(-2px);
   box-shadow: var(--card-shadow-hover);
 }
 
@@ -89,10 +91,10 @@ body[data-theme="dark"] {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(243, 244, 250, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border-soft);
+  background: rgba(251, 251, 249, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid #e4e4e7;
 }
 
 .dash-nav-inner {
