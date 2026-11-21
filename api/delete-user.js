@@ -87,7 +87,42 @@ export default async function handler(req, res) {
 
     const idsList = Array.from(targetUserIds)
 
-    // 2. Clean up workspaces metadata (members array, permissions, deletion requests)
+    // 2. Clean up workspaces created or owned by this user
+    for (const id of idsList) {
+      try {
+        const { data: ownedWorkspaces } = await supabaseAdmin
+          .from('workspaces')
+          .select('id')
+          .eq('created_by', id)
+
+        for (const ws of (ownedWorkspaces || [])) {
+          const wsId = ws.id
+          // Attempt atomic stored RPC first
+          try {
+            await supabaseAdmin.rpc('delete_workspace_completely', { target_workspace_id: wsId })
+          } catch (_) {}
+
+          // Purge invites and invites tables
+          await Promise.allSettled([
+            supabaseAdmin.from('invites').delete().eq('workspace_id', wsId),
+            supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', wsId),
+            supabaseAdmin.from('deadlines').delete().eq('workspace_id', wsId),
+            supabaseAdmin.from('sprints').delete().eq('workspace_id', wsId),
+            supabaseAdmin.from('meetings').delete().eq('workspace_id', wsId),
+            supabaseAdmin.from('audit_logs').delete().eq('workspace_id', wsId),
+            supabaseAdmin.from('evidence').delete().eq('workspace_id', wsId),
+            supabaseAdmin.from('extra_work').delete().eq('workspace_id', wsId)
+          ])
+
+          try { await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', wsId) } catch (_) {}
+          try { await supabaseAdmin.from('workspaces').delete().eq('id', wsId) } catch (_) {}
+        }
+      } catch (wsErr) {
+        console.warn('Error purging owned workspaces in delete-user:', wsErr.message)
+      }
+    }
+
+    // 3. Clean up workspaces metadata (members array, permissions, deletion requests)
     try {
       const { data: wsList } = await supabaseAdmin.from('workspaces').select('id, settings')
       for (const ws of (wsList || [])) {
@@ -131,7 +166,7 @@ export default async function handler(req, res) {
       }
     } catch (_) {}
 
-    // 3. Delete from workspace_members table
+    // 4. Delete from workspace_members table
     if (targetId) {
       try { await supabaseAdmin.from('workspace_members').delete().eq('user_id', targetId) } catch (_) {}
     }
@@ -139,13 +174,13 @@ export default async function handler(req, res) {
       try { await supabaseAdmin.from('workspace_members').delete().eq('user_id', id) } catch (_) {}
     }
 
-    // 4. Delete invites matching email
+    // 5. Delete invites matching email
     if (cleanEmail) {
       try { await supabaseAdmin.from('invites').delete().ilike('email', cleanEmail) } catch (_) {}
       try { await supabaseAdmin.from('workspace_invites').delete().ilike('email', cleanEmail) } catch (_) {}
     }
 
-    // 5. Delete audit logs, notifications, sessions
+    // 6. Delete audit logs, notifications, sessions
     for (const id of idsList) {
       try { await supabaseAdmin.from('notifications').delete().eq('user_id', id) } catch (_) {}
       try { await supabaseAdmin.from('audit_logs').delete().eq('actor_id', id) } catch (_) {}
@@ -154,7 +189,7 @@ export default async function handler(req, res) {
       try { await supabaseAdmin.from('notifications').delete().ilike('forEmail', cleanEmail) } catch (_) {}
     }
 
-    // 6. Delete from profiles and users tables
+    // 7. Delete from profiles and users tables
     for (const id of idsList) {
       try { await supabaseAdmin.from('profiles').delete().eq('id', id) } catch (_) {}
       try { await supabaseAdmin.from('users').delete().eq('id', id) } catch (_) {}
@@ -164,7 +199,7 @@ export default async function handler(req, res) {
       try { await supabaseAdmin.from('users').delete().ilike('email', cleanEmail) } catch (_) {}
     }
 
-    // 7. Permanently delete from Supabase Auth
+    // 8. Permanently delete from Supabase Auth
     let authDeleted = false
     let authError = null
     if (serviceKey) {

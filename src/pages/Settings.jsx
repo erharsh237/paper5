@@ -15,6 +15,7 @@ import {
   updateMemberPermissions,
   deleteWorkspace
 } from '../lib/workspaces'
+import { getAuthHeaders } from '../lib/authHeaders'
 
 import Breadcrumbs from '../components/Breadcrumbs'
 import { safeRedirect } from '../lib/safeRedirect'
@@ -110,11 +111,12 @@ function WarningIcon() {
 
 export default function Settings() {
   const { workspaceId, workspace, isAdmin, isOwner, canManageSettings } = useWorkspace()
-  const { user, userData, updateUserData } = useAuth()
+  const { user, userData, updateUserData, logout } = useAuth()
   
   const [activeTab, setActiveTab] = useState('general')
   const [alertMessage, setAlertMessage] = useState(null)
   const [isDeleteWorkspaceModalOpen, setIsDeleteWorkspaceModalOpen] = useState(false)
+  const [deletingAccount, setDeletingAccount] = useState(false)
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
   
   const [members, setMembers] = useState([])
@@ -916,12 +918,55 @@ export default function Settings() {
         localStorage.removeItem('current_workspace_id')
         sessionStorage.removeItem('current_workspace_id')
       } catch (_) {}
-      safeRedirect('/workspace')
+      safeRedirect('/workspace?picker=true')
     } catch (err) {
       console.error('Workspace deletion error:', err)
       setAlertMessage(`Unable to delete workspace: ${err?.message || 'Database foreign key constraint or permission error'}`)
       setDeleting(false)
     }
+  }
+
+  const handleDeleteAccount = () => {
+    openConfirm({
+      title: 'Permanently Delete Account & All Data',
+      message: 'Are you sure you want to completely erase your user account? This will permanently delete all workspaces you created, invalidate all pending member invitations, erase your tasks, sprints, and meetings, and wipe your authentication profile. You will be logged out immediately.',
+      confirmText: 'Permanently Delete Everything',
+      variant: 'danger',
+      requiresTyping: 'DELETE MY ACCOUNT',
+      onConfirm: async () => {
+        closeConfirm()
+        setDeletingAccount(true)
+        try {
+          const authHeaders = await getAuthHeaders()
+          const uid = user?.id || user?.uid
+          const resp = await fetch('/api/delete-user', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: authHeaders,
+            body: JSON.stringify({
+              userId: uid,
+              email: user?.email,
+              workspaceId,
+              fullDelete: true
+            })
+          })
+          const json = await resp.json().catch(() => ({}))
+          if (!resp.ok) {
+            throw new Error(json.error || 'Failed to delete account')
+          }
+          try {
+            localStorage.clear()
+            sessionStorage.clear()
+          } catch (_) {}
+          await logout()
+          window.location.href = '/login?deleted=account'
+        } catch (err) {
+          console.error('Account deletion error:', err)
+          setAlertMessage(`Unable to delete account: ${err?.message || 'Server error'}`)
+          setDeletingAccount(false)
+        }
+      }
+    })
   }
 
   const handleSelectPlan = async (newPlanId) => {
@@ -1984,14 +2029,38 @@ export default function Settings() {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid var(--border-subtle)' }}>
                   <div>
                     <p style={{ margin: '0 0 4px 0', fontWeight: 500, color: 'var(--text-primary)' }}>Delete Workspace</p>
-                    <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>Permanently delete this workspace and all its data. This action cannot be undone.</p>
+                    <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>Permanently delete this workspace, its tasks, sprints, meetings, and pending invites. (Only this workspace is removed).</p>
                   </div>
                   <div>
-                    <button className="btn-ghost" style={{ color: 'var(--accent-critical)' }} onClick={handleDeleteWorkspace} disabled={deleting}>
+                    <button className="btn-ghost" style={{ color: 'var(--accent-critical)' }} onClick={handleDeleteWorkspace} disabled={deleting || deletingAccount}>
                       {deleting ? 'Deleting...' : 'Delete Workspace'}
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0' }}>
+                  <div>
+                    <p style={{ margin: '0 0 4px 0', fontWeight: 600, color: 'var(--accent-critical)' }}>Delete Account & All Data</p>
+                    <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>Permanently erase your account, all workspaces you created, all member invites, and all data. You will be logged out immediately.</p>
+                  </div>
+                  <div>
+                    <button 
+                      className="btn-ghost" 
+                      style={{ 
+                        color: '#ffffff', 
+                        background: 'var(--accent-critical, #dc2626)', 
+                        border: 'none', 
+                        padding: '8px 16px', 
+                        borderRadius: '6px',
+                        fontWeight: 600
+                      }} 
+                      onClick={handleDeleteAccount} 
+                      disabled={deleting || deletingAccount}
+                    >
+                      {deletingAccount ? 'Purging Account...' : 'Delete Entire Account'}
                     </button>
                   </div>
                 </div>
