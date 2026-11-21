@@ -26,7 +26,7 @@ import InvoicesModal from '../components/InvoicesModal'
 import './Dashboard.css'
 import './Settings.css'
 import CapacityBanner from '../components/CapacityBanner'
-import { checkMemberCapacity } from '../lib/plans'
+import { checkMemberCapacity, getPlanLimits, formatPlanBadge } from '../lib/plans'
 import AlertModal from '../components/ui/AlertModal'
 import ConfirmModal from '../components/ui/ConfirmModal'
 import DeleteWorkspaceModal from '../components/ui/DeleteWorkspaceModal'
@@ -1553,7 +1553,7 @@ export default function Settings() {
             {activeTab === 'members' && (
               <div className="settings-section">
                 <CapacityBanner 
-                  planName={planId.toUpperCase()} 
+                  planName={formatPlanBadge(planId)} 
                   type="members" 
                   count={members.length + invites.length} 
                   limit={checkMemberCapacity(planId, members.length + invites.length).limit} 
@@ -1861,7 +1861,7 @@ export default function Settings() {
                             </span>
                           </div>
                           <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary, #64748B)', lineHeight: 1.5 }}>
-                            You have used all {maxMembers} seats available on your current <strong>{planId.toUpperCase()}</strong> plan ({members.length} active member{members.length !== 1 ? 's' : ''}{activePendingInvites.length > 0 ? `, ${activePendingInvites.length} pending invite${activePendingInvites.length !== 1 ? 's' : ''}` : ''}). To invite more team members, please upgrade your plan or free up a seat by canceling a pending invite or removing a member.
+                            You have used all {maxMembers} seats available on your current <strong>{formatPlanBadge(planId)}</strong> plan ({members.length} active member{members.length !== 1 ? 's' : ''}{activePendingInvites.length > 0 ? `, ${activePendingInvites.length} pending invite${activePendingInvites.length !== 1 ? 's' : ''}` : ''}). To invite more team members, please upgrade your plan or free up a seat by canceling a pending invite or removing a member.
                           </p>
                         </div>
                         <button
