@@ -13,7 +13,8 @@ import {
   cancelInvite,
   createInvite,
   updateMemberPermissions,
-  deleteWorkspace
+  deleteWorkspace,
+  subscribeUserWorkspaces
 } from '../lib/workspaces'
 import { getAuthHeaders } from '../lib/authHeaders'
 
@@ -118,6 +119,21 @@ export default function Settings() {
   const [isDeleteWorkspaceModalOpen, setIsDeleteWorkspaceModalOpen] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
+  
+  const [userWorkspaces, setUserWorkspaces] = useState([])
+  const [loadingWorkspacesCount, setLoadingWorkspacesCount] = useState(true)
+
+  useEffect(() => {
+    const uid = user?.id || user?.uid
+    if (!uid) return
+    const unsub = subscribeUserWorkspaces(uid, (list) => {
+      setUserWorkspaces(list || [])
+      setLoadingWorkspacesCount(false)
+    })
+    return () => unsub()
+  }, [user?.id, user?.uid])
+
+  const isOnlyWorkspace = !loadingWorkspacesCount && userWorkspaces.length <= 1
   
   const [members, setMembers] = useState([])
   const [invites, setInvites] = useState([])
@@ -906,6 +922,10 @@ export default function Settings() {
   }
 
   const handleDeleteWorkspace = () => {
+    if (isOnlyWorkspace) {
+      setAlertMessage('Cannot delete your only workspace. To permanently remove your entire account and all associated data, use "Delete Entire Account" below.')
+      return
+    }
     setIsDeleteWorkspaceModalOpen(true)
   }
 
@@ -2032,10 +2052,26 @@ export default function Settings() {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid var(--border-subtle)' }}>
                   <div>
                     <p style={{ margin: '0 0 4px 0', fontWeight: 500, color: 'var(--text-primary)' }}>Delete Workspace</p>
-                    <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>Permanently delete this workspace, its tasks, sprints, meetings, and pending invites. (Only this workspace is removed).</p>
+                    <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
+                      {isOnlyWorkspace
+                        ? 'Cannot delete your only workspace. To permanently remove your entire account and all associated data, use Delete Account below.'
+                        : 'Permanently delete this workspace, its tasks, sprints, meetings, and pending invites. (Only this workspace is removed).'}
+                    </p>
                   </div>
                   <div>
-                    <button className="btn-ghost" style={{ color: 'var(--accent-critical)' }} onClick={handleDeleteWorkspace} disabled={deleting || deletingAccount}>
+                    <button 
+                      className="btn-ghost" 
+                      style={{ 
+                        color: isOnlyWorkspace ? 'var(--text-tertiary, #9ca3af)' : 'var(--accent-critical)',
+                        opacity: isOnlyWorkspace ? 0.45 : 1,
+                        cursor: isOnlyWorkspace ? 'not-allowed' : (deleting || deletingAccount ? 'wait' : 'pointer'),
+                        border: isOnlyWorkspace ? '1px solid var(--border-subtle, #e5e7eb)' : undefined,
+                        background: isOnlyWorkspace ? 'var(--surface-2, #f3f4f6)' : undefined
+                      }} 
+                      onClick={handleDeleteWorkspace} 
+                      disabled={deleting || deletingAccount || isOnlyWorkspace}
+                      title={isOnlyWorkspace ? 'Cannot delete your only workspace. Use Delete Account below.' : 'Delete Workspace'}
+                    >
                       {deleting ? 'Deleting...' : 'Delete Workspace'}
                     </button>
                   </div>
