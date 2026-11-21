@@ -1,9 +1,9 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from './supabase';
 import { useAuth } from './AuthContext';
 import NotFound from '../pages/NotFound';
-import { getPlanLimits } from './plans';
+import { getPlanLimits, formatPlanBadge } from './plans';
 
 const WorkspaceContext = createContext(null);
 
@@ -351,7 +351,7 @@ export function WorkspaceProvider({ children }) {
       const { data, error } = await supabase.from('users').select('*').eq('id', workspace.created_by).maybeSingle();
       if (data) {
         setOwnerBilling({
-          planId: data.billing_plan_id || 'free',
+          planId: data.billing_plan_id || 'pro',
           createdAt: data.created_at
         });
       }
@@ -374,13 +374,29 @@ export function WorkspaceProvider({ children }) {
     isLocked = true;
   }
 
-  const planId = workspace?.plan || workspace?.billing_plan_id || workspace?.billing?.planId || 'pro'
+  // Derive effective workspace plan: checks workspace record, owner tier, and user profile
+  const planId = useMemo(() => {
+    const rawWsPlan = (workspace?.plan || workspace?.billing_plan_id || workspace?.billing?.planId || '').toLowerCase().trim()
+    if (['pro', 'scale', 'enterprise'].includes(rawWsPlan)) return 'pro'
+    if (rawWsPlan === 'team') return 'team'
+
+    const ownerPlan = (ownerBilling?.planId || '').toLowerCase().trim()
+    if (['pro', 'scale', 'enterprise'].includes(ownerPlan)) return 'pro'
+    if (ownerPlan === 'team') return 'team'
+
+    if (rawWsPlan === 'starter' || ownerPlan === 'starter') return 'starter'
+
+    // Early Access Launch Special defaults to Pro
+    return 'pro'
+  }, [workspace?.plan, workspace?.billing_plan_id, workspace?.billing?.planId, ownerBilling?.planId])
+
+  const planBadge = formatPlanBadge(planId)
   const isCapacityFrozen = typeof maxAllowedMembers === 'number' && maxAllowedMembers !== Infinity && totalSeatsUsed > maxAllowedMembers
   const capacityDetails = {
     totalSeatsUsed,
     maxAllowedMembers,
     excessCount: Math.max(0, totalSeatsUsed - (typeof maxAllowedMembers === 'number' ? maxAllowedMembers : 0)),
-    planId: planId.toUpperCase()
+    planId: planBadge
   }
 
   const isAdminOrOwner = workspaceRole === 'admin' || workspaceRole === 'owner'
@@ -425,11 +441,13 @@ export function WorkspaceProvider({ children }) {
 
   const value = {
     workspaceId,
-    workspace,
+    workspace: workspace ? { ...workspace, plan: planId, billing_plan_id: planId } : null,
     workspaceRole,
     userPermissions,
     loadingWorkspace,
     workspaceError,
+    planId,
+    planBadge,
     isAdmin: isAdminOrOwner,
     isOwner: workspaceRole === 'owner',
     hasPermission,

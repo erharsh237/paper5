@@ -5,7 +5,7 @@ import { createWorkspace, ensureUserRecordExists } from '../lib/workspaces'
 import { TEAM_SIZE_OPTIONS, WORKFLOWS, getRecommendedWorkflow, isWorkflowUnlocked } from '../lib/workflows'
 import { supabase } from '../lib/supabase'
 import PricingModal from '../components/PricingModal'
-import { getPlanLimits } from '../lib/plans'
+import { getPlanLimits, formatPlanBadge } from '../lib/plans'
 import ThemeToggle from '../components/ThemeToggle'
 import SEOHead from '../components/SEOHead'
 import './WorkspacePicker.css'
@@ -379,7 +379,10 @@ export default function WorkspacePicker() {
                         <span className="wp-current-badge">CURRENT</span>
                       )}
                     </div>
-                    <span className="wp-role-badge">{ws.role || 'member'}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className="wp-role-badge">{ws.role || 'member'}</span>
+                      <span className="wp-plan-badge">{formatPlanBadge(ws.plan || userPlan)}</span>
+                    </div>
                   </div>
                 </div>
                 <div className="wp-card-footer">

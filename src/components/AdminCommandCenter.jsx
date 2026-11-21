@@ -47,7 +47,7 @@ import {
 } from 'lucide-react'
 import { useWorkspaceBento } from './WorkspaceBentoLayout'
 import PricingModal from './PricingModal'
-import { getPlanLimits } from '../lib/plans'
+import { getPlanLimits, formatPlanBadge } from '../lib/plans'
 import './AdminCommandCenter.css'
 
 export default function AdminCommandCenter({ onSwitchToPersonal }) {
@@ -57,6 +57,8 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
     workspace,
     isAdmin,
     isOwner,
+    planId,
+    planBadge,
     onlineUsers: contextOnlineUsers = [],
     onlineUserIds: contextOnlineUserIds,
     onlineCount: contextOnlineCount
@@ -1197,7 +1199,7 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
                   {(workspace?.name || 'WORKSPACE').toUpperCase()}
                 </span>
                 <span className="bento-plan-badge">
-                  {(workspace?.plan || workspace?.billing_plan_id || 'PRO').toUpperCase()}
+                  {planBadge || formatPlanBadge(planId || workspace?.plan || workspace?.billing_plan_id || 'pro')}
                 </span>
               </div>
               <h1 className="bento-greeting">

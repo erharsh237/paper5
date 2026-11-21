@@ -74,6 +74,15 @@ export function getPlanLimits(planId) {
   return PLANS[p] || PLANS.pro
 }
 
+export function formatPlanBadge(planId) {
+  if (!planId) return 'PRO'
+  const p = String(planId).toLowerCase().trim()
+  if (p === 'pro' || p === 'scale' || p === 'enterprise') return 'PRO'
+  if (p === 'team') return 'TEAM'
+  if (p === 'starter' || p === 'free' || p === 'member') return 'STARTER'
+  return p.toUpperCase()
+}
+
 export function checkMemberCapacity(planId, currentMemberCount) {
   const plan = getPlanLimits(planId)
   if (plan.maxMembers === Infinity) {

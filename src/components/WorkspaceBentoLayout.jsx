@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, createContext, useCon
 import { NavLink, useLocation, useNavigate, Link } from 'react-router-dom'
 import { useWorkspace } from '../lib/WorkspaceContext'
 import { useAuth } from '../lib/AuthContext'
+import { formatPlanBadge } from '../lib/plans'
 import Paper5Logo from './Paper5Logo'
 import NotificationBell from './NotificationBell'
 import UserMenu from './UserMenu'
@@ -35,6 +36,8 @@ export default function WorkspaceBentoLayout({ children }) {
     workspace,
     isAdmin,
     isOwner,
+    planId,
+    planBadge,
     onlineUsers: contextOnlineUsers = [],
     onlineUserIds: contextOnlineUserIds,
     onlineCount: contextOnlineCount
@@ -329,7 +332,7 @@ export default function WorkspaceBentoLayout({ children }) {
                     {(workspace?.name || 'WORKSPACE').toUpperCase()}
                   </span>
                   <span className="bento-plan-badge">
-                    {(workspace?.plan || workspace?.billing_plan_id || 'PRO').toUpperCase()}
+                    {planBadge || formatPlanBadge(planId || workspace?.plan || workspace?.billing_plan_id || 'pro')}
                   </span>
                 </div>
                 <h1 className="bento-greeting">
