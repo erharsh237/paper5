@@ -97,9 +97,11 @@ import RouteSkeleton, { WorkspaceSkeleton } from './components/PageSkeleton'
 import { useLivePresenceTracker } from './hooks/useLivePresence'
 
 function CrossDomainRedirect({ toApp = false, path = '' }) {
-  const target = toApp 
-    ? getAppUrl(path || window.location.pathname + window.location.search) 
-    : getMainUrl(path || window.location.pathname + window.location.search)
+  const currentSearch = window.location.search || ''
+  const targetPath = path 
+    ? (path.includes('?') ? path : `${path}${currentSearch}`) 
+    : (window.location.pathname + currentSearch)
+  const target = toApp ? getAppUrl(targetPath) : getMainUrl(targetPath)
   
   if (target.startsWith('https://')) {
     window.location.replace(target)

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, Link } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { useWorkspace } from '../lib/WorkspaceContext'
 import { subscribeUserWorkspaces } from '../lib/workspaces'
@@ -130,9 +130,9 @@ export default function UserMenu() {
               </NavLink>
             )}
 
-            <a href="/workspace?picker=true" className="nav-more-item" onClick={() => setOpen(false)}>
+            <Link to="/workspace?picker=true" className="nav-more-item" onClick={() => setOpen(false)}>
               <SwitchIcon /> Switch / Create Workspace
-            </a>
+            </Link>
 
             <div style={{ margin: '4px 0', borderTop: '1px solid var(--border-soft, #EAECF6)' }} />
 

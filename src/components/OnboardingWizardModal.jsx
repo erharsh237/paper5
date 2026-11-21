@@ -134,7 +134,7 @@ export default function OnboardingWizardModal() {
             if (apiRes?.workspaceId) {
               if (isMounted) setIsPrimaryAdmin(false)
               if (updateUserData) updateUserData({ billing_plan_id: 'member' })
-              if (location.pathname === '/workspace' || location.pathname === '/') {
+              if (location.pathname === '/') {
                 navigate(`/${apiRes.workspaceId}`, { replace: true })
               }
               return
@@ -182,7 +182,7 @@ export default function OnboardingWizardModal() {
               if (updateUserData) updateUserData({ billing_plan_id: 'member' })
             }
             const targetWsId = memberships?.[0]?.workspace_id || invites?.[0]?.workspace_id
-            if (targetWsId && (location.pathname === '/workspace' || location.pathname === '/')) {
+            if (targetWsId && location.pathname === '/') {
               navigate(`/${targetWsId}`, { replace: true })
             }
             return

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { createWorkspace, ensureUserRecordExists } from '../lib/workspaces'
 import { TEAM_SIZE_OPTIONS, WORKFLOWS, getRecommendedWorkflow, isWorkflowUnlocked } from '../lib/workflows'
@@ -13,13 +13,16 @@ import { WorkspacePickerGridSkeleton } from '../components/PageSkeleton'
 export default function WorkspacePicker() {
   const { user, userData, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [workspaces, setWorkspaces] = useState([])
   const [loading, setLoading] = useState(true)
   const [isCreating, setIsCreating] = useState(false)
   const [newName, setNewName] = useState('')
   const [teamSize, setTeamSize] = useState('2-5')
   const [selectedWorkflow, setSelectedWorkflow] = useState('kanban')
-  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(() => (
+    location.search.includes('create=true') || window.location.search.includes('create=true')
+  ))
   const [showPricingModal, setShowPricingModal] = useState(false)
   const [modalStep, setModalStep] = useState(1) // 1: Details, 2: Data Consent
   const [saveData, setSaveData] = useState(false) // default off
@@ -79,9 +82,10 @@ export default function WorkspacePicker() {
         setWorkspaces(mapped)
         setLoading(false)
 
-        // Navigate directly to their workspace if member of one
+        // Navigate directly to their workspace ONLY if this is a default entry and picker is NOT requested
+        const isPickerRequested = location.search.includes('picker=true') || window.location.search.includes('picker=true') || location.search.includes('create=true')
         const finalWsId = targetWsId || (mapped.length > 0 ? mapped[0].workspaceId : null)
-        if (finalWsId && !window.location.search.includes('picker=true')) {
+        if (finalWsId && !isPickerRequested) {
           navigate(`/${finalWsId}`, { replace: true })
         }
       }
@@ -228,9 +232,9 @@ export default function WorkspacePicker() {
   if (userPlan === 'scale') maxWorkspaces = 10
   
   const canCreate = ownedCount < maxWorkspaces || hasActivePaidPlan
-  const isPickerForced = window.location.search.includes('picker=true')
+  const isPickerForced = location.search.includes('picker=true') || window.location.search.includes('picker=true') || location.search.includes('create=true')
   
-  // Routing logic
+  // Routing logic: only auto-redirect if NOT forced by picker=true or create=true
   if (!isPickerForced && workspaces.length > 0) {
     if (!isAdmin) {
       return <Navigate to={`/${workspaces[0].workspaceId}`} replace />

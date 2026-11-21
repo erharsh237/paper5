@@ -1218,9 +1218,9 @@ export default function Settings() {
                       <button type="submit" className="btn-primary" disabled={savingSettings}>
                         {savingSettings ? 'Saving Settings...' : 'Save Workflow & Preferences'}
                       </button>
-                      <a href="/workspace?picker=true" className="btn-ghost" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <Link to="/workspace?picker=true" className="btn-ghost" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                         Switch or Create Workspace
-                      </a>
+                      </Link>
                     </div>
                   )}
                 </form>
