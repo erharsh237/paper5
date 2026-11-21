@@ -48,30 +48,6 @@
   ],
   "rewrites": [
     {
-      "source": "/(pricing|features|about|about-us|vs|vs/:tool|contact|product-integrations|changelog|docs|docs/api|security|legal|legal/terms|legal/privacy|legal/dpa|legal/subprocessors|terms|privacy|dpa|subprocessors|thank-you|error|500|404|login|signup|forgot-password|verify|join|workspace|auth/action|reset-password)",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/:workspaceId",
-      "has": [
-        {
-          "type": "host",
-          "value": "^(app\\.paper5\\.co|.*\\.vercel\\.app)$"
-        }
-      ],
-      "destination": "/index.html"
-    },
-    {
-      "source": "/:workspaceId/:subpath*",
-      "has": [
-        {
-          "type": "host",
-          "value": "^(app\\.paper5\\.co|.*\\.vercel\\.app)$"
-        }
-      ],
-      "destination": "/index.html"
-    },
-    {
       "source": "/api/contact",
       "destination": "/api/public?action=contact"
     },
@@ -98,6 +74,30 @@
     {
       "source": "/api/accept-invite",
       "destination": "/api/invites?action=accept"
+    },
+    {
+      "source": "/(pricing|features|about|about-us|vs|vs/:tool|contact|product-integrations|changelog|docs|docs/api|security|legal|legal/terms|legal/privacy|legal/dpa|legal/subprocessors|terms|privacy|dpa|subprocessors|thank-you|error|500|404|login|signup|forgot-password|verify|join|workspace|auth/action|reset-password)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/:workspaceId([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})",
+      "has": [
+        {
+          "type": "host",
+          "value": "^(app\\.paper5\\.co|.*\\.vercel\\.app)$"
+        }
+      ],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/:workspaceId([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/:subpath*",
+      "has": [
+        {
+          "type": "host",
+          "value": "^(app\\.paper5\\.co|.*\\.vercel\\.app)$"
+        }
+      ],
+      "destination": "/index.html"
     },
     {
       "source": "/((?!api/|assets/|logo\\.png|og-image\\.png|favicon\\.ico|favicon\\.svg|dashboard-mockup\\.jpg|product-film\\.html|sprintos_dashboard\\.html|llms\\.txt|robots\\.txt|sitemap\\.xml|\\.well-known(?:/.*)?|\\.dev\\.vars|wrangler\\.(?:toml|json|jsonc)|vercel\\.json|\\.vercel(?:/.*)?|\\.env(?:\\..*)?|\\.git(?:/.*)?).*)",
