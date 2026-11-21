@@ -71,36 +71,17 @@ export function smoothScrollTo(target, options = {}) {
   const maxScrollY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
   targetY = Math.max(0, Math.min(targetY, maxScrollY))
 
-  // 1. If Lenis instance is active on window, synchronize dimensions and scroll
-  if (window.__lenis && typeof window.__lenis.scrollTo === 'function') {
-    try {
-      // Force dimensions recomputation so limit is up to date
-      if (typeof window.__lenis.resize === 'function') {
-        window.__lenis.resize()
-      }
-
-      window.__lenis.scrollTo(targetEl || targetY, {
-        offset,
-        duration: duration / 1000,
-        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-        lock: false,
-        force: true,
-        onComplete: () => {
-          if (onComplete) onComplete()
-        }
-      })
-      return
-    } catch {
-      // Fall through to RAF animator if Lenis encounters an exception
-    }
-  }
-
-  // 2. High-performance requestAnimationFrame cubic animator
-  const startY = window.pageYOffset
+  // High-performance direct requestAnimationFrame cubic ease-in-out animator
+  // Guaranteed to execute reliably across all browsers without being swallowed by third-party drivers
+  const startY = window.pageYOffset || document.documentElement.scrollTop || 0
   const distance = targetY - startY
 
   if (Math.abs(distance) < 2) {
     window.scrollTo(0, targetY)
+    if (window.__lenis) {
+      window.__lenis.animatedScroll = targetY
+      window.__lenis.targetScroll = targetY
+    }
     if (onComplete) onComplete()
     return
   }
@@ -114,11 +95,19 @@ export function smoothScrollTo(target, options = {}) {
     const currentY = startY + distance * eased
 
     window.scrollTo(0, currentY)
+    if (window.__lenis) {
+      window.__lenis.animatedScroll = currentY
+      window.__lenis.targetScroll = currentY
+    }
 
     if (progress < 1) {
       activeScrollAnimationId = requestAnimationFrame(step)
     } else {
       window.scrollTo(0, targetY)
+      if (window.__lenis) {
+        window.__lenis.animatedScroll = targetY
+        window.__lenis.targetScroll = targetY
+      }
       activeScrollAnimationId = null
       if (onComplete) onComplete()
     }

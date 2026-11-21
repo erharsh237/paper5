@@ -69,7 +69,6 @@ export default function MarketingNav() {
       scrollToPricing({ duration: 900 })
       if (window.location.hash !== '#pricing') {
         window.history.pushState('', document.title, '/#pricing')
-        window.dispatchEvent(new Event('hashchange'))
       }
     } else {
       if (e) e.preventDefault()
