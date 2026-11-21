@@ -71,13 +71,13 @@ export default function MarketingFooter({ hideCTA = false }) {
         <div className="footer-brand-col">
           {isAppSubdomain ? (
             <a href={getMainUrl('/')} className="landing-brand" style={{ display: 'flex', alignItems: 'center', marginBottom: '14px', textDecoration: 'none' }}>
-              <Paper5Logo size={30} style={{ marginRight: '10px' }} decorative />
-              <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>PAPER5</span>
+              <Paper5Logo size={28} style={{ marginRight: '8px' }} decorative />
+              <span className="nav-brand-text">PAPER5</span>
             </a>
           ) : (
             <Link to="/" className="landing-brand" style={{ display: 'flex', alignItems: 'center', marginBottom: '14px', textDecoration: 'none' }}>
-              <Paper5Logo size={30} style={{ marginRight: '10px' }} decorative />
-              <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>PAPER5</span>
+              <Paper5Logo size={28} style={{ marginRight: '8px' }} decorative />
+              <span className="nav-brand-text">PAPER5</span>
             </Link>
           )}
 

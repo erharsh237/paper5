@@ -1015,7 +1015,7 @@ export default function Landing() {
         <section id="faq" className="faq-section ">
           <div className="section-container">
             <div className="faq-two-col-layout">
-              {/* Left Column: Sticky Header & Single Contact Link */}
+              {/* Left Column: Sticky Header */}
               <div className="faq-intro-column">
                 <div className="sticky-faq-content">
                   <span className="section-kicker">QUESTIONS & ANSWERS</span>
@@ -1025,24 +1025,10 @@ export default function Landing() {
                   <p className="section-description">
                     Everything you need to know about Paper5, GitHub development workflows, and team onboarding.
                   </p>
-
-                  <div className="faq-contact-card">
-                    <div className="contact-card-icon"><HelpCircle size={22} /></div>
-                    <h3>Have a specific architecture question?</h3>
-                    <p>Our core engineering team is available to discuss custom workflows and squad setups.</p>
-                    <button 
-                      type="button" 
-                      className="btn-ghost btn-sm"
-                      onClick={() => setIsContactOpen(true)}
-                    >
-                      <span>Speak with Our Team</span>
-                      <ArrowRight size={14} />
-                    </button>
-                  </div>
                 </div>
               </div>
 
-              {/* Right Column: Clean Accordion Panels */}
+              {/* Right Column: Clean Accordion Panels + Direct Contact Support Block */}
               <div className="faq-accordion-column">
                 <div className="faq-accordion-container">
                   {faqs.map((faq, idx) => (
@@ -1065,6 +1051,21 @@ export default function Landing() {
                       )}
                     </div>
                   ))}
+                </div>
+
+                {/* Direct Contact Block placed immediately below FAQ list */}
+                <div className="faq-contact-card" style={{ marginTop: '24px' }}>
+                  <div className="contact-card-icon"><HelpCircle size={22} /></div>
+                  <h3>Have a specific architecture question?</h3>
+                  <p>Our core engineering team is available to discuss custom workflows and squad setups.</p>
+                  <button 
+                    type="button" 
+                    className="btn-ghost btn-sm"
+                    onClick={() => setIsContactOpen(true)}
+                  >
+                    <span>Speak with Our Team</span>
+                    <ArrowRight size={14} />
+                  </button>
                 </div>
               </div>
             </div>
