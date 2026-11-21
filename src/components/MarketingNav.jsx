@@ -36,7 +36,7 @@ export default function MarketingNav() {
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 40)
-      setIsPastHero(window.scrollY > 460)
+      setIsPastHero(window.scrollY > 540)
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
     handleScroll()

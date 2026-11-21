@@ -6,9 +6,9 @@
 .aether-hero-container {
   position: relative;
   width: 100%;
-  height: clamp(500px, 75svh, 680px);
-  min-height: 480px;
-  max-height: 700px;
+  height: clamp(580px, 84svh, 780px);
+  min-height: 560px;
+  max-height: 820px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -223,9 +223,9 @@
 /* ── Mobile Viewport Polish ── */
 @media (max-width: 768px) {
   .aether-hero-container {
-    height: clamp(420px, 68svh, 540px);
-    min-height: 400px;
-    max-height: 560px;
+    height: clamp(480px, 76svh, 600px);
+    min-height: 460px;
+    max-height: 640px;
   }
 
   .aether-headline {
