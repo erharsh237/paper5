@@ -67,6 +67,19 @@ const sessionCookieApi = {
 
 export const CURRENT_LEGAL_VERSION = '1.0'
 
+function clearAuthStorage() {
+  const preserved = {}
+  const keepKeys = ['p5_cookie_consent', 'p5_app_theme', 'p5_marketing_theme']
+  for (const k of keepKeys) {
+    try { preserved[k] = localStorage.getItem(k) } catch (_) {}
+  }
+  try { localStorage.clear() } catch (_) {}
+  try { sessionStorage.clear() } catch (_) {}
+  for (const [k, v] of Object.entries(preserved)) {
+    if (v) try { localStorage.setItem(k, v) } catch (_) {}
+  }
+}
+
 export const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
@@ -187,8 +200,7 @@ export function AuthProvider({ children }) {
             setUser(null)
             setUserData(null)
             sessionCookieApi.clear()
-            try { localStorage.clear() } catch (_) {}
-            try { sessionStorage.clear() } catch (_) {}
+            clearAuthStorage()
             supabase.auth.signOut().catch(() => {})
             return
           }
@@ -273,8 +285,7 @@ export function AuthProvider({ children }) {
         await sessionCookieApi.set(session)
       } else if (event === 'SIGNED_OUT') {
         await sessionCookieApi.clear()
-        try { localStorage.clear() } catch (_) {}
-        try { sessionStorage.clear() } catch (_) {}
+        clearAuthStorage()
       }
       // ─────────────────────────────────────────────────────────────────────
 
@@ -613,8 +624,7 @@ export function AuthProvider({ children }) {
     logout: () => {
       setIsPending2FA(false)
       sessionCookieApi.clear()
-      try { localStorage.clear() } catch (_) {}
-      try { sessionStorage.clear() } catch (_) {}
+      clearAuthStorage()
       return supabase.auth.signOut()
     }, 
     authError,
