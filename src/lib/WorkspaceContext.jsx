@@ -242,6 +242,8 @@ export function WorkspaceProvider({ children }) {
   }, [user, workspaceId]);
 
   // Track live workspace presence for team awareness & admin dashboard
+  const [onlineUserIds, setOnlineUserIds] = useState(new Set())
+
   useEffect(() => {
     if (!supabase || !workspaceId || !user) return
 
@@ -250,20 +252,32 @@ export function WorkspaceProvider({ children }) {
       config: { presence: { key: user.id } }
     })
 
-    channel.subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        try {
-          await channel.track({
-            userId: user.id,
-            email: (user.email || '').toLowerCase().trim(),
-            name: user.displayName || user.email?.split('@')[0] || 'Member',
-            onlineAt: new Date().toISOString()
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState()
+        const ids = new Set()
+        Object.keys(state).forEach((k) => {
+          ;(state[k] || []).forEach((p) => {
+            if (p.userId) ids.add(p.userId)
+            if (p.email) ids.add(p.email.toLowerCase().trim())
           })
-        } catch (e) {
-          console.warn('Workspace presence track notice:', e)
+        })
+        setOnlineUserIds(ids)
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          try {
+            await channel.track({
+              userId: user.id,
+              email: (user.email || '').toLowerCase().trim(),
+              name: user.displayName || user.email?.split('@')[0] || 'Member',
+              onlineAt: new Date().toISOString()
+            })
+          } catch (e) {
+            console.warn('Workspace presence track notice:', e)
+          }
         }
-      }
-    })
+      })
 
     return () => {
       try {
@@ -357,6 +371,8 @@ export function WorkspaceProvider({ children }) {
     isLocked,
     isCapacityFrozen,
     capacityDetails,
+    onlineUserIds,
+    onlineCount: Math.max(1, onlineUserIds.size),
     is2FABlocked: false,
   }
 

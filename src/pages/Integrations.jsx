@@ -253,9 +253,9 @@ export default function Integrations() {
             <div className="integration-card-top" style={{ flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <h3 style={{ margin: 0, fontSize: '18px' }}>⚡ 1-Click API Webhook & REST Sync Studio</h3>
+                  <h3 style={{ margin: 0, fontSize: '18px' }}>1-Click API Webhook & REST Sync Studio</h3>
                   <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', background: isScalePlan ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)', color: isScalePlan ? '#10b981' : '#f59e0b', padding: '3px 10px', borderRadius: '100px' }}>
-                    {isScalePlan ? 'Scale Tier Active ✓' : 'Scale Tier Exclusive 🔒'}
+                    {isScalePlan ? 'Scale Tier Active' : 'Scale Tier Exclusive'}
                   </span>
                 </div>
                 <p className="integration-desc" style={{ marginTop: '4px', marginBottom: 0 }}>
@@ -286,7 +286,7 @@ export default function Integrations() {
                       transition: 'all 0.2s'
                     }}
                   >
-                    🔑 1-Click Keys & Endpoint
+                    Keys & Endpoint
                   </button>
                   <button
                     type="button"
@@ -303,7 +303,7 @@ export default function Integrations() {
                       transition: 'all 0.2s'
                     }}
                   >
-                    💻 Code Snippets & SDKs
+                    Code Snippets & SDKs
                   </button>
                   <button
                     type="button"
@@ -320,7 +320,7 @@ export default function Integrations() {
                       transition: 'all 0.2s'
                     }}
                   >
-                    🧪 Interactive API Simulator
+                    Interactive API Simulator
                   </button>
                 </div>
 
@@ -352,7 +352,7 @@ export default function Integrations() {
                           onClick={handleGenerateApiKey}
                           style={{ whiteSpace: 'nowrap', padding: '9px 16px' }}
                         >
-                          {config.api_key ? '🔄 Re-Generate Key' : '⚡ 1-Click Generate Key'}
+                          {config.api_key ? 'Re-Generate Key' : 'Generate Key'}
                         </button>
                       </div>
                     </div>
@@ -367,10 +367,10 @@ export default function Integrations() {
                             onClick={() => {
                               const url = `https://paper5.co/api/v1/sync?workspace=${workspaceId}&key=${config.api_key}`
                               navigator.clipboard.writeText(url)
-                              setAlertMessage('⚡ 1-Click Webhook Sync Endpoint copied to clipboard!')
+                              setAlertMessage('Webhook Sync Endpoint copied to clipboard.')
                             }}
                           >
-                            📋 Copy Webhook URL
+                            Copy Webhook URL
                           </button>
                         </div>
                         <code style={{ display: 'block', padding: '10px 14px', background: 'var(--bg-layer-2)', borderRadius: '6px', fontSize: '12px', fontFamily: 'var(--mono)', wordBreak: 'break-all', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)' }}>
@@ -379,7 +379,7 @@ export default function Integrations() {
                       </div>
                     ) : (
                       <div style={{ padding: '14px', background: 'var(--bg-inset)', borderRadius: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                        Click <strong>"⚡ 1-Click Generate Key"</strong> above to provision your live API secret and webhook sync endpoint.
+                        Click <strong>"Generate Key"</strong> above to provision your live API secret and webhook sync endpoint.
                       </div>
                     )}
                   </div>
@@ -467,10 +467,10 @@ print(response.json())`}
                             ? `const response = await fetch("https://paper5.co/api/v1/sync?workspace=${workspaceId}&key=${config.api_key || 'sp_live_YOUR_KEY'}", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event: "proof_of_work_submitted", task_title: "Deploy Vercel Edge Function", agile_workflow: "${workspace?.settings?.agile_workflow || 'scrum'}", workflow_column: "In Progress" }) });`
                             : `import requests\nurl = "https://paper5.co/api/v1/sync?workspace=${workspaceId}&key=${config.api_key || 'sp_live_YOUR_KEY'}"\nresponse = requests.post(url, json={"event": "sprint_velocity_sync", "agile_workflow": "${workspace?.settings?.agile_workflow || 'scrum'}"})\nprint(response.json())`
                           navigator.clipboard.writeText(text)
-                          setAlertMessage('📋 Code snippet copied to clipboard!')
+                          setAlertMessage('Code snippet copied to clipboard.')
                         }}
                       >
-                        📋 Copy Code
+                        Copy Code
                       </button>
                     </div>
                   </div>
@@ -566,7 +566,7 @@ print(response.json())`}
                   onClick={() => setIsPricingModalOpen(true)}
                   style={{ whiteSpace: 'nowrap', padding: '10px 18px' }}
                 >
-                  ⚡ Upgrade to Scale
+                  Upgrade to Scale
                 </button>
               </div>
             )}
@@ -576,11 +576,10 @@ print(response.json())`}
           <div className="bento-tile-8 bento-card bento-card-google">
             <div className="integration-card-top">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '18px' }}>📅</span>
                 <h3 style={{ margin: 0 }}>Google Calendar & Meeting Notes Sync</h3>
               </div>
               <span className="integration-status integration-status--ready">
-                {savingNotes ? 'Saving...' : 'Auto-saved ✓'}
+                {savingNotes ? 'Saving...' : 'Auto-saved'}
               </span>
             </div>
             <p className="integration-desc">Select a meeting to add notes. They automatically sync to the Meeting Agenda page when that event is clicked.</p>
@@ -687,7 +686,6 @@ print(response.json())`}
             const isAllowedByPlan = currentPlan.allowedIntegrations ? currentPlan.allowedIntegrations.includes(integration.id) : true
             const configured = integration.isConfigured(formConfig, formCredentials)
             const result = testResults[integration.id]
-            const brandIcon = integration.id === 'github' ? '🐙' : integration.id === 'discord' ? '💬' : integration.id === 'slack' ? '📣' : integration.id === 'vercel' ? '🚀' : '🔌'
             const brandClass = `bento-tile-4 bento-card bento-card-${integration.id}`
 
             return (
@@ -698,12 +696,11 @@ print(response.json())`}
                   onClick={() => toggleCard(integration.id)}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '18px' }}>{brandIcon}</span>
                     <h3>{integration.name}</h3>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span className={`integration-status${configured && isAllowedByPlan ? ' integration-status--ready' : ''}`}>
-                      {!isAllowedByPlan ? 'Locked 🔒' : (configured ? 'Active ✓' : 'Setup')}
+                      {!isAllowedByPlan ? 'Locked' : (configured ? 'Active' : 'Setup')}
                     </span>
                     <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', transform: expandedCards[integration.id] ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
                   </div>
@@ -722,7 +719,7 @@ print(response.json())`}
                           Upgrade your workspace tier to connect {integration.name} for team notifications & workflow triggers.
                         </p>
                         <button className="btn-primary btn-sm" onClick={() => setIsPricingModalOpen(true)}>
-                          ⚡ Upgrade Plan
+                          Upgrade Plan
                         </button>
                       </div>
                     ) : (

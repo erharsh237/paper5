@@ -403,7 +403,7 @@ export default function Dashboard() {
               </div>
             </div>
             <Link to={`/${workspaceId}/settings`} className="dash-wf-link">
-              ⚙️ Change Workflow
+              Change Workflow &rarr;
             </Link>
           </div>
         )}
@@ -712,7 +712,7 @@ export default function Dashboard() {
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  <span>⚡ Active</span>
+                  <span>Active</span>
                   <span style={{ fontSize: '10px', opacity: 0.8, background: sprintTab === 'active' ? 'var(--accent-dim)' : 'transparent', padding: '1px 5px', borderRadius: '10px' }}>
                     {activeSprints.length}
                   </span>
@@ -737,7 +737,7 @@ export default function Dashboard() {
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  <span>🏁 Closed</span>
+                  <span>Closed</span>
                   <span style={{ fontSize: '10px', opacity: 0.8, background: sprintTab === 'closed' ? 'var(--accent-dim)' : 'transparent', padding: '1px 5px', borderRadius: '10px' }}>
                     {closedSprints.length}
                   </span>
@@ -805,7 +805,7 @@ export default function Dashboard() {
                             Sprint {sprint.number}
                           </span>
                           <span className={sprint.status === 'active' ? 'dash-sprint-badge-active' : 'dash-sprint-badge-closed'}>
-                            {sprint.status === 'active' ? '⚡ Active' : '🏁 Closed'}
+                            {sprint.status === 'active' ? 'Active' : 'Closed'}
                           </span>
                         </div>
 
@@ -840,7 +840,7 @@ export default function Dashboard() {
                                   }}
                                   title="100% deadlines completed! Click to close sprint."
                                 >
-                                  <span>🏁</span> Close
+                                  Close
                                 </button>
                               )
                             ) : (
@@ -869,7 +869,7 @@ export default function Dashboard() {
                                 }}
                                 title="Reopen sprint"
                               >
-                                <span>⚡</span> Reopen
+                                Reopen
                               </button>
                             )}
                           </div>
@@ -1031,7 +1031,7 @@ export default function Dashboard() {
             fontWeight: 600
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>🔍 Filtered by Velocity Timeline:</span>
+              <span>Filtered by Timeline:</span>
               <span style={{ color: 'var(--text)', fontWeight: 700 }}>{selectedPeriodFilter.title}</span>
               <span style={{
                 background: '#4F46E5',
@@ -1057,7 +1057,7 @@ export default function Dashboard() {
                 borderRadius: '6px'
               }}
             >
-              Clear Filter ✕
+              Clear Filter
             </button>
           </div>
         )}
@@ -1072,7 +1072,7 @@ export default function Dashboard() {
                 onClick={() => setViewMode('board')}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
-                <span>☷</span> Kanban
+                Board
               </button>
               <button
                 type="button"
@@ -1080,7 +1080,7 @@ export default function Dashboard() {
                 onClick={() => setViewMode('list')}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
-                <span>☰</span> List
+                List
               </button>
             </div>
 
@@ -1195,7 +1195,7 @@ export default function Dashboard() {
                             {col.id === 'not_started' && 'Nothing queued'}
                             {col.id === 'in_progress' && 'Nothing in flight'}
                             {col.id === 'review' && 'Nothing to review'}
-                            {col.id === 'blocked' && 'No blockers 🎉'}
+                            {col.id === 'blocked' && 'No blockers'}
                             {col.id === 'done' && 'Ship your first task'}
                           </div>
                         </div>

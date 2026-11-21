@@ -246,7 +246,6 @@ export default function Analytics() {
         {/* 4. CHARTS SECTION */}
         {sprintStats.length === 0 ? (
           <div className="dash-surface-card" style={{ padding: '36px', textAlign: 'center', marginBottom: '24px' }}>
-            <div style={{ fontSize: '32px', marginBottom: '12px' }}>📊</div>
             <div style={{ fontWeight: 700, fontSize: '16px', color: 'var(--text)', marginBottom: '6px' }}>No Sprint Cycles Yet</div>
             <div style={{ color: 'var(--muted)', fontSize: '13px', maxWidth: '380px', margin: '0 auto 16px' }}>
               Charts will automatically graph team velocity once sprint cycles and deliverables are created.
@@ -444,7 +443,6 @@ export default function Analytics() {
 
             {accountability.length === 0 ? (
               <div style={{ padding: '28px 0', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>
-                <div style={{ fontSize: '24px', marginBottom: '8px' }}>🛡️</div>
                 <div>No critical delay warnings detected across the workspace.</div>
               </div>
             ) : (

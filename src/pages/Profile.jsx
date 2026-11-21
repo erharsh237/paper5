@@ -416,7 +416,7 @@ export default function Profile() {
                         <span className="mono" style={{ fontSize: '11px', color: 'var(--text-tertiary)', letterSpacing: '0.05em' }}>RESUME</span>
                         {profile?.resumeURL ? (
                           <a href={profile.resumeURL} target="_blank" rel="noopener noreferrer" className="profile-resume-link">
-                            📄 {profile.resumeName || 'View uploaded resume'}
+                            {profile.resumeName || 'View uploaded resume'}
                           </a>
                         ) : (
                           <span className="profile-hint">No resume uploaded yet.</span>

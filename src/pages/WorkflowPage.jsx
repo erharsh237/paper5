@@ -297,7 +297,7 @@ export default function WorkflowPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   {col.isExceeded && (
                     <span title="WIP Limit Exceeded!" style={{ fontSize: '11px', color: '#ef4444', fontWeight: 700 }}>
-                      ⚠️ WIP Exceeded
+                      WIP Exceeded
                     </span>
                   )}
                   <span style={{

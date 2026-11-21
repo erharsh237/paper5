@@ -10,6 +10,9 @@ import CreateProjectModal from './CreateProjectModal'
 import ReassignTaskModal from './ReassignTaskModal'
 import NewDeadlineModal from './NewDeadlineModal'
 import Paper5Logo from './Paper5Logo'
+import NavTabs from './NavTabs'
+import NotificationBell from './NotificationBell'
+import UserMenu from './UserMenu'
 import {
   LayoutGrid,
   CheckSquare,
@@ -270,6 +273,13 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
       if (selectedProjectFilter !== 'all' && t.sprintId !== selectedProjectFilter) return false
       if (selectedStatusFilter !== 'all' && t.status !== selectedStatusFilter) return false
       if (selectedPriorityFilter !== 'all' && t.priority !== selectedPriorityFilter) return false
+      if (quickFilter === 'mine') {
+        const myUid = user?.id || user?.uid
+        const myEmail = (user?.email || '').toLowerCase().trim()
+        const isMine = (t.assigneeId && t.assigneeId === myUid) ||
+                       (t.assigneeEmail && t.assigneeEmail.toLowerCase().trim() === myEmail)
+        if (!isMine) return false
+      }
       if (quickFilter === 'overdue' && !t.isOverdue) return false
       if (quickFilter === 'stalled' && !t.isStalled) return false
       if (quickFilter === 'unassigned' && t.assigneeId) return false
@@ -324,16 +334,11 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
             <span className="admin-ws-divider">/</span>
             <span className="admin-ws-name">{workspace?.name || 'Workspace'}</span>
           </Link>
-          <span className="admin-pill-tag admin-tag-role">Admin</span>
+          <span className="admin-pill-tag admin-tag-role">{isAdmin ? 'Admin' : 'Member'}</span>
         </div>
 
-        {/* Center Live Online Presence Summary */}
-        <div className="admin-presence-summary">
-          <span className="status-live-dot" />
-          <span className="presence-label">
-            {onlineCount} of {teamWorkload.length || 1} team members online
-          </span>
-        </div>
+        {/* Center Navigation Tabs with Tooltips & Real-Time Presence */}
+        <NavTabs />
 
         {/* Right Action Controls */}
         <div className="admin-nav-right">
@@ -357,32 +362,30 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
             <span>Export</span>
           </button>
 
-          <button
-            type="button"
-            className="admin-btn-action primary"
-            onClick={() => setIsNewProjectOpen(true)}
-          >
-            <Plus size={13} />
-            <span>New Project</span>
-          </button>
+          {isAdmin && (
+            <button
+              type="button"
+              className="admin-btn-action primary"
+              onClick={() => setIsNewProjectOpen(true)}
+              title="Create new sprint or project"
+            >
+              <Plus size={13} />
+              <span>New Project</span>
+            </button>
+          )}
 
           <button
             type="button"
             className="admin-btn-action dark"
             onClick={() => setIsNewTaskOpen(true)}
+            title="Create new workspace task"
           >
             <CheckSquare size={13} />
             <span>New Task</span>
           </button>
 
-          <button
-            type="button"
-            className="admin-btn-action subtle"
-            onClick={onSwitchToPersonal}
-            title="Switch to personal task focus"
-          >
-            <span>Personal View &rarr;</span>
-          </button>
+          <NotificationBell currentUser={user} />
+          <UserMenu />
         </div>
       </header>
 
@@ -593,6 +596,13 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
                 onClick={() => setQuickFilter('all')}
               >
                 All
+              </button>
+              <button
+                type="button"
+                className={`filter-text-btn ${quickFilter === 'mine' ? 'active' : ''}`}
+                onClick={() => setQuickFilter('mine')}
+              >
+                My Tasks
               </button>
               <button
                 type="button"

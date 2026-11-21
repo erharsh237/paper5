@@ -1158,7 +1158,7 @@ export default function Settings() {
                   </div>
                   {!isAdminOrOwner && (
                     <span style={{ fontSize: '11px', background: 'var(--bg-layer-2)', color: 'var(--text-tertiary)', padding: '4px 10px', borderRadius: '100px', fontWeight: 600 }}>
-                      🔒 Admin Only Edit
+                      Admin Only
                     </span>
                   )}
                 </div>
@@ -1198,7 +1198,7 @@ export default function Settings() {
                           const unlocked = isWorkflowUnlocked(wf.id, planId)
                           return (
                             <option key={wf.id} value={wf.id} disabled={!unlocked}>
-                              {wf.num}. {wf.name} ({wf.teamSizeLabel}) {!unlocked ? `🔒 [${planId === 'team' ? 'Scale Only' : 'Team/Scale Only'}]` : ''}
+                              {wf.num}. {wf.name} ({wf.teamSizeLabel}) {!unlocked ? ` [${planId === 'team' ? 'Scale Only' : 'Team/Scale Only'}]` : ''}
                             </option>
                           )
                         })}
@@ -1213,7 +1213,7 @@ export default function Settings() {
                       <div style={{ marginTop: '16px', padding: '16px', background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: '10px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                           <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                            ⚡ Active: {activeWf.name}
+                            Active: {activeWf.name}
                           </span>
                           <span style={{ fontSize: '11px', background: 'var(--accent-dim)', color: 'var(--accent)', padding: '2px 10px', borderRadius: '100px', fontWeight: 600 }}>
                             {activeWf.badge}
@@ -1235,7 +1235,7 @@ export default function Settings() {
                         {savingSettings ? 'Saving Settings...' : 'Save Workflow & Preferences'}
                       </button>
                       <a href="/workspace?picker=true" className="btn-ghost" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                        🏢 Switch or Create Workspace
+                        Switch or Create Workspace
                       </a>
                     </div>
                   )}
@@ -1302,7 +1302,7 @@ export default function Settings() {
                         </p>
                       </div>
                       <button className="btn-primary" onClick={() => setIsExportModalOpen(true)}>
-                        📄 Export PDF & Data Reports
+                        Export PDF & Data Reports
                       </button>
                     </div>
                   </>
@@ -1319,11 +1319,11 @@ export default function Settings() {
                   <div style={{ padding: '16px', background: 'var(--bg-layer-2)', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                       <div>
-                        <h4 style={{ margin: '0 0 4px 0' }}>💾 Save Data to Cloud Database</h4>
+                        <h4 style={{ margin: '0 0 4px 0' }}>Save Data to Cloud Database</h4>
                         <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
                           {wsSettings.save_data !== false 
                             ? 'Cloud Persistence Active: Workspace items, sprints, and settings are securely stored in the PostgreSQL database.' 
-                            : '🔒 Zero-Data Retention Mode Active: Workspace data is kept in browser memory only and will not be stored in the database.'}
+                            : ' Zero-Data Retention Mode Active: Workspace data is kept in browser memory only and will not be stored in the database.'}
                         </p>
                       </div>
                       <label className="toggle-switch">
@@ -1376,7 +1376,7 @@ export default function Settings() {
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <button type="submit" className="btn-primary" disabled={savingSettings}>{savingSettings ? 'Saving...' : 'Save Security Policies'}</button>
                     <button type="button" className="btn-ghost" onClick={() => setIsExportModalOpen(true)}>
-                      📑 Export Audit Report (PDF / CSV)
+                      Export Audit Report (PDF / CSV)
                     </button>
                   </div>
                 </form>
@@ -1418,7 +1418,7 @@ export default function Settings() {
                         }}
                         style={{ padding: '8px 14px', whiteSpace: 'nowrap' }}
                       >
-                        📋 Copy Key
+                        Copy Key
                       </button>
                     </div>
                   </div>
@@ -1594,7 +1594,7 @@ export default function Settings() {
                       fontWeight: 600
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>⚠️</span>
+                        <span></span>
                         <span>{pendingDeletionCount} member{pendingDeletionCount !== 1 ? 's have' : ' has'} requested account deletion. Review and approve below.</span>
                       </div>
                     </div>
@@ -1629,7 +1629,7 @@ export default function Settings() {
                               </div>
                               {hasDeletionRequest && (
                                 <span style={{ fontSize: '10.5px', fontWeight: 700, background: '#FEE2E2', color: '#DC2626', padding: '1px 8px', borderRadius: '100px', border: '1px solid #FCA5A5' }}>
-                                  Deletion Requested ⚠️
+                                  Deletion Requested 
                                 </span>
                               )}
                             </div>
@@ -1652,7 +1652,7 @@ export default function Settings() {
                                 alignItems: 'center',
                                 gap: '4px'
                               }}>
-                                👑 Owner
+                                Owner
                               </span>
                             ) : (
                                 <select
@@ -1850,7 +1850,7 @@ export default function Settings() {
                       }}>
                         <div style={{ flex: '1 1 300px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                            <span style={{ fontSize: '15px' }}>🔒</span>
+                            <span style={{ fontSize: '15px' }}></span>
                             <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text, #1E293B)' }}>
                               All {maxMembers} Seats Used
                             </h4>
@@ -1886,7 +1886,7 @@ export default function Settings() {
                             cursor: 'pointer'
                           }}
                         >
-                          <span>⚡</span> Upgrade Plan
+                          <span></span> Upgrade Plan
                         </button>
                       </div>
                     ) : (
@@ -2044,7 +2044,7 @@ export default function Settings() {
                   </div>
                   <div>
                     <button className="btn-ghost" onClick={() => setIsExportModalOpen(true)}>
-                      📄 Export PDF
+                      Export PDF
                     </button>
                   </div>
                 </div>
