@@ -31,6 +31,14 @@ export default function WorkspacePicker() {
 
   const userId = user?.id || user?.uid
 
+  const currentWsId = useMemo(() => {
+    const params = new URLSearchParams(location.search)
+    return params.get('current') || 
+           localStorage.getItem('current_workspace_id') || 
+           sessionStorage.getItem('current_workspace_id') || 
+           null
+  }, [location.search])
+
   // Derive effective tier across user record and owned workspaces
   const userPlan = useMemo(() => {
     const rawUserPlan = (userData?.billing_plan_id || '').toLowerCase().trim()
@@ -340,26 +348,48 @@ export default function WorkspacePicker() {
         </div>
 
         <div className="wp-grid-list">
-          {workspaces.map((ws) => (
-            <div 
-              key={ws.id} 
-              className="wp-card"
-              onClick={() => navigate(`/${ws.workspaceId}`)}
-            >
-              <div className="wp-card-header">
-                <div className="wp-avatar">
-                  {ws.name ? ws.name.charAt(0).toUpperCase() : 'W'}
+          {workspaces.map((ws) => {
+            const isCurrent = Boolean(
+              currentWsId && (
+                ws.workspaceId === currentWsId || 
+                ws.id === currentWsId ||
+                String(ws.workspaceId).toLowerCase() === String(currentWsId).toLowerCase() ||
+                String(ws.id).toLowerCase() === String(currentWsId).toLowerCase()
+              )
+            )
+
+            return (
+              <div 
+                key={ws.id || ws.workspaceId} 
+                className={`wp-card ${isCurrent ? 'wp-card--current' : ''}`}
+                onClick={() => {
+                  if (!isCurrent) {
+                    navigate(`/${ws.workspaceId}`)
+                  }
+                }}
+              >
+                <div className="wp-card-header">
+                  <div className="wp-avatar">
+                    {ws.name ? ws.name.charAt(0).toUpperCase() : 'W'}
+                  </div>
+                  <div className="wp-info">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <h3>{ws.name || 'Untitled Workspace'}</h3>
+                      {isCurrent && (
+                        <span className="wp-current-badge">CURRENT</span>
+                      )}
+                    </div>
+                    <span className="wp-role-badge">{ws.role || 'member'}</span>
+                  </div>
                 </div>
-                <div className="wp-info">
-                  <h3>{ws.name || 'Untitled Workspace'}</h3>
-                  <span className="wp-role-badge">{ws.role || 'member'}</span>
+                <div className="wp-card-footer">
+                  <span className={isCurrent ? 'wp-enter-text--disabled' : ''}>
+                    {isCurrent ? 'Current Workspace' : 'Enter Workspace \u2192'}
+                  </span>
                 </div>
               </div>
-              <div className="wp-card-footer">
-                <span>Enter Workspace &rarr;</span>
-              </div>
-            </div>
-          ))}
+            )
+          })}
 
           <button 
             type="button"

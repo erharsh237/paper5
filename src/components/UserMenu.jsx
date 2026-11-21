@@ -130,7 +130,7 @@ export default function UserMenu() {
               </NavLink>
             )}
 
-            <Link to="/workspace?picker=true" className="nav-more-item" onClick={() => setOpen(false)}>
+            <Link to={`/workspace?picker=true&current=${workspaceId || ''}`} className="nav-more-item" onClick={() => setOpen(false)}>
               <SwitchIcon /> Switch / Create Workspace
             </Link>
 

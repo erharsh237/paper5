@@ -103,6 +103,44 @@
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
 }
 
+/* Current Workspace Card & Elements */
+.wp-card--current {
+  border: 2px solid #000000 !important;
+  background: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08) !important;
+  cursor: default !important;
+}
+
+.wp-card--current:hover {
+  border-color: #000000 !important;
+  background: #ffffff !important;
+  transform: none !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08) !important;
+}
+
+.wp-current-badge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  background: #000000;
+  color: #ffffff;
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.wp-enter-text--disabled {
+  color: #9ca3af !important;
+  font-weight: 500 !important;
+  cursor: default !important;
+  transform: none !important;
+  pointer-events: none !important;
+}
+
+.wp-card--current:hover .wp-card-footer span.wp-enter-text--disabled {
+  transform: none !important;
+}
+
 .wp-card-header {
   display: flex;
   align-items: center;
@@ -545,6 +583,27 @@ html[data-theme="dark"] .workspace-picker-page {
   background: #27272a !important;
   border-color: rgba(255, 255, 255, 0.25) !important;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] .wp-card--current {
+  border: 2px solid #ffffff !important;
+  background: #18181b !important;
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme="dark"] .wp-card--current:hover {
+  border-color: #ffffff !important;
+  background: #18181b !important;
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme="dark"] .wp-current-badge {
+  background: #ffffff !important;
+  color: #18181b !important;
+}
+
+[data-theme="dark"] .wp-card-footer span.wp-enter-text--disabled {
+  color: #71717a !important;
 }
 
 [data-theme="dark"] .wp-avatar {

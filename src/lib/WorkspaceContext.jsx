@@ -105,6 +105,10 @@ export function WorkspaceProvider({ children }) {
         if (wsData) {
           setWorkspace(wsData)
           setWorkspaceError(null)
+          try {
+            localStorage.setItem('current_workspace_id', workspaceId)
+            sessionStorage.setItem('current_workspace_id', workspaceId)
+          } catch (_) {}
         } else if (wsResult?.error) {
           setWorkspaceError(wsResult.error.message)
         } else {
