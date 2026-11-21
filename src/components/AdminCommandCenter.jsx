@@ -10,12 +10,11 @@ import ReassignTaskModal from './ReassignTaskModal'
 import NewDeadlineModal from './NewDeadlineModal'
 import Paper5Logo from './Paper5Logo'
 import {
-  LayoutDashboard,
+  LayoutGrid,
   CheckSquare,
   FolderGit2,
   Users2,
   Activity,
-  BarChart3,
   Search,
   Plus,
   RefreshCw,
@@ -35,9 +34,16 @@ import {
   ExternalLink,
   SlidersHorizontal,
   Trash2,
-  ArrowUpDown,
   TrendingUp,
-  Inbox
+  Inbox,
+  Bell,
+  ArrowUpRight,
+  MoreVertical,
+  CheckCircle,
+  HelpCircle,
+  LogOut,
+  ChevronRight,
+  Sparkles
 } from 'lucide-react'
 import './AdminCommandCenter.css'
 
@@ -48,7 +54,7 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
   // State
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState(null)
-  const [activeTab, setActiveTab] = useState('tasks') // 'tasks' | 'projects' | 'team' | 'audit' | 'analytics'
+  const [activeTab, setActiveTab] = useState('tasks') // 'tasks' | 'projects' | 'team' | 'audit'
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedProjectFilter, setSelectedProjectFilter] = useState('all')
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('all')
@@ -116,6 +122,16 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
   const recentActivity = data?.recentActivity || []
   const invites = data?.invites || []
 
+  // Current Admin First Name
+  const adminFirstName = useMemo(() => {
+    if (user?.displayName) return user.displayName.split(' ')[0]
+    if (user?.email) {
+      const prefix = user.email.split('@')[0]
+      return prefix.charAt(0).toUpperCase() + prefix.slice(1)
+    }
+    return 'Admin'
+  }, [user])
+
   // Direct CSV Export
   const handleExportCSV = () => {
     window.location.href = `/api/admin?workspaceId=${encodeURIComponent(workspaceId)}&action=export&type=tasks`
@@ -166,7 +182,6 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
   // Promote / Demote Member Role
   const handleToggleMemberRole = async (targetUserId, currentRole) => {
     const newRole = currentRole === 'admin' ? 'member' : 'admin'
-    // Safeguard: verify at least one other admin exists if demoting
     if (currentRole === 'admin') {
       const adminCount = teamWorkload.filter((m) => m.role === 'admin' || m.role === 'owner').length
       if (adminCount <= 1) {
@@ -204,7 +219,6 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
   // Filtered Tasks
   const filteredTasks = useMemo(() => {
     return tasks.filter((t) => {
-      // Search
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase()
         const matchesTitle = (t.title || '').toLowerCase().includes(q)
@@ -212,13 +226,9 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
         const matchesSprint = (t.sprintName || '').toLowerCase().includes(q)
         if (!matchesTitle && !matchesAssignee && !matchesSprint) return false
       }
-      // Project filter
       if (selectedProjectFilter !== 'all' && t.sprintId !== selectedProjectFilter) return false
-      // Status filter
       if (selectedStatusFilter !== 'all' && t.status !== selectedStatusFilter) return false
-      // Priority filter
       if (selectedPriorityFilter !== 'all' && t.priority !== selectedPriorityFilter) return false
-      // Quick filter
       if (quickFilter === 'overdue' && !t.isOverdue) return false
       if (quickFilter === 'stalled' && !t.isStalled) return false
       if (quickFilter === 'unassigned' && t.assigneeId) return false
@@ -234,7 +244,6 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
     return recentActivity.filter((l) => l.resource === auditResourceFilter)
   }, [recentActivity, auditResourceFilter])
 
-  // Format Date Helper
   const formatDate = (isoString) => {
     if (!isoString) return '—'
     try {
@@ -261,691 +270,835 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
     }
   }
 
+  // Computed Velocity Rate
+  const completedRate = overview.overallProductivity || 0
+
   return (
-    <div className="admin-command-root">
-      {/* ─────────────────────────────────────────────────────────────
-           1. TOP COMMAND HEADER
-      ───────────────────────────────────────────────────────────── */}
-      <header className="admin-header">
-        <div className="admin-header-left">
-          <div className="admin-header-brand">
-            <Paper5Logo size={24} decorative />
+    <div className="bento-canvas">
+      <div className="bento-shell">
+        {/* ─────────────────────────────────────────────────────────────
+             LEFT VERTICAL ICON DOCK (Identical to Fenco & Quixotic Mocks)
+        ───────────────────────────────────────────────────────────── */}
+        <aside className="bento-left-dock">
+          <div className="dock-top-group">
+            <div className="dock-brand-icon" title="Paper5 Workspace">
+              <Paper5Logo size={22} decorative />
+            </div>
+
+            <nav className="dock-nav-items">
+              <button
+                type="button"
+                className={`dock-btn ${activeTab === 'tasks' ? 'active' : ''}`}
+                onClick={() => setActiveTab('tasks')}
+                title="Master Task Grid"
+              >
+                <LayoutGrid size={19} />
+              </button>
+
+              <button
+                type="button"
+                className={`dock-btn ${activeTab === 'projects' ? 'active' : ''}`}
+                onClick={() => setActiveTab('projects')}
+                title="Projects & Sprints"
+              >
+                <FolderGit2 size={19} />
+              </button>
+
+              <button
+                type="button"
+                className={`dock-btn ${activeTab === 'team' ? 'active' : ''}`}
+                onClick={() => setActiveTab('team')}
+                title="Team Workload"
+              >
+                <Users2 size={19} />
+              </button>
+
+              <button
+                type="button"
+                className={`dock-btn ${activeTab === 'audit' ? 'active' : ''}`}
+                onClick={() => setActiveTab('audit')}
+                title="Activity & Audit Logs"
+              >
+                <Activity size={19} />
+              </button>
+
+              <button
+                type="button"
+                className="dock-btn"
+                onClick={() => (window.location.href = `/${workspaceId}/settings`)}
+                title="Workspace Settings"
+              >
+                <Shield size={19} />
+              </button>
+            </nav>
+          </div>
+
+          <div className="dock-bottom-group">
+            <button
+              type="button"
+              className="dock-btn"
+              onClick={onSwitchToPersonal}
+              title="Personal Focus View"
+            >
+              <CheckSquare size={19} />
+            </button>
+            <button
+              type="button"
+              className="dock-btn"
+              onClick={fetchOverview}
+              title="Refresh Workspace Telemetry"
+            >
+              <RefreshCw size={18} className={loading ? 'spin' : ''} />
+            </button>
+          </div>
+        </aside>
+
+        {/* ─────────────────────────────────────────────────────────────
+             MAIN STAGE
+        ───────────────────────────────────────────────────────────── */}
+        <main className="bento-main-stage">
+          {/* ── TOP HEADER ── */}
+          <header className="bento-top-header">
             <div>
-              <div className="admin-header-title-row">
-                <h1 className="admin-workspace-name">{workspace?.name || 'Workspace'}</h1>
-                <span className="admin-badge-plan">{(workspace?.plan || 'STARTER').toUpperCase()}</span>
-                <span className="admin-badge-role">WORKSPACE ADMIN</span>
+              <div className="bento-workspace-tag-row">
+                <span className="bento-workspace-badge">
+                  {(workspace?.name || 'WORKSPACE').toUpperCase()}
+                </span>
+                <span className="bento-plan-badge">
+                  {(workspace?.plan || 'PRO').toUpperCase()}
+                </span>
               </div>
-              <p className="admin-header-sub">
-                Executive Command Center &bull; Real-time operations, team workload, project health &amp; governance
+              <h1 className="bento-greeting">
+                Hello, <span>{adminFirstName}</span>
+              </h1>
+              <p className="bento-subtext">
+                View and govern your workspace operations, projects &amp; team deliverables.
               </p>
             </div>
-          </div>
-        </div>
 
-        <div className="admin-header-actions">
-          <button
-            type="button"
-            className="admin-btn-secondary"
-            onClick={fetchOverview}
-            title="Refresh workspace telemetry"
-          >
-            <RefreshCw size={14} className={loading ? 'spin' : ''} />
-            <span>Refresh</span>
-          </button>
-
-          <button
-            type="button"
-            className="admin-btn-secondary"
-            onClick={handleExportCSV}
-            title="Export all tasks to CSV"
-          >
-            <Download size={14} />
-            <span>Export CSV</span>
-          </button>
-
-          <button
-            type="button"
-            className="admin-btn-primary"
-            onClick={() => setIsNewProjectOpen(true)}
-          >
-            <Plus size={14} />
-            <span>New Project</span>
-          </button>
-
-          <button
-            type="button"
-            className="admin-btn-primary"
-            onClick={() => setIsNewTaskOpen(true)}
-          >
-            <CheckSquare size={14} />
-            <span>New Task</span>
-          </button>
-
-          <button
-            type="button"
-            className="admin-btn-focus"
-            onClick={onSwitchToPersonal}
-            title="Switch to your personal task list"
-          >
-            <span>Personal View &rarr;</span>
-          </button>
-        </div>
-      </header>
-
-      {/* Alert Notices */}
-      {actionSuccess && (
-        <div className="admin-toast-success">
-          <CheckCircle2 size={16} />
-          <span>{actionSuccess}</span>
-        </div>
-      )}
-      {actionError && (
-        <div className="admin-toast-error">
-          <AlertTriangle size={16} />
-          <span>{actionError}</span>
-        </div>
-      )}
-
-      {/* ─────────────────────────────────────────────────────────────
-           2. EXECUTIVE KPI SUMMARY RIBBON
-      ───────────────────────────────────────────────────────────── */}
-      <section className="admin-kpi-grid">
-        {/* KPI 1: Active Projects */}
-        <div className="admin-kpi-card">
-          <div className="admin-kpi-header">
-            <span className="admin-kpi-title">Active Projects</span>
-            <div className="admin-kpi-icon-wrap" style={{ background: '#e0e7ff', color: '#4338ca' }}>
-              <FolderGit2 size={18} />
-            </div>
-          </div>
-          <div className="admin-kpi-value-row">
-            <span className="admin-kpi-number">{overview.activeProjectsCount ?? '—'}</span>
-            <span className="admin-kpi-subdetail">of {overview.totalProjects ?? 0} total</span>
-          </div>
-          <div className="admin-kpi-footer">
-            <span className="admin-status-pill on-track">{overview.activeProjectsCount ? `${overview.activeProjectsCount - (overview.attentionProjectsCount || 0)} On Track` : '0 Active'}</span>
-            {overview.attentionProjectsCount > 0 && (
-              <span className="admin-status-pill at-risk">{overview.attentionProjectsCount} Needs Attention</span>
-            )}
-          </div>
-        </div>
-
-        {/* KPI 2: Overall Task Velocity */}
-        <div className="admin-kpi-card">
-          <div className="admin-kpi-header">
-            <span className="admin-kpi-title">Workspace Output</span>
-            <div className="admin-kpi-icon-wrap" style={{ background: '#ecfdf5', color: '#047857' }}>
-              <TrendingUp size={18} />
-            </div>
-          </div>
-          <div className="admin-kpi-value-row">
-            <span className="admin-kpi-number">{overview.overallProductivity ?? 100}%</span>
-            <span className="admin-kpi-subdetail">{overview.completedTasksCount || 0} / {overview.totalTasks || 0} completed</span>
-          </div>
-          <div className="admin-kpi-progress-bar">
-            <div className="admin-kpi-progress-fill" style={{ width: `${overview.overallProductivity || 0}%` }} />
-          </div>
-        </div>
-
-        {/* KPI 3: Urgent Attention Queue */}
-        <div className="admin-kpi-card" style={{ borderColor: overview.overdueTasksCount > 0 ? '#fecaca' : undefined }}>
-          <div className="admin-kpi-header">
-            <span className="admin-kpi-title">Critical Attention Queue</span>
-            <div className="admin-kpi-icon-wrap" style={{ background: '#fee2e2', color: '#b91c1c' }}>
-              <AlertTriangle size={18} />
-            </div>
-          </div>
-          <div className="admin-kpi-value-row">
-            <span className="admin-kpi-number" style={{ color: overview.overdueTasksCount > 0 ? '#b91c1c' : '#0f172a' }}>
-              {overview.overdueTasksCount || 0}
-            </span>
-            <span className="admin-kpi-subdetail">Overdue tasks</span>
-          </div>
-          <div className="admin-kpi-footer">
-            <button
-              type="button"
-              className="admin-link-pill"
-              onClick={() => { setActiveTab('tasks'); setQuickFilter('stalled'); }}
-            >
-              {overview.stalledTasksCount || 0} Stalled (&gt;7d)
-            </button>
-            <button
-              type="button"
-              className="admin-link-pill"
-              onClick={() => { setActiveTab('tasks'); setQuickFilter('unassigned'); }}
-            >
-              {overview.unassignedTasksCount || 0} Unassigned
-            </button>
-          </div>
-        </div>
-
-        {/* KPI 4: Team Capacity & Workload */}
-        <div className="admin-kpi-card">
-          <div className="admin-kpi-header">
-            <span className="admin-kpi-title">Team Workload</span>
-            <div className="admin-kpi-icon-wrap" style={{ background: '#f3e8ff', color: '#7e22ce' }}>
-              <Users2 size={18} />
-            </div>
-          </div>
-          <div className="admin-kpi-value-row">
-            <span className="admin-kpi-number">{overview.totalMembers || 1}</span>
-            <span className="admin-kpi-subdetail">Team members</span>
-          </div>
-          <div className="admin-kpi-footer">
-            {teamWorkload.filter((m) => m.workloadStatus === 'Overloaded').length > 0 ? (
-              <span className="admin-status-pill at-risk">
-                {teamWorkload.filter((m) => m.workloadStatus === 'Overloaded').length} Overloaded
-              </span>
-            ) : (
-              <span className="admin-status-pill on-track">Workload Balanced</span>
-            )}
-            {overview.pendingInvites > 0 && (
-              <span className="admin-status-pill-neutral">{overview.pendingInvites} Pending Invites</span>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ─────────────────────────────────────────────────────────────
-           3. MAIN OPERATIONAL NAVIGATION TABS
-      ───────────────────────────────────────────────────────────── */}
-      <nav className="admin-tabs-nav">
-        <button
-          type="button"
-          className={`admin-tab-btn ${activeTab === 'tasks' ? 'active' : ''}`}
-          onClick={() => setActiveTab('tasks')}
-        >
-          <CheckSquare size={16} />
-          <span>Master Task Grid ({overview.totalTasks || 0})</span>
-        </button>
-
-        <button
-          type="button"
-          className={`admin-tab-btn ${activeTab === 'projects' ? 'active' : ''}`}
-          onClick={() => setActiveTab('projects')}
-        >
-          <FolderGit2 size={16} />
-          <span>Project Command Deck ({overview.totalProjects || 0})</span>
-        </button>
-
-        <button
-          type="button"
-          className={`admin-tab-btn ${activeTab === 'team' ? 'active' : ''}`}
-          onClick={() => setActiveTab('team')}
-        >
-          <Users2 size={16} />
-          <span>Team Workload &amp; Members ({teamWorkload.length})</span>
-        </button>
-
-        <button
-          type="button"
-          className={`admin-tab-btn ${activeTab === 'audit' ? 'active' : ''}`}
-          onClick={() => setActiveTab('audit')}
-        >
-          <Activity size={16} />
-          <span>Activity &amp; Audit Trail</span>
-        </button>
-      </nav>
-
-      {/* ─────────────────────────────────────────────────────────────
-           TAB 1: MASTER TASK GRID (WORKSPACE-WIDE VISIBILITY)
-      ───────────────────────────────────────────────────────────── */}
-      {activeTab === 'tasks' && (
-        <section className="admin-stage-panel">
-          {/* Filter Bar */}
-          <div className="admin-filter-bar">
-            {/* Search Input */}
-            <div className="admin-search-wrap">
-              <Search size={15} color="#94a3b8" />
-              <input
-                type="text"
-                placeholder="Search all tasks by title, assignee, or sprint..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="admin-search-input"
-              />
-            </div>
-
-            {/* Project Filter Dropdown */}
-            <select
-              className="admin-select"
-              value={selectedProjectFilter}
-              onChange={(e) => setSelectedProjectFilter(e.target.value)}
-            >
-              <option value="all">All Projects</option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-
-            {/* Status Filter Dropdown */}
-            <select
-              className="admin-select"
-              value={selectedStatusFilter}
-              onChange={(e) => setSelectedStatusFilter(e.target.value)}
-            >
-              <option value="all">All Statuses</option>
-              <option value="todo">To Do</option>
-              <option value="in_progress">In Progress</option>
-              <option value="review">In Review</option>
-              <option value="completed">Completed</option>
-            </select>
-
-            {/* Priority Filter Dropdown */}
-            <select
-              className="admin-select"
-              value={selectedPriorityFilter}
-              onChange={(e) => setSelectedPriorityFilter(e.target.value)}
-            >
-              <option value="all">All Priorities</option>
-              <option value="urgent">Urgent</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
-
-            {/* Quick Pills */}
-            <div className="admin-quick-pills">
-              <button
-                type="button"
-                className={`admin-pill-btn ${quickFilter === 'all' ? 'active' : ''}`}
-                onClick={() => setQuickFilter('all')}
-              >
-                All
-              </button>
-              <button
-                type="button"
-                className={`admin-pill-btn ${quickFilter === 'overdue' ? 'active' : ''}`}
-                onClick={() => setQuickFilter('overdue')}
-              >
-                🔥 Overdue ({overview.overdueTasksCount || 0})
-              </button>
-              <button
-                type="button"
-                className={`admin-pill-btn ${quickFilter === 'stalled' ? 'active' : ''}`}
-                onClick={() => setQuickFilter('stalled')}
-              >
-                ⏳ Stalled (&gt;7d) ({overview.stalledTasksCount || 0})
-              </button>
-              <button
-                type="button"
-                className={`admin-pill-btn ${quickFilter === 'unassigned' ? 'active' : ''}`}
-                onClick={() => setQuickFilter('unassigned')}
-              >
-                👤 Unassigned ({overview.unassignedTasksCount || 0})
-              </button>
-              <button
-                type="button"
-                className={`admin-pill-btn ${quickFilter === 'urgent' ? 'active' : ''}`}
-                onClick={() => setQuickFilter('urgent')}
-              >
-                ⚡ High/Urgent
-              </button>
-            </div>
-          </div>
-
-          {/* Master Tasks Table */}
-          <div className="admin-table-container">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th style={{ width: '35%' }}>Task Description</th>
-                  <th style={{ width: '15%' }}>Project</th>
-                  <th style={{ width: '16%' }}>Assignee</th>
-                  <th style={{ width: '10%' }}>Priority</th>
-                  <th style={{ width: '12%' }}>Due Date</th>
-                  <th style={{ width: '12%' }}>Status</th>
-                  <th style={{ width: '10%', textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredTasks.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="admin-table-empty">
-                      <Inbox size={32} color="#cbd5e1" style={{ margin: '0 auto 12px' }} />
-                      <p>No tasks match your current filter parameters.</p>
-                    </td>
-                  </tr>
-                ) : (
-                  filteredTasks.map((task) => (
-                    <tr key={task.id} className={task.isOverdue ? 'row-overdue' : ''}>
-                      <td>
-                        <div className="admin-task-cell">
-                          <span className="admin-task-title">{task.title}</span>
-                          {task.isOverdue && <span className="admin-mini-tag overdue">OVERDUE</span>}
-                          {task.isStalled && <span className="admin-mini-tag stalled">INACTIVE &gt;7D</span>}
-                        </div>
-                      </td>
-
-                      <td>
-                        <span className="admin-project-tag">{task.sprintName}</span>
-                      </td>
-
-                      <td>
-                        {task.assigneeId ? (
-                          <div className="admin-assignee-cell">
-                            <span className="admin-avatar-small">
-                              {task.assigneeName.charAt(0).toUpperCase()}
-                            </span>
-                            <span className="admin-assignee-name">{task.assigneeName}</span>
-                          </div>
-                        ) : (
-                          <span className="admin-unassigned-tag">Unassigned</span>
-                        )}
-                      </td>
-
-                      <td>
-                        <span className={`admin-priority-badge ${task.priority}`}>
-                          {task.priority.toUpperCase()}
-                        </span>
-                      </td>
-
-                      <td>
-                        <span className={`admin-date-cell ${task.isOverdue ? 'date-overdue' : ''}`}>
-                          {formatDate(task.dueDate)}
-                        </span>
-                      </td>
-
-                      <td>
-                        <select
-                          className={`admin-status-dropdown ${task.status}`}
-                          value={task.status}
-                          onChange={(e) => handleTaskStatusChange(task.id, e.target.value)}
-                        >
-                          <option value="todo">To Do</option>
-                          <option value="in_progress">In Progress</option>
-                          <option value="review">In Review</option>
-                          <option value="completed">Completed</option>
-                        </select>
-                      </td>
-
-                      <td style={{ textAlign: 'right' }}>
-                        <div className="admin-actions-cell">
-                          <button
-                            type="button"
-                            className="admin-action-btn"
-                            title="Reassign or edit deadline"
-                            onClick={() => setTaskToReassign(task)}
-                          >
-                            <UserCheck size={14} />
-                          </button>
-
-                          <button
-                            type="button"
-                            className="admin-action-btn delete"
-                            title="Delete task"
-                            onClick={() => handleDeleteTask(task.id, task.title)}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
-
-      {/* ─────────────────────────────────────────────────────────────
-           TAB 2: PROJECT COMMAND DECK
-      ───────────────────────────────────────────────────────────── */}
-      {activeTab === 'projects' && (
-        <section className="admin-stage-panel">
-          <div className="admin-deck-header">
-            <div>
-              <h2 className="admin-section-title">Workspace Projects &amp; Sprints</h2>
-              <p className="admin-section-desc">Manage project deadlines, health status, leads, and archived sprints.</p>
-            </div>
-            <button
-              type="button"
-              className="admin-btn-primary"
-              onClick={() => setIsNewProjectOpen(true)}
-            >
-              <Plus size={14} />
-              <span>Create New Project</span>
-            </button>
-          </div>
-
-          <div className="admin-projects-grid">
-            {projects.map((proj) => (
-              <div key={proj.id} className={`admin-project-card ${proj.archived ? 'card-archived' : ''}`}>
-                <div className="admin-proj-card-top">
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                      <h3 className="admin-proj-card-title">{proj.name}</h3>
-                      <span className={`admin-health-badge ${proj.health}`}>
-                        {proj.health.replace('_', ' ').toUpperCase()}
-                      </span>
-                      {proj.archived && <span className="admin-mini-tag stalled">ARCHIVED</span>}
-                    </div>
-                    {proj.goal && <p className="admin-proj-goal">{proj.goal}</p>}
-                  </div>
-
-                  <button
-                    type="button"
-                    className="admin-proj-archive-btn"
-                    title={proj.archived ? 'Restore project' : 'Archive project'}
-                    onClick={() => handleToggleArchiveProject(proj.id, proj.archived)}
-                  >
-                    {proj.archived ? <ArchiveRestore size={16} /> : <Archive size={16} />}
-                  </button>
-                </div>
-
-                <div className="admin-proj-progress-section">
-                  <div className="admin-proj-progress-labels">
-                    <span>Progress</span>
-                    <span><strong>{proj.progress}%</strong> ({proj.completedTasks} / {proj.totalTasks} tasks)</span>
-                  </div>
-                  <div className="admin-kpi-progress-bar">
-                    <div
-                      className="admin-kpi-progress-fill"
-                      style={{
-                        width: `${proj.progress}%`,
-                        background: proj.health === 'critical' ? '#dc2626' : proj.health === 'at_risk' ? '#f59e0b' : '#10b981'
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div className="admin-proj-meta-grid">
-                  <div>
-                    <span className="admin-meta-label">Schedule</span>
-                    <span className="admin-meta-val">
-                      {formatDate(proj.startDate)} &rarr; {formatDate(proj.endDate)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="admin-meta-label">Overdue</span>
-                    <span className="admin-meta-val" style={{ color: proj.overdueTasks > 0 ? '#dc2626' : undefined }}>
-                      {proj.overdueTasks} tasks
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ─────────────────────────────────────────────────────────────
-           TAB 3: TEAM WORKLOAD & MEMBERSHIP GOVERNANCE
-      ───────────────────────────────────────────────────────────── */}
-      {activeTab === 'team' && (
-        <section className="admin-stage-panel">
-          <div className="admin-deck-header">
-            <div>
-              <h2 className="admin-section-title">Team Workload Distribution</h2>
-              <p className="admin-section-desc">Monitor member workload balance, assignments, roles, and pending invitations.</p>
-            </div>
-            <Link to={`/${workspaceId}/settings`} className="admin-btn-secondary" style={{ textDecoration: 'none' }}>
-              <UserPlus size={14} />
-              <span>Invite New Members</span>
-            </Link>
-          </div>
-
-          <div className="admin-members-grid">
-            {teamWorkload.map((member) => (
-              <div key={member.userId} className="admin-member-card">
-                <div className="admin-member-card-top">
-                  <div className="admin-member-avatar-large">
-                    {member.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <h4 className="admin-member-name">{member.name}</h4>
-                      <span className={`admin-member-role-badge ${member.role}`}>
-                        {member.role.toUpperCase()}
-                      </span>
-                    </div>
-                    <span className="admin-member-email">{member.email}</span>
-                  </div>
-
-                  <span className={`admin-workload-badge ${member.workloadStatus.toLowerCase()}`}>
-                    {member.workloadStatus}
-                  </span>
-                </div>
-
-                <div className="admin-member-stats-row">
-                  <div className="admin-member-stat-box">
-                    <span className="admin-stat-num">{member.activeTasksCount}</span>
-                    <span className="admin-stat-lbl">Active Tasks</span>
-                  </div>
-                  <div className="admin-member-stat-box">
-                    <span className="admin-stat-num">{member.completedTasksCount}</span>
-                    <span className="admin-stat-lbl">Completed</span>
-                  </div>
-                  <div className="admin-member-stat-box">
-                    <span className="admin-stat-num" style={{ color: member.overdueTasksCount > 0 ? '#dc2626' : undefined }}>
-                      {member.overdueTasksCount}
-                    </span>
-                    <span className="admin-stat-lbl">Overdue</span>
-                  </div>
-                </div>
-
-                {/* Member Recent Pipeline */}
-                {member.recentActiveTasks?.length > 0 && (
-                  <div className="admin-member-tasks-preview">
-                    <span className="admin-preview-title">Current Focus Queue:</span>
-                    {member.recentActiveTasks.map((t) => (
-                      <div key={t.id} className="admin-preview-task-item">
-                        <span className="admin-preview-task-title">{t.title}</span>
-                        <span className={`admin-priority-dot ${t.priority}`} title={t.priority} />
+            {/* Right Topbar Tools: Team Capsule, Actions, User */}
+            <div className="bento-topbar-right">
+              {/* Team Members Horizontal Capsule (Direct from Mock #1 Fenco) */}
+              {teamWorkload.length > 0 && (
+                <div
+                  className="bento-team-capsule"
+                  onClick={() => setActiveTab('team')}
+                  title="View Team Workload"
+                >
+                  <div className="bento-team-avatars-row">
+                    {teamWorkload.slice(0, 6).map((m, idx) => (
+                      <div
+                        key={m.userId || idx}
+                        className="bento-member-circle-avatar"
+                        title={`${m.name} (${m.role})`}
+                        style={{
+                          background: m.avatarUrl ? `url(${m.avatarUrl}) center/cover` : ['#4f46e5', '#0284c7', '#10b981', '#f59e0b', '#8b5cf6'][idx % 5]
+                        }}
+                      >
+                        {!m.avatarUrl && m.name.charAt(0).toUpperCase()}
                       </div>
                     ))}
+                    {teamWorkload.length > 6 && (
+                      <span className="bento-team-overflow">+{teamWorkload.length - 6}</span>
+                    )}
                   </div>
-                )}
+                  <ChevronRight size={14} color="#94a3b8" />
+                </div>
+              )}
 
-                {/* Governance Actions (Safeguards enforced) */}
-                <div className="admin-member-actions-footer">
-                  {member.role !== 'owner' && (
-                    <>
-                      <button
-                        type="button"
-                        className="admin-btn-xs"
-                        onClick={() => handleToggleMemberRole(member.userId, member.role)}
-                        title={member.role === 'admin' ? 'Demote to regular member' : 'Promote to workspace admin'}
-                      >
-                        {member.role === 'admin' ? 'Demote to Member' : 'Promote to Admin'}
-                      </button>
+              {/* Action Buttons */}
+              <button
+                type="button"
+                className="bento-pill-action-btn"
+                onClick={handleExportCSV}
+                title="Export Tasks to CSV"
+              >
+                <Download size={14} />
+                <span>Export CSV</span>
+              </button>
 
-                      <button
-                        type="button"
-                        className="admin-btn-xs danger"
-                        onClick={() => handleRemoveMember(member.userId, member.name, member.role)}
-                        title="Remove member from workspace"
-                      >
-                        Remove
-                      </button>
-                    </>
-                  )}
-                  {member.role === 'owner' && (
-                    <span className="admin-owner-protect-label">Protected Primary Owner</span>
-                  )}
+              <button
+                type="button"
+                className="bento-pill-action-btn primary"
+                onClick={() => setIsNewProjectOpen(true)}
+              >
+                <Plus size={14} />
+                <span>New Project</span>
+              </button>
+
+              <button
+                type="button"
+                className="bento-pill-action-btn dark"
+                onClick={() => setIsNewTaskOpen(true)}
+              >
+                <CheckSquare size={14} />
+                <span>New Task</span>
+              </button>
+
+              <button
+                type="button"
+                className="bento-pill-action-btn personal"
+                onClick={onSwitchToPersonal}
+                title="Switch to Personal View"
+              >
+                <span>Personal View &rarr;</span>
+              </button>
+            </div>
+          </header>
+
+          {/* Feedback Notices */}
+          {actionSuccess && (
+            <div className="bento-alert success">
+              <CheckCircle2 size={16} />
+              <span>{actionSuccess}</span>
+            </div>
+          )}
+          {actionError && (
+            <div className="bento-alert error">
+              <AlertTriangle size={16} />
+              <span>{actionError}</span>
+            </div>
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────
+               ROW 1: BENTO TELEMETRY CARDS (Direct from Fenco & Quixotic Mocks)
+          ───────────────────────────────────────────────────────────── */}
+          <section className="bento-kpi-row">
+            {/* Card 1: Workspace Output / Task Statistics */}
+            <div className="bento-card">
+              <div className="bento-card-top">
+                <span className="bento-card-title">Task Velocity</span>
+                <span className="bento-card-tag">All Projects</span>
+              </div>
+              <div className="bento-stat-hero-row">
+                <span className="bento-stat-hero-number">{overview.completedTasksCount || 0}</span>
+                <span className="bento-stat-hero-label">/ {overview.totalTasks || 0} Tasks Done</span>
+              </div>
+
+              {/* Visual Output Bar Meter */}
+              <div className="bento-task-meter-section">
+                <div className="bento-meter-bar">
+                  <div
+                    className="bento-meter-fill"
+                    style={{ width: `${completedRate}%` }}
+                  />
+                </div>
+                <div className="bento-meter-labels">
+                  <span>{completedRate}% workspace completion</span>
+                  <span>{overview.activeTasksCount || 0} in progress</span>
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ─────────────────────────────────────────────────────────────
-           TAB 4: LIVE ACTIVITY & AUDIT TRAIL
-      ───────────────────────────────────────────────────────────── */}
-      {activeTab === 'audit' && (
-        <section className="admin-stage-panel">
-          <div className="admin-deck-header">
-            <div>
-              <h2 className="admin-section-title">Workspace Activity &amp; Audit Trail</h2>
-              <p className="admin-section-desc">Chronological log of sensitive operations, role updates, project actions, and task events.</p>
             </div>
 
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                type="button"
-                className={`admin-pill-btn ${auditResourceFilter === 'all' ? 'active' : ''}`}
-                onClick={() => setAuditResourceFilter('all')}
-              >
-                All Events
-              </button>
-              <button
-                type="button"
-                className={`admin-pill-btn ${auditResourceFilter === 'task' ? 'active' : ''}`}
-                onClick={() => setAuditResourceFilter('task')}
-              >
-                Tasks
-              </button>
-              <button
-                type="button"
-                className={`admin-pill-btn ${auditResourceFilter === 'project' ? 'active' : ''}`}
-                onClick={() => setAuditResourceFilter('project')}
-              >
-                Projects
-              </button>
-              <button
-                type="button"
-                className={`admin-pill-btn ${auditResourceFilter === 'member' ? 'active' : ''}`}
-                onClick={() => setAuditResourceFilter('member')}
-              >
-                Team
-              </button>
-            </div>
-          </div>
-
-          <div className="admin-audit-stream">
-            {filteredAuditLogs.length === 0 ? (
-              <div className="admin-table-empty">
-                <Activity size={32} color="#cbd5e1" style={{ margin: '0 auto 12px' }} />
-                <p>No recent activity recorded for this selection.</p>
+            {/* Card 2: Emerald Green Project Deck Card (Direct from Quixotic Mock #3) */}
+            <div className="bento-card bento-card--emerald">
+              <div className="bento-emerald-top">
+                <div>
+                  <span className="bento-emerald-eyebrow">ACTIVE PROJECTS</span>
+                  <h3 className="bento-emerald-number">{overview.activeProjectsCount ?? 0} Sprints</h3>
+                </div>
+                <div className="bento-emerald-icon-box">
+                  <FolderGit2 size={20} />
+                </div>
               </div>
-            ) : (
-              filteredAuditLogs.map((log) => (
-                <div key={log.id} className="admin-audit-row">
-                  <div className="admin-audit-indicator" />
-                  <div className="admin-audit-body">
-                    <div className="admin-audit-top">
-                      <span className="admin-audit-action">{log.action}</span>
-                      <span className="admin-audit-time">{formatRelativeTime(log.createdAt)}</span>
+
+              <div className="bento-emerald-subrow">
+                <span>{overview.completedProjectsCount || 0} Delivered</span>
+                <span className="bento-emerald-badge">
+                  {overview.attentionProjectsCount > 0
+                    ? `${overview.attentionProjectsCount} Needs Attention`
+                    : '100% On Track'}
+                </span>
+              </div>
+            </div>
+
+            {/* Card 3: Analytics Radial Gauge (Direct from Fenco Mock #1) */}
+            <div className="bento-card">
+              <div className="bento-card-top">
+                <span className="bento-card-title">Analytics</span>
+                <button
+                  type="button"
+                  className="bento-card-dots"
+                  onClick={() => (window.location.href = `/${workspaceId}/analytics`)}
+                  title="View Analytics"
+                >
+                  <ArrowUpRight size={15} />
+                </button>
+              </div>
+
+              <div className="bento-gauge-wrap">
+                <div className="bento-gauge-semi">
+                  <div
+                    className="bento-gauge-arc"
+                    style={{ transform: `rotate(${Math.min(180, (completedRate / 100) * 180)}deg)` }}
+                  />
+                  <div className="bento-gauge-inner">
+                    <span className="bento-gauge-percent">{completedRate}%</span>
+                    <span className="bento-gauge-sub">Done</span>
+                  </div>
+                </div>
+
+                <div className="bento-gauge-legend">
+                  <div className="legend-item">
+                    <span className="legend-dot done" />
+                    <span>Done ({overview.completedTasksCount || 0})</span>
+                  </div>
+                  <div className="legend-item">
+                    <span className="legend-dot in-progress" />
+                    <span>In Flight ({overview.inProgressTasksCount || 0})</span>
+                  </div>
+                  <div className="legend-item">
+                    <span className="legend-dot todo" />
+                    <span>To do ({overview.todoTasksCount || 0})</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 4: Urgent Attention Alert Card */}
+            <div className="bento-card bento-card--alert">
+              <div className="bento-card-top">
+                <span className="bento-card-title" style={{ color: overview.overdueTasksCount > 0 ? '#b91c1c' : '#475569' }}>
+                  Critical Queue
+                </span>
+                <AlertTriangle size={16} color={overview.overdueTasksCount > 0 ? '#dc2626' : '#94a3b8'} />
+              </div>
+
+              <div className="bento-stat-hero-row">
+                <span className="bento-stat-hero-number" style={{ color: overview.overdueTasksCount > 0 ? '#dc2626' : '#0f172a' }}>
+                  {overview.overdueTasksCount || 0}
+                </span>
+                <span className="bento-stat-hero-label">Overdue</span>
+              </div>
+
+              <div className="bento-alert-tags-row">
+                <button
+                  type="button"
+                  className="bento-tag-btn"
+                  onClick={() => { setActiveTab('tasks'); setQuickFilter('stalled'); }}
+                >
+                  {overview.stalledTasksCount || 0} Stalled (&gt;7d)
+                </button>
+                <button
+                  type="button"
+                  className="bento-tag-btn"
+                  onClick={() => { setActiveTab('tasks'); setQuickFilter('unassigned'); }}
+                >
+                  {overview.unassignedTasksCount || 0} Unassigned
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* ─────────────────────────────────────────────────────────────
+               ROW 2: OPERATIONAL TABS & FILTER BAR
+          ───────────────────────────────────────────────────────────── */}
+          <div className="bento-tab-strip">
+            <div className="bento-tabs-left">
+              <button
+                type="button"
+                className={`bento-nav-tab ${activeTab === 'tasks' ? 'active' : ''}`}
+                onClick={() => setActiveTab('tasks')}
+              >
+                <CheckSquare size={15} />
+                <span>Master Task Grid ({overview.totalTasks || 0})</span>
+              </button>
+
+              <button
+                type="button"
+                className={`bento-nav-tab ${activeTab === 'projects' ? 'active' : ''}`}
+                onClick={() => setActiveTab('projects')}
+              >
+                <FolderGit2 size={15} />
+                <span>Projects Command ({overview.totalProjects || 0})</span>
+              </button>
+
+              <button
+                type="button"
+                className={`bento-nav-tab ${activeTab === 'team' ? 'active' : ''}`}
+                onClick={() => setActiveTab('team')}
+              >
+                <Users2 size={15} />
+                <span>Team Workload ({teamWorkload.length})</span>
+              </button>
+
+              <button
+                type="button"
+                className={`bento-nav-tab ${activeTab === 'audit' ? 'active' : ''}`}
+                onClick={() => setActiveTab('audit')}
+              >
+                <Activity size={15} />
+                <span>Audit Trail</span>
+              </button>
+            </div>
+          </div>
+
+          {/* ─────────────────────────────────────────────────────────────
+               TAB 1: MASTER TASK GRID (CROSS-PROJECT VISIBILITY)
+          ───────────────────────────────────────────────────────────── */}
+          {activeTab === 'tasks' && (
+            <section className="bento-stage-card">
+              {/* Filter Controls */}
+              <div className="bento-filter-row">
+                <div className="bento-search-box">
+                  <Search size={14} color="#94a3b8" />
+                  <input
+                    type="text"
+                    placeholder="Search tasks across workspace..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="bento-search-field"
+                  />
+                </div>
+
+                <select
+                  className="bento-select-pill"
+                  value={selectedProjectFilter}
+                  onChange={(e) => setSelectedProjectFilter(e.target.value)}
+                >
+                  <option value="all">All Projects</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  className="bento-select-pill"
+                  value={selectedStatusFilter}
+                  onChange={(e) => setSelectedStatusFilter(e.target.value)}
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="todo">To Do</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="review">In Review</option>
+                  <option value="completed">Completed</option>
+                </select>
+
+                <select
+                  className="bento-select-pill"
+                  value={selectedPriorityFilter}
+                  onChange={(e) => setSelectedPriorityFilter(e.target.value)}
+                >
+                  <option value="all">All Priorities</option>
+                  <option value="urgent">Urgent</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+
+                <div className="bento-filter-pills-group">
+                  <button
+                    type="button"
+                    className={`bento-chip ${quickFilter === 'all' ? 'active' : ''}`}
+                    onClick={() => setQuickFilter('all')}
+                  >
+                    All
+                  </button>
+                  <button
+                    type="button"
+                    className={`bento-chip ${quickFilter === 'overdue' ? 'active' : ''}`}
+                    onClick={() => setQuickFilter('overdue')}
+                  >
+                    🔥 Overdue ({overview.overdueTasksCount || 0})
+                  </button>
+                  <button
+                    type="button"
+                    className={`bento-chip ${quickFilter === 'stalled' ? 'active' : ''}`}
+                    onClick={() => setQuickFilter('stalled')}
+                  >
+                    ⏳ Inactive &gt;7d ({overview.stalledTasksCount || 0})
+                  </button>
+                  <button
+                    type="button"
+                    className={`bento-chip ${quickFilter === 'unassigned' ? 'active' : ''}`}
+                    onClick={() => setQuickFilter('unassigned')}
+                  >
+                    👤 Unassigned ({overview.unassignedTasksCount || 0})
+                  </button>
+                  <button
+                    type="button"
+                    className={`bento-chip ${quickFilter === 'urgent' ? 'active' : ''}`}
+                    onClick={() => setQuickFilter('urgent')}
+                  >
+                    ⚡ Urgent/High
+                  </button>
+                </div>
+              </div>
+
+              {/* Master Task List */}
+              <div className="bento-table-wrap">
+                <table className="bento-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '38%' }}>Task</th>
+                      <th style={{ width: '15%' }}>Project</th>
+                      <th style={{ width: '16%' }}>Assignee</th>
+                      <th style={{ width: '10%' }}>Priority</th>
+                      <th style={{ width: '11%' }}>Due Date</th>
+                      <th style={{ width: '10%' }}>Status</th>
+                      <th style={{ width: '10%', textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredTasks.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" className="bento-empty-cell">
+                          <Inbox size={32} color="#cbd5e1" style={{ margin: '0 auto 10px' }} />
+                          <p>No workspace tasks match your selected filters.</p>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredTasks.map((t) => (
+                        <tr key={t.id} className={t.isOverdue ? 'row-alert' : ''}>
+                          <td>
+                            <div className="bento-task-title-cell">
+                              <span className="bento-task-title">{t.title}</span>
+                              <div className="bento-task-tags">
+                                {t.isOverdue && <span className="bento-micro-badge overdue">OVERDUE</span>}
+                                {t.isStalled && <span className="bento-micro-badge stalled">STALLED &gt;7D</span>}
+                              </div>
+                            </div>
+                          </td>
+
+                          <td>
+                            <span className="bento-project-pill">{t.sprintName}</span>
+                          </td>
+
+                          <td>
+                            {t.assigneeId ? (
+                              <div className="bento-assignee-item">
+                                <span className="bento-avatar-xs">
+                                  {t.assigneeName.charAt(0).toUpperCase()}
+                                </span>
+                                <span className="bento-assignee-text">{t.assigneeName}</span>
+                              </div>
+                            ) : (
+                              <span className="bento-unassigned-text">Unassigned</span>
+                            )}
+                          </td>
+
+                          <td>
+                            <span className={`bento-priority-badge ${t.priority}`}>
+                              {t.priority.toUpperCase()}
+                            </span>
+                          </td>
+
+                          <td>
+                            <span className={`bento-date-text ${t.isOverdue ? 'overdue' : ''}`}>
+                              {formatDate(t.dueDate)}
+                            </span>
+                          </td>
+
+                          <td>
+                            <select
+                              className={`bento-status-dropdown ${t.status}`}
+                              value={t.status}
+                              onChange={(e) => handleTaskStatusChange(t.id, e.target.value)}
+                            >
+                              <option value="todo">To Do</option>
+                              <option value="in_progress">In Progress</option>
+                              <option value="review">In Review</option>
+                              <option value="completed">Completed</option>
+                            </select>
+                          </td>
+
+                          <td style={{ textAlign: 'right' }}>
+                            <div className="bento-row-actions">
+                              <button
+                                type="button"
+                                className="bento-icon-btn"
+                                title="Reassign task or edit"
+                                onClick={() => setTaskToReassign(t)}
+                              >
+                                <UserCheck size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                className="bento-icon-btn danger"
+                                title="Delete task"
+                                onClick={() => handleDeleteTask(t.id, t.title)}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────
+               TAB 2: PROJECT COMMAND DECK
+          ───────────────────────────────────────────────────────────── */}
+          {activeTab === 'projects' && (
+            <section className="bento-stage-card">
+              <div className="bento-stage-header">
+                <div>
+                  <h2 className="bento-section-title">Workspace Projects &amp; Sprints</h2>
+                  <p className="bento-section-sub">Overview of active sprints, goals, schedules, and deliverables.</p>
+                </div>
+                <button
+                  type="button"
+                  className="bento-pill-action-btn primary"
+                  onClick={() => setIsNewProjectOpen(true)}
+                >
+                  <Plus size={14} />
+                  <span>Create Project</span>
+                </button>
+              </div>
+
+              <div className="bento-projects-grid">
+                {projects.map((p) => (
+                  <div key={p.id} className={`bento-proj-card ${p.archived ? 'archived' : ''}`}>
+                    <div className="bento-proj-card-top">
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <h3 className="bento-proj-title">{p.name}</h3>
+                          <span className={`bento-health-badge ${p.health}`}>
+                            {p.health.replace('_', ' ').toUpperCase()}
+                          </span>
+                          {p.archived && <span className="bento-micro-badge stalled">ARCHIVED</span>}
+                        </div>
+                        {p.goal && <p className="bento-proj-goal">{p.goal}</p>}
+                      </div>
+
+                      <button
+                        type="button"
+                        className="bento-icon-btn"
+                        title={p.archived ? 'Restore project' : 'Archive project'}
+                        onClick={() => handleToggleArchiveProject(p.id, p.archived)}
+                      >
+                        {p.archived ? <ArchiveRestore size={15} /> : <Archive size={15} />}
+                      </button>
                     </div>
-                    <p className="admin-audit-desc">
-                      Resource: <strong>{log.resource}</strong> &bull; {log.metadata?.title ? `"${log.metadata.title}"` : log.metadata?.name ? `"${log.metadata.name}"` : 'System action'}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
-      )}
 
-      {/* ─────────────────────────────────────────────────────────────
-           MODALS
-      ───────────────────────────────────────────────────────────── */}
+                    <div className="bento-proj-meter-wrap">
+                      <div className="bento-meter-bar">
+                        <div
+                          className="bento-meter-fill"
+                          style={{
+                            width: `${p.progress}%`,
+                            background: p.health === 'critical' ? '#dc2626' : p.health === 'at_risk' ? '#f59e0b' : '#10b981'
+                          }}
+                        />
+                      </div>
+                      <div className="bento-meter-labels">
+                        <span><strong>{p.progress}%</strong> Done</span>
+                        <span>{p.completedTasks} / {p.totalTasks} tasks</span>
+                      </div>
+                    </div>
+
+                    <div className="bento-proj-meta-row">
+                      <div>
+                        <span className="bento-meta-lbl">Duration</span>
+                        <span className="bento-meta-val">
+                          {formatDate(p.startDate)} &rarr; {formatDate(p.endDate)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="bento-meta-lbl">Overdue</span>
+                        <span className="bento-meta-val" style={{ color: p.overdueTasks > 0 ? '#dc2626' : undefined }}>
+                          {p.overdueTasks} tasks
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────
+               TAB 3: TEAM WORKLOAD & GOVERNANCE
+          ───────────────────────────────────────────────────────────── */}
+          {activeTab === 'team' && (
+            <section className="bento-stage-card">
+              <div className="bento-stage-header">
+                <div>
+                  <h2 className="bento-section-title">Team Workload Distribution</h2>
+                  <p className="bento-section-sub">Balanced resource allocation, assigned focus queues, and membership controls.</p>
+                </div>
+                <Link to={`/${workspaceId}/settings`} className="bento-pill-action-btn" style={{ textDecoration: 'none' }}>
+                  <UserPlus size={14} />
+                  <span>Invite Member</span>
+                </Link>
+              </div>
+
+              <div className="bento-team-grid">
+                {teamWorkload.map((m) => (
+                  <div key={m.userId} className="bento-member-card">
+                    <div className="bento-member-card-top">
+                      <div className="bento-member-avatar-box">
+                        {m.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <h4 className="bento-member-name">{m.name}</h4>
+                          <span className={`bento-role-pill ${m.role}`}>
+                            {m.role.toUpperCase()}
+                          </span>
+                        </div>
+                        <span className="bento-member-email">{m.email}</span>
+                      </div>
+
+                      <span className={`bento-workload-chip ${m.workloadStatus.toLowerCase()}`}>
+                        {m.workloadStatus}
+                      </span>
+                    </div>
+
+                    <div className="bento-member-stats-strip">
+                      <div>
+                        <span className="stat-v">{m.activeTasksCount}</span>
+                        <span className="stat-l">Active</span>
+                      </div>
+                      <div>
+                        <span className="stat-v">{m.completedTasksCount}</span>
+                        <span className="stat-l">Done</span>
+                      </div>
+                      <div>
+                        <span className="stat-v" style={{ color: m.overdueTasksCount > 0 ? '#dc2626' : undefined }}>
+                          {m.overdueTasksCount}
+                        </span>
+                        <span className="stat-l">Overdue</span>
+                      </div>
+                    </div>
+
+                    {/* Member Focus Tasks */}
+                    {m.recentActiveTasks?.length > 0 && (
+                      <div className="bento-member-pipeline">
+                        <span className="pipeline-title">Active Assignments</span>
+                        {m.recentActiveTasks.map((t) => (
+                          <div key={t.id} className="pipeline-item">
+                            <span className="pipeline-item-name">{t.title}</span>
+                            <span className={`bento-dot ${t.priority}`} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Safeguarded Actions */}
+                    <div className="bento-member-card-footer">
+                      {m.role !== 'owner' ? (
+                        <>
+                          <button
+                            type="button"
+                            className="bento-btn-text"
+                            onClick={() => handleToggleMemberRole(m.userId, m.role)}
+                          >
+                            {m.role === 'admin' ? 'Demote to Member' : 'Promote to Admin'}
+                          </button>
+                          <button
+                            type="button"
+                            className="bento-btn-text danger"
+                            onClick={() => handleRemoveMember(m.userId, m.name, m.role)}
+                          >
+                            Remove
+                          </button>
+                        </>
+                      ) : (
+                        <span className="bento-owner-shield">Primary Workspace Owner</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────
+               TAB 4: LIVE ACTIVITY & AUDIT TRAIL
+          ───────────────────────────────────────────────────────────── */}
+          {activeTab === 'audit' && (
+            <section className="bento-stage-card">
+              <div className="bento-stage-header">
+                <div>
+                  <h2 className="bento-section-title">Workspace Audit Log</h2>
+                  <p className="bento-section-sub">Chronological governance history of all task, sprint, and membership events.</p>
+                </div>
+
+                <div className="bento-filter-pills-group">
+                  <button
+                    type="button"
+                    className={`bento-chip ${auditResourceFilter === 'all' ? 'active' : ''}`}
+                    onClick={() => setAuditResourceFilter('all')}
+                  >
+                    All Events
+                  </button>
+                  <button
+                    type="button"
+                    className={`bento-chip ${auditResourceFilter === 'task' ? 'active' : ''}`}
+                    onClick={() => setAuditResourceFilter('task')}
+                  >
+                    Tasks
+                  </button>
+                  <button
+                    type="button"
+                    className={`bento-chip ${auditResourceFilter === 'project' ? 'active' : ''}`}
+                    onClick={() => setAuditResourceFilter('project')}
+                  >
+                    Projects
+                  </button>
+                  <button
+                    type="button"
+                    className={`bento-chip ${auditResourceFilter === 'member' ? 'active' : ''}`}
+                    onClick={() => setAuditResourceFilter('member')}
+                  >
+                    Team
+                  </button>
+                </div>
+              </div>
+
+              <div className="bento-audit-stream">
+                {filteredAuditLogs.length === 0 ? (
+                  <div className="bento-empty-cell">
+                    <Activity size={32} color="#cbd5e1" style={{ margin: '0 auto 10px' }} />
+                    <p>No activity logged for this selection.</p>
+                  </div>
+                ) : (
+                  filteredAuditLogs.map((log) => (
+                    <div key={log.id} className="bento-audit-item">
+                      <div className="bento-audit-dot" />
+                      <div className="bento-audit-content">
+                        <div className="bento-audit-top-row">
+                          <span className="bento-audit-action-tag">{log.action}</span>
+                          <span className="bento-audit-time">{formatRelativeTime(log.createdAt)}</span>
+                        </div>
+                        <p className="bento-audit-desc">
+                          Resource: <strong>{log.resource}</strong> &bull; {log.metadata?.title ? `"${log.metadata.title}"` : log.metadata?.name ? `"${log.metadata.name}"` : 'Workspace modification'}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────
+               BOTTOM DARK CALLOUT BANNER (Direct from Fenco Mock #1)
+          ───────────────────────────────────────────────────────────── */}
+          <div className="bento-bottom-banner">
+            <div className="bento-banner-left">
+              <Sparkles size={20} color="#a5b4fc" />
+              <div>
+                <h4 className="bento-banner-title">Need custom workflows, webhooks or enterprise seats?</h4>
+                <p className="bento-banner-sub">Configure integrations, webhooks, or upgrade your workspace capacity.</p>
+              </div>
+            </div>
+            <Link to={`/${workspaceId}/settings`} className="bento-banner-btn">
+              Configure Settings &rarr;
+            </Link>
+          </div>
+        </main>
+      </div>
+
+      {/* Modals */}
       {isNewTaskOpen && (
         <NewDeadlineModal
           members={teamWorkload}
