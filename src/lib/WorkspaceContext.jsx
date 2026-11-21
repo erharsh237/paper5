@@ -248,21 +248,37 @@ export function WorkspaceProvider({ children }) {
     if (!supabase || !workspaceId || !user) return
 
     const channelName = `p5-workspace-presence-${workspaceId}`
+    
+    // Safely remove any existing channel with the same topic before re-registering
+    try {
+      const existing = supabase.getChannels().find(
+        (ch) => ch.topic === `realtime:${channelName}` || ch.topic === channelName
+      )
+      if (existing) {
+        existing.untrack()
+        supabase.removeChannel(existing)
+      }
+    } catch (_) {}
+
     const channel = supabase.channel(channelName, {
       config: { presence: { key: user.id } }
     })
 
     channel
       .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState()
-        const ids = new Set()
-        Object.keys(state).forEach((k) => {
-          ;(state[k] || []).forEach((p) => {
-            if (p.userId) ids.add(p.userId)
-            if (p.email) ids.add(p.email.toLowerCase().trim())
+        try {
+          const state = channel.presenceState()
+          const ids = new Set()
+          Object.keys(state).forEach((k) => {
+            ;(state[k] || []).forEach((p) => {
+              if (p.userId) ids.add(p.userId)
+              if (p.email) ids.add(p.email.toLowerCase().trim())
+            })
           })
-        })
-        setOnlineUserIds(ids)
+          setOnlineUserIds(ids)
+        } catch (err) {
+          console.warn('Presence sync error:', err)
+        }
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {

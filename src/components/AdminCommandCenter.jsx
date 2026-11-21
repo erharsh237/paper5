@@ -37,7 +37,7 @@ import {
 import './AdminCommandCenter.css'
 
 export default function AdminCommandCenter({ onSwitchToPersonal }) {
-  const { workspaceId, workspace, isAdmin, isOwner } = useWorkspace()
+  const { workspaceId, workspace, isAdmin, isOwner, onlineUserIds: contextOnlineUserIds, onlineCount: contextOnlineCount } = useWorkspace()
   const { user } = useAuth()
 
   // State
@@ -51,8 +51,8 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
   const [quickFilter, setQuickFilter] = useState('all') // 'all' | 'overdue' | 'stalled' | 'unassigned' | 'high'
   const [auditResourceFilter, setAuditResourceFilter] = useState('all')
 
-  // Real-time Team Online Presence (Supabase Realtime Channel)
-  const [onlineUserIds, setOnlineUserIds] = useState(new Set())
+  // Real-time Team Online Presence (Provided via WorkspaceContext)
+  const onlineUserIds = contextOnlineUserIds || new Set()
 
   // Modals
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false)
@@ -71,50 +71,6 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
       return () => clearTimeout(timer)
     }
   }, [actionError, actionSuccess])
-
-  // Track & subscribe to live workspace presence
-  useEffect(() => {
-    if (!supabase || !workspaceId || !user) return
-
-    const channelName = `p5-workspace-presence-${workspaceId}`
-    const channel = supabase.channel(channelName, {
-      config: { presence: { key: user.id } }
-    })
-
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState()
-        const userIds = new Set()
-        Object.keys(state).forEach((key) => {
-          ;(state[key] || []).forEach((p) => {
-            if (p.userId) userIds.add(p.userId)
-            if (p.email) userIds.add(p.email.toLowerCase().trim())
-          })
-        })
-        setOnlineUserIds(userIds)
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          try {
-            await channel.track({
-              userId: user.id,
-              email: (user.email || '').toLowerCase().trim(),
-              name: user.displayName || user.email?.split('@')[0] || 'Member',
-              onlineAt: new Date().toISOString()
-            })
-          } catch (e) {
-            console.warn('Workspace presence track error:', e)
-          }
-        }
-      })
-
-    return () => {
-      try {
-        channel.untrack()
-        supabase.removeChannel(channel)
-      } catch (_) {}
-    }
-  }, [workspaceId, user])
 
   // Fetch Admin Overview Data
   const fetchOverview = useCallback(async () => {
@@ -172,9 +128,9 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
 
   // Count online members
   const onlineCount = useMemo(() => {
-    if (teamWorkload.length === 0) return 1
-    return teamWorkload.filter(isMemberOnline).length
-  }, [teamWorkload, isMemberOnline])
+    const matchedCount = teamWorkload.filter(isMemberOnline).length
+    return Math.max(contextOnlineCount || 1, matchedCount || 1)
+  }, [contextOnlineCount, teamWorkload, isMemberOnline])
 
   // Direct CSV Export
   const handleExportCSV = () => {

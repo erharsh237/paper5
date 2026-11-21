@@ -161,11 +161,11 @@ export default function OnboardingWizardModal() {
           Boolean(user.user_metadata?.invited_workspace_id)
 
         if (isInvitedOrMember) {
-          // Check if the user is explicitly the owner of any workspace
+          // Check if the user is explicitly the creator/owner of any workspace
           const { data: ownedWs } = await supabase
             .from('workspaces')
             .select('id')
-            .eq('owner_id', user.id)
+            .eq('created_by', user.id)
 
           if (!ownedWs || ownedWs.length === 0) {
             // User is an invited team member — NEVER primary workspace creator!
