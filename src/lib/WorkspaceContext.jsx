@@ -241,6 +241,38 @@ export function WorkspaceProvider({ children }) {
     }
   }, [user, workspaceId]);
 
+  // Track live workspace presence for team awareness & admin dashboard
+  useEffect(() => {
+    if (!supabase || !workspaceId || !user) return
+
+    const channelName = `p5-workspace-presence-${workspaceId}`
+    const channel = supabase.channel(channelName, {
+      config: { presence: { key: user.id } }
+    })
+
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        try {
+          await channel.track({
+            userId: user.id,
+            email: (user.email || '').toLowerCase().trim(),
+            name: user.displayName || user.email?.split('@')[0] || 'Member',
+            onlineAt: new Date().toISOString()
+          })
+        } catch (e) {
+          console.warn('Workspace presence track notice:', e)
+        }
+      }
+    })
+
+    return () => {
+      try {
+        channel.untrack()
+        supabase.removeChannel(channel)
+      } catch (_) {}
+    }
+  }, [workspaceId, user])
+
   useEffect(() => {
     if (!workspace?.created_by) {
       setOwnerBilling(null);
