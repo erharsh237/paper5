@@ -329,7 +329,7 @@ export default function WorkspaceBentoLayout({ children }) {
                     {(workspace?.name || 'WORKSPACE').toUpperCase()}
                   </span>
                   <span className="bento-plan-badge">
-                    {(workspace?.plan || 'PRO').toUpperCase()}
+                    {(workspace?.plan || workspace?.billing_plan_id || 'PRO').toUpperCase()}
                   </span>
                 </div>
                 <h1 className="bento-greeting">

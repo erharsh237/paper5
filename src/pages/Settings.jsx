@@ -110,7 +110,7 @@ function WarningIcon() {
 }
 
 export default function Settings() {
-  const { workspaceId, workspace, isAdmin, isOwner, canManageSettings } = useWorkspace()
+  const { workspaceId, workspace, isAdmin, isOwner, canManageSettings, updateWorkspacePlan } = useWorkspace()
   const { user, userData, updateUserData, logout } = useAuth()
   
   const [activeTab, setActiveTab] = useState('general')
@@ -460,14 +460,18 @@ export default function Settings() {
         invoices: updatedInvoices
       }
 
+      if (updateWorkspacePlan) {
+        await updateWorkspacePlan('starter')
+      }
       await updateWorkspaceSettings(workspaceId, {
-        billing_plan_id: 'free',
+        plan: 'starter',
+        billing_plan_id: 'starter',
         billing_status: 'cancelled',
         settings: updatedSettings
       })
       if (typeof updateUserData === 'function') {
         try {
-          await updateUserData({ billing_plan_id: 'free', billing_status: 'cancelled' })
+          await updateUserData({ billing_plan_id: 'starter', billing_status: 'cancelled' })
         } catch (e) {
           console.warn('Optional updateUserData call skipped:', e)
         }
@@ -527,7 +531,8 @@ export default function Settings() {
   }, [activeTab, workspaceId, isAdminOrOwner])
   
   const planId = workspace?.plan || workspace?.billing_plan_id || workspace?.billing?.planId || 'pro'
-  const maxMembers = (planId === 'free' || planId === 'starter') ? 3 : planId === 'team' ? 7 : 'unlimited'
+  const planLimits = getPlanLimits(planId)
+  const maxMembers = planLimits.maxMembers === Infinity ? 'unlimited' : planLimits.maxMembers
 
   const activeMemberEmails = useMemo(() => {
     return new Set(members.map(m => (m.email || m.users?.email || m.user?.email || '').trim().toLowerCase()).filter(Boolean))
@@ -1037,7 +1042,12 @@ export default function Settings() {
         invoices: updatedInvoices
       }
 
+      if (updateWorkspacePlan) {
+        await updateWorkspacePlan(newPlanId)
+      }
+
       await updateWorkspaceSettings(workspaceId, { 
+        plan: newPlanId,
         billing_plan_id: newPlanId,
         settings: updatedSettings
       })
@@ -1157,7 +1167,7 @@ export default function Settings() {
                         onChange={e => {
                           const newSize = e.target.value
                           const rec = getRecommendedWorkflow(newSize)
-                          const planId = workspace?.plan || workspace?.billing_plan_id || 'free'
+                          const planId = workspace?.plan || workspace?.billing_plan_id || 'pro'
                           const recId = (rec && isWorkflowUnlocked(rec.id, planId)) ? rec.id : (wsSettings.agile_workflow || 'scrum')
                           setWsSettings(prev => ({ ...prev, team_size: newSize, agile_workflow: recId }))
                         }}
@@ -1178,11 +1188,11 @@ export default function Settings() {
                         onChange={e => setWsSettings(prev => ({ ...prev, agile_workflow: e.target.value }))}
                       >
                         {WORKFLOWS.map(wf => {
-                          const planId = workspace?.plan || workspace?.billing_plan_id || 'free'
+                          const planId = workspace?.plan || workspace?.billing_plan_id || 'pro'
                           const unlocked = isWorkflowUnlocked(wf.id, planId)
                           return (
                             <option key={wf.id} value={wf.id} disabled={!unlocked}>
-                              {wf.num}. {wf.name} ({wf.teamSizeLabel}) {!unlocked ? ` [${planId === 'team' ? 'Scale Only' : 'Team/Scale Only'}]` : ''}
+                              {wf.num}. {wf.name} ({wf.teamSizeLabel}) {!unlocked ? ` [${planId === 'team' ? 'Pro Only' : 'Team/Pro Only'}]` : ''}
                             </option>
                           )
                         })}

@@ -3,10 +3,11 @@ import { daysLeft, getUrgency } from '../lib/utils'
 import { setActiveSprint, lockSprint, unlockSprint } from '../lib/sprints'
 import NewSprintModal from './NewSprintModal'
 import { useWorkspace } from '../lib/WorkspaceContext'
+import { getPlanLimits } from '../lib/plans'
 import './SprintOverview.css'
 
 export default function SprintOverview({ sprints, deadlines, currentUser, members = [] }) {
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, workspace } = useWorkspace();
   const [showNewSprint, setShowNewSprint] = useState(false)
   const active = useMemo(() => sprints.find(s => s.status === 'active'), [sprints])
 
@@ -32,6 +33,11 @@ export default function SprintOverview({ sprints, deadlines, currentUser, member
   async function handleToggleLock() {
     if (!active) return
     setLockError(null)
+    const planLimits = getPlanLimits(workspace?.plan || workspace?.billing_plan_id || 'pro')
+    if (!planLimits.hasSprintLock) {
+      setLockError('Locked Sprint Scope Control is exclusive to Team & Pro Plans. Upgrade to lock sprint boundaries and prevent mid-sprint scope creep.')
+      return
+    }
     try {
       if (active.locked) {
         if (!confirm('Unlock this sprint? This allows adding tasks, changing deadlines/owners/estimates again.')) return

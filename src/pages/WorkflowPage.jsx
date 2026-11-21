@@ -5,6 +5,7 @@ import { useWorkspace } from '../lib/WorkspaceContext'
 import { useDeadlines } from '../lib/useDeadlines'
 import { subscribeSprints, lockSprint } from '../lib/sprints'
 import { getWorkflowById } from '../lib/workflows'
+import { getPlanLimits } from '../lib/plans'
 import { supabase } from '../lib/supabase'
 
 import UserMenu from '../components/UserMenu'
@@ -120,6 +121,11 @@ export default function WorkflowPage() {
 
   const handleToggleSprintLock = async () => {
     if (!activeSprint) return
+    const planLimits = getPlanLimits(workspace?.plan || workspace?.billing_plan_id || 'pro')
+    if (!planLimits.hasSprintLock) {
+      setAlertMessage('Locked Sprint Scope Control is exclusive to Team & Pro Plans. Upgrade to lock sprint boundaries and prevent mid-sprint scope creep.')
+      return
+    }
     try {
       if (activeSprint.locked) {
         await lockSprint(workspaceId, activeSprint.id, false)

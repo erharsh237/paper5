@@ -364,16 +364,13 @@ export function WorkspaceProvider({ children }) {
     return () => supabase.removeChannel(channel);
   }, [workspace?.created_by]);
 
+  // Paper5 provides a Free Forever plan for Starter tier — no artificial 7-day lockout
   let isLocked = false;
-  if (ownerBilling && ownerBilling.planId === 'free') {
-    const createdAt = ownerBilling.createdAt ? new Date(ownerBilling.createdAt) : new Date(Date.now() - 1000);
-    const daysSinceCreation = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-    if (daysSinceCreation > 7) {
-      isLocked = true;
-    }
+  if (ownerBilling && ownerBilling.billing_status === 'suspended') {
+    isLocked = true;
   }
 
-  const planId = workspace?.billing_plan_id || workspace?.billing?.planId || 'free'
+  const planId = workspace?.plan || workspace?.billing_plan_id || workspace?.billing?.planId || 'pro'
   const isCapacityFrozen = typeof maxAllowedMembers === 'number' && maxAllowedMembers !== Infinity && totalSeatsUsed > maxAllowedMembers
   const capacityDetails = {
     totalSeatsUsed,

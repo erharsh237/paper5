@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { subscribeUserWorkspaces } from '../lib/workspaces'
+import { getPlanLimits } from '../lib/plans'
 
 export default function DataExportModal({ isOpen, onClose, currentWorkspaceId, currentUser }) {
   const [workspaces, setWorkspaces] = useState([])
@@ -316,6 +317,12 @@ export default function DataExportModal({ isOpen, onClose, currentWorkspaceId, c
     }
 
     if (auditFormat === 'csv') {
+      const targetWs = workspaces.find(w => w.workspaceId === selectedWorkspaceId)
+      const targetLimits = getPlanLimits(targetWs?.plan || targetWs?.billing_plan_id || 'pro')
+      if (!targetLimits.hasAuditCsvExport) {
+        throw new Error('Instant CSV Audit Export is an Enterprise Security feature exclusive to the Pro Plan. Please select PDF or upgrade your workspace to Pro.')
+      }
+
       const headers = ['id', 'created_at', 'actor_id', 'action', 'resource', 'metadata']
       const csvRows = [
         headers.join(','),

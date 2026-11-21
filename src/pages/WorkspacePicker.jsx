@@ -111,6 +111,11 @@ export default function WorkspacePicker() {
   const handleCreate = async (e) => {
     if (e) e.preventDefault()
     if (!newName.trim()) return
+    if (ownedCount >= maxWorkspaces) {
+      setShowCreateModal(false)
+      setShowPricingModal(true)
+      return
+    }
     setCreateError('')
     setIsCreating(true)
     try {
@@ -229,10 +234,10 @@ export default function WorkspacePicker() {
 
   const isAdmin = workspaces.some(w => w.role === 'owner' || w.role === 'admin')
   const ownedCount = workspaces.filter(w => w.role === 'owner' || w.role === 'admin').length
-  const canCreateDirectly = ownedCount < maxWorkspaces || hasActivePaidPlan
+  const canCreateDirectly = ownedCount < maxWorkspaces
 
   const handleOpenCreateWorkspace = () => {
-    if (!canCreateDirectly && ownedCount >= maxWorkspaces) {
+    if (ownedCount >= maxWorkspaces) {
       setShowPricingModal(true)
       return
     }

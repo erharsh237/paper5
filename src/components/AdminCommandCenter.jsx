@@ -46,6 +46,8 @@ import {
   Sparkles
 } from 'lucide-react'
 import { useWorkspaceBento } from './WorkspaceBentoLayout'
+import PricingModal from './PricingModal'
+import { getPlanLimits } from '../lib/plans'
 import './AdminCommandCenter.css'
 
 export default function AdminCommandCenter({ onSwitchToPersonal }) {
@@ -173,8 +175,15 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
     return []
   }, [contextOnlineUsers, user, workspace])
 
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false)
+  const effectivePlan = getPlanLimits(workspace?.plan || workspace?.billing_plan_id || 'pro')
+
   const onlineCount = onlineList.length
   const handleExportCSV = () => {
+    if (!effectivePlan.hasAuditCsvExport) {
+      setIsPricingModalOpen(true)
+      return
+    }
     window.location.href = `/api/admin?workspaceId=${encodeURIComponent(workspaceId)}&action=export&type=tasks`
   }
 
@@ -1188,7 +1197,7 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
                   {(workspace?.name || 'WORKSPACE').toUpperCase()}
                 </span>
                 <span className="bento-plan-badge">
-                  {(workspace?.plan || 'PRO').toUpperCase()}
+                  {(workspace?.plan || workspace?.billing_plan_id || 'PRO').toUpperCase()}
                 </span>
               </div>
               <h1 className="bento-greeting">
@@ -1274,6 +1283,19 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
           {renderDashboardStage()}
         </main>
       </div>
+
+      <PricingModal
+        isOpen={isPricingModalOpen}
+        onClose={() => setIsPricingModalOpen(false)}
+        currentPlan={effectivePlan.id}
+        onSelectPlan={async (planId) => {
+          if (bentoLayout?.updateWorkspacePlan) {
+            await bentoLayout.updateWorkspacePlan(planId)
+          }
+          setIsPricingModalOpen(false)
+          setActionSuccess(`Plan updated to ${planId.toUpperCase()}!`)
+        }}
+      />
     </div>
   )
 }

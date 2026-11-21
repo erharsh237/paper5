@@ -9,8 +9,11 @@ export const PLANS = {
     maxMembers: 3,
     allowedIntegrations: ['google_calendar'],
     hasAdvancedAnalytics: false,
+    hasAdvancedRiskRadar: false,
     hasPrioritySupport: false,
     hasOneClickApi: false,
+    hasAuditCsvExport: false,
+    hasSprintLock: false,
   },
   team: {
     id: 'team',
@@ -19,9 +22,12 @@ export const PLANS = {
     maxWorkspaces: 5,
     maxMembers: 7,
     allowedIntegrations: ['google_calendar', 'github'],
-    hasAdvancedAnalytics: false,
+    hasAdvancedAnalytics: true,
+    hasAdvancedRiskRadar: false,
     hasPrioritySupport: false,
     hasOneClickApi: false,
+    hasAuditCsvExport: false,
+    hasSprintLock: true,
   },
   pro: {
     id: 'pro',
@@ -30,9 +36,12 @@ export const PLANS = {
     maxWorkspaces: 10,
     maxMembers: Infinity,
     allowedIntegrations: ['google_calendar', 'github', 'slack', 'discord', 'vercel'],
-    hasOneClickApi: true,
     hasAdvancedAnalytics: true,
+    hasAdvancedRiskRadar: true,
     hasPrioritySupport: true,
+    hasOneClickApi: true,
+    hasAuditCsvExport: true,
+    hasSprintLock: true,
   },
   scale: {
     id: 'scale',
@@ -41,9 +50,12 @@ export const PLANS = {
     maxWorkspaces: 10,
     maxMembers: Infinity,
     allowedIntegrations: ['google_calendar', 'github', 'slack', 'discord', 'vercel'],
-    hasOneClickApi: true,
     hasAdvancedAnalytics: true,
+    hasAdvancedRiskRadar: true,
     hasPrioritySupport: true,
+    hasOneClickApi: true,
+    hasAuditCsvExport: true,
+    hasSprintLock: true,
   }
 }
 

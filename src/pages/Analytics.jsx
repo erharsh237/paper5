@@ -10,6 +10,8 @@ import { subscribeSprints } from '../lib/sprints'
 import { computeAccountability } from '../lib/accountability'
 import UserMenu from '../components/UserMenu'
 import Paper5Logo from '../components/Paper5Logo'
+import PricingModal from '../components/PricingModal'
+import { getPlanLimits } from '../lib/plans'
 import { useWorkspace } from '../lib/WorkspaceContext'
 import './Dashboard.css'
 import './Analytics.css'
@@ -17,11 +19,13 @@ import './Analytics.css'
 const ANALYTICS_DEADLINES_CAP = 1000
 
 export default function Analytics() {
-  const { workspaceId, workspace } = useWorkspace();
+  const { workspaceId, workspace, updateWorkspacePlan } = useWorkspace();
   const { user, userData } = useAuth()
   
-  const planId = userData?.billing?.planId || 'free'
-  const isScale = planId === 'scale'
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false)
+  const currentPlan = getPlanLimits(workspace?.plan || workspace?.billing_plan_id || userData?.billing_plan_id || 'pro')
+  const hasAnalytics = currentPlan.hasAdvancedAnalytics
+  const hasRiskRadar = currentPlan.hasAdvancedRiskRadar
   const [deadlines, setDeadlines] = useState([])
   const [members, setMembers] = useState([])
   const [sprints, setSprints] = useState([])
@@ -226,6 +230,20 @@ export default function Analytics() {
         </section>
 
         {/* 4. CHARTS SECTION */}
+        {!hasAnalytics && (
+          <div style={{ padding: '24px', background: 'rgba(245, 158, 11, 0.04)', border: '1px dashed rgba(245, 158, 11, 0.3)', borderRadius: '12px', textAlign: 'center', marginBottom: '24px' }}>
+            <div style={{ fontWeight: 800, fontSize: '16px', color: 'var(--text)', marginBottom: '8px' }}>
+              Sprint Velocity &amp; Team Analytics are available on Team &amp; Pro Plans
+            </div>
+            <p style={{ fontSize: '13.5px', color: 'var(--muted)', maxWidth: '540px', margin: '0 auto 16px', lineHeight: 1.5 }}>
+              Your Starter plan includes the Personal Focus Dashboard and task tracking. Upgrade to Team or Pro to unlock sprint velocity graphs, estimation accuracy charts, and member workload distributions.
+            </p>
+            <button className="dash-btn-accent" onClick={() => setIsPricingModalOpen(true)}>
+              View Upgrade Options
+            </button>
+          </div>
+        )}
+
         {sprintStats.length === 0 ? (
           <div className="dash-surface-card" style={{ padding: '36px', textAlign: 'center', marginBottom: '24px' }}>
             <div style={{ fontWeight: 700, fontSize: '16px', color: 'var(--text)', marginBottom: '6px' }}>No Sprint Cycles Yet</div>
@@ -418,12 +436,29 @@ export default function Analytics() {
           <div className="dash-surface-card" style={{ padding: '24px' }}>
             <div className="dash-panel-header" style={{ marginBottom: '16px' }}>
               <div>
-                <div className="dash-panel-title">Risk & Delay Intelligence</div>
+                <div className="dash-panel-title">Risk &amp; Delay Intelligence</div>
                 <div className="dash-panel-desc">Automated accountability signals and delay warnings</div>
               </div>
+              {!hasRiskRadar && (
+                <span className="badge" style={{ background: '#27272a', color: '#ffffff', fontSize: '11px', padding: '3px 8px', borderRadius: '4px' }}>
+                  Pro Only
+                </span>
+              )}
             </div>
 
-            {accountability.length === 0 ? (
+            {!hasRiskRadar ? (
+              <div style={{ padding: '24px 16px', textAlign: 'center', background: 'rgba(245, 158, 11, 0.04)', border: '1px dashed rgba(245, 158, 11, 0.3)', borderRadius: '8px' }}>
+                <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '6px', color: 'var(--text)' }}>
+                  Delivery Risk Radar &amp; Delay Intelligence is exclusive to the Pro Plan.
+                </div>
+                <p style={{ fontSize: '12.5px', color: 'var(--muted)', margin: '0 0 14px 0' }}>
+                  Upgrade to unlock automated delay warnings, bottleneck signals, and member risk scores.
+                </p>
+                <button className="dash-btn-accent" onClick={() => setIsPricingModalOpen(true)}>
+                  Upgrade to Pro
+                </button>
+              </div>
+            ) : accountability.length === 0 ? (
               <div style={{ padding: '28px 0', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>
                 <div>No critical delay warnings detected across the workspace.</div>
               </div>
@@ -463,6 +498,18 @@ export default function Analytics() {
         </div>
 
       </main>
+
+      <PricingModal
+        isOpen={isPricingModalOpen}
+        onClose={() => setIsPricingModalOpen(false)}
+        currentPlan={currentPlan.id}
+        onSelectPlan={async (planId) => {
+          if (updateWorkspacePlan) {
+            await updateWorkspacePlan(planId)
+          }
+          setIsPricingModalOpen(false)
+        }}
+      />
     </div>
   )
 }
