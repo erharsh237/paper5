@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import './InvoicesModal.css'
 import AlertModal from './ui/AlertModal'
 import { Calendar, Download, ShieldCheck, FileText } from 'lucide-react'
@@ -10,26 +10,45 @@ export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspac
   const initialCycle = workspace?.billing_interval || workspace?.billing?.interval || 'monthly'
   const [billingCycle, setBillingCycle] = useState(initialCycle)
 
+  const effectivePlanId = useMemo(() => {
+    const p = (currentPlanId || workspace?.billing_plan_id || workspace?.plan || workspace?.billing?.planId || 'pro').toLowerCase().trim()
+    if (['pro', 'scale', 'enterprise'].includes(p)) return 'pro'
+    if (p === 'team') return 'team'
+    if (p === 'starter' || p === 'free') return 'starter'
+    return 'pro'
+  }, [currentPlanId, workspace])
+
   if (!isOpen) return null
 
   const getPlanName = (id) => {
-    const clean = (id || '').toLowerCase()
+    const clean = (id || '').toLowerCase().trim()
     if (clean === 'team') return 'Team Plan'
     if (clean === 'scale') return 'Scale Plan'
-    return 'Starter Plan'
+    if (clean === 'pro' || clean === 'enterprise') return 'Pro Plan'
+    if (clean === 'starter' || clean === 'free') return 'Starter Plan'
+    return 'Pro Plan'
   }
 
   const getPlanPrice = () => {
     return '₹0'
   }
 
-  const activePlanName = getPlanName(currentPlanId)
+  const activePlanName = getPlanName(effectivePlanId)
   
   // 1. Retrieve stored invoices from workspace settings (all plans are ₹0 during launch special)
-  const storedInvoices = (Array.isArray(workspace?.settings?.invoices) ? workspace.settings.invoices : []).map(inv => ({
-    ...inv,
-    amount: '₹0'
-  }))
+  const storedInvoices = (Array.isArray(workspace?.settings?.invoices) ? workspace.settings.invoices : []).map(inv => {
+    let fixedPlan = inv.plan
+    if (inv.id?.includes('PRO') || inv.planId === 'pro' || inv.planId === 'scale') {
+      fixedPlan = (inv.plan || '').replace(/Starter Plan/gi, 'Pro Plan') || `${getPlanName('pro')} (${inv.cycle || 'Monthly'})`
+    } else if (inv.id?.includes('TEAM') || inv.planId === 'team') {
+      fixedPlan = (inv.plan || '').replace(/Starter Plan/gi, 'Team Plan') || `${getPlanName('team')} (${inv.cycle || 'Monthly'})`
+    }
+    return {
+      ...inv,
+      plan: fixedPlan || inv.plan || `${getPlanName(inv.planId || effectivePlanId)} (${inv.cycle || 'Monthly'})`,
+      amount: '₹0'
+    }
+  })
 
   // 2. Build baseline fallback invoices if history is missing
   const createdAtDate = workspace?.created_at ? new Date(workspace.created_at) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
@@ -47,15 +66,15 @@ export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspac
   const formattedExpiryDate = expiryDateObj.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
 
   const fallbackCurrentInvoice = {
-    id: `INV-${(currentPlanId || 'STARTER').toUpperCase()}-${billingCycle === 'annual' ? 'ANNUAL' : 'MONTHLY'}-2026-001`,
+    id: `INV-${effectivePlanId.toUpperCase()}-${billingCycle === 'annual' ? 'ANNUAL' : 'MONTHLY'}-2026-001`,
     invoiceNumber: `INV-2026-88410`,
     date: formattedToday,
     expiryDate: formattedExpiryDate,
     cycle: billingCycle === 'annual' ? 'Annual (12 Months)' : 'Monthly (1 Month)',
     plan: `${activePlanName} (${billingCycle === 'annual' ? 'Annual' : 'Monthly'})`,
-    planId: currentPlanId || 'free',
-    changeType: currentPlanId && currentPlanId !== 'free' ? 'Subscription' : 'Initial Workspace Creation',
-    amount: getPlanPrice(currentPlanId, billingCycle),
+    planId: effectivePlanId,
+    changeType: (effectivePlanId !== 'starter' && effectivePlanId !== 'free') ? 'Subscription' : 'Initial Workspace Creation',
+    amount: '₹0',
     status: 'Paid'
   }
 
@@ -66,7 +85,7 @@ export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspac
     expiryDate: formattedToday,
     cycle: 'Monthly (1 Month)',
     plan: 'Starter Plan (Monthly)',
-    planId: 'free',
+    planId: 'starter',
     changeType: 'Initial Workspace Setup',
     amount: '₹0',
     status: 'Paid'
@@ -75,7 +94,7 @@ export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspac
   // Combine stored + fallback, deduplicating by invoice id
   let combinedInvoices = [...storedInvoices]
   if (combinedInvoices.length === 0) {
-    if ((currentPlanId || 'free') !== 'free') {
+    if (effectivePlanId !== 'starter' && effectivePlanId !== 'free') {
       combinedInvoices = [fallbackCurrentInvoice, fallbackInitialInvoice]
     } else {
       combinedInvoices = [fallbackCurrentInvoice]
@@ -95,7 +114,7 @@ export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspac
       const wsName = workspace?.name || 'My Workspace'
       const issueDate = inv.date || formattedToday
       const expDate = inv.expiryDate || formattedExpiryDate
-      const planTitle = inv.plan || `${getPlanName(inv.planId || currentPlanId)} (${inv.cycle || 'Monthly'})`
+      const planTitle = inv.plan || `${getPlanName(inv.planId || effectivePlanId)} (${inv.cycle || 'Monthly'})`
       const price = (inv.amount || '₹0').replace(/^\$/, '₹')
       const changeType = inv.changeType || 'Subscription'
 

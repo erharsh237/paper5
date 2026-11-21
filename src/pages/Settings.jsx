@@ -1005,10 +1005,12 @@ export default function Settings() {
       const expiryDate = expDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
 
       const getPlanTitle = (id) => {
-        const c = (id || '').toLowerCase()
+        const c = (id || '').toLowerCase().trim()
         if (c === 'team') return 'Team Plan'
-        if (c === 'scale' || c === 'pro') return 'Pro Plan'
-        return 'Starter Plan'
+        if (c === 'scale') return 'Scale Plan'
+        if (c === 'pro' || c === 'enterprise') return 'Pro Plan'
+        if (c === 'starter' || c === 'free') return 'Starter Plan'
+        return 'Pro Plan'
       }
 
       const getPlanPrice = () => {
