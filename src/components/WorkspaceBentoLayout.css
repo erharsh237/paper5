@@ -236,3 +236,73 @@
   background: #e4e4e7;
   border-radius: 4px;
 }
+
+/* ==============================================================================
+   WORKSPACE BENTO LAYOUT - DARK THEME EXTENSIONS
+   ============================================================================== */
+
+[data-theme="dark"] .bento-online-popover-card {
+  background: #121215 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7) !important;
+  color: #f4f4f5 !important;
+}
+
+[data-theme="dark"] .bento-online-popover-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .bento-popover-close-btn:hover {
+  color: #ffffff !important;
+  background: #27272a !important;
+}
+
+[data-theme="dark"] .bento-online-popover-scroll::-webkit-scrollbar-thumb {
+  background: #27272a !important;
+}
+
+[data-theme="dark"] .bento-route-body .btn-ghost,
+[data-theme="dark"] .bento-route-body .btn-secondary {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  background: #18181b !important;
+}
+
+[data-theme="dark"] .bento-route-body .btn-ghost:hover,
+[data-theme="dark"] .bento-route-body .btn-secondary:hover {
+  background: #27272a !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .bento-route-body button.btn-primary,
+[data-theme="dark"] .bento-route-body .btn-primary,
+[data-theme="dark"] .bento-route-body button[type="submit"],
+[data-theme="dark"] .bento-route-body .settings-form button[type="submit"],
+[data-theme="dark"] .bento-route-body .settings-section .btn-primary,
+[data-theme="dark"] .bento-route-body .btn-save {
+  background: #ffffff !important;
+  color: #09090b !important;
+  border-color: #ffffff !important;
+}
+
+[data-theme="dark"] .bento-route-body button.btn-primary:hover,
+[data-theme="dark"] .bento-route-body .btn-primary:hover,
+[data-theme="dark"] .bento-route-body button[type="submit"]:hover,
+[data-theme="dark"] .bento-route-body .settings-form button[type="submit"]:hover,
+[data-theme="dark"] .bento-route-body .settings-section .btn-primary:hover,
+[data-theme="dark"] .bento-route-body .btn-save:hover {
+  background: #e4e4e7 !important;
+  border-color: #e4e4e7 !important;
+  color: #09090b !important;
+}
+
+[data-theme="dark"] .bento-route-body .settings-nav-item--active {
+  background: #ffffff !important;
+  color: #09090b !important;
+  border-color: #ffffff !important;
+}
+
+[data-theme="dark"] .bento-route-body .settings-nav-item--active svg {
+  stroke: #09090b !important;
+}

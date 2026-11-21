@@ -1813,3 +1813,221 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* ==============================================================================
+   BENTO ADMIN COMMAND CENTER - COMPREHENSIVE DARK THEME SYSTEM
+   ============================================================================== */
+
+[data-theme="dark"] .bento-canvas,
+[data-theme="dark"].bento-canvas,
+body[data-theme="dark"] .bento-canvas,
+html[data-theme="dark"] .bento-canvas {
+  background: #09090b !important;
+  color: #f4f4f5 !important;
+}
+
+[data-theme="dark"] .bento-shell {
+  background: #09090b !important;
+}
+
+[data-theme="dark"] .bento-main-stage {
+  color: #f4f4f5 !important;
+}
+
+[data-theme="dark"] .bento-greeting {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .bento-workspace-badge {
+  color: #a1a1aa !important;
+}
+
+[data-theme="dark"] .bento-plan-badge {
+  background: #27272a !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .bento-topbar-pill {
+  background: #18181b !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #f4f4f5 !important;
+}
+
+[data-theme="dark"] .bento-topbar-pill:hover {
+  background: #27272a !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+[data-theme="dark"] .bento-topbar-nav {
+  background: #18181b !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .bento-topbar-nav-item {
+  color: #a1a1aa !important;
+}
+
+[data-theme="dark"] .bento-topbar-nav-item:hover {
+  color: #ffffff !important;
+  background: #27272a !important;
+}
+
+[data-theme="dark"] .bento-topbar-nav-item.active {
+  background: #ffffff !important;
+  color: #09090b !important;
+}
+
+[data-theme="dark"] .bento-pill-action-btn {
+  background: #18181b !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #f4f4f5 !important;
+}
+
+[data-theme="dark"] .bento-pill-action-btn:hover {
+  background: #27272a !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .bento-pill-action-btn.primary {
+  background: #ffffff !important;
+  border-color: #ffffff !important;
+  color: #09090b !important;
+}
+
+[data-theme="dark"] .bento-pill-action-btn.primary:hover {
+  background: #e4e4e7 !important;
+  border-color: #e4e4e7 !important;
+  color: #09090b !important;
+}
+
+[data-theme="dark"] .bento-card {
+  background: #121215 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+  color: #f4f4f5 !important;
+}
+
+[data-theme="dark"] .bento-card:hover {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6) !important;
+}
+
+[data-theme="dark"] .bento-card-title {
+  color: #a1a1aa !important;
+}
+
+[data-theme="dark"] .bento-stat-num,
+[data-theme="dark"] .bento-stat-hero,
+[data-theme="dark"] .bento-card-val {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .bento-card-sub {
+  color: #a1a1aa !important;
+}
+
+[data-theme="dark"] .bento-section-header h2 {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .bento-nav-tabs {
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .bento-nav-tab {
+  color: #a1a1aa !important;
+}
+
+[data-theme="dark"] .bento-nav-tab:hover {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .bento-nav-tab.active {
+  color: #ffffff !important;
+  border-bottom-color: #ffffff !important;
+}
+
+[data-theme="dark"] .bento-search-input {
+  background: #18181b !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .bento-search-input:focus {
+  border-color: #ffffff !important;
+}
+
+[data-theme="dark"] .bento-filter-select {
+  background: #18181b !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .bento-filter-pill {
+  background: #18181b !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #a1a1aa !important;
+}
+
+[data-theme="dark"] .bento-filter-pill:hover {
+  background: #27272a !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .bento-filter-pill.active {
+  background: #ffffff !important;
+  color: #09090b !important;
+  border-color: #ffffff !important;
+}
+
+[data-theme="dark"] .bento-table-card {
+  background: #121215 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .bento-table-head {
+  background: #18181b !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+  color: #a1a1aa !important;
+}
+
+[data-theme="dark"] .bento-table-row {
+  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+  color: #f4f4f5 !important;
+}
+
+[data-theme="dark"] .bento-table-row:hover {
+  background: #18181b !important;
+}
+
+[data-theme="dark"] .bento-table-cell {
+  color: #f4f4f5 !important;
+}
+
+[data-theme="dark"] .bento-banner-card {
+  background: #121215 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #f4f4f5 !important;
+}
+
+[data-theme="dark"] .bento-banner-card h3 {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .bento-banner-card p {
+  color: #a1a1aa !important;
+}
+
+[data-theme="dark"] .bento-banner-btn {
+  background: #ffffff !important;
+  color: #09090b !important;
+}
+
+[data-theme="dark"] .bento-banner-btn:hover {
+  background: #e4e4e7 !important;
+}
+
+[data-theme="dark"] .bento-empty-text {
+  color: #71717a !important;
+}

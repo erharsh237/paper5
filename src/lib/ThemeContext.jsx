@@ -37,14 +37,27 @@ export const isAppArea = (pathname = '') => {
     return true
   }
 
+  // 3. Workspace routes (/workspace-id or /workspace-id/...)
+  if (/^\/[0-9a-fA-F-]{8,}(?:\/.*)?$/.test(currentPath)) {
+    return true
+  }
+
   return false
 }
 
 export const getStoredTheme = (isApp) => {
   if (typeof window === 'undefined') return 'light'
+  const primary = localStorage.getItem('paper5_theme')
+  if (primary === 'dark' || primary === 'light') return primary
+
   const key = isApp ? APP_THEME_KEY : MARKETING_THEME_KEY
   const saved = localStorage.getItem(key)
   if (saved === 'dark' || saved === 'light') return saved
+  
+  const altKey = isApp ? MARKETING_THEME_KEY : APP_THEME_KEY
+  const altSaved = localStorage.getItem(altKey)
+  if (altSaved === 'dark' || altSaved === 'light') return altSaved
+
   return 'light'
 }
 
@@ -92,14 +105,16 @@ export function ThemeProvider({ children }) {
     syncThemeCookie(isApp, contextTheme)
   }, [isApp])
 
-  // Apply theme attribute to DOM and save to context-specific storage key
+  // Apply theme attribute to DOM and save to storage keys
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
     document.body.setAttribute('data-theme', theme)
-    const key = isApp ? APP_THEME_KEY : MARKETING_THEME_KEY
-    localStorage.setItem(key, theme)
-    syncThemeCookie(isApp, theme)
-  }, [theme, isApp])
+    localStorage.setItem(APP_THEME_KEY, theme)
+    localStorage.setItem(MARKETING_THEME_KEY, theme)
+    localStorage.setItem('paper5_theme', theme)
+    syncThemeCookie(true, theme)
+    syncThemeCookie(false, theme)
+  }, [theme])
 
   const toggleTheme = () => {
     setThemeState((prev) => (prev === 'light' ? 'dark' : 'light'))

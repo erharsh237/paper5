@@ -5,6 +5,7 @@ import { createWorkspace, ensureUserRecordExists } from '../lib/workspaces'
 import { TEAM_SIZE_OPTIONS, WORKFLOWS, getRecommendedWorkflow, isWorkflowUnlocked } from '../lib/workflows'
 import { supabase } from '../lib/supabase'
 import PricingModal from '../components/PricingModal'
+import { getPlanLimits } from '../lib/plans'
 import ThemeToggle from '../components/ThemeToggle'
 import SEOHead from '../components/SEOHead'
 import './WorkspacePicker.css'
@@ -29,8 +30,10 @@ export default function WorkspacePicker() {
   const [createError, setCreateError] = useState('')
 
   const userId = user?.id || user?.uid
-  const userPlan = userData?.billing_plan_id || 'free'
-  const hasActivePaidPlan = ['starter', 'team', 'scale'].includes(userPlan) || (userData?.billing_status === 'active' && userPlan !== 'free' && userPlan !== 'member')
+  const userPlan = userData?.billing_plan_id || 'pro'
+  const planLimits = getPlanLimits(userPlan)
+  const maxWorkspaces = planLimits.maxWorkspaces || 10
+  const hasActivePaidPlan = ['starter', 'team', 'scale', 'pro'].includes(userPlan?.toLowerCase()) || (userData?.billing_status === 'active' && userPlan !== 'free' && userPlan !== 'member')
 
   useEffect(() => {
     if (!userId) {
@@ -226,12 +229,17 @@ export default function WorkspacePicker() {
 
   const isAdmin = workspaces.some(w => w.role === 'owner' || w.role === 'admin')
   const ownedCount = workspaces.filter(w => w.role === 'owner' || w.role === 'admin').length
-  
-  let maxWorkspaces = 1
-  if (userPlan === 'team') maxWorkspaces = 5
-  if (userPlan === 'scale') maxWorkspaces = 10
-  
-  const canCreate = ownedCount < maxWorkspaces || hasActivePaidPlan
+  const canCreateDirectly = ownedCount < maxWorkspaces || hasActivePaidPlan
+
+  const handleOpenCreateWorkspace = () => {
+    if (!canCreateDirectly && ownedCount >= maxWorkspaces) {
+      setShowPricingModal(true)
+      return
+    }
+    setModalStep(1)
+    setShowCreateModal(true)
+  }
+
   const isPickerForced = location.search.includes('picker=true') || window.location.search.includes('picker=true') || location.search.includes('create=true')
   
   // Routing logic: only auto-redirect if NOT forced by picker=true or create=true
@@ -288,18 +296,13 @@ export default function WorkspacePicker() {
             </div>
           ))}
 
-          {canCreate && (
-            <button 
-              type="button"
-              className="wp-create-btn"
-              onClick={() => {
-                setModalStep(1)
-                setShowCreateModal(true)
-              }}
-            >
-              + Create New Workspace
-            </button>
-          )}
+          <button 
+            type="button"
+            className="wp-create-btn"
+            onClick={handleOpenCreateWorkspace}
+          >
+            + Create New Workspace
+          </button>
         </div>
 
         <div className="wp-footer">
