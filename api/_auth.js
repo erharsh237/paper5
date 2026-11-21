@@ -78,7 +78,7 @@ export async function verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { r
     // 1. Check workspace existence and ownership
     const { data: wsRecord, error: wsErr } = await supabaseAdmin
       .from('workspaces')
-      .select('id, owner_id')
+      .select('id, created_by, settings')
       .eq('id', workspaceId)
       .maybeSingle()
 
@@ -86,12 +86,12 @@ export async function verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { r
       return { error: 'Workspace not found.', status: 404 }
     }
 
-    const isDirectOwner = wsRecord.owner_id === user.id
+    const isDirectOwner = (wsRecord.created_by || wsRecord.owner_id) === user.id
 
     // 2. Check membership record
     const { data: memberRecord } = await supabaseAdmin
       .from('workspace_members')
-      .select('role, permissions')
+      .select('role')
       .eq('workspace_id', workspaceId)
       .eq('user_id', user.id)
       .maybeSingle()
@@ -115,13 +115,15 @@ export async function verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { r
       }
     }
 
+    const memberPermissions = wsRecord.settings?.member_permissions?.[user.id] || []
+
     return {
       user,
       workspaceId,
       role,
       isAdmin,
       isOwner,
-      permissions: memberRecord?.permissions || []
+      permissions: memberPermissions
     }
   } catch (err) {
     return { error: 'Failed to verify workspace permissions.', status: 500 }

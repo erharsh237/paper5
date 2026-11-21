@@ -772,19 +772,91 @@ export async function updateMemberPermissions(workspaceId, userId, permissions, 
 export async function deleteWorkspace(workspaceId) {
   if (!workspaceId) throw new Error('Workspace ID is required.')
 
-  await Promise.allSettled([
-    supabase.from('workspace_members').delete().eq('workspace_id', workspaceId),
-    supabase.from('deadlines').delete().eq('workspace_id', workspaceId),
-    supabase.from('sprints').delete().eq('workspace_id', workspaceId),
-    supabase.from('invites').delete().eq('workspace_id', workspaceId),
-    supabase.from('meetings').delete().eq('workspace_id', workspaceId),
-    supabase.from('audit_logs').delete().eq('workspace_id', workspaceId),
-    supabase.from('integrations').delete().eq('workspace_id', workspaceId),
-  ])
+  let apiSuccess = false
+  let apiErrorMessage = ''
 
-  const { error } = await supabase.from('workspaces').delete().eq('id', workspaceId)
-  if (error) {
-    const { error: rpcErr } = await supabase.rpc('delete_workspace', { workspace_id: workspaceId })
-    if (rpcErr) throw error
+  // 1. Primary: Use dedicated backend API with elevated administrative permissions
+  try {
+    const authHeaders = await getAuthHeaders()
+    const res = await fetch('/api/delete-workspace', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: authHeaders,
+      body: JSON.stringify({ workspaceId })
+    })
+
+    if (res.ok) {
+      apiSuccess = true
+    } else {
+      const data = await res.json().catch(() => ({}))
+      apiErrorMessage = data.error || `HTTP ${res.status}`
+    }
+  } catch (err) {
+    apiErrorMessage = err.message || 'Network error'
   }
+
+  // 2. Secondary fallback: Use workspace-members endpoint with delete_workspace action
+  if (!apiSuccess) {
+    try {
+      const authHeaders = await getAuthHeaders()
+      const res = await fetch('/api/workspace-members', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: authHeaders,
+        body: JSON.stringify({ action: 'delete_workspace', workspaceId })
+      })
+
+      if (res.ok) {
+        apiSuccess = true
+      } else {
+        const data = await res.json().catch(() => ({}))
+        apiErrorMessage = data.error || apiErrorMessage
+      }
+    } catch (_) {}
+  }
+
+  // 3. Client-side fallback if backend API is unavailable
+  if (!apiSuccess) {
+    // Purge invites and operational data first to eliminate orphan dependencies
+    await Promise.allSettled([
+      supabase.from('invites').delete().eq('workspace_id', workspaceId),
+      supabase.from('workspace_invites').delete().eq('workspace_id', workspaceId),
+      supabase.from('deadlines').delete().eq('workspace_id', workspaceId),
+      supabase.from('sprints').delete().eq('workspace_id', workspaceId),
+      supabase.from('meetings').delete().eq('workspace_id', workspaceId),
+      supabase.from('audit_logs').delete().eq('workspace_id', workspaceId),
+      supabase.from('evidence').delete().eq('workspace_id', workspaceId),
+      supabase.from('extra_work').delete().eq('workspace_id', workspaceId),
+    ])
+
+    // Delete non-owner members first
+    try {
+      await supabase.from('workspace_members').delete().eq('workspace_id', workspaceId).neq('role', 'owner')
+    } catch (_) {}
+
+    // Delete the workspace record
+    const { error } = await supabase.from('workspaces').delete().eq('id', workspaceId)
+    if (error) {
+      const { error: rpcErr } = await supabase.rpc('delete_workspace', { workspace_id: workspaceId })
+      if (rpcErr) {
+        throw new Error(apiErrorMessage || error.message || 'Failed to delete workspace.')
+      }
+    }
+
+    try {
+      await supabase.from('workspace_members').delete().eq('workspace_id', workspaceId)
+    } catch (_) {}
+  }
+
+  // Clean local storage references to deleted workspace
+  try {
+    if (typeof window !== 'undefined') {
+      if (localStorage.getItem('current_workspace_id') === workspaceId) {
+        localStorage.removeItem('current_workspace_id')
+      }
+      localStorage.removeItem(`workspace_cache_${workspaceId}`)
+      window.dispatchEvent(new CustomEvent('sprintos:data-sync'))
+      window.dispatchEvent(new CustomEvent('sprintos:workspace-deleted', { detail: { workspaceId } }))
+    }
+  } catch (_) {}
 }

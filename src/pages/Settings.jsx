@@ -912,6 +912,10 @@ export default function Settings() {
     setDeleting(true)
     try {
       await deleteWorkspace(workspaceId)
+      try {
+        localStorage.removeItem('current_workspace_id')
+        sessionStorage.removeItem('current_workspace_id')
+      } catch (_) {}
       safeRedirect('/workspace')
     } catch (err) {
       console.error('Workspace deletion error:', err)

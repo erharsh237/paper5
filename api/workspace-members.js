@@ -276,6 +276,45 @@ export default async function handler(req, res) {
         return res.status(200).json({ success: true })
       }
 
+      if (action === 'delete_workspace') {
+        // Invalidate all invites immediately
+        await Promise.allSettled([
+          supabaseAdmin.from('invites').delete().eq('workspace_id', workspaceId),
+          supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', workspaceId)
+        ])
+
+        // Delete all child data
+        await Promise.allSettled([
+          supabaseAdmin.from('deadlines').delete().eq('workspace_id', workspaceId),
+          supabaseAdmin.from('sprints').delete().eq('workspace_id', workspaceId),
+          supabaseAdmin.from('meetings').delete().eq('workspace_id', workspaceId),
+          supabaseAdmin.from('audit_logs').delete().eq('workspace_id', workspaceId),
+          supabaseAdmin.from('evidence').delete().eq('workspace_id', workspaceId),
+          supabaseAdmin.from('extra_work').delete().eq('workspace_id', workspaceId)
+        ])
+
+        // Delete non-owner members first
+        try {
+          await supabaseAdmin
+            .from('workspace_members')
+            .delete()
+            .eq('workspace_id', workspaceId)
+            .neq('role', 'owner')
+        } catch (_) {}
+
+        // Delete workspace row
+        const { error: wsDelErr } = await supabaseAdmin.from('workspaces').delete().eq('id', workspaceId)
+        if (wsDelErr) {
+          try { await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', workspaceId) } catch (_) {}
+          const { error: retryErr } = await supabaseAdmin.from('workspaces').delete().eq('id', workspaceId)
+          if (retryErr) throw retryErr
+        } else {
+          try { await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', workspaceId) } catch (_) {}
+        }
+
+        return res.status(200).json({ success: true, workspaceId })
+      }
+
       if (action === 'force_delete') {
         if (!memberId) return res.status(400).json({ error: 'Missing memberId' })
         const delRes = await supabaseAdmin
