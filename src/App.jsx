@@ -14,14 +14,19 @@ function safeLazy(routeKey, { trackLoading = true } = {}) {
     if (shouldTrack) beginRouteLoad()
     try {
       const component = await loadRouteModule(routeKey)
-      sessionStorage.removeItem('chunk_reload_attempt')
       return component
     } catch (error) {
       const msg = error?.message || (typeof error === 'string' ? error : '')
-      if (msg.includes('dynamically imported module') || msg.includes('Failed to fetch') || msg.includes('Loading chunk')) {
-        const hasReloaded = sessionStorage.getItem('chunk_reload_attempt')
-        if (!hasReloaded) {
-          sessionStorage.setItem('chunk_reload_attempt', 'true')
+      if (
+        msg.includes('dynamically imported module') ||
+        msg.includes('Failed to fetch') ||
+        msg.includes('Loading chunk') ||
+        msg.includes('error loading')
+      ) {
+        const lastReload = sessionStorage.getItem('p5_chunk_reload')
+        const now = Date.now()
+        if (!lastReload || now - parseInt(lastReload, 10) > 8000) {
+          sessionStorage.setItem('p5_chunk_reload', String(now))
           window.location.reload()
           return new Promise(() => {})
         }

@@ -65,6 +65,33 @@
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Outfit:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Playfair+Display:wght@600;700&display=swap">
     </noscript>
 
+    <!-- Stale Vite Asset Chunk Recovery on New Deployments -->
+    <script>
+      (function() {
+        function reloadOnStaleChunk() {
+          var key = 'p5_chunk_reload';
+          var last = sessionStorage.getItem(key);
+          var now = Date.now();
+          if (!last || (now - parseInt(last, 10)) > 8000) {
+            sessionStorage.setItem(key, String(now));
+            window.location.reload();
+          }
+        }
+        window.addEventListener('vite:preloadError', function(event) {
+          event.preventDefault();
+          reloadOnStaleChunk();
+        });
+        window.addEventListener('error', function(event) {
+          var target = event.target || event.srcElement;
+          var isScriptOrLink = target && (target.tagName === 'SCRIPT' || target.tagName === 'LINK');
+          var src = target ? (target.src || target.href || '') : '';
+          if (isScriptOrLink && src && (src.indexOf('/assets/') !== -1 || src.indexOf('.js') !== -1)) {
+            reloadOnStaleChunk();
+          }
+        }, true);
+      })();
+    </script>
+
     <!-- Schema.org JSON-LD Structured Data: Organization, WebSite, SoftwareApplication, FAQPage -->
     <script type="application/ld+json">
     {

@@ -33,10 +33,24 @@ export default function WorkspacePicker() {
 
   const currentWsId = useMemo(() => {
     const params = new URLSearchParams(location.search)
-    return params.get('current') || 
-           localStorage.getItem('current_workspace_id') || 
-           sessionStorage.getItem('current_workspace_id') || 
-           null
+    const fromParam = params.get('current')
+    if (fromParam && fromParam.trim()) return fromParam.trim()
+
+    const fromLocal = localStorage.getItem('current_workspace_id')
+    if (fromLocal && fromLocal.trim()) return fromLocal.trim()
+
+    const fromSession = sessionStorage.getItem('current_workspace_id')
+    if (fromSession && fromSession.trim()) return fromSession.trim()
+
+    if (typeof document !== 'undefined' && document.referrer) {
+      try {
+        const refUrl = new URL(document.referrer)
+        const match = refUrl.pathname.match(/\/([0-9a-fA-F-]{36})/)
+        if (match && match[1]) return match[1].trim()
+      } catch (_) {}
+    }
+
+    return null
   }, [location.search])
 
   // Derive effective tier across user record and owned workspaces
@@ -92,14 +106,14 @@ export default function WorkspacePicker() {
         }
       }
 
-      // 2. Query workspace_members directly with joined workspace name
+      // 2. Query workspace_members directly with joined workspace name and tier
       let mapped = []
       const { data: memberList, error: memberErr } = await supabase
         .from('workspace_members')
         .select(`
           role,
           workspace_id,
-          workspaces ( id, name )
+          workspaces ( id, name, billing_plan_id, settings )
         `)
         .eq('user_id', userId)
 
@@ -112,18 +126,21 @@ export default function WorkspacePicker() {
           workspaceId: r.workspace_id,
           id: r.workspace_id,
           role: r.role || 'member',
-          name: r.workspaces?.name || 'My Workspace'
+          name: r.workspaces?.name || 'My Workspace',
+          plan: r.workspaces?.billing_plan_id || r.workspaces?.settings?.plan || 'pro'
         }))
       }
 
-      // Robust fallback: Also query workspaces created or owned by this user directly
+      // Robust fallback: Query workspaces created by this user directly via created_by
       try {
-        const { data: ownedWs } = await supabase
+        const { data: ownedWs, error: ownedWsErr } = await supabase
           .from('workspaces')
-          .select('id, name')
-          .or(`owner_id.eq.${userId},created_by.eq.${userId}`)
+          .select('id, name, billing_plan_id, settings')
+          .eq('created_by', userId)
         
-        if (Array.isArray(ownedWs) && ownedWs.length > 0) {
+        if (ownedWsErr) {
+          console.warn('Direct workspaces query notice:', ownedWsErr)
+        } else if (Array.isArray(ownedWs) && ownedWs.length > 0) {
           const existingIds = new Set(mapped.map(m => m.workspaceId))
           ownedWs.forEach(ow => {
             if (!existingIds.has(ow.id)) {
@@ -131,7 +148,8 @@ export default function WorkspacePicker() {
                 workspaceId: ow.id,
                 id: ow.id,
                 role: 'owner',
-                name: ow.name || 'My Workspace'
+                name: ow.name || 'My Workspace',
+                plan: ow.billing_plan_id || ow.settings?.plan || 'pro'
               })
               existingIds.add(ow.id)
             }
@@ -364,6 +382,10 @@ export default function WorkspacePicker() {
                 className={`wp-card ${isCurrent ? 'wp-card--current' : ''}`}
                 onClick={() => {
                   if (!isCurrent) {
+                    try {
+                      localStorage.setItem('current_workspace_id', ws.workspaceId)
+                      sessionStorage.setItem('current_workspace_id', ws.workspaceId)
+                    } catch (_) {}
                     navigate(`/${ws.workspaceId}`)
                   }
                 }}

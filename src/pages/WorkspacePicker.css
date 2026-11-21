@@ -130,11 +130,17 @@
 }
 
 .wp-enter-text--disabled {
-  color: #9ca3af !important;
-  font-weight: 500 !important;
+  color: #94a3b8 !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
   cursor: default !important;
   transform: none !important;
   pointer-events: none !important;
+  background: #f1f5f9;
+  padding: 5px 12px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .wp-card--current:hover .wp-card-footer span.wp-enter-text--disabled {
@@ -616,6 +622,7 @@ html[data-theme="dark"] .workspace-picker-page {
 
 [data-theme="dark"] .wp-card-footer span.wp-enter-text--disabled {
   color: #71717a !important;
+  background: #27272a !important;
 }
 
 [data-theme="dark"] .wp-avatar {
