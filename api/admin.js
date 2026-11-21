@@ -40,22 +40,87 @@ export default async function handler(req, res) {
 
   const body = parseBody(req)
   const workspaceId = req.query?.workspaceId || body.workspaceId || body.workspace_id
+  const action = req.query?.action || body.action || (req.url && req.url.includes('audit-logs') ? 'audit-logs' : 'overview')
 
   if (!workspaceId) {
     return res.status(400).json({ error: 'Missing required workspaceId parameter' })
   }
 
-  // Verify caller identity and workspace administrative access
+  // Verify administrative privileges
   const authRes = await verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { requireAdmin: true })
   if (authRes.error) {
     return res.status(authRes.status || 403).json({ error: authRes.error })
   }
 
+  // Route 1: Audit Logs
+  if (action === 'audit-logs' || action === 'audit_logs') {
+    const limit = Math.min(parseInt(req.query?.limit || body.limit || '50', 10), 100)
+    const offset = parseInt(req.query?.offset || body.offset || '0', 10)
+    const resource = req.query?.resource || body.resource
+
+    try {
+      let query = supabaseAdmin
+        .from('audit_logs')
+        .select('*')
+        .eq('workspace_id', workspaceId)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+
+      if (resource && resource !== 'all') {
+        query = query.eq('resource', resource)
+      }
+
+      const { data: logs, error } = await query
+      if (error) throw error
+
+      const actorIds = [...new Set((logs || []).map((l) => l.actor_id).filter(Boolean))]
+      const actorsMap = {}
+
+      if (actorIds.length > 0) {
+        try {
+          const { data: users } = await supabaseAdmin
+            .from('users')
+            .select('id, email, raw_user_meta_data')
+            .in('id', actorIds)
+
+          ;(users || []).forEach((u) => {
+            const meta = u.raw_user_meta_data || {}
+            actorsMap[u.id] = {
+              id: u.id,
+              email: u.email,
+              name: meta.full_name || meta.name || u.email?.split('@')[0] || 'Admin',
+              avatarUrl: meta.avatar_url || null
+            }
+          })
+        } catch (_) {}
+      }
+
+      const enrichedLogs = (logs || []).map((l) => ({
+        id: l.id,
+        action: l.action,
+        resource: l.resource,
+        metadata: l.metadata || {},
+        createdAt: l.created_at,
+        actor: actorsMap[l.actor_id] || { id: l.actor_id, name: 'System', email: '' }
+      }))
+
+      return res.status(200).json({
+        success: true,
+        logs: enrichedLogs,
+        limit,
+        offset
+      })
+    } catch (err) {
+      console.error('API audit-logs error:', err)
+      return res.status(500).json({ error: sanitizeError(err, 'Failed to fetch audit logs') })
+    }
+  }
+
+  // Route 2: Overview Metrics & Health
   try {
     const now = new Date()
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
-    // Query core collections in parallel
     const [membersRes, invitesRes, sprintsRes, deadlinesRes, workspaceRes] = await Promise.all([
       supabaseAdmin
         .from('workspace_members')
@@ -88,7 +153,6 @@ export default async function handler(req, res) {
     const tasks = deadlinesRes.data || []
     const workspace = workspaceRes.data || {}
 
-    // 1. Task Metrics
     const isDone = (t) => ['done', 'completed', 'shipped'].includes((t.status || '').toLowerCase())
     const completedTasks = tasks.filter(isDone)
     const activeTasks = tasks.filter((t) => !isDone(t))
@@ -108,7 +172,6 @@ export default async function handler(req, res) {
       return lastActive && new Date(lastActive) < new Date(sevenDaysAgo)
     })
 
-    // 2. Project / Sprint Metrics with health calculation
     const projectSummaries = sprints.map((s) => {
       const sTasks = tasks.filter((t) => (t.sprint_id || t.sprintId) === s.id)
       const sDone = sTasks.filter(isDone)
@@ -150,7 +213,6 @@ export default async function handler(req, res) {
     const archivedProjects = projectSummaries.filter((p) => p.archived)
     const projectsRequiringAttention = activeProjects.filter((p) => p.health === 'critical' || p.health === 'at_risk')
 
-    // 3. Team Workload Distribution
     const memberWorkload = members.map((m) => {
       const u = m.users || {}
       const meta = u.raw_user_meta_data || {}
@@ -195,12 +257,10 @@ export default async function handler(req, res) {
       }
     })
 
-    // 4. Productivity Calculation
     const overallProductivity = tasks.length > 0 
       ? Math.round((completedTasks.length / tasks.length) * 100) 
       : 100
 
-    // 5. Next Critical Milestones (closest upcoming active tasks)
     const upcomingDeadlines = activeTasks
       .filter((t) => t.due_date || t.dueDate)
       .slice(0, 5)
@@ -253,7 +313,7 @@ export default async function handler(req, res) {
       }))
     })
   } catch (err) {
-    console.error('API admin-overview error:', err)
-    return res.status(500).json({ error: sanitizeError(err, 'Failed to generate admin overview') })
+    console.error('API admin error:', err)
+    return res.status(500).json({ error: sanitizeError(err, 'Failed to generate admin data') })
   }
 }
