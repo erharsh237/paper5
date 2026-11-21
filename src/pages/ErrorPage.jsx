@@ -1,24 +1,12 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Link } from 'react-router-dom'
 import SEOHead from '../components/SEOHead'
 import { safeRedirect } from '../lib/safeRedirect'
 import { getDomainConfig, getMainUrl } from '../lib/domain'
 import './ErrorPage.css'
 
-export default function ErrorPage({ error, errorInfo, resetError }) {
-  const [showDetails, setShowDetails] = useState(false)
-  const [copied, setCopied] = useState(false)
+export default function ErrorPage({ resetError }) {
   const { isAppSubdomain } = getDomainConfig()
-
-  // Generate deterministic-looking error reference for tracking
-  const [errorRef] = useState(() => `ERR-${Math.random().toString(36).substring(2, 8).toUpperCase()}`)
-
-  const copyErrorDetails = () => {
-    const details = `Error Reference: ${errorRef}\nMessage: ${error?.message || error?.toString() || 'Internal Server Error'}\nTimestamp: ${new Date().toISOString()}\nStack:\n${errorInfo?.componentStack || error?.stack || 'No stack trace available'}`
-    navigator.clipboard.writeText(details)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
 
   const handleReturnHome = () => {
     if (resetError) resetError()
@@ -41,8 +29,6 @@ export default function ErrorPage({ error, errorInfo, resetError }) {
     } catch (_) {}
     window.location.reload()
   }
-
-  const hasDiagnostics = Boolean(error || errorInfo)
 
   return (
     <div className="server-500-page">
@@ -118,48 +104,6 @@ export default function ErrorPage({ error, errorInfo, resetError }) {
                 <Link to="/" onClick={handleReturnHome} className="server-cta-btn-ghost">
                   <span>GO BACK HOME</span>
                 </Link>
-              )}
-            </div>
-
-            {/* Subtle diagnostic drawer */}
-            <div className="server-diagnostics-wrap">
-              <div className="server-meta-line">
-                Error Code: 500 &middot; Ref: {errorRef}
-              </div>
-
-              {hasDiagnostics && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setShowDetails(!showDetails)}
-                    className="server-diag-toggle"
-                  >
-                    {showDetails ? '▲ Hide Diagnostics' : '▼ View Diagnostics'}
-                  </button>
-
-                  {showDetails && (
-                    <div className="server-diag-panel">
-                      <div className="server-diag-panel-header">
-                        <span className="server-diag-error-text">
-                          {error?.name || 'Exception'}: {error?.message || error?.toString()}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={copyErrorDetails}
-                          className="server-diag-copy-btn"
-                        >
-                          {copied ? '✓ Copied' : 'Copy'}
-                        </button>
-                      </div>
-
-                      {(errorInfo?.componentStack || error?.stack) && (
-                        <pre className="server-diag-stack">
-                          {errorInfo?.componentStack || error?.stack}
-                        </pre>
-                      )}
-                    </div>
-                  )}
-                </>
               )}
             </div>
           </div>
