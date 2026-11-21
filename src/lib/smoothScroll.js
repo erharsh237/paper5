@@ -24,16 +24,8 @@ export function smoothScrollTo(target, options = {}) {
 
   const {
     offset = -84, // Default header clearance
-    duration = 850, // Duration in ms
-    easing = easeInOutCubic,
     onComplete
   } = options
-
-  // Cancel any running animation to prevent fighting
-  if (activeScrollAnimationId) {
-    cancelAnimationFrame(activeScrollAnimationId)
-    activeScrollAnimationId = null
-  }
 
   // Resolve DOM element
   let targetEl = null
@@ -46,16 +38,36 @@ export function smoothScrollTo(target, options = {}) {
     targetEl = target
   }
 
-  // Calculate target Y coordinate
-  let targetY = 0
-
+  // If numeric target
   if (typeof target === 'number') {
-    targetY = target
-  } else if (targetEl) {
+    window.scrollTo({
+      top: Math.max(0, target),
+      behavior: 'smooth'
+    })
+    if (onComplete) setTimeout(onComplete, 600)
+    return
+  }
+
+  // If target element found
+  if (targetEl) {
     const rect = targetEl.getBoundingClientRect()
-    targetY = window.pageYOffset + rect.top + offset
-  } else if (typeof target === 'string') {
-    // Retry once in next tick if element was mounting
+    const targetY = Math.max(0, window.pageYOffset + rect.top + offset)
+
+    try {
+      window.scrollTo({
+        top: targetY,
+        behavior: 'smooth'
+      })
+    } catch {
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+
+    if (onComplete) setTimeout(onComplete, 600)
+    return
+  }
+
+  // Retry once if element was mounting
+  if (typeof target === 'string') {
     setTimeout(() => {
       const retryEl = document.querySelector(selector)
       if (retryEl) {
@@ -63,57 +75,8 @@ export function smoothScrollTo(target, options = {}) {
       } else if (onComplete) {
         onComplete()
       }
-    }, 100)
-    return
+    }, 120)
   }
-
-  // Clamp target between 0 and maximum document scrollable height
-  const maxScrollY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
-  targetY = Math.max(0, Math.min(targetY, maxScrollY))
-
-  // High-performance direct requestAnimationFrame cubic ease-in-out animator
-  // Guaranteed to execute reliably across all browsers without being swallowed by third-party drivers
-  const startY = window.pageYOffset || document.documentElement.scrollTop || 0
-  const distance = targetY - startY
-
-  if (Math.abs(distance) < 2) {
-    window.scrollTo(0, targetY)
-    if (window.__lenis) {
-      window.__lenis.animatedScroll = targetY
-      window.__lenis.targetScroll = targetY
-    }
-    if (onComplete) onComplete()
-    return
-  }
-
-  const startTime = performance.now()
-
-  function step(now) {
-    const elapsed = now - startTime
-    const progress = Math.min(elapsed / duration, 1)
-    const eased = easing(progress)
-    const currentY = startY + distance * eased
-
-    window.scrollTo(0, currentY)
-    if (window.__lenis) {
-      window.__lenis.animatedScroll = currentY
-      window.__lenis.targetScroll = currentY
-    }
-
-    if (progress < 1) {
-      activeScrollAnimationId = requestAnimationFrame(step)
-    } else {
-      window.scrollTo(0, targetY)
-      if (window.__lenis) {
-        window.__lenis.animatedScroll = targetY
-        window.__lenis.targetScroll = targetY
-      }
-      activeScrollAnimationId = null
-      if (onComplete) onComplete()
-    }
-  }
-
-  activeScrollAnimationId = requestAnimationFrame(step)
 }
 
 /**

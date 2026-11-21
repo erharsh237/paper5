@@ -1,5 +1,4 @@
 import { ThemeProvider } from './lib/ThemeContext'
-import { useLenis } from './hooks/useLenis'
 import ScrollToTop from './components/ScrollToTop'
 import FloatingNotice from './components/FloatingNotice'
 import { Suspense, lazy, useEffect, useState, useSyncExternalStore } from 'react'
@@ -222,7 +221,6 @@ function AdminGuard({ children }) {
 
 export default function App() {
   useLivePresenceTracker()
-  useLenis()
   const location = useLocation()
   const { user, userData, loading, isPending2FA } = useAuth()
   const [analyticsConsent, setAnalyticsConsent] = useState(() => hasAnalyticsConsent())

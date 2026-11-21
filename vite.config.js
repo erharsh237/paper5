@@ -87,9 +87,6 @@ export default defineConfig({
             if (id.includes('@sentry')) {
               return 'vendor-sentry'
             }
-            if (id.includes('lenis')) {
-              return 'vendor-lenis'
-            }
           }
         }
       }

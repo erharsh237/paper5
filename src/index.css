@@ -24,27 +24,10 @@ body {
   padding: 0;
 }
 
-/* Ensure Lenis does not fight browser native smooth scroll or fixed container height */
-html.lenis,
-html.lenis body {
-  height: auto !important;
-  scroll-behavior: auto !important;
-}
-
-.lenis.lenis-smooth {
-  scroll-behavior: auto !important;
-}
-
-.lenis.lenis-smooth [data-lenis-prevent] {
-  overscroll-behavior: contain;
-}
-
-.lenis.lenis-stopped {
-  overflow: clip;
-}
-
-.lenis.lenis-smooth iframe {
-  pointer-events: none;
+/* Global Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 88px;
 }
 
 /* Base Interactive Transitions across all elements */
