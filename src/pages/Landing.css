@@ -3427,8 +3427,18 @@
    MODERN VERCEL / LINEAR NAVBAR DESIGN SYSTEM
    ========================================================================== */
 
+.landing-page {
+  padding-top: 64px;
+}
+
+@media (max-width: 820px) {
+  .landing-page {
+    padding-top: 56px;
+  }
+}
+
 .landing-nav {
-  position: sticky;
+  position: fixed !important;
   top: 0;
   left: 0;
   right: 0;
