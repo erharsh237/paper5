@@ -8,111 +8,124 @@
 --   3. Completely eradicate all workspace data (members, tasks, sprints, meetings, logs).
 -- ==============================================================================
 
--- 1. FIX TRIGGER: Check if parent workspace is being deleted before throwing compliance error
-create or replace function public.check_last_owner()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  -- If the parent workspace does not exist or has already been deleted, skip compliance check
-  if not exists (select 1 from public.workspaces where id = old.workspace_id) then
-    return old;
-  end if;
+-- 1. DYNAMICALLY PATCH ANY EXISTING TRIGGER FUNCTION RAISING THE COMPLIANCE ERROR
+DO $$
+DECLARE
+  f RECORD;
+BEGIN
+  FOR f IN (
+    SELECT proname, pronamespace::regnamespace::text as schema_name
+    FROM pg_proc
+    WHERE prosrc ILIKE '%Cannot remove or demote the last owner%'
+  ) LOOP
+    RAISE NOTICE 'Patching compliance trigger function: %.%', f.schema_name, f.proname;
+    EXECUTE format('
+      CREATE OR REPLACE FUNCTION %I.%I()
+      RETURNS TRIGGER
+      LANGUAGE plpgsql
+      SECURITY DEFINER
+      SET search_path = public
+      AS $func$
+      BEGIN
+        -- If parent workspace does not exist or has already been deleted, skip compliance check
+        IF NOT EXISTS (SELECT 1 FROM public.workspaces WHERE id = OLD.workspace_id) THEN
+          RETURN OLD;
+        END IF;
 
-  -- Deletion check: cannot delete the last owner of an ACTIVE workspace
-  if (tg_op = 'DELETE' and old.role = 'owner') then
-    if not exists (
-      select 1 from public.workspace_members
-      where workspace_id = old.workspace_id
-        and role = 'owner'
-        and user_id != old.user_id
-    ) then
-      -- If the workspace itself is being deleted, allow it
-      -- Otherwise, raise compliance error
-      if exists (select 1 from public.workspaces where id = old.workspace_id) then
-        raise exception 'Compliance Error: Cannot remove or demote the last owner of a workspace.';
-      end if;
-    end if;
-  end if;
+        -- Deletion check: cannot delete the last owner of an ACTIVE workspace
+        IF (TG_OP = ''DELETE'' AND OLD.role = ''owner'') THEN
+          IF NOT EXISTS (
+            SELECT 1 FROM public.workspace_members
+            WHERE workspace_id = OLD.workspace_id
+              AND role = ''owner''
+              AND user_id != OLD.user_id
+          ) THEN
+            -- Only raise if parent workspace still exists and is not being deleted
+            IF EXISTS (SELECT 1 FROM public.workspaces WHERE id = OLD.workspace_id) THEN
+              RAISE EXCEPTION ''Compliance Error: Cannot remove or demote the last owner of a workspace.'';
+            END IF;
+          END IF;
+        END IF;
 
-  -- Demotion check: cannot demote the last owner of an ACTIVE workspace
-  if (tg_op = 'UPDATE' and old.role = 'owner' and new.role != 'owner') then
-    if not exists (
-      select 1 from public.workspace_members
-      where workspace_id = old.workspace_id
-        and role = 'owner'
-        and user_id != old.user_id
-    ) then
-      raise exception 'Compliance Error: Cannot remove or demote the last owner of a workspace.';
-    end if;
-  end if;
+        -- Demotion check: cannot demote the last owner of an ACTIVE workspace
+        IF (TG_OP = ''UPDATE'' AND OLD.role = ''owner'' AND NEW.role != ''owner'') THEN
+          IF NOT EXISTS (
+            SELECT 1 FROM public.workspace_members
+            WHERE workspace_id = OLD.workspace_id
+              AND role = ''owner''
+              AND user_id != OLD.user_id
+          ) THEN
+            RAISE EXCEPTION ''Compliance Error: Cannot remove or demote the last owner of a workspace.'';
+          END IF;
+        END IF;
 
-  return old;
-end;
-$$;
+        RETURN OLD;
+      END;
+      $func$;
+    ', f.schema_name, f.proname);
+  END LOOP;
+END $$;
 
 -- 2. DEDICATED ATOMIC WORKSPACE PURGE RPC (EXECUTED WITH ELEVATED PRIVILEGES)
-create or replace function public.delete_workspace_completely(target_workspace_id uuid)
-returns jsonb
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  caller_uid uuid;
-  ws_creator uuid;
-  is_admin boolean;
-begin
+CREATE OR REPLACE FUNCTION public.delete_workspace_completely(target_workspace_id UUID)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  caller_uid UUID;
+  ws_creator UUID;
+  is_admin BOOLEAN;
+BEGIN
   caller_uid := auth.uid();
 
   -- Verify caller is authenticated (or called via service role where auth.uid() is null)
-  if caller_uid is not null then
-    select created_by into ws_creator from public.workspaces where id = target_workspace_id;
+  IF caller_uid IS NOT NULL THEN
+    SELECT created_by INTO ws_creator FROM public.workspaces WHERE id = target_workspace_id;
     
-    select exists (
-      select 1 from public.workspace_members
-      where workspace_id = target_workspace_id
-        and user_id = caller_uid
-        and role in ('owner', 'admin')
-    ) into is_admin;
+    SELECT EXISTS (
+      SELECT 1 FROM public.workspace_members
+      WHERE workspace_id = target_workspace_id
+        AND user_id = caller_uid
+        AND role IN ('owner', 'admin')
+    ) INTO is_admin;
 
-    if ws_creator != caller_uid and not coalesce(is_admin, false) then
-      raise exception 'Access denied: Only workspace owners and admins can permanently delete a workspace.';
-    end if;
-  end if;
+    IF ws_creator != caller_uid AND NOT COALESCE(is_admin, false) THEN
+      RAISE EXCEPTION 'Access denied: Only workspace owners and admins can permanently delete a workspace.';
+    END IF;
+  END IF;
 
   -- Step 1: Invalidate all pending invites immediately (invite links become dead)
-  delete from public.invites where workspace_id = target_workspace_id;
-  delete from public.workspace_invites where workspace_id = target_workspace_id;
+  DELETE FROM public.invites WHERE workspace_id = target_workspace_id;
+  DELETE FROM public.workspace_invites WHERE workspace_id = target_workspace_id;
 
   -- Step 2: Delete all operational data
-  delete from public.deadlines where workspace_id = target_workspace_id;
-  delete from public.sprints where workspace_id = target_workspace_id;
-  delete from public.meetings where workspace_id = target_workspace_id;
-  delete from public.audit_logs where workspace_id = target_workspace_id;
-  delete from public.evidence where workspace_id = target_workspace_id;
-  delete from public.extra_work where workspace_id = target_workspace_id;
+  DELETE FROM public.deadlines WHERE workspace_id = target_workspace_id;
+  DELETE FROM public.sprints WHERE workspace_id = target_workspace_id;
+  DELETE FROM public.meetings WHERE workspace_id = target_workspace_id;
+  DELETE FROM public.audit_logs WHERE workspace_id = target_workspace_id;
+  DELETE FROM public.evidence WHERE workspace_id = target_workspace_id;
+  DELETE FROM public.extra_work WHERE workspace_id = target_workspace_id;
 
   -- Step 3: Delete members (temporarily bypass trigger)
-  alter table public.workspace_members disable trigger all;
-  delete from public.workspace_members where workspace_id = target_workspace_id;
-  alter table public.workspace_members enable trigger all;
+  ALTER TABLE public.workspace_members DISABLE TRIGGER ALL;
+  DELETE FROM public.workspace_members WHERE workspace_id = target_workspace_id;
+  ALTER TABLE public.workspace_members ENABLE TRIGGER ALL;
 
   -- Step 4: Delete the workspace row
-  delete from public.workspaces where id = target_workspace_id;
+  DELETE FROM public.workspaces WHERE id = target_workspace_id;
 
-  return jsonb_build_object(
+  RETURN jsonb_build_object(
     'success', true,
     'workspace_id', target_workspace_id,
     'message', 'Workspace and all associated data permanently eradicated.'
   );
-exception when others then
-  alter table public.workspace_members enable trigger all;
-  raise;
-end;
+EXCEPTION WHEN OTHERS THEN
+  ALTER TABLE public.workspace_members ENABLE TRIGGER ALL;
+  RAISE;
+END;
 $$;
 
 -- Grant execution to authenticated users and service_role
-grant execute on function public.delete_workspace_completely(uuid) to authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.delete_workspace_completely(UUID) TO authenticated, service_role;
