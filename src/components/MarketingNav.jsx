@@ -69,6 +69,7 @@ export default function MarketingNav() {
       scrollToPricing({ duration: 900 })
       if (window.location.hash !== '#pricing') {
         window.history.pushState('', document.title, '/#pricing')
+        window.dispatchEvent(new Event('hashchange'))
       }
     } else {
       if (e) e.preventDefault()
@@ -424,8 +425,15 @@ export default function MarketingNav() {
               <Link 
                 to="/#pricing" 
                 onClick={(e) => { 
-                  handlePricingClick(e); 
+                  if (e) e.preventDefault();
                   setIsMobileMenuOpen(false); 
+                  setTimeout(() => {
+                    scrollToPricing({ duration: 900 });
+                    if (window.location.hash !== '#pricing') {
+                      window.history.pushState('', document.title, '/#pricing');
+                      window.dispatchEvent(new Event('hashchange'));
+                    }
+                  }, 80);
                 }} 
                 className={`mobile-drawer-link ${location.pathname === '/pricing' || location.hash === '#pricing' ? 'active' : ''}`}
               >

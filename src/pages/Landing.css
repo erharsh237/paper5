@@ -2287,6 +2287,7 @@
 .pricing-section {
   padding: 100px 0;
   background: #f4f1ed;
+  scroll-margin-top: 88px;
 }
 
 .pricing-grid {
@@ -6776,6 +6777,7 @@
   padding: 88px 0;
   background: #ffffff;
   border-bottom: 1px solid #eef1f5;
+  scroll-margin-top: 88px;
 }
 
 [data-theme="dark"] .pricing-section {

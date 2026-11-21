@@ -35,41 +35,63 @@ export function smoothScrollTo(target, options = {}) {
     activeScrollAnimationId = null
   }
 
-  // Calculate target Y position
+  // Resolve DOM element
+  let targetEl = null
+  let selector = null
+
+  if (typeof target === 'string') {
+    selector = target.startsWith('#') ? target : `#${target}`
+    targetEl = document.querySelector(selector)
+  } else if (target instanceof HTMLElement) {
+    targetEl = target
+  }
+
+  // Calculate target Y coordinate
   let targetY = 0
 
   if (typeof target === 'number') {
     targetY = target
+  } else if (targetEl) {
+    const rect = targetEl.getBoundingClientRect()
+    targetY = window.pageYOffset + rect.top + offset
   } else if (typeof target === 'string') {
-    const selector = target.startsWith('#') ? target : `#${target}`
-    const el = document.querySelector(selector)
-    if (!el) {
-      if (onComplete) onComplete()
-      return
-    }
-    const rect = el.getBoundingClientRect()
-    targetY = window.pageYOffset + rect.top + offset
-  } else if (target instanceof HTMLElement) {
-    const rect = target.getBoundingClientRect()
-    targetY = window.pageYOffset + rect.top + offset
+    // Retry once in next tick if element was mounting
+    setTimeout(() => {
+      const retryEl = document.querySelector(selector)
+      if (retryEl) {
+        smoothScrollTo(retryEl, options)
+      } else if (onComplete) {
+        onComplete()
+      }
+    }, 100)
+    return
   }
 
   // Clamp target between 0 and maximum document scrollable height
   const maxScrollY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
   targetY = Math.max(0, Math.min(targetY, maxScrollY))
 
-  // 1. If Lenis instance is active on window, let Lenis glide
+  // 1. If Lenis instance is active on window, synchronize dimensions and scroll
   if (window.__lenis && typeof window.__lenis.scrollTo === 'function') {
     try {
-      window.__lenis.scrollTo(targetY, {
-        offset: 0,
+      // Force dimensions recomputation so limit is up to date
+      if (typeof window.__lenis.resize === 'function') {
+        window.__lenis.resize()
+      }
+
+      window.__lenis.scrollTo(targetEl || targetY, {
+        offset,
         duration: duration / 1000,
         easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-        onComplete
+        lock: false,
+        force: true,
+        onComplete: () => {
+          if (onComplete) onComplete()
+        }
       })
       return
     } catch {
-      // Fall through to manual RAF animator if Lenis encounters an exception
+      // Fall through to RAF animator if Lenis encounters an exception
     }
   }
 

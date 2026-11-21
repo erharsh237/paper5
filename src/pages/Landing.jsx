@@ -160,6 +160,16 @@ export default function Landing() {
     }
   }, [location.pathname, location.hash])
 
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash === '#pricing') {
+        smoothScrollTo('pricing', { offset: -84, duration: 900 })
+      }
+    }
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
   const toggleFaq = (index) => {
     setOpenFaq(prev => (prev === index ? -1 : index))
   }

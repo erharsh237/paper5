@@ -36,6 +36,15 @@ export function useLenis() {
 
     window.__lenis = lenis
 
+    // Keep Lenis dimensions updated as dynamic DOM components and images render
+    let resizeObserver = null
+    if (typeof ResizeObserver !== 'undefined' && document.body) {
+      resizeObserver = new ResizeObserver(() => {
+        lenis.resize()
+      })
+      resizeObserver.observe(document.body)
+    }
+
     // Dedicated requestAnimationFrame loop to ensure 60fps/120fps buttery mouse wheel interpolation
     let rafId = null
     const raf = (time) => {
@@ -45,6 +54,10 @@ export function useLenis() {
     rafId = requestAnimationFrame(raf)
 
     return () => {
+      if (resizeObserver) {
+        resizeObserver.disconnect()
+        resizeObserver = null
+      }
       if (rafId) {
         cancelAnimationFrame(rafId)
         rafId = null
