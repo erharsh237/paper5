@@ -242,6 +242,7 @@ export function WorkspaceProvider({ children }) {
   }, [user, workspaceId]);
 
   // Track live workspace presence for team awareness & admin dashboard
+  const [onlineUsers, setOnlineUsers] = useState([])
   const [onlineUserIds, setOnlineUserIds] = useState(new Set())
 
   useEffect(() => {
@@ -268,14 +269,45 @@ export function WorkspaceProvider({ children }) {
       .on('presence', { event: 'sync' }, () => {
         try {
           const state = channel.presenceState()
-          const ids = new Set()
+          const uniqueUsersMap = new Map()
+          const lookupIds = new Set()
+
           Object.keys(state).forEach((k) => {
             ;(state[k] || []).forEach((p) => {
-              if (p.userId) ids.add(p.userId)
-              if (p.email) ids.add(p.email.toLowerCase().trim())
+              const primaryKey = p.userId || p.email
+              if (primaryKey && !uniqueUsersMap.has(primaryKey)) {
+                uniqueUsersMap.set(primaryKey, {
+                  userId: p.userId,
+                  email: (p.email || '').toLowerCase().trim(),
+                  name: p.name || 'Workspace Member',
+                  avatarUrl: p.avatarUrl || null,
+                  role: p.role || 'Member',
+                  onlineAt: p.onlineAt || new Date().toISOString()
+                })
+              }
+              if (p.userId) lookupIds.add(p.userId)
+              if (p.email) lookupIds.add(p.email.toLowerCase().trim())
             })
           })
-          setOnlineUserIds(ids)
+
+          const list = Array.from(uniqueUsersMap.values())
+          const currentUserEmail = (user.email || '').toLowerCase().trim()
+          if (!uniqueUsersMap.has(user.id) && (!currentUserEmail || !uniqueUsersMap.has(currentUserEmail))) {
+            list.unshift({
+              userId: user.id,
+              email: currentUserEmail,
+              name: user.displayName || user.email?.split('@')[0] || 'You',
+              avatarUrl: user.photoURL || null,
+              role: workspaceRole || 'Owner',
+              onlineAt: new Date().toISOString(),
+              isCurrent: true
+            })
+            lookupIds.add(user.id)
+            if (currentUserEmail) lookupIds.add(currentUserEmail)
+          }
+
+          setOnlineUsers(list)
+          setOnlineUserIds(lookupIds)
         } catch (err) {
           console.warn('Presence sync error:', err)
         }
@@ -287,6 +319,7 @@ export function WorkspaceProvider({ children }) {
               userId: user.id,
               email: (user.email || '').toLowerCase().trim(),
               name: user.displayName || user.email?.split('@')[0] || 'Member',
+              role: workspaceRole || 'Member',
               onlineAt: new Date().toISOString()
             })
           } catch (e) {
@@ -301,7 +334,7 @@ export function WorkspaceProvider({ children }) {
         supabase.removeChannel(channel)
       } catch (_) {}
     }
-  }, [workspaceId, user])
+  }, [workspaceId, user, workspaceRole])
 
   useEffect(() => {
     if (!workspace?.created_by) {
@@ -387,8 +420,9 @@ export function WorkspaceProvider({ children }) {
     isLocked,
     isCapacityFrozen,
     capacityDetails,
+    onlineUsers,
     onlineUserIds,
-    onlineCount: Math.max(1, onlineUserIds.size),
+    onlineCount: Math.max(1, onlineUsers.length),
     is2FABlocked: false,
   }
 

@@ -35,6 +35,7 @@ export default function WorkspaceBentoLayout({ children }) {
     workspace,
     isAdmin,
     isOwner,
+    onlineUsers: contextOnlineUsers = [],
     onlineUserIds: contextOnlineUserIds,
     onlineCount: contextOnlineCount
   } = useWorkspace()
@@ -42,9 +43,10 @@ export default function WorkspaceBentoLayout({ children }) {
   const location = useLocation()
   const navigate = useNavigate()
 
-  // Modals
+  // Modals & Popovers
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false)
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false)
+  const [isOnlinePopoverOpen, setIsOnlinePopoverOpen] = useState(false)
 
   // Real-time Presence
   const onlineUserIds = contextOnlineUserIds || new Set()
@@ -90,10 +92,21 @@ export default function WorkspaceBentoLayout({ children }) {
     return onlineUserIds.has(memberId) || onlineUserIds.has(memberEmail)
   }, [onlineUserIds, user])
 
-  const onlineCount = useMemo(() => {
-    const matched = teamMembers.filter(isMemberOnline).length
-    return Math.max(contextOnlineCount || 1, matched || 1)
-  }, [contextOnlineCount, teamMembers, isMemberOnline])
+  const onlineList = useMemo(() => {
+    if (contextOnlineUsers && contextOnlineUsers.length > 0) return contextOnlineUsers
+    if (user) {
+      return [{
+        userId: user.id,
+        email: user.email,
+        name: user.displayName || user.email?.split('@')[0] || 'You',
+        role: workspace?.role || 'Owner',
+        isCurrent: true
+      }]
+    }
+    return []
+  }, [contextOnlineUsers, user, workspace])
+
+  const onlineCount = onlineList.length
 
   // Keyboard navigation shortcuts (⌘1 - ⌘5)
   useEffect(() => {
@@ -320,35 +333,82 @@ export default function WorkspaceBentoLayout({ children }) {
 
               {/* Right Topbar Tools: Team Capsule, Actions, User */}
               <div className="bento-topbar-right">
-                {/* Team Members Horizontal Capsule */}
-                <div
-                  className="bento-team-capsule"
-                  onClick={() => navigate(`/${workspaceId}`)}
-                  title="View Team Workload & Live Presence"
-                >
-                  <span className="bento-live-pulse-dot" />
-                  <span className="bento-online-count-lbl">{onlineCount} Online</span>
-                  <div className="bento-team-avatars-row">
-                    {teamMembers.slice(0, 6).map((m, idx) => {
-                      const isOnline = isMemberOnline(m)
-                      return (
+                {/* Team Members Horizontal Capsule with Interactive Popover */}
+                <div style={{ position: 'relative' }}>
+                  <div
+                    className="bento-team-capsule"
+                    onClick={() => setIsOnlinePopoverOpen(prev => !prev)}
+                    title="Click to view online team members"
+                  >
+                    <span className="bento-live-pulse-dot" />
+                    <span className="bento-online-count-lbl">{onlineCount} Online</span>
+                    <div className="bento-team-avatars-row">
+                      {onlineList.slice(0, 6).map((m, idx) => (
                         <div
-                          key={m.userId || m.id || idx}
-                          className={`bento-member-circle-avatar ${isOnline ? 'online' : ''}`}
-                          title={`${m.name || m.email} (${m.role || 'Member'}) — ${isOnline ? 'Online now' : 'Offline'}`}
+                          key={m.userId || m.email || idx}
+                          className="bento-member-circle-avatar online"
+                          title={`${m.name || m.email} (${m.role || 'Member'}) — Online now`}
                           style={{
-                            background: m.avatarUrl ? `url(${m.avatarUrl}) center/cover` : ['#4f46e5', '#0284c7', '#10b981', '#f59e0b', '#8b5cf6'][idx % 5]
+                            background: m.avatarUrl ? `url(${m.avatarUrl}) center/cover` : ['#18181b', '#27272a', '#3f3f46'][idx % 3]
                           }}
                         >
                           {!m.avatarUrl && (m.name || m.email || 'M').charAt(0).toUpperCase()}
                         </div>
-                      )
-                    })}
-                    {teamMembers.length > 6 && (
-                      <span className="bento-team-overflow">+{teamMembers.length - 6}</span>
-                    )}
+                      ))}
+                      {onlineList.length > 6 && (
+                        <span className="bento-team-overflow">+{onlineList.length - 6}</span>
+                      )}
+                    </div>
+                    <ChevronRight size={14} color="#94a3b8" />
                   </div>
-                  <ChevronRight size={14} color="#94a3b8" />
+
+                  {/* Dropdown Scrollable Bento Card */}
+                  {isOnlinePopoverOpen && (
+                    <div className="bento-online-popover-card">
+                      <div className="bento-online-popover-header">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="bento-live-pulse-dot" />
+                          <span style={{ fontSize: '13px', fontWeight: 700, color: '#18181b' }}>
+                            Online Team ({onlineCount})
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          className="bento-popover-close-btn"
+                          onClick={(e) => { e.stopPropagation(); setIsOnlinePopoverOpen(false); }}
+                        >
+                          &times;
+                        </button>
+                      </div>
+
+                      <div className="bento-online-popover-scroll">
+                        {onlineList.map((m) => (
+                          <div key={m.userId || m.email} className="bento-presence-user-row">
+                            <div className="bento-presence-avatar-wrap">
+                              <div
+                                className="bento-presence-avatar"
+                                style={{
+                                  background: m.avatarUrl ? `url(${m.avatarUrl}) center/cover` : '#18181b'
+                                }}
+                              >
+                                {!m.avatarUrl && (m.name || m.email || 'U').charAt(0).toUpperCase()}
+                              </div>
+                              <span className="bento-presence-dot" />
+                            </div>
+                            <div className="bento-presence-meta">
+                              <div className="bento-presence-name-row">
+                                <span className="bento-presence-name">
+                                  {m.name || m.email} {m.userId === user?.id ? '(You)' : ''}
+                                </span>
+                                <span className="bento-presence-role">{m.role || 'Member'}</span>
+                              </div>
+                              <span className="bento-presence-status">Online now</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Action Buttons */}

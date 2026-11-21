@@ -450,15 +450,21 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
-   3. ROW 1: BENTO TELEMETRY CARDS (4 Modules)
+   3. ROW 1: BENTO TELEMETRY CARDS (5 Modules including Live Presence)
 ───────────────────────────────────────────────────────────── */
 .bento-kpi-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1440px) {
+  .bento-kpi-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
   .bento-kpi-row {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -468,6 +474,147 @@
   .bento-kpi-row {
     grid-template-columns: 1fr;
   }
+}
+
+/* Live Presence Scrollable Bento Card */
+.bento-card--presence {
+  display: flex;
+  flex-direction: column;
+}
+
+.bento-online-pill-tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: #059669;
+  background: #ecfdf5;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  border: 1px solid #a7f3d0;
+}
+
+.bento-card-online-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+  max-height: 125px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.bento-card-online-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.bento-card-online-scroll::-webkit-scrollbar-thumb {
+  background: #e4e4e7;
+  border-radius: 4px;
+}
+
+.bento-presence-user-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  background: #fbfbf9;
+  border: 1px solid #f4f4f5;
+  transition: all 0.15s ease;
+}
+
+.bento-presence-user-row:hover {
+  background: #f4f4f5;
+}
+
+.bento-presence-user-row.offline {
+  opacity: 0.65;
+  background: transparent;
+}
+
+.bento-presence-avatar-wrap {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.bento-presence-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bento-presence-avatar.offline {
+  filter: grayscale(1);
+}
+
+.bento-presence-dot {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  border: 1.5px solid #ffffff;
+}
+
+.bento-presence-dot.offline {
+  background: #a1a1aa;
+}
+
+.bento-presence-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.bento-presence-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.bento-presence-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #18181b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bento-presence-name.offline {
+  font-weight: 600;
+  color: #71717a;
+}
+
+.bento-presence-role {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #71717a;
+  background: #ffffff;
+  padding: 1px 5px;
+  border-radius: 9999px;
+  border: 1px solid #e4e4e7;
+  text-transform: capitalize;
+}
+
+.bento-presence-status {
+  font-size: 10.5px;
+  color: #059669;
+  font-weight: 500;
+}
+
+.bento-presence-status.offline {
+  color: #a1a1aa;
 }
 
 .bento-card {

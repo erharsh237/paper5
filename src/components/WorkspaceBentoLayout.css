@@ -178,3 +178,61 @@
   border-color: #d4d4d8 !important;
   color: #18181b !important;
 }
+
+/* 5. Online Members Popover Card */
+.bento-online-popover-card {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 290px;
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e4e4e7;
+  z-index: 1000;
+  animation: bentoFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bento-online-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f4f4f5;
+  margin-bottom: 10px;
+}
+
+.bento-popover-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  color: #a1a1aa;
+  cursor: pointer;
+  padding: 0 4px;
+  border-radius: 6px;
+}
+
+.bento-popover-close-btn:hover {
+  color: #18181b;
+  background: #f4f4f5;
+}
+
+.bento-online-popover-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.bento-online-popover-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.bento-online-popover-scroll::-webkit-scrollbar-thumb {
+  background: #e4e4e7;
+  border-radius: 4px;
+}

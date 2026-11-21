@@ -50,7 +50,15 @@ import './AdminCommandCenter.css'
 
 export default function AdminCommandCenter({ onSwitchToPersonal }) {
   const bentoLayout = useWorkspaceBento()
-  const { workspaceId, workspace, isAdmin, isOwner, onlineUserIds: contextOnlineUserIds, onlineCount: contextOnlineCount } = useWorkspace()
+  const {
+    workspaceId,
+    workspace,
+    isAdmin,
+    isOwner,
+    onlineUsers: contextOnlineUsers = [],
+    onlineUserIds: contextOnlineUserIds,
+    onlineCount: contextOnlineCount
+  } = useWorkspace()
   const { user } = useAuth()
 
   // Real-time Presence
@@ -151,10 +159,21 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
     return onlineUserIds.has(memberId) || onlineUserIds.has(memberEmail)
   }, [onlineUserIds, user])
 
-  const onlineCount = useMemo(() => {
-    const matched = teamWorkload.filter(isMemberOnline).length
-    return Math.max(contextOnlineCount || 1, matched || 1)
-  }, [contextOnlineCount, teamWorkload, isMemberOnline])
+  const onlineList = useMemo(() => {
+    if (contextOnlineUsers && contextOnlineUsers.length > 0) return contextOnlineUsers
+    if (user) {
+      return [{
+        userId: user.id,
+        email: user.email,
+        name: user.displayName || user.email?.split('@')[0] || 'You',
+        role: workspace?.role || 'Owner',
+        isCurrent: true
+      }]
+    }
+    return []
+  }, [contextOnlineUsers, user, workspace])
+
+  const onlineCount = onlineList.length
   const handleExportCSV = () => {
     window.location.href = `/api/admin?workspaceId=${encodeURIComponent(workspaceId)}&action=export&type=tasks`
   }
@@ -458,6 +477,72 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
                 >
                   {overview.unassignedTasksCount || 0} Unassigned
                 </button>
+              </div>
+            </div>
+
+            {/* Card 5: Live Team Presence (Scrollable Bento Card) */}
+            <div className="bento-card bento-card--presence">
+              <div className="bento-card-top">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="bento-live-pulse-dot" />
+                  <span className="bento-card-title">Live Team</span>
+                </div>
+                <span className="bento-online-pill-tag">
+                  {onlineCount} {onlineCount === 1 ? 'Online' : 'Online'}
+                </span>
+              </div>
+
+              <div className="bento-card-online-scroll">
+                {onlineList.map((m) => (
+                  <div key={m.userId || m.email} className="bento-presence-user-row">
+                    <div className="bento-presence-avatar-wrap">
+                      <div
+                        className="bento-presence-avatar"
+                        style={{
+                          background: m.avatarUrl ? `url(${m.avatarUrl}) center/cover` : '#18181b'
+                        }}
+                      >
+                        {!m.avatarUrl && (m.name || m.email || 'U').charAt(0).toUpperCase()}
+                      </div>
+                      <span className="bento-presence-dot" />
+                    </div>
+                    <div className="bento-presence-meta">
+                      <div className="bento-presence-name-row">
+                        <span className="bento-presence-name">
+                          {m.name || m.email} {m.userId === user?.id ? '(You)' : ''}
+                        </span>
+                        <span className="bento-presence-role">{m.role || 'Member'}</span>
+                      </div>
+                      <span className="bento-presence-status">Online now</span>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Show offline workspace members */}
+                {teamWorkload
+                  .filter((tm) => !isMemberOnline(tm))
+                  .map((m) => (
+                    <div key={m.userId || m.id || m.email} className="bento-presence-user-row offline">
+                      <div className="bento-presence-avatar-wrap">
+                        <div
+                          className="bento-presence-avatar offline"
+                          style={{
+                            background: m.avatarUrl ? `url(${m.avatarUrl}) center/cover` : '#71717a'
+                          }}
+                        >
+                          {!m.avatarUrl && (m.name || m.email || 'U').charAt(0).toUpperCase()}
+                        </div>
+                        <span className="bento-presence-dot offline" />
+                      </div>
+                      <div className="bento-presence-meta">
+                        <div className="bento-presence-name-row">
+                          <span className="bento-presence-name offline">{m.name || m.email}</span>
+                          <span className="bento-presence-role">{m.role || 'Member'}</span>
+                        </div>
+                        <span className="bento-presence-status offline">Offline</span>
+                      </div>
+                    </div>
+                  ))}
               </div>
             </div>
           </section>
