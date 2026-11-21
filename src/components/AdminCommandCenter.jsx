@@ -465,15 +465,17 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
               <div className="bento-alert-tags-row">
                 <button
                   type="button"
-                  className="bento-tag-btn"
+                  className={`bento-tag-btn ${(overview.stalledTasksCount || 0) > 0 ? 'is-warning' : 'is-neutral'}`}
                   onClick={() => { setActiveTab('tasks'); setQuickFilter('stalled'); }}
+                  aria-label={`Filter by stalled tasks: ${overview.stalledTasksCount || 0} stalled`}
                 >
                   {overview.stalledTasksCount || 0} Stalled (&gt;7d)
                 </button>
                 <button
                   type="button"
-                  className="bento-tag-btn"
+                  className={`bento-tag-btn ${(overview.unassignedTasksCount || 0) > 0 ? 'is-warning' : 'is-neutral'}`}
                   onClick={() => { setActiveTab('tasks'); setQuickFilter('unassigned'); }}
+                  aria-label={`Filter by unassigned tasks: ${overview.unassignedTasksCount || 0} unassigned`}
                 >
                   {overview.unassignedTasksCount || 0} Unassigned
                 </button>
@@ -595,99 +597,109 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
           ───────────────────────────────────────────────────────────── */}
           {activeTab === 'tasks' && (
             <section className="bento-stage-card">
-              {/* Filter Controls */}
-              <div className="bento-filter-row">
-                <div className="bento-search-box">
-                  <Search size={14} color="#94a3b8" />
-                  <input
-                    type="text"
-                    placeholder="Search tasks across workspace..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bento-search-field"
-                  />
+              {/* Filter Controls: Tier 1 (Search & Selects) + Tier 2 (Quick Filter Chips) */}
+              <div className="bento-filter-container">
+                <div className="bento-filter-primary-tier">
+                  <div className="bento-search-box">
+                    <Search size={14} color="#94a3b8" />
+                    <input
+                      type="text"
+                      placeholder="Search tasks across workspace..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="bento-search-field"
+                    />
+                  </div>
+
+                  <select
+                    className="bento-select-pill"
+                    value={selectedProjectFilter}
+                    onChange={(e) => setSelectedProjectFilter(e.target.value)}
+                  >
+                    <option value="all">All Projects</option>
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    className="bento-select-pill"
+                    value={selectedStatusFilter}
+                    onChange={(e) => setSelectedStatusFilter(e.target.value)}
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="todo">To Do</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="review">In Review</option>
+                    <option value="completed">Completed</option>
+                  </select>
+
+                  <select
+                    className="bento-select-pill"
+                    value={selectedPriorityFilter}
+                    onChange={(e) => setSelectedPriorityFilter(e.target.value)}
+                  >
+                    <option value="all">All Priorities</option>
+                    <option value="urgent">Urgent</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
                 </div>
 
-                <select
-                  className="bento-select-pill"
-                  value={selectedProjectFilter}
-                  onChange={(e) => setSelectedProjectFilter(e.target.value)}
-                >
-                  <option value="all">All Projects</option>
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  className="bento-select-pill"
-                  value={selectedStatusFilter}
-                  onChange={(e) => setSelectedStatusFilter(e.target.value)}
-                >
-                  <option value="all">All Statuses</option>
-                  <option value="todo">To Do</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="review">In Review</option>
-                  <option value="completed">Completed</option>
-                </select>
-
-                <select
-                  className="bento-select-pill"
-                  value={selectedPriorityFilter}
-                  onChange={(e) => setSelectedPriorityFilter(e.target.value)}
-                >
-                  <option value="all">All Priorities</option>
-                  <option value="urgent">Urgent</option>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                </select>
-
-                <div className="bento-filter-pills-group">
-                  <button
-                    type="button"
-                    className={`bento-chip ${quickFilter === 'all' ? 'active' : ''}`}
-                    onClick={() => setQuickFilter('all')}
-                  >
-                    All
-                  </button>
-                  <button
-                    type="button"
-                    className={`bento-chip ${quickFilter === 'mine' ? 'active' : ''}`}
-                    onClick={() => setQuickFilter('mine')}
-                  >
-                    My Tasks
-                  </button>
-                  <button
-                    type="button"
-                    className={`bento-chip ${quickFilter === 'overdue' ? 'active' : ''}`}
-                    onClick={() => setQuickFilter('overdue')}
-                  >
-                    Overdue ({overview.overdueTasksCount || 0})
-                  </button>
-                  <button
-                    type="button"
-                    className={`bento-chip ${quickFilter === 'stalled' ? 'active' : ''}`}
-                    onClick={() => setQuickFilter('stalled')}
-                  >
-                    Inactive &gt;7d ({overview.stalledTasksCount || 0})
-                  </button>
-                  <button
-                    type="button"
-                    className={`bento-chip ${quickFilter === 'unassigned' ? 'active' : ''}`}
-                    onClick={() => setQuickFilter('unassigned')}
-                  >
-                    Unassigned ({overview.unassignedTasksCount || 0})
-                  </button>
-                  <button
-                    type="button"
-                    className={`bento-chip ${quickFilter === 'urgent' ? 'active' : ''}`}
-                    onClick={() => setQuickFilter('urgent')}
-                  >
-                    Urgent / High
-                  </button>
+                <div className="bento-filter-chips-tier">
+                  <div className="bento-filter-pills-group" role="group" aria-label="Task quick filters">
+                    <button
+                      type="button"
+                      className={`bento-chip ${quickFilter === 'all' ? 'active' : ''}`}
+                      onClick={() => setQuickFilter('all')}
+                      aria-pressed={quickFilter === 'all'}
+                    >
+                      All
+                    </button>
+                    <button
+                      type="button"
+                      className={`bento-chip ${quickFilter === 'mine' ? 'active' : ''}`}
+                      onClick={() => setQuickFilter('mine')}
+                      aria-pressed={quickFilter === 'mine'}
+                    >
+                      My Tasks
+                    </button>
+                    <button
+                      type="button"
+                      className={`bento-chip ${quickFilter === 'overdue' ? 'active' : ''}`}
+                      onClick={() => setQuickFilter('overdue')}
+                      aria-pressed={quickFilter === 'overdue'}
+                    >
+                      Overdue ({overview.overdueTasksCount || 0})
+                    </button>
+                    <button
+                      type="button"
+                      className={`bento-chip ${quickFilter === 'stalled' ? 'active' : ''}`}
+                      onClick={() => setQuickFilter('stalled')}
+                      aria-pressed={quickFilter === 'stalled'}
+                    >
+                      Inactive &gt;7d ({overview.stalledTasksCount || 0})
+                    </button>
+                    <button
+                      type="button"
+                      className={`bento-chip ${quickFilter === 'unassigned' ? 'active' : ''}`}
+                      onClick={() => setQuickFilter('unassigned')}
+                      aria-pressed={quickFilter === 'unassigned'}
+                    >
+                      Unassigned ({overview.unassignedTasksCount || 0})
+                    </button>
+                    <button
+                      type="button"
+                      className={`bento-chip ${quickFilter === 'urgent' ? 'active' : ''}`}
+                      onClick={() => setQuickFilter('urgent')}
+                      aria-pressed={quickFilter === 'urgent'}
+                    >
+                      Urgent / High
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1232,7 +1244,7 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
 
               <button
                 type="button"
-                className="bento-pill-action-btn primary"
+                className="bento-pill-action-btn secondary"
                 onClick={() => setIsNewProjectOpen(true)}
               >
                 <Plus size={14} />
@@ -1241,7 +1253,7 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
 
               <button
                 type="button"
-                className="bento-pill-action-btn dark"
+                className="bento-pill-action-btn primary"
                 onClick={() => setIsNewTaskOpen(true)}
               >
                 <CheckSquare size={14} />

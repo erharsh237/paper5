@@ -4,6 +4,30 @@
    Synthesized from Fenco, Quixotic, Volvo Minimal & Cloud SaaS Mocks
    ============================================================================== */
 
+:root {
+  /* Typography Scale (Strict 6-level scale, min 12px for accessibility) */
+  --p5-font-xs: 12px;
+  --p5-font-sm: 13px;
+  --p5-font-base: 14px;
+  --p5-font-md: 16px;
+  --p5-font-lg: 20px;
+  --p5-font-xl: 28px;
+
+  /* Semantic Text Colors (Consolidated 5-token palette) */
+  --p5-text-primary: #18181b;
+  --p5-text-secondary: #52525b;
+  --p5-text-muted: #71717a;
+  --p5-text-inverse: #ffffff;
+  --p5-text-critical: #b91c1c;
+
+  /* Standard Border Radii (Consolidated 5-token scale) */
+  --p5-radius-sm: 8px;
+  --p5-radius-md: 12px;
+  --p5-radius-lg: 16px;
+  --p5-radius-card: 24px;
+  --p5-radius-full: 9999px;
+}
+
 /* Outer Canvas - Edge-to-Edge Full Screen (Zero Margin Clipping) */
 .bento-canvas {
   background: #fbfbf9;
@@ -41,7 +65,7 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
-   1. LEFT VERTICAL ICON DOCK WITH INTERACTIVE TOOLTIPS
+   1. LEFT VERTICAL ICON DOCK WITH EXPAND-ON-HOVER & LABELS
 ───────────────────────────────────────────────────────────── */
 .bento-left-dock {
   width: 66px;
@@ -58,6 +82,17 @@
   position: sticky;
   top: 24px;
   z-index: 50;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), padding 0.22s ease;
+  overflow: hidden;
+}
+
+@media (min-width: 901px) {
+  .bento-left-dock:hover,
+  .bento-left-dock:focus-within {
+    width: 196px;
+    align-items: flex-start;
+    padding: 22px 14px;
+  }
 }
 
 @media (max-width: 900px) {
@@ -120,7 +155,7 @@
 .dock-btn {
   width: 44px;
   height: 44px;
-  border-radius: 14px;
+  border-radius: var(--p5-radius-md, 12px);
   border: none;
   background: transparent;
   color: #a1a1aa;
@@ -129,13 +164,44 @@
   justify-content: center;
   cursor: pointer;
   position: relative;
+  text-decoration: none;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+@media (min-width: 901px) {
+  .bento-left-dock:hover .dock-btn,
+  .bento-left-dock:focus-within .dock-btn {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 0 12px;
+    gap: 12px;
+  }
+}
+
+.dock-label {
+  display: none;
+  font-size: var(--p5-font-sm, 13px);
+  font-weight: 500;
+  color: inherit;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+@media (min-width: 901px) {
+  .bento-left-dock:hover .dock-label,
+  .bento-left-dock:focus-within .dock-label {
+    display: inline-block;
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .dock-btn:hover {
   background: #27272a;
   color: #ffffff;
-  transform: scale(1.04);
 }
 
 .dock-btn:active {
@@ -168,6 +234,13 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
   z-index: 100;
   border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+@media (min-width: 901px) {
+  .bento-left-dock:hover .dock-tooltip,
+  .bento-left-dock:focus-within .dock-tooltip {
+    display: none !important;
+  }
 }
 
 .dock-tooltip::before {
@@ -398,6 +471,18 @@
   transform: scale(0.97);
 }
 
+.bento-pill-action-btn.secondary {
+  background: #ffffff;
+  color: #18181b;
+  border: 1px solid #e4e4e7;
+}
+
+.bento-pill-action-btn.secondary:hover {
+  background: #f4f4f5;
+  border-color: #d4d4d8;
+  color: #18181b;
+}
+
 .bento-pill-action-btn.primary {
   background: #18181b;
   color: #ffffff;
@@ -409,20 +494,21 @@
 }
 
 .bento-pill-action-btn.dark {
-  background: #0f172a;
-  color: #ffffff;
-  border-color: #0f172a;
-}
-
-.bento-pill-action-btn.personal {
   background: #18181b;
   color: #ffffff;
   border-color: #18181b;
-  font-weight: 700;
+}
+
+.bento-pill-action-btn.personal {
+  background: #ffffff;
+  color: #18181b;
+  border-color: #e4e4e7;
+  font-weight: 600;
 }
 
 .bento-pill-action-btn.personal:hover {
-  background: #27272a;
+  background: #f4f4f5;
+  border-color: #d4d4d8;
 }
 
 /* Alert Notices */
@@ -723,7 +809,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 11.5px;
+  font-size: var(--p5-font-xs, 12px);
   color: #71717a;
   font-weight: 600;
 }
@@ -858,7 +944,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11.5px;
+  font-size: var(--p5-font-xs, 12px);
   color: #52525b;
   font-weight: 600;
 }
@@ -888,18 +974,47 @@
 
 .bento-tag-btn {
   background: #ffffff;
-  border: 1px solid #fecaca;
-  color: #b91c1c;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 8px;
-  border-radius: 8px;
+  border: 1px solid #e4e4e7;
+  color: #52525b;
+  font-size: var(--p5-font-xs, 12px);
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--p5-radius-sm, 8px);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
 }
 
-.bento-tag-btn:hover {
-  background: #fef2f2;
+.bento-tag-btn:focus-visible {
+  outline: 2px solid #18181b;
+  outline-offset: 1px;
+}
+
+.bento-tag-btn.is-neutral {
+  background: #ffffff;
+  border: 1px solid #e4e4e7;
+  color: #52525b;
+}
+
+.bento-tag-btn.is-neutral:hover {
+  background: #f4f4f5;
+  border-color: #d4d4d8;
+  color: #18181b;
+  transform: translateY(-1px);
+}
+
+.bento-tag-btn.is-warning {
+  background: #fff5f5;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.bento-tag-btn.is-warning:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #991b1b;
   transform: translateY(-1px);
 }
 
@@ -960,10 +1075,24 @@
   animation: bentoTabFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
-/* Filter Row */
+/* Filter Row & 2-Tier Container */
+.bento-filter-container,
 .bento-filter-row {
   padding: 16px 20px;
   border-bottom: 1px solid #f4f4f5;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bento-filter-primary-tier {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bento-filter-chips-tier {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -975,7 +1104,7 @@
   align-items: center;
   gap: 8px;
   background: #f4f4f5;
-  border-radius: 9999px;
+  border-radius: var(--p5-radius-full, 9999px);
   padding: 6px 14px;
   flex: 1;
   min-width: 220px;
@@ -989,7 +1118,7 @@
 .bento-search-field {
   border: none;
   background: transparent;
-  font-size: 13px;
+  font-size: var(--p5-font-sm, 13px);
   color: #18181b;
   outline: none;
   width: 100%;
@@ -998,9 +1127,9 @@
 .bento-select-pill {
   background: #f4f4f5;
   border: none;
-  border-radius: 9999px;
+  border-radius: var(--p5-radius-full, 9999px);
   padding: 6px 12px;
-  font-size: 12.5px;
+  font-size: var(--p5-font-sm, 13px);
   font-weight: 600;
   color: #3f3f46;
   outline: none;
@@ -1023,10 +1152,10 @@
   background: #f4f4f5;
   border: none;
   color: #52525b;
-  font-size: 11.5px;
-  font-weight: 700;
+  font-size: var(--p5-font-xs, 12px);
+  font-weight: 600;
   padding: 5px 12px;
-  border-radius: 9999px;
+  border-radius: var(--p5-radius-full, 9999px);
   cursor: pointer;
   transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }

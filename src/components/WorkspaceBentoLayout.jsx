@@ -12,10 +12,10 @@ import {
   Kanban,
   GitBranch,
   Calendar,
-  BarChart3,
+  TrendingUp,
   Shield,
   Plug,
-  User,
+  HelpCircle,
   RefreshCw,
   Plus,
   Download,
@@ -224,6 +224,7 @@ export default function WorkspaceBentoLayout({ children }) {
                   aria-label="Overview & Telemetry"
                 >
                   <LayoutGrid size={19} />
+                  <span className="dock-label">Overview</span>
                   <span className="dock-tooltip">Overview &amp; Telemetry (⌘1)</span>
                 </NavLink>
 
@@ -233,6 +234,7 @@ export default function WorkspaceBentoLayout({ children }) {
                   aria-label="Sprint Board & Tasks"
                 >
                   <Kanban size={19} />
+                  <span className="dock-label">Sprint Board</span>
                   <span className="dock-tooltip">Sprint Board (⌘2)</span>
                 </NavLink>
 
@@ -242,6 +244,7 @@ export default function WorkspaceBentoLayout({ children }) {
                   aria-label="Agile Workflows"
                 >
                   <GitBranch size={19} />
+                  <span className="dock-label">Workflows</span>
                   <span className="dock-tooltip">Agile Workflows (⌘3)</span>
                 </NavLink>
 
@@ -251,6 +254,7 @@ export default function WorkspaceBentoLayout({ children }) {
                   aria-label="Sync Meetings"
                 >
                   <Calendar size={19} />
+                  <span className="dock-label">Meetings</span>
                   <span className="dock-tooltip">Sync Meetings (⌘4)</span>
                 </NavLink>
 
@@ -259,7 +263,8 @@ export default function WorkspaceBentoLayout({ children }) {
                   className={({ isActive }) => `dock-btn ${isActive ? 'active' : ''}`}
                   aria-label="Velocity & Analytics"
                 >
-                  <BarChart3 size={19} />
+                  <TrendingUp size={19} />
+                  <span className="dock-label">Velocity</span>
                   <span className="dock-tooltip">Velocity &amp; Analytics (⌘5)</span>
                 </NavLink>
 
@@ -269,6 +274,7 @@ export default function WorkspaceBentoLayout({ children }) {
                   aria-label="Workspace Settings"
                 >
                   <Shield size={19} />
+                  <span className="dock-label">Settings</span>
                   <span className="dock-tooltip">Workspace Settings</span>
                 </NavLink>
 
@@ -278,20 +284,22 @@ export default function WorkspaceBentoLayout({ children }) {
                   aria-label="API Studio & Integrations"
                 >
                   <Plug size={19} />
+                  <span className="dock-label">API Studio</span>
                   <span className="dock-tooltip">API &amp; Integrations</span>
                 </NavLink>
               </nav>
             </div>
 
             <div className="dock-bottom-group">
-              <NavLink
-                to={`/${workspaceId}/profile`}
-                className={({ isActive }) => `dock-btn ${isActive ? 'active' : ''}`}
-                aria-label="Profile & Preferences"
+              <Link
+                to="/docs/api"
+                className="dock-btn"
+                aria-label="Help & Documentation"
               >
-                <User size={19} />
-                <span className="dock-tooltip">Profile &amp; Preferences</span>
-              </NavLink>
+                <HelpCircle size={19} />
+                <span className="dock-label">Docs &amp; Help</span>
+                <span className="dock-tooltip">Help &amp; Documentation</span>
+              </Link>
 
               <button
                 type="button"
@@ -303,6 +311,7 @@ export default function WorkspaceBentoLayout({ children }) {
                 aria-label="Refresh Workspace"
               >
                 <RefreshCw size={18} />
+                <span className="dock-label">Refresh</span>
                 <span className="dock-tooltip">Refresh Workspace</span>
               </button>
             </div>
@@ -424,7 +433,7 @@ export default function WorkspaceBentoLayout({ children }) {
 
                 <button
                   type="button"
-                  className="bento-pill-action-btn primary"
+                  className="bento-pill-action-btn secondary"
                   onClick={() => setIsNewProjectOpen(true)}
                 >
                   <Plus size={14} />
@@ -433,7 +442,7 @@ export default function WorkspaceBentoLayout({ children }) {
 
                 <button
                   type="button"
-                  className="bento-pill-action-btn dark"
+                  className="bento-pill-action-btn primary"
                   onClick={() => setIsNewTaskOpen(true)}
                 >
                   <CheckSquare size={14} />
