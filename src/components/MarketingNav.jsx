@@ -149,7 +149,7 @@ export default function MarketingNav() {
           )}
 
           {/* Desktop Icon Navigation with Tooltips */}
-          <div className="nav-links desktop-only" role="menubar" aria-label="Main Navigation">
+          <div className="nav-links desktop-only" aria-label="Main Navigation">
             {navLinks.map((item) => {
               const linkContent = (
                 <>

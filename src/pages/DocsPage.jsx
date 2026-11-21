@@ -312,7 +312,7 @@ export default function DocsPage() {
                     <div className="docs-code-header">
                       <span>cURL Example Request</span>
                       <button 
-                        onClick={() => copyToClipboard(`curl -X POST https://app.paper5.co/api/v1/sync \\\n  -H "Authorization: Bearer sp_live_key_99481" \\\n  -H "Content-Type: application/json" \\\n  -d '{"agile_workflow":"scrum","workflow_column":"done"}'`, 'curl-req')}
+                        onClick={() => copyToClipboard(`curl -X POST https://app.paper5.co/api/v1/sync \\\n  -H "Authorization: Bearer YOUR_API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '{"agile_workflow":"scrum","workflow_column":"done"}'`, 'curl-req')}
                         style={{ background: 'transparent', border: 'none', color: '#8b949e', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                       >
                         {copiedId === 'curl-req' ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
@@ -321,7 +321,7 @@ export default function DocsPage() {
                     </div>
                     <pre className="docs-code-content">
 {`curl -X POST https://app.paper5.co/api/v1/sync \\
-  -H "Authorization: Bearer sp_live_key_99481" \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"agile_workflow":"scrum","workflow_column":"done"}'`}
                     </pre>

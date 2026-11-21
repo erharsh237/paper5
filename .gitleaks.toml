@@ -1,0 +1,27 @@
+title = "SprintOS Gitleaks Configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allowlist build artifacts, local env files (ignored by git), documentation placeholders, and public client-side keys"
+paths = [
+  '''(?i)\.bla-hardened/''',
+  '''(?i)dist/''',
+  '''(?i)\.lighthouse/''',
+  '''(?i)node_modules/''',
+  '''gitleaks-.*\.json$''',
+  '''(?i)\.env$''',
+  '''(?i)\.env\.local$''',
+  '''(?i)\.env\.example$'''
+]
+commits = [
+  "71e4610d07b880d22697201787c959b6d19edf76",
+  "ac8c630cb00821edd5745ac07b7b27a85cb9e652",
+  "bd10732951c5f6d4bf9ff431bf25cdbcc55df0f6"
+]
+regexes = [
+  '''sp_live_key_99481''',
+  '''YOUR_API_KEY''',
+  '''sb_publishable_[a-zA-Z0-9_-]+'''
+]

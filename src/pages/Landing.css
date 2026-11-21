@@ -1837,7 +1837,7 @@
   font-size: 10px;
   font-weight: 600;
   background: #f0fdf4;
-  color: #16a34a;
+  color: #15803d;
   border: 1px solid #bbf7d0;
   padding: 2px 7px;
   border-radius: 4px;
@@ -2496,6 +2496,7 @@
   justify-content: center;
 }
 
+.faq-contact-card h3,
 .faq-contact-card h4 {
   font-size: 16px;
   font-weight: 700;
@@ -5105,6 +5106,7 @@
   background: #121215;
   border-color: #27272a;
 }
+[data-theme="dark"] .faq-contact-card h3,
 [data-theme="dark"] .faq-contact-card h4 {
   color: #ffffff;
 }
@@ -6760,6 +6762,7 @@
   justify-content: center;
 }
 
+.security-card h3,
 .security-card h4 {
   font-size: 16px;
   font-weight: 700;
@@ -6767,6 +6770,7 @@
   margin: 0;
 }
 
+[data-theme="dark"] .security-card h3,
 [data-theme="dark"] .security-card h4 {
   color: #ffffff;
 }
@@ -6839,13 +6843,14 @@
 
 .tier-future-strikethrough {
   font-size: 13.5px;
-  color: #71717a;
+  color: #52525b;
   margin-bottom: 4px;
 }
 
 .tier-future-strikethrough .struck-price {
   text-decoration: line-through;
-  opacity: 0.7;
+  opacity: 0.9;
+  color: #52525b;
   font-weight: 600;
   margin-right: 6px;
 }
@@ -6943,6 +6948,7 @@
   margin: 0;
 }
 
+[data-theme="dark"] .faq-contact-card h3,
 [data-theme="dark"] .faq-contact-card h4 {
   color: #ffffff;
 }
@@ -7775,11 +7781,14 @@
     border-radius: 9px !important;
     border: none !important;
     background: transparent !important;
-    color: #71717a !important;
+    color: #4b5563 !important;
     font-size: 13px !important;
     font-weight: 600 !important;
     cursor: pointer !important;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+  [data-theme="dark"] .pillar-tab-btn {
+    color: #a1a1aa !important;
   }
   .pillar-tab-btn.active {
     background: #ffffff !important;
@@ -7881,6 +7890,7 @@
     height: 34px !important;
     margin-bottom: 8px !important;
   }
+  .integration-app-card h3,
   .integration-app-card h4 {
     font-size: 13.5px !important;
     margin-bottom: 4px !important;
@@ -7908,6 +7918,7 @@
     height: 34px !important;
     margin-bottom: 8px !important;
   }
+  .security-card h3,
   .security-card h4 {
     font-size: 13.5px !important;
     margin-bottom: 4px !important;

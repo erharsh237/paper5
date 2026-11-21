@@ -50,7 +50,17 @@
     <!-- Performance & Preconnect Non-Blocking Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Outfit:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Playfair+Display:wght@600;700&display=swap" crossorigin="anonymous">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Outfit:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Playfair+Display:wght@600;700&display=swap" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Outfit:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Playfair+Display:wght@600;700&display=swap" media="print" id="p5-webfonts" crossorigin="anonymous">
+    <script>
+      (function() {
+        var wf = document.getElementById('p5-webfonts');
+        if (wf) {
+          wf.addEventListener('load', function() { wf.media = 'all'; });
+          setTimeout(function() { wf.media = 'all'; }, 150);
+        }
+      })();
+    </script>
     <noscript>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Outfit:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Playfair+Display:wght@600;700&display=swap">
     </noscript>
@@ -166,7 +176,7 @@
       <main style="max-width: 960px; margin: 0 auto; padding: 48px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #18181b; line-height: 1.6;">
         <header style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; border-bottom: 1px solid #e4e4e7; padding-bottom: 20px;">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <img src="/logo.png" alt="Paper5 Project Management Software" width="36" height="36" style="width: 36px; height: 36px; object-fit: contain;" />
+            <img src="/logo.png" alt="Paper5 Project Management Software" width="36" height="36" fetchpriority="high" decoding="async" style="width: 36px; height: 36px; object-fit: contain;" />
             <strong style="font-size: 24px; font-weight: 800; letter-spacing: -0.03em;">Paper5</strong>
           </div>
           <nav style="display: flex; gap: 20px;">

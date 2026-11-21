@@ -515,6 +515,37 @@ export default async function handler(req, res) {
 
         return res.status(200).json({ success: true, cancelled: true })
       }
+
+      if (action === 'resend_invite') {
+        const { inviteId, email } = req.body
+        const cleanEmail = email ? email.trim().toLowerCase() : null
+
+        let targetInvite = null
+        if (inviteId) {
+          const { data } = await supabaseAdmin.from('invites').select('*').eq('id', inviteId).maybeSingle()
+          targetInvite = data
+        } else if (cleanEmail) {
+          const { data } = await supabaseAdmin.from('invites').select('*').eq('workspace_id', workspaceId).eq('email', cleanEmail).maybeSingle()
+          targetInvite = data
+        }
+
+        if (!targetInvite) {
+          return res.status(404).json({ error: 'Invite not found' })
+        }
+
+        // Update timestamp so invite is refreshed
+        await supabaseAdmin.from('invites').update({ created_at: new Date().toISOString() }).eq('id', targetInvite.id)
+
+        await logAdminAction(supabaseAdmin, {
+          workspaceId,
+          actorId: authRes.user.id,
+          action: 'invite.resend',
+          resource: 'invites',
+          metadata: { email: targetInvite.email, inviteId: targetInvite.id }
+        })
+
+        return res.status(200).json({ success: true, message: 'Invitation resent successfully' })
+      }
     } catch (postErr) {
       console.error('Update member error:', postErr?.message || postErr)
       return res.status(500).json({ error: sanitizeError(postErr, 'Failed to update member') })

@@ -89,3 +89,8 @@ wrangler.jsonc
 bla.config.json
 *.bla.log
 bla-*.json
+
+# Security & Audit Reports
+gitleaks-*.json
+.gitleaks/
+.lighthouse/

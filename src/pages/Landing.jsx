@@ -787,7 +787,7 @@ export default function Landing() {
               <div className="integration-app-card">
                 <div className="app-card-icon"><GitPullRequest size={20} /></div>
                 <div className="app-card-info">
-                  <h4>GitHub Native Sync</h4>
+                  <h3>GitHub Native Sync</h3>
                   <p>Real-time branch commit tracking, automated PR status updates, and deploy link syncing.</p>
                 </div>
               </div>
@@ -796,7 +796,7 @@ export default function Landing() {
               <div className="integration-app-card">
                 <div className="app-card-icon"><MessageSquare size={20} /></div>
                 <div className="app-card-info">
-                  <h4>Slack Broadcasts</h4>
+                  <h3>Slack Broadcasts</h3>
                   <p>Post automated sprint kickoffs, blocker swarms, and daily digest summaries directly to channels.</p>
                 </div>
               </div>
@@ -805,7 +805,7 @@ export default function Landing() {
               <div className="integration-app-card">
                 <div className="app-card-icon"><Users size={20} /></div>
                 <div className="app-card-info">
-                  <h4>Discord Webhooks</h4>
+                  <h3>Discord Webhooks</h3>
                   <p>Stream real-time sprint events and deliverable sign-offs to your technical community channels.</p>
                 </div>
               </div>
@@ -814,7 +814,7 @@ export default function Landing() {
               <div className="integration-app-card">
                 <div className="app-card-icon"><Calendar size={20} /></div>
                 <div className="app-card-info">
-                  <h4>Google Calendar Sync</h4>
+                  <h3>Google Calendar Sync</h3>
                   <p>Synchronize release deadlines and sprint milestones directly with engineering team calendars.</p>
                 </div>
               </div>
@@ -823,7 +823,7 @@ export default function Landing() {
               <div className="integration-app-card">
                 <div className="app-card-icon"><Layers size={20} /></div>
                 <div className="app-card-info">
-                  <h4>Linear Workspace Importer</h4>
+                  <h3>Linear Workspace Importer</h3>
                   <p>One-click migration utility to import existing issue hierarchies, labels, and backlogs without loss.</p>
                 </div>
               </div>
@@ -832,7 +832,7 @@ export default function Landing() {
               <div className="integration-app-card">
                 <div className="app-card-icon"><Terminal size={20} /></div>
                 <div className="app-card-info">
-                  <h4>REST API Studio</h4>
+                  <h3>REST API Studio</h3>
                   <p>Programmatic curl access to query sprints, trigger deliverable checks, and export team telemetry.</p>
                 </div>
               </div>
@@ -863,25 +863,25 @@ export default function Landing() {
             <div className="security-compact-grid ">
               <div className="security-card">
                 <div className="security-card-icon"><Shield size={20} /></div>
-                <h4>Tenant Isolation</h4>
+                <h3>Tenant Isolation</h3>
                 <p>PostgreSQL Row-Level Security policies mathematically partition every workspace at query time.</p>
               </div>
 
               <div className="security-card">
                 <div className="security-card-icon"><Lock size={20} /></div>
-                <h4>End-to-End Encryption</h4>
+                <h3>End-to-End Encryption</h3>
                 <p>Standard AES-256 cryptographic storage at rest and TLS 1.3 protocol encryption for all data in transit.</p>
               </div>
 
               <div className="security-card">
                 <div className="security-card-icon"><CheckCircle2 size={20} /></div>
-                <h4>Two-Factor Authentication</h4>
+                <h3>Two-Factor Authentication</h3>
                 <p>TOTP multi-factor security compatible with Google Authenticator, 1Password, and hardware tokens.</p>
               </div>
 
               <div className="security-card">
                 <div className="security-card-icon"><Download size={20} /></div>
-                <h4>Complete Data Ownership</h4>
+                <h3>Complete Data Ownership</h3>
                 <p>Download full workspace exports in raw CSV or printable vector PDF format anytime with no lock-in.</p>
               </div>
             </div>
@@ -913,7 +913,7 @@ export default function Landing() {
                 </div>
                 <div className="tier-price-box">
                   <div className="tier-future-strikethrough">
-                    <span style={{ fontWeight: 700, color: '#16a34a', fontSize: '13px', display: 'inline-block' }}>
+                    <span style={{ fontWeight: 700, color: '#15803d', fontSize: '13px', display: 'inline-block' }}>
                       Free Forever Plan
                     </span>
                   </div>
@@ -1028,7 +1028,7 @@ export default function Landing() {
 
                   <div className="faq-contact-card">
                     <div className="contact-card-icon"><HelpCircle size={22} /></div>
-                    <h4>Have a specific architecture question?</h4>
+                    <h3>Have a specific architecture question?</h3>
                     <p>Our core engineering team is available to discuss custom workflows and squad setups.</p>
                     <button 
                       type="button" 

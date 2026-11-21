@@ -11,7 +11,6 @@ import { safeRedirect } from './lib/safeRedirect.js'
 import { isLocalHost } from './lib/domain.js'
 import { isSafeUrl } from './utils/security.js'
 import { hasAnalyticsConsent } from './lib/privacyPrefs.js'
-import * as Sentry from '@sentry/react'
 import './index.css'
 import './pages/Auth.css'
 import './styles/editorial-theme.css'
@@ -87,16 +86,18 @@ if (typeof window !== 'undefined') {
   }
 
   if (import.meta.env.VITE_SENTRY_DSN) {
-    const analyticsAllowed = hasAnalyticsConsent()
-    Sentry.init({
-      dsn: import.meta.env.VITE_SENTRY_DSN,
-      integrations: analyticsAllowed
-        ? [Sentry.browserTracingIntegration(), Sentry.replayIntegration()]
-        : [],
-      tracesSampleRate: analyticsAllowed ? 0.2 : 0,
-      replaysSessionSampleRate: analyticsAllowed ? 0.1 : 0,
-      replaysOnErrorSampleRate: analyticsAllowed ? 1.0 : 0,
-    })
+    import('@sentry/react').then((Sentry) => {
+      const analyticsAllowed = hasAnalyticsConsent()
+      Sentry.init({
+        dsn: import.meta.env.VITE_SENTRY_DSN,
+        integrations: analyticsAllowed
+          ? [Sentry.browserTracingIntegration(), Sentry.replayIntegration()]
+          : [],
+        tracesSampleRate: analyticsAllowed ? 0.2 : 0,
+        replaysSessionSampleRate: analyticsAllowed ? 0.1 : 0,
+        replaysOnErrorSampleRate: analyticsAllowed ? 1.0 : 0,
+      })
+    }).catch(() => {})
   }
 
   const rootElement = document.getElementById('root')

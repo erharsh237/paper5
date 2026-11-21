@@ -624,6 +624,26 @@ export async function cancelInvite(workspaceId, inviteId, email = null) {
   }
 }
 
+export async function resendInvite(workspaceId, inviteId, email = null) {
+  const authHeaders = await getAuthHeaders()
+  const res = await fetch('/api/workspace-members', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: authHeaders,
+    body: JSON.stringify({
+      action: 'resend_invite',
+      workspaceId,
+      inviteId,
+      email: email ? email.trim().toLowerCase() : null
+    })
+  })
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}))
+    throw new Error(json.error || 'Failed to resend invitation')
+  }
+  return true
+}
+
 export async function createInvite(workspaceId, email, role, permissions = [], password, sendEmail = false) {
   const { data: authData } = await supabase.auth.getUser()
   const inviterId = authData?.user?.id

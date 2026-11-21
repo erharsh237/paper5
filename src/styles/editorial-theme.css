@@ -14,7 +14,7 @@
   --p5-hairline-strong: #d1cbc0;
   --p5-ink: #09090b;
   --p5-ink-muted: #52525b;
-  --p5-ink-subtle: #71717a;
+  --p5-ink-subtle: #52525b;
   --p5-ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -27,7 +27,7 @@
   --p5-hairline-strong: #3f3f46;
   --p5-ink: #f4f4f5;
   --p5-ink-muted: #a1a1aa;
-  --p5-ink-subtle: #71717a;
+  --p5-ink-subtle: #a1a1aa;
 }
 
 /* ── Global Editorial Motion ── */

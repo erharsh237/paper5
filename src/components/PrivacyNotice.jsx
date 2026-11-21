@@ -11,9 +11,16 @@ import {
 import './PrivacyNotice.css'
 
 export default function CookieConsent() {
+  const [mounted, setMounted] = useState(false)
   const [visible, setVisible] = useState(() => !hasMadeConsentChoice())
   const [showPrefs, setShowPrefs] = useState(false)
   const [analyticsEnabled, setAnalyticsEnabled] = useState(() => Boolean(getConsentState()?.analytics))
+
+  useEffect(() => {
+    // Delay rendering consent until after initial paint & hydration (600ms) to preserve critical LCP
+    const timer = setTimeout(() => setMounted(true), 600)
+    return () => clearTimeout(timer)
+  }, [])
 
   useEffect(() => {
     const unsubConsent = subscribeConsent((state) => {
@@ -23,6 +30,7 @@ export default function CookieConsent() {
       const current = getConsentState()
       setAnalyticsEnabled(Boolean(current?.analytics))
       setShowPrefs(true)
+      setMounted(true)
       setVisible(true)
     })
     return () => {
@@ -31,7 +39,7 @@ export default function CookieConsent() {
     }
   }, [])
 
-  if (!visible) return null
+  if (!mounted || !visible) return null
 
   const handleAcceptAll = () => {
     saveConsentDecision(true)

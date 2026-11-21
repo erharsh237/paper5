@@ -15,6 +15,7 @@ import { useWorkspace } from '../lib/WorkspaceContext'
 import { subscribeIntegrationConfig } from '../lib/integrations/config'
 import NewDeadlineModal from '../components/NewDeadlineModal'
 import Paper5Logo from '../components/Paper5Logo'
+import AdminCommandCenter from '../components/AdminCommandCenter'
 import './Dashboard.css'
 import './MyDashboard.css'
 
@@ -550,6 +551,10 @@ export default function MyDashboard() {
   const activeHoverPoint = hoveredPointIndex !== null ? points[hoveredPointIndex] : null
   const chartAccentColor = isAdmin ? '#F59E0B' : '#4F46E5'
 
+  if (isAdmin && adminScope === 'team') {
+    return <AdminCommandCenter onSwitchToPersonal={() => setAdminScope('mine')} />
+  }
+
   return (
     <div className="dash-root">
       {/* ─────────────────────────────────────────────────────────────
@@ -597,13 +602,24 @@ export default function MyDashboard() {
               
               <p className="dash-subtitle">
                 {isAdmin
-                  ? 'Executive Workspace Overview • High-velocity sprint operations & team throughput'
+                  ? 'Personal Mission Center • Your individual focus queue & deliverables'
                   : 'Personal Mission Center • Your sprint targets, focus queue & deliverables'}
               </p>
             </div>
 
             {/* Header Right Actions */}
             <div className="dash-header-actions">
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setAdminScope('team')}
+                  className="dash-btn-secondary"
+                  style={{ fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                  ← Command Center
+                </button>
+              )}
+
               {/* Search Bar with ⌘K */}
               <div className="dash-search-bar">
                 <svg className="dash-search-icon" width="15" height="15" viewBox="0 0 15 15" fill="none">

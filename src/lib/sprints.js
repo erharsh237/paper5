@@ -101,13 +101,18 @@ async function callSprintApi(action, payload) {
   return json
 }
 
-export async function createSprint(workspaceId, teamId, { number, goal, startDate, endDate, status = 'active' }) {
+export async function createSprint(workspaceId, teamId, { number, name, goal, startDate, endDate, status = 'active', priority = 'medium', ownerId = null, memberIds = [], archived = false }) {
   const sprintPayload = {
     number,
+    name: name || goal?.slice(0, 50) || `Sprint #${number}`,
     goal: goal || '',
     startDate,
     endDate,
     status: status || 'active',
+    priority,
+    ownerId,
+    memberIds,
+    archived
   }
   const res = await callSprintApi('create_sprint', {
     workspaceId,
@@ -116,6 +121,16 @@ export async function createSprint(workspaceId, teamId, { number, goal, startDat
   })
   notifySprintChange()
   return res.data
+}
+
+export async function archiveSprint(workspaceId, id) {
+  await callSprintApi('archive_sprint', { workspaceId, id })
+  notifySprintChange()
+}
+
+export async function unarchiveSprint(workspaceId, id) {
+  await callSprintApi('unarchive_sprint', { workspaceId, id })
+  notifySprintChange()
 }
 
 export async function updateSprint(workspaceId, id, patch) {

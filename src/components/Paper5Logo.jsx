@@ -8,6 +8,7 @@ export default function Paper5Logo({ size = 28, className = "", style = {}, deco
       aria-hidden={decorative ? "true" : undefined}
       width={size} 
       height={size} 
+      decoding="async"
       className={className}
       style={{ 
         width: `${size}px`, 

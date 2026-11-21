@@ -66,25 +66,28 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+            const normalized = id.replace(/\\/g, '/')
+            if (
+              normalized.includes('/react/') ||
+              normalized.includes('/react-dom/') ||
+              normalized.includes('/react-router/') ||
+              normalized.includes('/react-router-dom/')
+            ) {
               return 'vendor-react'
             }
-            if (id.includes('@supabase')) {
+            if (normalized.includes('/@supabase/')) {
               return 'vendor-supabase'
             }
-            if (id.includes('recharts') || id.includes('d3-')) {
-              return 'vendor-charts'
-            }
-            if (id.includes('framer-motion')) {
+            if (normalized.includes('/framer-motion/')) {
               return 'vendor-motion'
             }
-            if (id.includes('lucide-react') || id.includes('@fortawesome')) {
+            if (normalized.includes('/lucide-react/') || normalized.includes('/@fortawesome/')) {
               return 'vendor-icons'
             }
-            if (id.includes('date-fns')) {
+            if (normalized.includes('/date-fns/')) {
               return 'vendor-date'
             }
-            if (id.includes('@sentry')) {
+            if (normalized.includes('/@sentry/')) {
               return 'vendor-sentry'
             }
           }

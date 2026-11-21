@@ -75,6 +75,15 @@ export default async function handler(req, res) {
       }
       const { data, error } = await supabaseAdmin.from('deadlines').insert([payload]).select()
       if (error) throw error
+
+      await logAdminAction(supabaseAdmin, {
+        workspaceId,
+        actorId: authRes.user.id,
+        action: 'task.create',
+        resource: 'tasks',
+        metadata: { taskId: data[0]?.id, title: payload.title, priority: payload.priority, assigneeName: payload.assignee_name }
+      })
+
       return res.status(200).json({ success: true, data: data[0] })
     }
 
@@ -86,6 +95,8 @@ export default async function handler(req, res) {
       if (typeof sanitizedPatch.description === 'string') {
         sanitizedPatch.description = sanitizeText(sanitizedPatch.description, { maxLen: 5000, preserveNewlines: true })
       }
+      sanitizedPatch.last_activity_at = new Date().toISOString()
+
       const { data, error } = await supabaseAdmin
         .from('deadlines')
         .update(sanitizedPatch)
@@ -93,6 +104,15 @@ export default async function handler(req, res) {
         .eq('workspace_id', workspaceId)
         .select()
       if (error) throw error
+
+      await logAdminAction(supabaseAdmin, {
+        workspaceId,
+        actorId: authRes.user.id,
+        action: sanitizedPatch.status ? 'task.status_change' : sanitizedPatch.assignee_id ? 'task.reassign' : 'task.update',
+        resource: 'tasks',
+        metadata: { taskId: id, title: data[0]?.title, patch: sanitizedPatch }
+      })
+
       return res.status(200).json({ success: true, data: data[0] })
     }
 

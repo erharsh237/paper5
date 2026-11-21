@@ -46,8 +46,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing workspaceId' })
   }
 
-  // Sprints are managerial: deleting, locking, closing require workspace admin privileges
-  const requireAdmin = ['delete_sprint', 'lock_sprint', 'unlock_sprint', 'close_sprint', 'reopen_sprint'].includes(action)
+  // Sprints are managerial: deleting, locking, closing, archiving require workspace admin privileges
+  const requireAdmin = ['delete_sprint', 'lock_sprint', 'unlock_sprint', 'close_sprint', 'reopen_sprint', 'archive_sprint', 'unarchive_sprint'].includes(action)
   const authRes = await verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { requireAdmin })
   if (authRes.error) {
     return res.status(authRes.status || 403).json({ error: authRes.error })
@@ -59,24 +59,83 @@ export default async function handler(req, res) {
         workspace_id: workspaceId,
         team_id: teamId || null,
         number: sprintData?.number,
+        name: sanitizeText(sprintData?.name || sprintData?.title || (sprintData?.goal ? sprintData.goal.slice(0, 50) : `Sprint #${sprintData?.number || 1}`), { maxLen: 120 }),
         goal: sanitizeText(sprintData?.goal || '', { maxLen: 1000 }),
+        owner_id: sprintData?.ownerId || sprintData?.owner_id || authRes.user.id,
+        priority: ['low', 'medium', 'high', 'critical'].includes(sprintData?.priority) ? sprintData.priority : 'medium',
+        member_ids: Array.isArray(sprintData?.memberIds || sprintData?.member_ids) ? (sprintData.memberIds || sprintData.member_ids) : [],
         start_date: sprintData?.startDate || sprintData?.start_date,
         end_date: sprintData?.endDate || sprintData?.end_date,
         status: sprintData?.status || 'active',
+        archived: Boolean(sprintData?.archived),
         created_at: new Date().toISOString(),
       }
       const { data, error } = await supabaseAdmin.from('sprints').insert([payload]).select()
       if (error) throw error
+
+      await logAdminAction(supabaseAdmin, {
+        workspaceId,
+        actorId: authRes.user.id,
+        action: 'project.create',
+        resource: 'sprints',
+        metadata: { sprintId: data[0]?.id, name: payload.name }
+      })
+
       return res.status(200).json({ success: true, data: data[0] })
     }
 
     if (action === 'update_sprint') {
       const sanitizedPatch = { ...patch }
+      if (typeof sanitizedPatch.name === 'string') {
+        sanitizedPatch.name = sanitizeText(sanitizedPatch.name, { maxLen: 120 })
+      }
       if (typeof sanitizedPatch.goal === 'string') {
         sanitizedPatch.goal = sanitizeText(sanitizedPatch.goal, { maxLen: 1000 })
       }
+      if (sanitizedPatch.priority && !['low', 'medium', 'high', 'critical'].includes(sanitizedPatch.priority)) {
+        delete sanitizedPatch.priority
+      }
       const { error } = await supabaseAdmin.from('sprints').update(sanitizedPatch).eq('id', id).eq('workspace_id', workspaceId)
       if (error) throw error
+
+      await logAdminAction(supabaseAdmin, {
+        workspaceId,
+        actorId: authRes.user.id,
+        action: 'project.update',
+        resource: 'sprints',
+        metadata: { sprintId: id, patch: sanitizedPatch }
+      })
+
+      return res.status(200).json({ success: true })
+    }
+
+    if (action === 'archive_sprint') {
+      const { error } = await supabaseAdmin.from('sprints').update({ archived: true }).eq('id', id).eq('workspace_id', workspaceId)
+      if (error) throw error
+
+      await logAdminAction(supabaseAdmin, {
+        workspaceId,
+        actorId: authRes.user.id,
+        action: 'project.archive',
+        resource: 'sprints',
+        metadata: { sprintId: id }
+      })
+
+      return res.status(200).json({ success: true })
+    }
+
+    if (action === 'unarchive_sprint') {
+      const { error } = await supabaseAdmin.from('sprints').update({ archived: false }).eq('id', id).eq('workspace_id', workspaceId)
+      if (error) throw error
+
+      await logAdminAction(supabaseAdmin, {
+        workspaceId,
+        actorId: authRes.user.id,
+        action: 'project.unarchive',
+        resource: 'sprints',
+        metadata: { sprintId: id }
+      })
+
       return res.status(200).json({ success: true })
     }
 
