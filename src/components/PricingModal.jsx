@@ -4,9 +4,13 @@ import './PricingModal.css'
 const PLAN_LEVELS = {
   free: 1,
   starter: 1,
+  member: 1,
+  unselected: 1,
+  none: 1,
   team: 2,
   pro: 3,
-  scale: 3
+  scale: 3,
+  enterprise: 3
 }
 
 export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPlan }) {
@@ -21,15 +25,15 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
     setLoadingPlan(null)
   }
 
-  const normalizedCurrent = (currentPlan || 'pro').toLowerCase()
-  const currentLevel = PLAN_LEVELS[normalizedCurrent] || 3
+  const normalizedCurrent = (currentPlan || 'starter').toLowerCase().trim()
+  const currentLevel = PLAN_LEVELS[normalizedCurrent] || 1
 
   const getButtonProps = (targetPlanId) => {
-    const targetLevel = PLAN_LEVELS[targetPlanId]
+    const targetLevel = PLAN_LEVELS[targetPlanId] || 1
     const planName = targetPlanId === 'pro' || targetPlanId === 'scale' ? 'Pro' : (targetPlanId.charAt(0).toUpperCase() + targetPlanId.slice(1))
     
     if (targetLevel === currentLevel) {
-      return { label: 'Active Plan', disabled: true, className: 'btn-ghost' }
+      return { label: `Continue with ${planName}`, disabled: false, className: 'btn-ghost' }
     }
     if (targetLevel < currentLevel) {
       return { label: `Downgrade to ${planName}`, disabled: false, className: 'btn-ghost' }

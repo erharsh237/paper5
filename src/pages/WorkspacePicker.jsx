@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { createWorkspace, ensureUserRecordExists } from '../lib/workspaces'
@@ -30,7 +30,27 @@ export default function WorkspacePicker() {
   const [createError, setCreateError] = useState('')
 
   const userId = user?.id || user?.uid
-  const userPlan = userData?.billing_plan_id || 'pro'
+
+  // Derive effective tier across user record and owned workspaces
+  const userPlan = useMemo(() => {
+    const rawUserPlan = (userData?.billing_plan_id || '').toLowerCase().trim()
+    if (['pro', 'scale', 'enterprise'].includes(rawUserPlan)) return 'pro'
+    if (rawUserPlan === 'team') return 'team'
+
+    // Check if user is owner/admin of any workspace that is on Pro or Team
+    for (const ws of workspaces) {
+      if (ws.role === 'owner' || ws.role === 'admin') {
+        const wsPlan = (ws.plan || '').toLowerCase().trim()
+        if (['pro', 'scale', 'enterprise'].includes(wsPlan)) return 'pro'
+        if (wsPlan === 'team') return 'team'
+      }
+    }
+
+    if (rawUserPlan === 'starter' || rawUserPlan === 'free') return 'starter'
+    // Default to 'pro' during launch special
+    return 'pro'
+  }, [userData?.billing_plan_id, workspaces])
+
   const planLimits = getPlanLimits(userPlan)
   const maxWorkspaces = planLimits.maxWorkspaces || 10
   const hasActivePaidPlan = ['starter', 'team', 'scale', 'pro'].includes(userPlan?.toLowerCase()) || (userData?.billing_status === 'active' && userPlan !== 'free' && userPlan !== 'member')
@@ -64,13 +84,13 @@ export default function WorkspacePicker() {
         }
       }
 
-      // 2. Query workspace_members directly with joined workspace name
+      // 2. Query workspace_members directly with joined workspace name & plan
       const { data: memberList } = await supabase
         .from('workspace_members')
         .select(`
           role,
           workspace_id,
-          workspaces ( name )
+          workspaces ( name, plan, billing_plan_id, subscription_tier )
         `)
         .eq('user_id', userId)
 
@@ -78,7 +98,8 @@ export default function WorkspacePicker() {
         workspaceId: r.workspace_id,
         id: r.workspace_id,
         role: r.role,
-        name: r.workspaces?.name || 'My Workspace'
+        name: r.workspaces?.name || 'My Workspace',
+        plan: r.workspaces?.plan || r.workspaces?.billing_plan_id || r.workspaces?.subscription_tier || 'pro'
       }))
 
       if (isMounted) {
@@ -119,7 +140,7 @@ export default function WorkspacePicker() {
     setCreateError('')
     setIsCreating(true)
     try {
-      const newId = await createWorkspace(userId, user.email, newName.trim(), teamSize, selectedWorkflow, saveData)
+      const newId = await createWorkspace(userId, user.email, newName.trim(), teamSize, selectedWorkflow, saveData, userPlan)
       navigate(`/${newId}`)
     } catch (err) {
       console.error('Failed to create workspace:', err)
@@ -133,10 +154,18 @@ export default function WorkspacePicker() {
     try {
       await ensureUserRecordExists(userId, user?.email, { billing_plan_id: planId, billing_status: 'active' })
       await supabase.from('users').update({ billing_plan_id: planId, billing_status: 'active' }).eq('id', userId)
+      if (userData) {
+        userData.billing_plan_id = planId
+        userData.billingPlanId = planId
+      }
       setShowPricingModal(false)
+      setModalStep(1)
       setShowCreateModal(true)
     } catch (err) {
       console.error('Plan selection notice:', err)
+      setShowPricingModal(false)
+      setModalStep(1)
+      setShowCreateModal(true)
     }
   }
 

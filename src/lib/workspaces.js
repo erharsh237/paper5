@@ -475,7 +475,7 @@ export async function ensureUserRecordExists(uid, email, metadata = {}) {
   }
 }
 
-export async function createWorkspace(uid, email, name, teamSize, agileWorkflow, saveData) {
+export async function createWorkspace(uid, email, name, teamSize, agileWorkflow, saveData, planId = 'pro') {
   // 1. Pre-flight: ensure user exists in public.users to satisfy foreign key constraint workspaces_created_by_fkey
   await ensureUserRecordExists(uid, email)
 
@@ -504,19 +504,21 @@ export async function createWorkspace(uid, email, name, teamSize, agileWorkflow,
     throw error
   }
 
-  // 3. Save initial workspace settings if provided
-  if (teamSize !== undefined || agileWorkflow !== undefined || saveData !== undefined) {
-    try {
-      await updateWorkspaceSettings(newWorkspaceId, {
-        settings: {
-          team_size: teamSize,
-          agile_workflow: agileWorkflow,
-          save_data: saveData
-        }
-      })
-    } catch (settErr) {
-      console.warn('Initial workspace settings sync notice:', settErr)
-    }
+  // 3. Save initial workspace settings & active plan
+  try {
+    await updateWorkspaceSettings(newWorkspaceId, {
+      plan: planId || 'pro',
+      billing_plan_id: planId || 'pro',
+      subscription_tier: planId || 'pro',
+      billing_status: 'active',
+      settings: {
+        team_size: teamSize || '2-5',
+        agile_workflow: agileWorkflow || 'scrum',
+        save_data: saveData || false
+      }
+    })
+  } catch (settErr) {
+    console.warn('Initial workspace settings sync notice:', settErr)
   }
 
   return newWorkspaceId
@@ -529,6 +531,7 @@ export async function updateWorkspaceSettings(workspaceId, patch) {
   if (patch.settings !== undefined) mappedPatch.settings = patch.settings
   if (patch.subscription_tier !== undefined) mappedPatch.subscription_tier = patch.subscription_tier
   if (patch.billing_plan_id !== undefined) mappedPatch.billing_plan_id = patch.billing_plan_id
+  if (patch.plan !== undefined) mappedPatch.billing_plan_id = patch.plan
   if (patch.billing_status !== undefined) mappedPatch.billing_status = patch.billing_status
   
   if (patch.billing !== undefined) {

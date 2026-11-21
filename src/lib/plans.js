@@ -62,7 +62,7 @@ export const PLANS = {
 export function getPlanLimits(planId) {
   if (!planId) return PLANS.pro
   const p = String(planId).toLowerCase().trim()
-  if (p === 'starter' || p === 'free' || p === 'member') {
+  if (p === 'starter' || p === 'free') {
     return PLANS.starter
   }
   if (p === 'team') {
