@@ -959,22 +959,6 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
             </section>
           )}
 
-          {/* ─────────────────────────────────────────────────────────────
-               BOTTOM DARK CALLOUT BANNER (Direct from Fenco Mock #1)
-          ───────────────────────────────────────────────────────────── */}
-          <div className="bento-bottom-banner">
-            <div className="bento-banner-left">
-              <SlidersHorizontal size={20} color="#a5b4fc" />
-              <div>
-                <h4 className="bento-banner-title">Need custom workflows, webhooks or enterprise seats?</h4>
-                <p className="bento-banner-sub">Configure integrations, webhooks, or upgrade your workspace capacity.</p>
-              </div>
-            </div>
-            <Link to={`/${workspaceId}/settings`} className="bento-banner-btn">
-              Configure Settings &rarr;
-            </Link>
-          </div>
-
           {/* Modals */}
           {isNewTaskOpen && (
             <NewDeadlineModal
