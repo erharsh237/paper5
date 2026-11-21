@@ -384,8 +384,6 @@ export function WorkspaceProvider({ children }) {
     if (['pro', 'scale', 'enterprise'].includes(ownerPlan)) return 'pro'
     if (ownerPlan === 'team') return 'team'
 
-    if (rawWsPlan === 'starter' || ownerPlan === 'starter') return 'starter'
-
     // Early Access Launch Special defaults to Pro
     return 'pro'
   }, [workspace?.plan, workspace?.billing_plan_id, workspace?.billing?.planId, ownerBilling?.planId])

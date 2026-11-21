@@ -79,7 +79,7 @@ export function formatPlanBadge(planId) {
   const p = String(planId).toLowerCase().trim()
   if (p === 'pro' || p === 'scale' || p === 'enterprise') return 'PRO'
   if (p === 'team') return 'TEAM'
-  if (p === 'starter' || p === 'free' || p === 'member') return 'STARTER'
+  if (p === 'starter' || p === 'free' || p === 'member') return 'PRO'
   return p.toUpperCase()
 }
 

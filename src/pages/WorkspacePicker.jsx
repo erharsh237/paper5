@@ -68,7 +68,6 @@ export default function WorkspacePicker() {
       }
     }
 
-    if (rawUserPlan === 'starter' || rawUserPlan === 'free') return 'starter'
     // Default to 'pro' during launch special
     return 'pro'
   }, [userData?.billing_plan_id, workspaces])
@@ -106,6 +105,14 @@ export default function WorkspacePicker() {
         }
       }
 
+      // 1.5 Auto-upgrade user and owned workspaces to Pro in Supabase
+      if (userId) {
+        try {
+          supabase.from('users').update({ billing_plan_id: 'pro', billing_status: 'active' }).eq('id', userId).then()
+          supabase.from('workspaces').update({ billing_plan_id: 'pro' }).eq('created_by', userId).in('billing_plan_id', ['starter', 'free', 'member', null]).then()
+        } catch (_) {}
+      }
+
       // 2. Query workspace_members directly with joined workspace name and tier
       let mapped = []
       const { data: memberList, error: memberErr } = await supabase
@@ -122,13 +129,17 @@ export default function WorkspacePicker() {
       }
 
       if (Array.isArray(memberList) && memberList.length > 0) {
-        mapped = memberList.map(r => ({
-          workspaceId: r.workspace_id,
-          id: r.workspace_id,
-          role: r.role || 'member',
-          name: r.workspaces?.name || 'My Workspace',
-          plan: r.workspaces?.billing_plan_id || r.workspaces?.settings?.plan || 'pro'
-        }))
+        mapped = memberList.map(r => {
+          const rawPlan = (r.workspaces?.billing_plan_id || r.workspaces?.settings?.plan || '').toLowerCase().trim()
+          const plan = rawPlan === 'team' ? 'team' : 'pro'
+          return {
+            workspaceId: r.workspace_id,
+            id: r.workspace_id,
+            role: r.role || 'member',
+            name: r.workspaces?.name || 'My Workspace',
+            plan
+          }
+        })
       }
 
       // Robust fallback: Query workspaces created by this user directly via created_by
@@ -144,12 +155,14 @@ export default function WorkspacePicker() {
           const existingIds = new Set(mapped.map(m => m.workspaceId))
           ownedWs.forEach(ow => {
             if (!existingIds.has(ow.id)) {
+              const rawPlan = (ow.billing_plan_id || ow.settings?.plan || '').toLowerCase().trim()
+              const plan = rawPlan === 'team' ? 'team' : 'pro'
               mapped.push({
                 workspaceId: ow.id,
                 id: ow.id,
                 role: 'owner',
                 name: ow.name || 'My Workspace',
-                plan: ow.billing_plan_id || ow.settings?.plan || 'pro'
+                plan
               })
               existingIds.add(ow.id)
             }
