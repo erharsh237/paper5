@@ -115,3 +115,66 @@
   color: inherit !important;
   padding: 0 !important;
 }
+
+/* 4. Unified Monochrome & Black Buttons Across Workspace */
+:root {
+  --accent: #18181b !important;
+  --accent-dim: #f4f4f5 !important;
+  --accent-hover: #27272a !important;
+}
+
+.bento-route-body button.btn-primary,
+.bento-route-body .btn-primary,
+.bento-route-body button[type="submit"],
+.bento-route-body .settings-form button[type="submit"],
+.bento-route-body .settings-section .btn-primary,
+.bento-route-body .btn-save {
+  background: #18181b !important;
+  color: #ffffff !important;
+  border: 1px solid #18181b !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.bento-route-body button.btn-primary:hover,
+.bento-route-body .btn-primary:hover,
+.bento-route-body button[type="submit"]:hover,
+.bento-route-body .settings-form button[type="submit"]:hover,
+.bento-route-body .settings-section .btn-primary:hover,
+.bento-route-body .btn-save:hover {
+  background: #27272a !important;
+  border-color: #27272a !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Unified Settings Sidebar Active State */
+.bento-route-body .settings-nav-item--active {
+  background: #18181b !important;
+  color: #ffffff !important;
+  border-color: #18181b !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.bento-route-body .settings-nav-item--active svg {
+  stroke: #ffffff !important;
+}
+
+/* Secondary & Ghost Buttons */
+.bento-route-body .btn-ghost,
+.bento-route-body .btn-secondary {
+  border: 1px solid #e4e4e7 !important;
+  color: #18181b !important;
+  background: #ffffff !important;
+  border-radius: 10px !important;
+}
+
+.bento-route-body .btn-ghost:hover,
+.bento-route-body .btn-secondary:hover {
+  background: #f4f4f5 !important;
+  border-color: #d4d4d8 !important;
+  color: #18181b !important;
+}
