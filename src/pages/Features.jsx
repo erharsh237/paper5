@@ -234,9 +234,9 @@ export default function Features() {
               <thead>
                 <tr>
                   <th>Capability / Feature</th>
-                  <th>Starter</th>
-                  <th>Team (Launch Special)</th>
-                  <th>Scale (Launch Special)</th>
+                  <th>Starter (Free)</th>
+                  <th>Team</th>
+                  <th>Pro (Scale)</th>
                 </tr>
               </thead>
               <tbody>
@@ -244,7 +244,7 @@ export default function Features() {
                   <td><strong>Agile Workflows</strong></td>
                   <td>2 Workflows (Ad-hoc, Kanban)</td>
                   <td>6 Workflows (Kanban, Scrum, XP, Lean, Scrumban)</td>
-                  <td>All 8 Workflows (SAFe Enterprise)</td>
+                  <td>All 8 Workflows (including Spotify &amp; SAFe)</td>
                 </tr>
                 <tr>
                   <td><strong>Max Workspaces</strong></td>
@@ -260,21 +260,21 @@ export default function Features() {
                 </tr>
                 <tr>
                   <td><strong>Stack Integrations</strong></td>
-                  <td>GitHub Sync</td>
-                  <td>GitHub & Discord</td>
-                  <td>GitHub, Discord, Slack, Calendar & Vercel</td>
+                  <td>Google Calendar Sync</td>
+                  <td>Google Calendar &amp; GitHub Sync</td>
+                  <td>All Unlocked (Google Calendar, GitHub, Slack, Discord, Vercel)</td>
                 </tr>
                 <tr>
                   <td><strong>1-Click API REST Studio</strong></td>
-                  <td>Read-only API</td>
-                  <td>Full API & Webhooks</td>
-                  <td>Full API, Webhooks & Simulator</td>
+                  <td>Not Included</td>
+                  <td>Not Included</td>
+                  <td>Full API Tokens, Webhooks &amp; Request Simulator</td>
                 </tr>
                 <tr>
-                  <td><strong>Printable PDF Export</strong></td>
-                  <td>Standard PDF</td>
-                  <td>Custom PDF Sections</td>
-                  <td>Vector PDF & CSV Security Audit Trail</td>
+                  <td><strong>Security &amp; Audit Logs</strong></td>
+                  <td>Standard Export</td>
+                  <td>Audit Log View</td>
+                  <td>Compliance Audit Logs &amp; CSV Export</td>
                 </tr>
               </tbody>
             </table>

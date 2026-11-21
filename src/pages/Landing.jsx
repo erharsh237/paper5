@@ -57,9 +57,9 @@ const PLANS = {
     features: [
       '1 Active Workspace',
       'Up to 3 squad members',
-      'Sprint boards & custom workflows',
-      'GitHub commit & pull request tracking',
-      'Personal focus dashboard',
+      '2 Agile Workflows (Ad-hoc, Kanban)',
+      'Google Calendar Sync & Meeting Notes',
+      'Personal focus dashboard & Sprint tracking',
       'Community developer support'
     ]
   },
@@ -74,28 +74,29 @@ const PLANS = {
     ctaText: 'Claim Team Access',
     features: [
       'Everything in Starter, plus:',
-      'Up to 5 workspaces and 10 squad members',
-      'Locked sprint boundary control',
-      'Deliverable staging preview & test sign-off',
-      'Proactive roadblock radar with squad alerts',
+      'Up to 5 workspaces and 7 squad members',
+      '6 Agile Workflows (Kanban, Scrum, XP, Lean, Scrumban)',
+      'Google Calendar & GitHub PR Sync',
+      'Locked sprint boundary control & peer verification',
       'Connected meeting decisions & sync digests'
     ]
   },
   scale: {
     id: 'scale',
-    name: 'Scale',
+    name: 'Pro',
     target: 'For multi-squad teams requiring custom methodologies, audit reporting, and API access.',
     futurePrice: '₹500',
     period: '/ month after launch',
     launchPrice: '₹0',
     popular: false,
-    ctaText: 'Claim Scale Access',
+    ctaText: 'Claim Pro Access',
     features: [
       'Everything in Team, plus:',
-      'Unlimited workspaces and squad members',
-      'All agile frameworks (Spotify squads, SAFe)',
-      'REST API access with live tokens',
-      'Compliance audit logs & printable vector PDF briefs',
+      'Up to 10 workspaces & unlimited squad members',
+      'All 8 Agile Workflows (Spotify Squads, SAFe Enterprise)',
+      'All Integrations (Google Calendar, GitHub, Slack, Discord, Vercel)',
+      '1-Click API Webhooks & REST Sync Studio',
+      'Compliance audit logs & CSV export',
       'Priority developer support'
     ]
   }
