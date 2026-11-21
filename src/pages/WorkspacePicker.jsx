@@ -84,23 +84,54 @@ export default function WorkspacePicker() {
         }
       }
 
-      // 2. Query workspace_members directly with joined workspace name & plan
-      const { data: memberList } = await supabase
+      // 2. Query workspace_members directly with joined workspace name
+      let mapped = []
+      const { data: memberList, error: memberErr } = await supabase
         .from('workspace_members')
         .select(`
           role,
           workspace_id,
-          workspaces ( name, plan, billing_plan_id, subscription_tier )
+          workspaces ( id, name )
         `)
         .eq('user_id', userId)
 
-      let mapped = (memberList || []).map(r => ({
-        workspaceId: r.workspace_id,
-        id: r.workspace_id,
-        role: r.role,
-        name: r.workspaces?.name || 'My Workspace',
-        plan: r.workspaces?.plan || r.workspaces?.billing_plan_id || r.workspaces?.subscription_tier || 'pro'
-      }))
+      if (memberErr) {
+        console.warn('workspace_members query notice in WorkspacePicker:', memberErr)
+      }
+
+      if (Array.isArray(memberList) && memberList.length > 0) {
+        mapped = memberList.map(r => ({
+          workspaceId: r.workspace_id,
+          id: r.workspace_id,
+          role: r.role || 'member',
+          name: r.workspaces?.name || 'My Workspace'
+        }))
+      }
+
+      // Robust fallback: Also query workspaces created or owned by this user directly
+      try {
+        const { data: ownedWs } = await supabase
+          .from('workspaces')
+          .select('id, name')
+          .or(`owner_id.eq.${userId},created_by.eq.${userId}`)
+        
+        if (Array.isArray(ownedWs) && ownedWs.length > 0) {
+          const existingIds = new Set(mapped.map(m => m.workspaceId))
+          ownedWs.forEach(ow => {
+            if (!existingIds.has(ow.id)) {
+              mapped.push({
+                workspaceId: ow.id,
+                id: ow.id,
+                role: 'owner',
+                name: ow.name || 'My Workspace'
+              })
+              existingIds.add(ow.id)
+            }
+          })
+        }
+      } catch (directErr) {
+        console.warn('Direct workspaces query notice:', directErr)
+      }
 
       if (isMounted) {
         setWorkspaces(mapped)
