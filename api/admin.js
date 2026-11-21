@@ -14,7 +14,6 @@ function parseBody(req) {
 
 export default async function handler(req, res) {
   setCorsHeaders(req, res)
-  res.setHeader('Content-Type', 'application/json')
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end()
@@ -46,14 +45,17 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required workspaceId parameter' })
   }
 
-  // Verify administrative privileges
+  // Verify administrative privileges strictly on backend
   const authRes = await verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { requireAdmin: true })
   if (authRes.error) {
     return res.status(authRes.status || 403).json({ error: authRes.error })
   }
 
-  // Route 1: Audit Logs
+  // ─────────────────────────────────────────────────────────────
+  // 1. AUDIT LOGS ENDPOINT
+  // ─────────────────────────────────────────────────────────────
   if (action === 'audit-logs' || action === 'audit_logs') {
+    res.setHeader('Content-Type', 'application/json')
     const limit = Math.min(parseInt(req.query?.limit || body.limit || '50', 10), 100)
     const offset = parseInt(req.query?.offset || body.offset || '0', 10)
     const resource = req.query?.resource || body.resource
@@ -116,12 +118,52 @@ export default async function handler(req, res) {
     }
   }
 
-  // Route 2: Overview Metrics & Health
+  // ─────────────────────────────────────────────────────────────
+  // 2. CSV EXPORT ENDPOINT
+  // ─────────────────────────────────────────────────────────────
+  if (action === 'export') {
+    const type = req.query?.type || body.type || 'tasks'
+    try {
+      if (type === 'tasks') {
+        const { data: tasks } = await supabaseAdmin
+          .from('deadlines')
+          .select('*')
+          .eq('workspace_id', workspaceId)
+          .order('due_date', { ascending: true })
+
+        const header = 'ID,Title,Status,Priority,Due Date,Assignee Name,Assignee Email,Created At\n'
+        const rows = (tasks || []).map((t) => {
+          const clean = (s) => `"${String(s || '').replace(/"/g, '""')}"`
+          return [
+            clean(t.id),
+            clean(t.title),
+            clean(t.status || 'todo'),
+            clean(t.priority || 'medium'),
+            clean(t.due_date || t.dueDate || ''),
+            clean(t.assignee_name || t.assigneeName || ''),
+            clean(t.assignee_email || t.assigneeEmail || ''),
+            clean(t.created_at || '')
+          ].join(',')
+        }).join('\n')
+
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+        res.setHeader('Content-Disposition', `attachment; filename="paper5-workspace-tasks-${Date.now()}.csv"`)
+        return res.status(200).send(header + rows)
+      }
+    } catch (e) {
+      return res.status(500).json({ error: 'Failed to generate export' })
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // 3. OVERVIEW: REAL WORKSPACE EXECUTIVE AGGREGATE
+  // ─────────────────────────────────────────────────────────────
+  res.setHeader('Content-Type', 'application/json')
   try {
     const now = new Date()
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
-    const [membersRes, invitesRes, sprintsRes, deadlinesRes, workspaceRes] = await Promise.all([
+    const [membersRes, invitesRes, sprintsRes, deadlinesRes, workspaceRes, recentLogsRes] = await Promise.all([
       supabaseAdmin
         .from('workspace_members')
         .select('user_id, role, created_at, users:user_id(id, email, raw_user_meta_data)')
@@ -144,21 +186,28 @@ export default async function handler(req, res) {
         .from('workspaces')
         .select('id, name, created_at, settings, billing_plan_id')
         .eq('id', workspaceId)
-        .maybeSingle()
+        .maybeSingle(),
+      supabaseAdmin
+        .from('audit_logs')
+        .select('*')
+        .eq('workspace_id', workspaceId)
+        .order('created_at', { ascending: false })
+        .limit(10)
     ])
 
     const members = membersRes.data || []
     const invites = invitesRes.data || []
     const sprints = sprintsRes.data || []
-    const tasks = deadlinesRes.data || []
+    const rawTasks = deadlinesRes.data || []
     const workspace = workspaceRes.data || {}
+    const recentLogs = recentLogsRes.data || []
 
     const isDone = (t) => ['done', 'completed', 'shipped'].includes((t.status || '').toLowerCase())
-    const completedTasks = tasks.filter(isDone)
-    const activeTasks = tasks.filter((t) => !isDone(t))
-    const inProgressTasks = tasks.filter((t) => ['in_progress', 'doing'].includes((t.status || '').toLowerCase()))
-    const reviewTasks = tasks.filter((t) => ['review', 'in_review'].includes((t.status || '').toLowerCase()))
-    const todoTasks = tasks.filter((t) => ['todo', 'backlog', 'planned'].includes((t.status || '').toLowerCase()))
+    const completedTasks = rawTasks.filter(isDone)
+    const activeTasks = rawTasks.filter((t) => !isDone(t))
+    const inProgressTasks = rawTasks.filter((t) => ['in_progress', 'doing'].includes((t.status || '').toLowerCase()))
+    const reviewTasks = rawTasks.filter((t) => ['review', 'in_review'].includes((t.status || '').toLowerCase()))
+    const todoTasks = rawTasks.filter((t) => ['todo', 'backlog', 'planned'].includes((t.status || '').toLowerCase()))
 
     const overdueTasks = activeTasks.filter((t) => {
       if (!t.due_date && !t.dueDate) return false
@@ -172,8 +221,9 @@ export default async function handler(req, res) {
       return lastActive && new Date(lastActive) < new Date(sevenDaysAgo)
     })
 
+    // Project summaries
     const projectSummaries = sprints.map((s) => {
-      const sTasks = tasks.filter((t) => (t.sprint_id || t.sprintId) === s.id)
+      const sTasks = rawTasks.filter((t) => (t.sprint_id || t.sprintId) === s.id)
       const sDone = sTasks.filter(isDone)
       const sOverdue = sTasks.filter((t) => {
         if (isDone(t)) return false
@@ -213,13 +263,14 @@ export default async function handler(req, res) {
     const archivedProjects = projectSummaries.filter((p) => p.archived)
     const projectsRequiringAttention = activeProjects.filter((p) => p.health === 'critical' || p.health === 'at_risk')
 
+    // Member workload
     const memberWorkload = members.map((m) => {
       const u = m.users || {}
       const meta = u.raw_user_meta_data || {}
       const mEmail = (u.email || '').toLowerCase()
       const mId = m.user_id
 
-      const userTasks = tasks.filter((t) => {
+      const userTasks = rawTasks.filter((t) => {
         const tEmail = (t.assignee_email || t.assigneeEmail || '').toLowerCase()
         const tId = t.assignee_id || t.assigneeId
         return (tEmail && mEmail && tEmail === mEmail) || (tId && mId && tId === mId)
@@ -257,23 +308,36 @@ export default async function handler(req, res) {
       }
     })
 
-    const overallProductivity = tasks.length > 0 
-      ? Math.round((completedTasks.length / tasks.length) * 100) 
+    const overallProductivity = rawTasks.length > 0 
+      ? Math.round((completedTasks.length / rawTasks.length) * 100) 
       : 100
 
-    const upcomingDeadlines = activeTasks
-      .filter((t) => t.due_date || t.dueDate)
-      .slice(0, 5)
-      .map((t) => ({
+    // Full task list mapped for Cross-Project Master Task Grid
+    const mappedTasks = rawTasks.map((t) => {
+      const tDue = t.due_date || t.dueDate
+      const isOverdue = !isDone(t) && tDue && new Date(tDue) < now
+      const lastActive = t.last_activity_at || t.created_at || t.createdAt
+      const isStalled = !isDone(t) && lastActive && new Date(lastActive) < new Date(sevenDaysAgo)
+      const sprint = sprints.find((s) => s.id === (t.sprint_id || t.sprintId))
+
+      return {
         id: t.id,
         title: t.title,
-        dueDate: t.due_date || t.dueDate,
+        description: t.description || '',
+        status: t.status || 'todo',
         priority: t.priority || 'medium',
-        status: t.status,
-        assigneeName: t.assignee_name || t.assigneeName || 'Unassigned',
+        dueDate: tDue,
         assigneeId: t.assignee_id || t.assigneeId,
-        sprintId: t.sprint_id || t.sprintId
-      }))
+        assigneeName: t.assignee_name || t.assigneeName || 'Unassigned',
+        assigneeEmail: t.assignee_email || t.assigneeEmail,
+        sprintId: t.sprint_id || t.sprintId,
+        sprintName: sprint?.name || (sprint?.number ? `Sprint #${sprint.number}` : 'No Sprint'),
+        createdAt: t.created_at || t.createdAt,
+        lastActivityAt: lastActive,
+        isOverdue,
+        isStalled
+      }
+    })
 
     return res.status(200).json({
       success: true,
@@ -290,7 +354,7 @@ export default async function handler(req, res) {
         completedProjectsCount: completedProjects.length,
         archivedProjectsCount: archivedProjects.length,
         attentionProjectsCount: projectsRequiringAttention.length,
-        totalTasks: tasks.length,
+        totalTasks: rawTasks.length,
         activeTasksCount: activeTasks.length,
         todoTasksCount: todoTasks.length,
         inProgressTasksCount: inProgressTasks.length,
@@ -303,13 +367,20 @@ export default async function handler(req, res) {
       },
       projects: projectSummaries,
       attentionProjects: projectsRequiringAttention,
-      upcomingDeadlines,
+      tasks: mappedTasks,
       teamWorkload: memberWorkload,
       invites: invites.map((inv) => ({
         id: inv.id,
         email: inv.email,
         role: inv.role,
         createdAt: inv.created_at
+      })),
+      recentActivity: recentLogs.map((l) => ({
+        id: l.id,
+        action: l.action,
+        resource: l.resource,
+        createdAt: l.created_at,
+        metadata: l.metadata || {}
       }))
     })
   } catch (err) {

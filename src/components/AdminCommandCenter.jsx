@@ -2,63 +2,77 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useWorkspace } from '../lib/WorkspaceContext'
 import { useAuth } from '../lib/AuthContext'
-import { updateDeadline } from '../lib/deadlines'
+import { updateDeadline, deleteDeadline } from '../lib/deadlines'
+import { archiveSprint, unarchiveSprint } from '../lib/sprints'
+import { changeMemberRole, removeMember } from '../lib/workspaces'
 import CreateProjectModal from './CreateProjectModal'
 import ReassignTaskModal from './ReassignTaskModal'
 import NewDeadlineModal from './NewDeadlineModal'
 import Paper5Logo from './Paper5Logo'
 import {
-  Calendar,
-  Clock,
-  Plus,
-  Search,
-  ArrowLeft,
-  ArrowUpRight,
-  UserCheck,
-  Folder,
-  CheckCircle2,
-  Bell,
-  RefreshCw,
-  ExternalLink,
-  Shield,
-  Send,
-  Flag,
-  User,
+  LayoutDashboard,
+  CheckSquare,
+  FolderGit2,
+  Users2,
   Activity,
-  Layers,
-  LayoutGrid,
-  Users,
-  MessageSquare,
-  Video,
-  Mic,
-  Volume2,
-  PhoneOff,
-  SlidersHorizontal,
+  BarChart3,
+  Search,
+  Plus,
+  RefreshCw,
   Download,
-  Edit3,
-  Maximize2,
-  X,
-  PhoneCall,
-  Mail,
-  FileText
+  AlertTriangle,
+  Clock,
+  UserCheck,
+  CheckCircle2,
+  Calendar,
+  Flag,
+  ArrowRight,
+  UserPlus,
+  Shield,
+  ShieldAlert,
+  Archive,
+  ArchiveRestore,
+  ExternalLink,
+  SlidersHorizontal,
+  Trash2,
+  ArrowUpDown,
+  TrendingUp,
+  Inbox
 } from 'lucide-react'
 import './AdminCommandCenter.css'
 
 export default function AdminCommandCenter({ onSwitchToPersonal }) {
-  const { workspaceId, workspace, isAdmin } = useWorkspace()
+  const { workspaceId, workspace, isAdmin, isOwner } = useWorkspace()
   const { user } = useAuth()
 
   // State
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState(null)
-  const [leadTab, setLeadTab] = useState('all') // 'all' | 'hot' | 'great' | 'medium' | 'low'
-  const [taskTab, setTaskTab] = useState('all') // 'all' | 'hot' | 'due_today' | 'overdue' | 'completed'
-  const [isVideoActive, setIsVideoActive] = useState(true)
+  const [activeTab, setActiveTab] = useState('tasks') // 'tasks' | 'projects' | 'team' | 'audit' | 'analytics'
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedProjectFilter, setSelectedProjectFilter] = useState('all')
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState('all')
+  const [selectedPriorityFilter, setSelectedPriorityFilter] = useState('all')
+  const [quickFilter, setQuickFilter] = useState('all') // 'all' | 'overdue' | 'stalled' | 'unassigned' | 'urgent'
+  const [auditResourceFilter, setAuditResourceFilter] = useState('all')
 
   // Modals
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false)
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false)
   const [taskToReassign, setTaskToReassign] = useState(null)
+  const [actionError, setActionError] = useState('')
+  const [actionSuccess, setActionSuccess] = useState('')
+
+  // Auto-dismiss alerts
+  useEffect(() => {
+    if (actionError || actionSuccess) {
+      const timer = setTimeout(() => {
+        setActionError('')
+        setActionSuccess('')
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [actionError, actionSuccess])
 
   // Fetch Admin Overview Data
   const fetchOverview = useCallback(async () => {
@@ -96,581 +110,848 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
   }, [fetchOverview])
 
   const overview = data?.overview || {}
-  const teamWorkload = data?.teamWorkload || []
   const projects = data?.projects || []
-  const upcomingDeadlines = data?.upcomingDeadlines || []
+  const tasks = data?.tasks || []
+  const teamWorkload = data?.teamWorkload || []
+  const recentActivity = data?.recentActivity || []
+  const invites = data?.invites || []
 
-  // Sample Leads / Team Lead Cards exactly modeled on the mock
-  const leads = useMemo(() => {
-    if (teamWorkload.length >= 4) {
-      return teamWorkload.slice(0, 4).map((m, i) => ({
-        id: m.userId || String(i),
-        name: m.name,
-        role: m.role === 'owner' ? 'Workspace Owner & Lead' : `${m.role.toUpperCase()} at ${workspace?.name || 'TechNova'}`,
-        avatar: m.avatarUrl || `https://images.unsplash.com/photo-${1534528741775 + i * 100}?w=150&auto=format&fit=crop&q=80`,
-        sources: ['LinkedIn', 'Email'],
-        hotLevel: 5 - (i % 2),
-        tag: i === 0 ? 'Hot Client' : i === 1 ? 'High Interest' : 'Medium Interest'
-      }))
+  // Direct CSV Export
+  const handleExportCSV = () => {
+    window.location.href = `/api/admin?workspaceId=${encodeURIComponent(workspaceId)}&action=export&type=tasks`
+  }
+
+  // Inline Status Change for Tasks
+  const handleTaskStatusChange = async (taskId, newStatus) => {
+    try {
+      await updateDeadline(workspaceId, taskId, { status: newStatus })
+      setActionSuccess('Task status updated.')
+      fetchOverview()
+    } catch (err) {
+      console.error('Failed to update task status:', err)
+      setActionError(err?.message || 'Failed to update task.')
     }
-    return [
-      {
-        id: '1',
-        name: 'Sophia Martinez',
-        role: 'Marketing Director at TechNova',
-        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-        sources: ['LinkedIn', 'Email'],
-        hotLevel: 5,
-        tag: 'Hot Client'
-      },
-      {
-        id: '2',
-        name: 'Liam Anderson',
-        role: 'Financial Manager at Vertex',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-        sources: ['LinkedIn', 'Facebook'],
-        hotLevel: 4,
-        tag: 'Great Interest'
-      },
-      {
-        id: '3',
-        name: 'Noah Bennett',
-        role: 'Operations Manager at BrightCore',
-        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-        sources: ['Typeform'],
-        hotLevel: 4,
-        tag: 'Medium Interest'
-      },
-      {
-        id: '4',
-        name: 'Ethan Harper',
-        role: 'Web Developer at CodeWave',
-        avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80',
-        sources: ['Typeform'],
-        hotLevel: 3,
-        tag: 'Low Interest'
+  }
+
+  // Delete Task
+  const handleDeleteTask = async (taskId, title) => {
+    if (!window.confirm(`Are you sure you want to delete task "${title}"?`)) return
+    try {
+      await deleteDeadline(workspaceId, taskId)
+      setActionSuccess(`Deleted task "${title}".`)
+      fetchOverview()
+    } catch (err) {
+      console.error('Failed to delete task:', err)
+      setActionError(err?.message || 'Failed to delete task.')
+    }
+  }
+
+  // Archive / Unarchive Project
+  const handleToggleArchiveProject = async (sprintId, currentlyArchived) => {
+    try {
+      if (currentlyArchived) {
+        await unarchiveSprint(workspaceId, sprintId)
+        setActionSuccess('Project restored from archive.')
+      } else {
+        await archiveSprint(workspaceId, sprintId)
+        setActionSuccess('Project archived successfully.')
       }
-    ]
-  }, [teamWorkload, workspace?.name])
+      fetchOverview()
+    } catch (err) {
+      console.error('Failed to toggle project archive:', err)
+      setActionError(err?.message || 'Failed to update project.')
+    }
+  }
 
-  // Filtered Leads
-  const filteredLeads = useMemo(() => {
-    if (leadTab === 'hot') return leads.filter((l) => l.hotLevel >= 5)
-    if (leadTab === 'great') return leads.filter((l) => l.hotLevel === 4)
-    if (leadTab === 'medium') return leads.filter((l) => l.hotLevel === 3)
-    if (leadTab === 'low') return leads.filter((l) => l.hotLevel < 3)
-    return leads
-  }, [leads, leadTab])
+  // Promote / Demote Member Role
+  const handleToggleMemberRole = async (targetUserId, currentRole) => {
+    const newRole = currentRole === 'admin' ? 'member' : 'admin'
+    // Safeguard: verify at least one other admin exists if demoting
+    if (currentRole === 'admin') {
+      const adminCount = teamWorkload.filter((m) => m.role === 'admin' || m.role === 'owner').length
+      if (adminCount <= 1) {
+        return setActionError('Cannot demote the last remaining administrator in this workspace.')
+      }
+    }
 
-  // Today's formatted date
-  const todayFormatted = useMemo(() => {
-    const d = new Date()
-    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })
-  }, [])
+    try {
+      await changeMemberRole(workspaceId, targetUserId, newRole)
+      setActionSuccess(`Member updated to ${newRole.toUpperCase()}.`)
+      fetchOverview()
+    } catch (err) {
+      console.error('Failed to update role:', err)
+      setActionError(err?.message || 'Failed to change member role.')
+    }
+  }
+
+  // Remove Member
+  const handleRemoveMember = async (targetUserId, memberName, memberRole) => {
+    if (memberRole === 'owner') {
+      return setActionError('The workspace owner cannot be removed.')
+    }
+    if (!window.confirm(`Remove ${memberName} from this workspace?`)) return
+
+    try {
+      await removeMember(workspaceId, targetUserId)
+      setActionSuccess(`Removed ${memberName} from workspace.`)
+      fetchOverview()
+    } catch (err) {
+      console.error('Failed to remove member:', err)
+      setActionError(err?.message || 'Failed to remove member.')
+    }
+  }
+
+  // Filtered Tasks
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((t) => {
+      // Search
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase()
+        const matchesTitle = (t.title || '').toLowerCase().includes(q)
+        const matchesAssignee = (t.assigneeName || '').toLowerCase().includes(q) || (t.assigneeEmail || '').toLowerCase().includes(q)
+        const matchesSprint = (t.sprintName || '').toLowerCase().includes(q)
+        if (!matchesTitle && !matchesAssignee && !matchesSprint) return false
+      }
+      // Project filter
+      if (selectedProjectFilter !== 'all' && t.sprintId !== selectedProjectFilter) return false
+      // Status filter
+      if (selectedStatusFilter !== 'all' && t.status !== selectedStatusFilter) return false
+      // Priority filter
+      if (selectedPriorityFilter !== 'all' && t.priority !== selectedPriorityFilter) return false
+      // Quick filter
+      if (quickFilter === 'overdue' && !t.isOverdue) return false
+      if (quickFilter === 'stalled' && !t.isStalled) return false
+      if (quickFilter === 'unassigned' && t.assigneeId) return false
+      if (quickFilter === 'urgent' && !['urgent', 'high'].includes(t.priority)) return false
+
+      return true
+    })
+  }, [tasks, searchQuery, selectedProjectFilter, selectedStatusFilter, selectedPriorityFilter, quickFilter])
+
+  // Filtered Audit Logs
+  const filteredAuditLogs = useMemo(() => {
+    if (auditResourceFilter === 'all') return recentActivity
+    return recentActivity.filter((l) => l.resource === auditResourceFilter)
+  }, [recentActivity, auditResourceFilter])
+
+  // Format Date Helper
+  const formatDate = (isoString) => {
+    if (!isoString) return '—'
+    try {
+      const d = new Date(isoString)
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    } catch {
+      return '—'
+    }
+  }
+
+  const formatRelativeTime = (isoString) => {
+    if (!isoString) return '—'
+    try {
+      const diffMs = Date.now() - new Date(isoString).getTime()
+      const diffMins = Math.floor(diffMs / 60000)
+      if (diffMins < 1) return 'Just now'
+      if (diffMins < 60) return `${diffMins}m ago`
+      const diffHours = Math.floor(diffMins / 60)
+      if (diffHours < 24) return `${diffHours}h ago`
+      const diffDays = Math.floor(diffHours / 24)
+      return `${diffDays}d ago`
+    } catch {
+      return '—'
+    }
+  }
 
   return (
-    <div className="p5-mock-canvas">
-      <div className="p5-mock-shell">
-        {/* ─────────────────────────────────────────────────────────────
-             1. TOP BAR: LOGO, BLACK SCHEDULE CAPSULE STRIP, NOTIFICATIONS, AVATAR
-        ───────────────────────────────────────────────────────────── */}
-        <div className="p5-mock-topbar">
-          {/* Logo on Left */}
-          <div className="p5-brand-block">
-            <div className="p5-brand-logo-icon">
-              <Paper5Logo size={28} decorative />
-            </div>
-            <div className="p5-brand-text">
-              <span className="p5-brand-title">{workspace?.name || 'TaskOrbit'}</span>
-              <span className="p5-brand-tag">CRM &amp; OPS</span>
-            </div>
-          </div>
-
-          {/* Center Black Schedule Capsule Strip (Exact from Mock) */}
-          <div className="p5-schedule-capsule">
-            <span className="p5-capsule-schedule-label">Your Schedule</span>
-            <div className="p5-capsule-date-pill">
-              <Calendar size={13} color="#a1a1aa" />
-              <span>{todayFormatted || '28 March'}</span>
-            </div>
-
-            {/* Lime Pill 30 min */}
-            <div className="p5-capsule-lime-block">
-              <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80"
-                alt="Avatar"
-                className="p5-capsule-lime-avatar"
-              />
-              <span>30 min</span>
-              <ArrowUpRight size={13} />
-            </div>
-
-            {/* 2:00 pm slot */}
-            <div className="p5-capsule-time-slot">
-              <span>2:00 pm</span>
-              <div className="p5-capsule-avatar-pair">
-                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=80" alt="Avatar" className="p5-capsule-mini-avatar" />
-                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&auto=format&fit=crop&q=80" alt="Avatar" className="p5-capsule-mini-avatar" />
+    <div className="admin-command-root">
+      {/* ─────────────────────────────────────────────────────────────
+           1. TOP COMMAND HEADER
+      ───────────────────────────────────────────────────────────── */}
+      <header className="admin-header">
+        <div className="admin-header-left">
+          <div className="admin-header-brand">
+            <Paper5Logo size={24} decorative />
+            <div>
+              <div className="admin-header-title-row">
+                <h1 className="admin-workspace-name">{workspace?.name || 'Workspace'}</h1>
+                <span className="admin-badge-plan">{(workspace?.plan || 'STARTER').toUpperCase()}</span>
+                <span className="admin-badge-role">WORKSPACE ADMIN</span>
               </div>
-              <div className="p5-capsule-slider-track">
-                <div className="p5-capsule-slider-thumb" />
-              </div>
+              <p className="admin-header-sub">
+                Executive Command Center &bull; Real-time operations, team workload, project health &amp; governance
+              </p>
             </div>
-
-            {/* 3:00 pm slot */}
-            <div className="p5-capsule-time-slot">
-              <div style={{ background: '#a3e635', color: '#14532d', borderRadius: '4px', padding: '2px 4px', fontSize: '10px', fontWeight: 800 }}>
-                G
-              </div>
-              <span>3:00 pm</span>
-              <div className="p5-capsule-avatar-pair">
-                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&auto=format&fit=crop&q=80" alt="Avatar" className="p5-capsule-mini-avatar" />
-                <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=80&auto=format&fit=crop&q=80" alt="Avatar" className="p5-capsule-mini-avatar" />
-              </div>
-            </div>
-
-            <button type="button" className="p5-capsule-circle-arrow" title="Next schedule" onClick={() => (window.location.href = `/${workspaceId}/meeting`)}>
-              <ArrowUpRight size={14} />
-            </button>
-          </div>
-
-          {/* Right Topbar Icons */}
-          <div className="p5-topbar-actions">
-            <button type="button" className="p5-icon-button-circle" onClick={onSwitchToPersonal} title="Personal Task View">
-              <User size={18} />
-            </button>
-            <button type="button" className="p5-icon-button-circle" title="Notifications">
-              <Bell size={18} />
-              <div className="p5-bell-dot" />
-            </button>
-            <img
-              src={user?.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
-              alt="User"
-              className="p5-user-avatar-circle"
-            />
           </div>
         </div>
 
-        {/* ─────────────────────────────────────────────────────────────
-             2. 3-COLUMN BODY: LEFT DOCK, CENTER STAGE, RIGHT WIDGETS
-        ───────────────────────────────────────────────────────────── */}
-        <div className="p5-mock-body-layout">
-          {/* Left Icon Navigation Dock (Exact from Mock) */}
-          <aside className="p5-mock-left-dock">
-            <button type="button" className="p5-dock-item p5-dock-item--active" title="Command Center">
-              <LayoutGrid size={20} />
-            </button>
-            <button type="button" className="p5-dock-item" title="Team Members" onClick={() => (window.location.href = `/${workspaceId}/settings`)}>
-              <Users size={20} />
-            </button>
-            <button type="button" className="p5-dock-item" title="Meetings & Standups" onClick={() => (window.location.href = `/${workspaceId}/meeting`)}>
-              <MessageSquare size={20} />
-            </button>
-            <button type="button" className="p5-dock-item" title="Sprint Workflow" onClick={() => (window.location.href = `/${workspaceId}/workflow`)}>
-              <Calendar size={20} />
-            </button>
-          </aside>
+        <div className="admin-header-actions">
+          <button
+            type="button"
+            className="admin-btn-secondary"
+            onClick={fetchOverview}
+            title="Refresh workspace telemetry"
+          >
+            <RefreshCw size={14} className={loading ? 'spin' : ''} />
+            <span>Refresh</span>
+          </button>
 
-          {/* Center Stage Content */}
-          <main className="p5-mock-center-stage">
-            {/* Hero Row: Back Button, Title (HELIXCRM), + New Task Pill, Metrics inline */}
-            <div className="p5-mock-hero-row">
-              <div className="p5-hero-left-wrap">
-                <button type="button" className="p5-back-arrow-btn" onClick={onSwitchToPersonal} title="Back to personal tasks">
-                  <ArrowLeft size={16} />
-                </button>
-                <h1 className="p5-mock-main-title">{(workspace?.name || 'HELIXCRM').toUpperCase()}</h1>
-                <button type="button" className="p5-new-task-pill-btn" onClick={() => setIsNewTaskOpen(true)}>
-                  <Plus size={16} /> New Task
-                </button>
-              </div>
+          <button
+            type="button"
+            className="admin-btn-secondary"
+            onClick={handleExportCSV}
+            title="Export all tasks to CSV"
+          >
+            <Download size={14} />
+            <span>Export CSV</span>
+          </button>
 
-              {/* Metric Counters (Exact from Mock: 34 Deals (+3), 20 won (+2), 3 lost (-1)) */}
-              <div className="p5-hero-metrics-group">
-                <div className="p5-hero-metric-item">
-                  <span className="p5-hero-stat-number">{overview.totalTasks || 34}</span>
-                  <span className="p5-hero-stat-label">Deals</span>
-                  <span className="p5-hero-pill-badge p5-badge-green">+{overview.todoTasksCount || 3}</span>
-                </div>
+          <button
+            type="button"
+            className="admin-btn-primary"
+            onClick={() => setIsNewProjectOpen(true)}
+          >
+            <Plus size={14} />
+            <span>New Project</span>
+          </button>
 
-                <div className="p5-hero-metric-item">
-                  <span className="p5-hero-stat-number">{overview.completedTasksCount || 20}</span>
-                  <span className="p5-hero-stat-label">won</span>
-                  <span className="p5-hero-pill-badge p5-badge-orange">+{overview.inProgressTasksCount || 2}</span>
-                </div>
+          <button
+            type="button"
+            className="admin-btn-primary"
+            onClick={() => setIsNewTaskOpen(true)}
+          >
+            <CheckSquare size={14} />
+            <span>New Task</span>
+          </button>
 
-                <div className="p5-hero-metric-item">
-                  <span className="p5-hero-stat-number" style={{ color: overview.overdueTasksCount > 0 ? '#dc2626' : undefined }}>
-                    {overview.overdueTasksCount || 3}
-                  </span>
-                  <span className="p5-hero-stat-label">lost</span>
-                  <span className="p5-hero-pill-badge p5-badge-red">-{overview.overdueTasksCount || 1}</span>
-                </div>
-              </div>
+          <button
+            type="button"
+            className="admin-btn-focus"
+            onClick={onSwitchToPersonal}
+            title="Switch to your personal task list"
+          >
+            <span>Personal View &rarr;</span>
+          </button>
+        </div>
+      </header>
+
+      {/* Alert Notices */}
+      {actionSuccess && (
+        <div className="admin-toast-success">
+          <CheckCircle2 size={16} />
+          <span>{actionSuccess}</span>
+        </div>
+      )}
+      {actionError && (
+        <div className="admin-toast-error">
+          <AlertTriangle size={16} />
+          <span>{actionError}</span>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+           2. EXECUTIVE KPI SUMMARY RIBBON
+      ───────────────────────────────────────────────────────────── */}
+      <section className="admin-kpi-grid">
+        {/* KPI 1: Active Projects */}
+        <div className="admin-kpi-card">
+          <div className="admin-kpi-header">
+            <span className="admin-kpi-title">Active Projects</span>
+            <div className="admin-kpi-icon-wrap" style={{ background: '#e0e7ff', color: '#4338ca' }}>
+              <FolderGit2 size={18} />
             </div>
-
-            {/* ── SECTION 1: "NEW LEADS" (7 Leads) ── */}
-            <section className="p5-mock-section">
-              <div className="p5-mock-section-header">
-                <div className="p5-section-title-combo">
-                  <h2 className="p5-mock-h2">New Leads</h2>
-                  <span className="p5-mock-count-pill">{filteredLeads.length} Leads</span>
-                </div>
-
-                <div className="p5-mock-filters-row">
-                  <button type="button" className="p5-icon-pill-btn" title="Search leads">
-                    <Search size={14} />
-                  </button>
-                  <button type="button" className="p5-icon-pill-btn" title="Filter options">
-                    <SlidersHorizontal size={14} />
-                  </button>
-                  <button type="button" className={`p5-tab-pill-btn ${leadTab === 'all' ? 'p5-tab-pill-btn--active' : ''}`} onClick={() => setLeadTab('all')}>
-                    All
-                  </button>
-                  <button type="button" className={`p5-tab-pill-btn ${leadTab === 'hot' ? 'p5-tab-pill-btn--active' : ''}`} onClick={() => setLeadTab('hot')}>
-                    🔥 Hot Client
-                  </button>
-                  <button type="button" className={`p5-tab-pill-btn ${leadTab === 'great' ? 'p5-tab-pill-btn--active' : ''}`} onClick={() => setLeadTab('great')}>
-                    Great interest
-                  </button>
-                  <button type="button" className={`p5-tab-pill-btn ${leadTab === 'medium' ? 'p5-tab-pill-btn--active' : ''}`} onClick={() => setLeadTab('medium')}>
-                    Medium interest
-                  </button>
-                  <button type="button" className={`p5-tab-pill-btn ${leadTab === 'low' ? 'p5-tab-pill-btn--active' : ''}`} onClick={() => setLeadTab('low')}>
-                    Low interest
-                  </button>
-                </div>
-              </div>
-
-              {/* 4 Horizontal Leads Cards */}
-              <div className="p5-leads-cards-grid">
-                {filteredLeads.map((lead) => (
-                  <div key={lead.id} className="p5-lead-card">
-                    <button type="button" className="p5-lead-arrow-btn" title="Inspect lead">
-                      <ArrowUpRight size={14} />
-                    </button>
-                    <div>
-                      <img src={lead.avatar} alt={lead.name} className="p5-lead-avatar" />
-                      <h3 className="p5-lead-name">{lead.name}</h3>
-                      <p className="p5-lead-role">{lead.role}</p>
-                    </div>
-
-                    <div className="p5-lead-meta-row">
-                      <div className="p5-lead-sources">
-                        {lead.sources.map((s, idx) => (
-                          <span key={idx} className="p5-source-tag">
-                            {s}
-                          </span>
-                        ))}
-                      </div>
-
-                      <div className="p5-dots-rating" title={`${lead.hotLevel} / 5 Interest Level`}>
-                        {[...Array(5)].map((_, i) => (
-                          <div
-                            key={i}
-                            className="p5-dot-orange"
-                            style={{ opacity: i < lead.hotLevel ? 1 : 0.2 }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* ── SECTION 2: "YOUR DAYS TASKS" (16 Tasks) ── */}
-            <section className="p5-mock-section">
-              <div className="p5-mock-section-header">
-                <div className="p5-section-title-combo">
-                  <h2 className="p5-mock-h2">Your Days Tasks</h2>
-                  <span className="p5-mock-count-pill">{upcomingDeadlines.length || 16} Tasks</span>
-                </div>
-
-                <div className="p5-mock-filters-row">
-                  <button type="button" className="p5-icon-pill-btn" title="Search tasks">
-                    <Search size={14} />
-                  </button>
-                  <button type="button" className="p5-icon-pill-btn" title="Filter tasks">
-                    <SlidersHorizontal size={14} />
-                  </button>
-                  <button type="button" className={`p5-tab-pill-btn ${taskTab === 'all' ? 'p5-tab-pill-btn--active' : ''}`} onClick={() => setTaskTab('all')}>
-                    All
-                  </button>
-                  <button type="button" className={`p5-tab-pill-btn ${taskTab === 'hot' ? 'p5-tab-pill-btn--active' : ''}`} onClick={() => setTaskTab('hot')}>
-                    🔥 Hot
-                  </button>
-                  <button type="button" className={`p5-tab-pill-btn ${taskTab === 'due_today' ? 'p5-tab-pill-btn--active' : ''}`} onClick={() => setTaskTab('due_today')}>
-                    Due Today
-                  </button>
-                  <button type="button" className={`p5-tab-pill-btn ${taskTab === 'overdue' ? 'p5-tab-pill-btn--active' : ''}`} onClick={() => setTaskTab('overdue')}>
-                    Overdue
-                  </button>
-                  <button type="button" className={`p5-tab-pill-btn ${taskTab === 'completed' ? 'p5-tab-pill-btn--active' : ''}`} onClick={() => setTaskTab('completed')}>
-                    Completed
-                  </button>
-                </div>
-              </div>
-
-              {/* Tasks Cards Grid (Lime Green Hero + White Cards) */}
-              <div className="p5-tasks-cards-grid">
-                {/* 1. VIBRANT LIME GREEN HERO CARD (Exact from Mock) */}
-                <div className="p5-task-lime-card">
-                  <div>
-                    <div className="p5-task-lime-top">
-                      <div className="p5-lime-user-group">
-                        <img
-                          src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
-                          alt="David Thompson"
-                          className="p5-lime-avatar"
-                        />
-                        <div>
-                          <h4 className="p5-lime-user-name">David Thompson</h4>
-                          <p className="p5-lime-user-role">CEO at InnovateX</p>
-                        </div>
-                      </div>
-
-                      <div className="p5-lime-top-actions">
-                        <button type="button" className="p5-lime-bell-icon" title="Urgent Task">
-                          <Bell size={14} />
-                        </button>
-                        <button type="button" className="p5-lime-bell-icon" title="View Details" onClick={() => setIsNewTaskOpen(true)}>
-                          <ArrowUpRight size={14} />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="p5-lime-title-row">
-                      <div style={{ background: '#14532d', color: '#ffffff', borderRadius: '6px', padding: '4px', display: 'flex' }}>
-                        <Video size={16} />
-                      </div>
-                      <h3 className="p5-lime-task-title">Google Meet Call</h3>
-                    </div>
-
-                    <div className="p5-lime-time-row">
-                      <Calendar size={13} />
-                      <span>{todayFormatted} at 2 pm</span>
-                      <div className="p5-capsule-avatar-pair" style={{ marginLeft: '4px' }}>
-                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60&auto=format&fit=crop&q=80" alt="Avatar" className="p5-capsule-mini-avatar" />
-                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=60&auto=format&fit=crop&q=80" alt="Avatar" className="p5-capsule-mini-avatar" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p5-lime-bottom-row">
-                    <div className="p5-lime-status-pill">
-                      <PhoneCall size={13} />
-                      <span>Call scheduled ▾</span>
-                    </div>
-
-                    <div className="p5-lime-circle-actions">
-                      <button type="button" className="p5-black-circle-action-btn" title="Send email">
-                        <Mail size={14} />
-                      </button>
-                      <button type="button" className="p5-black-circle-action-btn" title="Launch Video Call" onClick={() => (window.location.href = `/${workspaceId}/meeting`)}>
-                        <Video size={14} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2. WHITE CARD 1: Send Proposal */}
-                <div className="p5-task-white-card">
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div className="p5-white-user-group">
-                        <img
-                          src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-                          alt="Ava Williams"
-                          className="p5-white-task-avatar"
-                        />
-                        <div>
-                          <h4 className="p5-white-task-name">Ava Williams</h4>
-                          <p className="p5-white-task-role">CEO at BlueHorizon</p>
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <button type="button" className="p5-lead-arrow-btn">
-                          <Bell size={13} />
-                        </button>
-                        <button type="button" className="p5-lead-arrow-btn">
-                          <ArrowUpRight size={13} />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="p5-white-title-row">
-                      <FileText size={18} color="#71717a" />
-                      <div>
-                        <h3 className="p5-white-task-title">Send Proposal</h3>
-                        <p className="p5-white-subdetail">Amount $20,000</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p5-white-bottom-row">
-                    <div className="p5-white-status-pill">
-                      <span>Waiting Proposal ▾</span>
-                    </div>
-
-                    <button type="button" className="p5-black-circle-action-btn" title="Send message">
-                      <Mail size={14} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* 3. WHITE CARD 2: Google Meet Call */}
-                <div className="p5-task-white-card">
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div className="p5-white-user-group">
-                        <img
-                          src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80"
-                          alt="Mia Johnson"
-                          className="p5-white-task-avatar"
-                        />
-                        <div>
-                          <h4 className="p5-white-task-name">Mia Johnson</h4>
-                          <p className="p5-white-task-role">Brand Manager at Creative Studio</p>
-                        </div>
-                      </div>
-
-                      <button type="button" className="p5-lead-arrow-btn">
-                        <ArrowUpRight size={13} />
-                      </button>
-                    </div>
-
-                    <div className="p5-white-title-row">
-                      <Video size={18} color="#71717a" />
-                      <div>
-                        <h3 className="p5-white-task-title">Google Meet Call</h3>
-                        <p className="p5-white-subdetail">28.03.2023 at 8 pm</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p5-white-bottom-row">
-                    <div className="p5-white-status-pill">
-                      <PhoneCall size={13} />
-                      <span>Call scheduled ▾</span>
-                    </div>
-
-                    <button type="button" className="p5-black-circle-action-btn" title="Quick action">
-                      <ArrowUpRight size={14} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </main>
-
-          {/* ─────────────────────────────────────────────────────────────
-               6. RIGHT-SIDE MODULAR WIDGETS (VIDEO CALL + DARK SUMMARY DRAWER)
-          ───────────────────────────────────────────────────────────── */}
-          <aside className="p5-mock-right-widgets">
-            {/* Live Video Call Card (Exact from Mock) */}
-            {isVideoActive && (
-              <div className="p5-video-call-card">
-                <img
-                  src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=600&auto=format&fit=crop&q=80"
-                  alt="Live Call Video"
-                  className="p5-video-feed-img"
-                />
-
-                <div className="p5-video-top-badges">
-                  <div className="p5-video-meet-icon">
-                    <Video size={15} color="#bef264" />
-                  </div>
-                  <div className="p5-video-window-actions">
-                    <button type="button" className="p5-video-mini-btn" title="Expand">
-                      <Maximize2 size={13} />
-                    </button>
-                    <button type="button" className="p5-video-mini-btn" onClick={() => setIsVideoActive(false)} title="Close video">
-                      <X size={13} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="p5-video-bottom-controls">
-                  <button type="button" className="p5-video-ctrl-btn" title="Camera">
-                    <Video size={15} />
-                  </button>
-                  <button type="button" className="p5-video-ctrl-btn" title="Mute">
-                    <Mic size={15} />
-                  </button>
-                  <button type="button" className="p5-video-ctrl-btn" title="Speaker">
-                    <Volume2 size={15} />
-                  </button>
-                  <button type="button" className="p5-video-hangup-btn" onClick={() => setIsVideoActive(false)} title="End Call">
-                    <PhoneOff size={16} />
-                  </button>
-                </div>
-              </div>
+          </div>
+          <div className="admin-kpi-value-row">
+            <span className="admin-kpi-number">{overview.activeProjectsCount ?? '—'}</span>
+            <span className="admin-kpi-subdetail">of {overview.totalProjects ?? 0} total</span>
+          </div>
+          <div className="admin-kpi-footer">
+            <span className="admin-status-pill on-track">{overview.activeProjectsCount ? `${overview.activeProjectsCount - (overview.attentionProjectsCount || 0)} On Track` : '0 Active'}</span>
+            {overview.attentionProjectsCount > 0 && (
+              <span className="admin-status-pill at-risk">{overview.attentionProjectsCount} Needs Attention</span>
             )}
-
-            {/* Dark Summary Panel (Exact from Mock) */}
-            <div className="p5-dark-summary-panel">
-              <div className="p5-summary-panel-header">
-                <div className="p5-summary-title-wrap">
-                  <Activity size={16} color="#bef264" />
-                  <span>Summary</span>
-                </div>
-                <button type="button" className="p5-summary-edit-btn" title="Edit summary">
-                  <Edit3 size={15} />
-                </button>
-              </div>
-
-              {/* Documents Section */}
-              <div>
-                <h4 className="p5-docs-section-title">Documents:</h4>
-                <div className="p5-docs-thumbnails-row">
-                  <div className="p5-doc-thumbnail-card" title="Download Brief.pdf">
-                    <div className="p5-doc-icon-preview">
-                      <div className="p5-doc-line" style={{ width: '80%' }} />
-                      <div className="p5-doc-line" style={{ width: '100%' }} />
-                      <div className="p5-doc-line" style={{ width: '60%' }} />
-                    </div>
-                    <span className="p5-doc-label-pill">Brief.pdf</span>
-                  </div>
-
-                  <div className="p5-doc-thumbnail-card" title="Download Requirement.pdf">
-                    <div className="p5-doc-icon-preview">
-                      <div className="p5-doc-line" style={{ width: '100%' }} />
-                      <div className="p5-doc-line" style={{ width: '70%' }} />
-                      <div className="p5-doc-line" style={{ width: '90%' }} />
-                    </div>
-                    <span className="p5-doc-label-pill">Requirement.pdf</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Goal Timeline Section (Exact from Mock) */}
-              <div className="p5-timeline-goal-block">
-                <div className="p5-timeline-time-col">3:15</div>
-                <div className="p5-timeline-node-line">
-                  <div className="p5-timeline-node-dot" />
-                  <div className="p5-timeline-node-stem" />
-                </div>
-                <div className="p5-goal-content">
-                  <div className="p5-goal-header">
-                    <h5 className="p5-goal-title">Goal:</h5>
-                    <Edit3 size={13} color="#71717a" style={{ cursor: 'pointer' }} />
-                  </div>
-                  <p className="p5-goal-text">
-                    Reduce the number of security incidents by 50%. This goal is quantitative and measurable, and it would have a significant impact on workspace operations.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </aside>
+          </div>
         </div>
-      </div>
 
-      {/* Modals */}
+        {/* KPI 2: Overall Task Velocity */}
+        <div className="admin-kpi-card">
+          <div className="admin-kpi-header">
+            <span className="admin-kpi-title">Workspace Output</span>
+            <div className="admin-kpi-icon-wrap" style={{ background: '#ecfdf5', color: '#047857' }}>
+              <TrendingUp size={18} />
+            </div>
+          </div>
+          <div className="admin-kpi-value-row">
+            <span className="admin-kpi-number">{overview.overallProductivity ?? 100}%</span>
+            <span className="admin-kpi-subdetail">{overview.completedTasksCount || 0} / {overview.totalTasks || 0} completed</span>
+          </div>
+          <div className="admin-kpi-progress-bar">
+            <div className="admin-kpi-progress-fill" style={{ width: `${overview.overallProductivity || 0}%` }} />
+          </div>
+        </div>
+
+        {/* KPI 3: Urgent Attention Queue */}
+        <div className="admin-kpi-card" style={{ borderColor: overview.overdueTasksCount > 0 ? '#fecaca' : undefined }}>
+          <div className="admin-kpi-header">
+            <span className="admin-kpi-title">Critical Attention Queue</span>
+            <div className="admin-kpi-icon-wrap" style={{ background: '#fee2e2', color: '#b91c1c' }}>
+              <AlertTriangle size={18} />
+            </div>
+          </div>
+          <div className="admin-kpi-value-row">
+            <span className="admin-kpi-number" style={{ color: overview.overdueTasksCount > 0 ? '#b91c1c' : '#0f172a' }}>
+              {overview.overdueTasksCount || 0}
+            </span>
+            <span className="admin-kpi-subdetail">Overdue tasks</span>
+          </div>
+          <div className="admin-kpi-footer">
+            <button
+              type="button"
+              className="admin-link-pill"
+              onClick={() => { setActiveTab('tasks'); setQuickFilter('stalled'); }}
+            >
+              {overview.stalledTasksCount || 0} Stalled (&gt;7d)
+            </button>
+            <button
+              type="button"
+              className="admin-link-pill"
+              onClick={() => { setActiveTab('tasks'); setQuickFilter('unassigned'); }}
+            >
+              {overview.unassignedTasksCount || 0} Unassigned
+            </button>
+          </div>
+        </div>
+
+        {/* KPI 4: Team Capacity & Workload */}
+        <div className="admin-kpi-card">
+          <div className="admin-kpi-header">
+            <span className="admin-kpi-title">Team Workload</span>
+            <div className="admin-kpi-icon-wrap" style={{ background: '#f3e8ff', color: '#7e22ce' }}>
+              <Users2 size={18} />
+            </div>
+          </div>
+          <div className="admin-kpi-value-row">
+            <span className="admin-kpi-number">{overview.totalMembers || 1}</span>
+            <span className="admin-kpi-subdetail">Team members</span>
+          </div>
+          <div className="admin-kpi-footer">
+            {teamWorkload.filter((m) => m.workloadStatus === 'Overloaded').length > 0 ? (
+              <span className="admin-status-pill at-risk">
+                {teamWorkload.filter((m) => m.workloadStatus === 'Overloaded').length} Overloaded
+              </span>
+            ) : (
+              <span className="admin-status-pill on-track">Workload Balanced</span>
+            )}
+            {overview.pendingInvites > 0 && (
+              <span className="admin-status-pill-neutral">{overview.pendingInvites} Pending Invites</span>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* ─────────────────────────────────────────────────────────────
+           3. MAIN OPERATIONAL NAVIGATION TABS
+      ───────────────────────────────────────────────────────────── */}
+      <nav className="admin-tabs-nav">
+        <button
+          type="button"
+          className={`admin-tab-btn ${activeTab === 'tasks' ? 'active' : ''}`}
+          onClick={() => setActiveTab('tasks')}
+        >
+          <CheckSquare size={16} />
+          <span>Master Task Grid ({overview.totalTasks || 0})</span>
+        </button>
+
+        <button
+          type="button"
+          className={`admin-tab-btn ${activeTab === 'projects' ? 'active' : ''}`}
+          onClick={() => setActiveTab('projects')}
+        >
+          <FolderGit2 size={16} />
+          <span>Project Command Deck ({overview.totalProjects || 0})</span>
+        </button>
+
+        <button
+          type="button"
+          className={`admin-tab-btn ${activeTab === 'team' ? 'active' : ''}`}
+          onClick={() => setActiveTab('team')}
+        >
+          <Users2 size={16} />
+          <span>Team Workload &amp; Members ({teamWorkload.length})</span>
+        </button>
+
+        <button
+          type="button"
+          className={`admin-tab-btn ${activeTab === 'audit' ? 'active' : ''}`}
+          onClick={() => setActiveTab('audit')}
+        >
+          <Activity size={16} />
+          <span>Activity &amp; Audit Trail</span>
+        </button>
+      </nav>
+
+      {/* ─────────────────────────────────────────────────────────────
+           TAB 1: MASTER TASK GRID (WORKSPACE-WIDE VISIBILITY)
+      ───────────────────────────────────────────────────────────── */}
+      {activeTab === 'tasks' && (
+        <section className="admin-stage-panel">
+          {/* Filter Bar */}
+          <div className="admin-filter-bar">
+            {/* Search Input */}
+            <div className="admin-search-wrap">
+              <Search size={15} color="#94a3b8" />
+              <input
+                type="text"
+                placeholder="Search all tasks by title, assignee, or sprint..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="admin-search-input"
+              />
+            </div>
+
+            {/* Project Filter Dropdown */}
+            <select
+              className="admin-select"
+              value={selectedProjectFilter}
+              onChange={(e) => setSelectedProjectFilter(e.target.value)}
+            >
+              <option value="all">All Projects</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Status Filter Dropdown */}
+            <select
+              className="admin-select"
+              value={selectedStatusFilter}
+              onChange={(e) => setSelectedStatusFilter(e.target.value)}
+            >
+              <option value="all">All Statuses</option>
+              <option value="todo">To Do</option>
+              <option value="in_progress">In Progress</option>
+              <option value="review">In Review</option>
+              <option value="completed">Completed</option>
+            </select>
+
+            {/* Priority Filter Dropdown */}
+            <select
+              className="admin-select"
+              value={selectedPriorityFilter}
+              onChange={(e) => setSelectedPriorityFilter(e.target.value)}
+            >
+              <option value="all">All Priorities</option>
+              <option value="urgent">Urgent</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+
+            {/* Quick Pills */}
+            <div className="admin-quick-pills">
+              <button
+                type="button"
+                className={`admin-pill-btn ${quickFilter === 'all' ? 'active' : ''}`}
+                onClick={() => setQuickFilter('all')}
+              >
+                All
+              </button>
+              <button
+                type="button"
+                className={`admin-pill-btn ${quickFilter === 'overdue' ? 'active' : ''}`}
+                onClick={() => setQuickFilter('overdue')}
+              >
+                🔥 Overdue ({overview.overdueTasksCount || 0})
+              </button>
+              <button
+                type="button"
+                className={`admin-pill-btn ${quickFilter === 'stalled' ? 'active' : ''}`}
+                onClick={() => setQuickFilter('stalled')}
+              >
+                ⏳ Stalled (&gt;7d) ({overview.stalledTasksCount || 0})
+              </button>
+              <button
+                type="button"
+                className={`admin-pill-btn ${quickFilter === 'unassigned' ? 'active' : ''}`}
+                onClick={() => setQuickFilter('unassigned')}
+              >
+                👤 Unassigned ({overview.unassignedTasksCount || 0})
+              </button>
+              <button
+                type="button"
+                className={`admin-pill-btn ${quickFilter === 'urgent' ? 'active' : ''}`}
+                onClick={() => setQuickFilter('urgent')}
+              >
+                ⚡ High/Urgent
+              </button>
+            </div>
+          </div>
+
+          {/* Master Tasks Table */}
+          <div className="admin-table-container">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '35%' }}>Task Description</th>
+                  <th style={{ width: '15%' }}>Project</th>
+                  <th style={{ width: '16%' }}>Assignee</th>
+                  <th style={{ width: '10%' }}>Priority</th>
+                  <th style={{ width: '12%' }}>Due Date</th>
+                  <th style={{ width: '12%' }}>Status</th>
+                  <th style={{ width: '10%', textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTasks.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="admin-table-empty">
+                      <Inbox size={32} color="#cbd5e1" style={{ margin: '0 auto 12px' }} />
+                      <p>No tasks match your current filter parameters.</p>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredTasks.map((task) => (
+                    <tr key={task.id} className={task.isOverdue ? 'row-overdue' : ''}>
+                      <td>
+                        <div className="admin-task-cell">
+                          <span className="admin-task-title">{task.title}</span>
+                          {task.isOverdue && <span className="admin-mini-tag overdue">OVERDUE</span>}
+                          {task.isStalled && <span className="admin-mini-tag stalled">INACTIVE &gt;7D</span>}
+                        </div>
+                      </td>
+
+                      <td>
+                        <span className="admin-project-tag">{task.sprintName}</span>
+                      </td>
+
+                      <td>
+                        {task.assigneeId ? (
+                          <div className="admin-assignee-cell">
+                            <span className="admin-avatar-small">
+                              {task.assigneeName.charAt(0).toUpperCase()}
+                            </span>
+                            <span className="admin-assignee-name">{task.assigneeName}</span>
+                          </div>
+                        ) : (
+                          <span className="admin-unassigned-tag">Unassigned</span>
+                        )}
+                      </td>
+
+                      <td>
+                        <span className={`admin-priority-badge ${task.priority}`}>
+                          {task.priority.toUpperCase()}
+                        </span>
+                      </td>
+
+                      <td>
+                        <span className={`admin-date-cell ${task.isOverdue ? 'date-overdue' : ''}`}>
+                          {formatDate(task.dueDate)}
+                        </span>
+                      </td>
+
+                      <td>
+                        <select
+                          className={`admin-status-dropdown ${task.status}`}
+                          value={task.status}
+                          onChange={(e) => handleTaskStatusChange(task.id, e.target.value)}
+                        >
+                          <option value="todo">To Do</option>
+                          <option value="in_progress">In Progress</option>
+                          <option value="review">In Review</option>
+                          <option value="completed">Completed</option>
+                        </select>
+                      </td>
+
+                      <td style={{ textAlign: 'right' }}>
+                        <div className="admin-actions-cell">
+                          <button
+                            type="button"
+                            className="admin-action-btn"
+                            title="Reassign or edit deadline"
+                            onClick={() => setTaskToReassign(task)}
+                          >
+                            <UserCheck size={14} />
+                          </button>
+
+                          <button
+                            type="button"
+                            className="admin-action-btn delete"
+                            title="Delete task"
+                            onClick={() => handleDeleteTask(task.id, task.title)}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+           TAB 2: PROJECT COMMAND DECK
+      ───────────────────────────────────────────────────────────── */}
+      {activeTab === 'projects' && (
+        <section className="admin-stage-panel">
+          <div className="admin-deck-header">
+            <div>
+              <h2 className="admin-section-title">Workspace Projects &amp; Sprints</h2>
+              <p className="admin-section-desc">Manage project deadlines, health status, leads, and archived sprints.</p>
+            </div>
+            <button
+              type="button"
+              className="admin-btn-primary"
+              onClick={() => setIsNewProjectOpen(true)}
+            >
+              <Plus size={14} />
+              <span>Create New Project</span>
+            </button>
+          </div>
+
+          <div className="admin-projects-grid">
+            {projects.map((proj) => (
+              <div key={proj.id} className={`admin-project-card ${proj.archived ? 'card-archived' : ''}`}>
+                <div className="admin-proj-card-top">
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                      <h3 className="admin-proj-card-title">{proj.name}</h3>
+                      <span className={`admin-health-badge ${proj.health}`}>
+                        {proj.health.replace('_', ' ').toUpperCase()}
+                      </span>
+                      {proj.archived && <span className="admin-mini-tag stalled">ARCHIVED</span>}
+                    </div>
+                    {proj.goal && <p className="admin-proj-goal">{proj.goal}</p>}
+                  </div>
+
+                  <button
+                    type="button"
+                    className="admin-proj-archive-btn"
+                    title={proj.archived ? 'Restore project' : 'Archive project'}
+                    onClick={() => handleToggleArchiveProject(proj.id, proj.archived)}
+                  >
+                    {proj.archived ? <ArchiveRestore size={16} /> : <Archive size={16} />}
+                  </button>
+                </div>
+
+                <div className="admin-proj-progress-section">
+                  <div className="admin-proj-progress-labels">
+                    <span>Progress</span>
+                    <span><strong>{proj.progress}%</strong> ({proj.completedTasks} / {proj.totalTasks} tasks)</span>
+                  </div>
+                  <div className="admin-kpi-progress-bar">
+                    <div
+                      className="admin-kpi-progress-fill"
+                      style={{
+                        width: `${proj.progress}%`,
+                        background: proj.health === 'critical' ? '#dc2626' : proj.health === 'at_risk' ? '#f59e0b' : '#10b981'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-proj-meta-grid">
+                  <div>
+                    <span className="admin-meta-label">Schedule</span>
+                    <span className="admin-meta-val">
+                      {formatDate(proj.startDate)} &rarr; {formatDate(proj.endDate)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="admin-meta-label">Overdue</span>
+                    <span className="admin-meta-val" style={{ color: proj.overdueTasks > 0 ? '#dc2626' : undefined }}>
+                      {proj.overdueTasks} tasks
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+           TAB 3: TEAM WORKLOAD & MEMBERSHIP GOVERNANCE
+      ───────────────────────────────────────────────────────────── */}
+      {activeTab === 'team' && (
+        <section className="admin-stage-panel">
+          <div className="admin-deck-header">
+            <div>
+              <h2 className="admin-section-title">Team Workload Distribution</h2>
+              <p className="admin-section-desc">Monitor member workload balance, assignments, roles, and pending invitations.</p>
+            </div>
+            <Link to={`/${workspaceId}/settings`} className="admin-btn-secondary" style={{ textDecoration: 'none' }}>
+              <UserPlus size={14} />
+              <span>Invite New Members</span>
+            </Link>
+          </div>
+
+          <div className="admin-members-grid">
+            {teamWorkload.map((member) => (
+              <div key={member.userId} className="admin-member-card">
+                <div className="admin-member-card-top">
+                  <div className="admin-member-avatar-large">
+                    {member.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <h4 className="admin-member-name">{member.name}</h4>
+                      <span className={`admin-member-role-badge ${member.role}`}>
+                        {member.role.toUpperCase()}
+                      </span>
+                    </div>
+                    <span className="admin-member-email">{member.email}</span>
+                  </div>
+
+                  <span className={`admin-workload-badge ${member.workloadStatus.toLowerCase()}`}>
+                    {member.workloadStatus}
+                  </span>
+                </div>
+
+                <div className="admin-member-stats-row">
+                  <div className="admin-member-stat-box">
+                    <span className="admin-stat-num">{member.activeTasksCount}</span>
+                    <span className="admin-stat-lbl">Active Tasks</span>
+                  </div>
+                  <div className="admin-member-stat-box">
+                    <span className="admin-stat-num">{member.completedTasksCount}</span>
+                    <span className="admin-stat-lbl">Completed</span>
+                  </div>
+                  <div className="admin-member-stat-box">
+                    <span className="admin-stat-num" style={{ color: member.overdueTasksCount > 0 ? '#dc2626' : undefined }}>
+                      {member.overdueTasksCount}
+                    </span>
+                    <span className="admin-stat-lbl">Overdue</span>
+                  </div>
+                </div>
+
+                {/* Member Recent Pipeline */}
+                {member.recentActiveTasks?.length > 0 && (
+                  <div className="admin-member-tasks-preview">
+                    <span className="admin-preview-title">Current Focus Queue:</span>
+                    {member.recentActiveTasks.map((t) => (
+                      <div key={t.id} className="admin-preview-task-item">
+                        <span className="admin-preview-task-title">{t.title}</span>
+                        <span className={`admin-priority-dot ${t.priority}`} title={t.priority} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Governance Actions (Safeguards enforced) */}
+                <div className="admin-member-actions-footer">
+                  {member.role !== 'owner' && (
+                    <>
+                      <button
+                        type="button"
+                        className="admin-btn-xs"
+                        onClick={() => handleToggleMemberRole(member.userId, member.role)}
+                        title={member.role === 'admin' ? 'Demote to regular member' : 'Promote to workspace admin'}
+                      >
+                        {member.role === 'admin' ? 'Demote to Member' : 'Promote to Admin'}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="admin-btn-xs danger"
+                        onClick={() => handleRemoveMember(member.userId, member.name, member.role)}
+                        title="Remove member from workspace"
+                      >
+                        Remove
+                      </button>
+                    </>
+                  )}
+                  {member.role === 'owner' && (
+                    <span className="admin-owner-protect-label">Protected Primary Owner</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+           TAB 4: LIVE ACTIVITY & AUDIT TRAIL
+      ───────────────────────────────────────────────────────────── */}
+      {activeTab === 'audit' && (
+        <section className="admin-stage-panel">
+          <div className="admin-deck-header">
+            <div>
+              <h2 className="admin-section-title">Workspace Activity &amp; Audit Trail</h2>
+              <p className="admin-section-desc">Chronological log of sensitive operations, role updates, project actions, and task events.</p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                type="button"
+                className={`admin-pill-btn ${auditResourceFilter === 'all' ? 'active' : ''}`}
+                onClick={() => setAuditResourceFilter('all')}
+              >
+                All Events
+              </button>
+              <button
+                type="button"
+                className={`admin-pill-btn ${auditResourceFilter === 'task' ? 'active' : ''}`}
+                onClick={() => setAuditResourceFilter('task')}
+              >
+                Tasks
+              </button>
+              <button
+                type="button"
+                className={`admin-pill-btn ${auditResourceFilter === 'project' ? 'active' : ''}`}
+                onClick={() => setAuditResourceFilter('project')}
+              >
+                Projects
+              </button>
+              <button
+                type="button"
+                className={`admin-pill-btn ${auditResourceFilter === 'member' ? 'active' : ''}`}
+                onClick={() => setAuditResourceFilter('member')}
+              >
+                Team
+              </button>
+            </div>
+          </div>
+
+          <div className="admin-audit-stream">
+            {filteredAuditLogs.length === 0 ? (
+              <div className="admin-table-empty">
+                <Activity size={32} color="#cbd5e1" style={{ margin: '0 auto 12px' }} />
+                <p>No recent activity recorded for this selection.</p>
+              </div>
+            ) : (
+              filteredAuditLogs.map((log) => (
+                <div key={log.id} className="admin-audit-row">
+                  <div className="admin-audit-indicator" />
+                  <div className="admin-audit-body">
+                    <div className="admin-audit-top">
+                      <span className="admin-audit-action">{log.action}</span>
+                      <span className="admin-audit-time">{formatRelativeTime(log.createdAt)}</span>
+                    </div>
+                    <p className="admin-audit-desc">
+                      Resource: <strong>{log.resource}</strong> &bull; {log.metadata?.title ? `"${log.metadata.title}"` : log.metadata?.name ? `"${log.metadata.name}"` : 'System action'}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+           MODALS
+      ───────────────────────────────────────────────────────────── */}
       {isNewTaskOpen && (
         <NewDeadlineModal
-          workspaceId={workspaceId}
+          members={teamWorkload}
+          currentUser={user}
+          activeSprint={projects.find((p) => p.status === 'active')}
+          sprints={projects}
           onClose={() => setIsNewTaskOpen(false)}
           onCreated={() => fetchOverview()}
         />
@@ -682,6 +963,15 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
           members={teamWorkload}
           onClose={() => setIsNewProjectOpen(false)}
           onCreated={() => fetchOverview()}
+        />
+      )}
+
+      {taskToReassign && (
+        <ReassignTaskModal
+          task={taskToReassign}
+          members={teamWorkload}
+          onClose={() => setTaskToReassign(null)}
+          onUpdated={() => fetchOverview()}
         />
       )}
     </div>
