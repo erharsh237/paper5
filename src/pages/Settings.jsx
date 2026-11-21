@@ -526,7 +526,7 @@ export default function Settings() {
     }
   }, [activeTab, workspaceId, isAdminOrOwner])
   
-  const planId = workspace?.billing_plan_id || workspace?.billing?.planId || 'free'
+  const planId = workspace?.plan || workspace?.billing_plan_id || workspace?.billing?.planId || 'pro'
   const maxMembers = (planId === 'free' || planId === 'starter') ? 3 : planId === 'team' ? 7 : 'unlimited'
 
   const activeMemberEmails = useMemo(() => {
@@ -1002,7 +1002,7 @@ export default function Settings() {
       const getPlanTitle = (id) => {
         const c = (id || '').toLowerCase()
         if (c === 'team') return 'Team Plan'
-        if (c === 'scale') return 'Scale Plan'
+        if (c === 'scale' || c === 'pro') return 'Pro Plan'
         return 'Starter Plan'
       }
 
@@ -1468,7 +1468,7 @@ export default function Settings() {
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                       <span style={{ fontWeight: 800, color: 'var(--text, #1C1D2B)', fontSize: '15px' }}>
-                        {planId === 'team' ? 'Team Plan' : planId === 'scale' ? 'Scale Plan' : 'Starter Plan (Launch Special)'}
+                        {planId === 'team' ? 'Team Plan' : (planId === 'scale' || planId === 'pro') ? 'Pro Plan' : 'Starter Plan (Launch Special)'}
                       </span>
                       <span style={{ fontSize: '11px', background: 'rgba(16, 185, 129, 0.12)', color: '#059669', padding: '2px 8px', borderRadius: '100px', fontWeight: 700 }}>
                         Active
@@ -1506,22 +1506,22 @@ export default function Settings() {
                   </div>
                   <div style={{ 
                     padding: '16px', 
-                    border: (planId === 'team' || planId === 'scale') ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid var(--border-subtle)', 
+                    border: (planId === 'team' || planId === 'scale' || planId === 'pro') ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid var(--border-subtle)', 
                     borderRadius: '8px', 
-                    background: (planId === 'team' || planId === 'scale') ? 'rgba(239, 68, 68, 0.03)' : 'var(--bg-layer-2)' 
+                    background: (planId === 'team' || planId === 'scale' || planId === 'pro') ? 'rgba(239, 68, 68, 0.03)' : 'var(--bg-layer-2)' 
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', color: (planId === 'team' || planId === 'scale') ? 'var(--accent-critical, #ef4444)' : 'var(--text-primary)' }}>
+                        <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', color: (planId === 'team' || planId === 'scale' || planId === 'pro') ? 'var(--accent-critical, #ef4444)' : 'var(--text-primary)' }}>
                           Cancel Membership
                         </h4>
                         <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
-                          {(planId === 'team' || planId === 'scale')
+                          {(planId === 'team' || planId === 'scale' || planId === 'pro')
                             ? 'Downgrade workspace tier and cancel subscription membership.' 
                             : 'You are currently on the Free Starter Tier. No active paid subscription to cancel.'}
                         </p>
                       </div>
-                      {(planId === 'team' || planId === 'scale') ? (
+                      {(planId === 'team' || planId === 'scale' || planId === 'pro') ? (
                         <button 
                           className="btn-ghost btn-sm" 
                           style={{ color: 'var(--accent-critical, #ef4444)', borderColor: 'rgba(239, 68, 68, 0.4)' }}

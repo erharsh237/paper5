@@ -13,7 +13,7 @@ export default function CalendarWidget({ user, onSelectEvent, selectedEventId })
   const workspaceContext = useWorkspace()
   const workspaceId = workspaceContext?.workspaceId
   const workspace = workspaceContext?.workspace
-  const currentPlan = getPlanLimits(workspace?.plan || workspace?.subscription_tier || 'starter')
+  const currentPlan = getPlanLimits(workspace?.plan || workspace?.billing_plan_id || workspace?.subscription_tier || 'pro')
   const isAllowedByPlan = currentPlan.allowedIntegrations ? currentPlan.allowedIntegrations.includes('google_calendar') : true
 
   if (!isAllowedByPlan) {

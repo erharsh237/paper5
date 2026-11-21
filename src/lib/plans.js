@@ -1,4 +1,4 @@
-// Subscription Plans & Plan Capacity Management for SprintOS
+// Subscription Plans & Plan Capacity Management for SprintOS / Paper5
 
 export const PLANS = {
   starter: {
@@ -7,9 +7,10 @@ export const PLANS = {
     price: 0,
     maxWorkspaces: 1,
     maxMembers: 3,
-    allowedIntegrations: ['github'],
+    allowedIntegrations: ['google_calendar'],
     hasAdvancedAnalytics: false,
     hasPrioritySupport: false,
+    hasOneClickApi: false,
   },
   team: {
     id: 'team',
@@ -17,17 +18,29 @@ export const PLANS = {
     price: 0,
     maxWorkspaces: 5,
     maxMembers: 7,
-    allowedIntegrations: ['github', 'google_calendar'],
+    allowedIntegrations: ['google_calendar', 'github'],
     hasAdvancedAnalytics: false,
     hasPrioritySupport: false,
+    hasOneClickApi: false,
   },
-  scale: {
-    id: 'scale',
-    name: 'Scale',
+  pro: {
+    id: 'pro',
+    name: 'Pro',
     price: 0,
     maxWorkspaces: 10,
     maxMembers: Infinity,
-    allowedIntegrations: ['github', 'google_calendar', 'slack', 'vercel', 'discord'],
+    allowedIntegrations: ['google_calendar', 'github', 'slack', 'discord', 'vercel'],
+    hasOneClickApi: true,
+    hasAdvancedAnalytics: true,
+    hasPrioritySupport: true,
+  },
+  scale: {
+    id: 'scale',
+    name: 'Scale (Pro)',
+    price: 0,
+    maxWorkspaces: 10,
+    maxMembers: Infinity,
+    allowedIntegrations: ['google_calendar', 'github', 'slack', 'discord', 'vercel'],
     hasOneClickApi: true,
     hasAdvancedAnalytics: true,
     hasPrioritySupport: true,
@@ -35,7 +48,18 @@ export const PLANS = {
 }
 
 export function getPlanLimits(planId) {
-  return PLANS[planId?.toLowerCase()] || PLANS.starter
+  if (!planId) return PLANS.pro
+  const p = String(planId).toLowerCase().trim()
+  if (p === 'starter' || p === 'free' || p === 'member') {
+    return PLANS.starter
+  }
+  if (p === 'team') {
+    return PLANS.team
+  }
+  if (p === 'pro' || p === 'scale' || p === 'enterprise') {
+    return PLANS.pro
+  }
+  return PLANS[p] || PLANS.pro
 }
 
 export function checkMemberCapacity(planId, currentMemberCount) {

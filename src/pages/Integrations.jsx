@@ -23,8 +23,9 @@ export default function Integrations() {
   const { user } = useAuth()
   
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false)
-  const currentPlan = getPlanLimits(workspace?.plan || workspace?.subscription_tier || 'starter')
-  const isScalePlan = currentPlan.id === 'scale' || Boolean(currentPlan.hasOneClickApi)
+  const effectivePlanId = workspace?.plan || workspace?.billing_plan_id || workspace?.subscription_tier || 'pro'
+  const currentPlan = getPlanLimits(effectivePlanId)
+  const isScalePlan = currentPlan.id === 'scale' || currentPlan.id === 'pro' || Boolean(currentPlan.hasOneClickApi)
 
   const handleGenerateApiKey = async () => {
     const newApiKey = `sp_live_${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}`
@@ -543,14 +544,14 @@ print(response.json())`}
             ) : (
               <div style={{ marginTop: '16px', padding: '20px', background: 'rgba(245, 158, 11, 0.04)', border: '1px dashed rgba(245, 158, 11, 0.3)', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>1-Click API Webhook & REST Sync Studio is exclusive to the Scale Plan.</div>
+                  <div style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>1-Click API Webhook & REST Sync Studio is exclusive to the Pro Plan.</div>
                 </div>
                 <button 
                   className="btn-primary"
                   onClick={() => setIsPricingModalOpen(true)}
                   style={{ whiteSpace: 'nowrap', padding: '10px 18px' }}
                 >
-                  Upgrade to Scale
+                  Upgrade to Pro
                 </button>
               </div>
             )}
@@ -697,7 +698,7 @@ print(response.json())`}
                     {!isAllowedByPlan ? (
                       <div style={{ padding: '16px', background: 'rgba(245, 158, 11, 0.05)', border: '1px dashed rgba(245, 158, 11, 0.3)', borderRadius: '8px', fontSize: '13px', textAlign: 'center' }}>
                         <div style={{ fontWeight: 700, marginBottom: '6px', color: 'var(--text-primary)' }}>
-                          {integration.name} is exclusive to Team & Scale Plans.
+                          {integration.name} is exclusive to {integration.id === 'github' ? 'Team & Pro Plans' : 'Pro Plan'}.
                         </div>
                         <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
                           Upgrade your workspace tier to connect {integration.name} for team notifications & workflow triggers.
@@ -780,7 +781,7 @@ print(response.json())`}
       <PricingModal
         isOpen={isPricingModalOpen}
         onClose={() => setIsPricingModalOpen(false)}
-        currentPlan={workspace?.plan || workspace?.subscription_tier || 'starter'}
+        currentPlan={effectivePlanId}
         onSelectPlan={async (planId) => {
           if (updateWorkspacePlan) {
             await updateWorkspacePlan(planId)

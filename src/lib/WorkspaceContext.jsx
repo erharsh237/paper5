@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from './supabase';
 import { useAuth } from './AuthContext';
 import NotFound from '../pages/NotFound';
+import { getPlanLimits } from './plans';
 
 const WorkspaceContext = createContext(null);
 
@@ -152,9 +153,9 @@ export function WorkspaceProvider({ children }) {
         } catch (_) {}
 
         setTotalSeatsUsed(seatCount)
-        const currentPlan = wsData?.billing_plan_id || wsData?.billing?.planId || 'free'
-        const limit = (currentPlan === 'free' || currentPlan === 'starter') ? 3 : currentPlan === 'team' ? 7 : Infinity
-        setMaxAllowedMembers(limit)
+        const currentPlan = wsData?.billing_plan_id || wsData?.billing?.planId || wsData?.plan || 'pro'
+        const planLimits = getPlanLimits(currentPlan)
+        setMaxAllowedMembers(planLimits.maxMembers)
 
         // Fallback 1: If user is workspace owner directly
         if (!myRole && wsData && (wsData.owner_id === user.id || wsData.created_by === user.id)) {
@@ -404,6 +405,23 @@ export function WorkspaceProvider({ children }) {
   const canManageSettings = isAdminOrOwner || hasPermission('settings_and_roles') || hasPermission('teamSettings.manage') || hasPermission('roles.manage')
   const canManageMeetingNotes = !isCapacityFrozen && (isAdminOrOwner || hasPermission('meetings.manage'))
 
+  const updateWorkspacePlan = async (newPlanId) => {
+    if (!workspaceId) return
+    try {
+      const { updateWorkspaceSettings } = await import('./workspaces')
+      await updateWorkspaceSettings(workspaceId, {
+        plan: newPlanId,
+        billing_plan_id: newPlanId
+      })
+      setWorkspace(prev => prev ? { ...prev, plan: newPlanId, billing_plan_id: newPlanId } : prev)
+      const limits = getPlanLimits(newPlanId)
+      setMaxAllowedMembers(limits.maxMembers)
+    } catch (err) {
+      console.error('Failed to update workspace plan:', err)
+      throw err
+    }
+  }
+
   const value = {
     workspaceId,
     workspace,
@@ -424,6 +442,7 @@ export function WorkspaceProvider({ children }) {
     onlineUserIds,
     onlineCount: Math.max(1, onlineUsers.length),
     is2FABlocked: false,
+    updateWorkspacePlan,
   }
 
   if (!loadingWorkspace && !workspace) {

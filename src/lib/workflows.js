@@ -208,8 +208,8 @@ export function getRecommendedWorkflow(teamSizeValue) {
 }
 
 export function getUnlockedWorkflowsForPlan(planId) {
-  const normalizedPlan = (planId || 'free').toLowerCase()
-  if (normalizedPlan === 'scale') {
+  const normalizedPlan = (planId || 'pro').toLowerCase()
+  if (normalizedPlan === 'scale' || normalizedPlan === 'pro' || normalizedPlan === 'enterprise') {
     return WORKFLOWS
   }
   if (normalizedPlan === 'team') {

@@ -18,7 +18,7 @@ const TIERS = [
       '1 Workspace included',
       'Up to 3 Team Members',
       'Ad-hoc & Kanban Workflows',
-      'GitHub PR Sync',
+      'Google Calendar Integration',
       'Vector PDF Data Export'
     ]
   },
@@ -35,14 +35,14 @@ const TIERS = [
     features: [
       '5 Workspaces included',
       'Up to 7 Team Members',
-      'All 8 Agile Methodology Tiers',
-      'API Webhooks & Integrations',
+      '⚡ 6 Agile Workflows (Kanban, Scrum, XP, Lean, Scrumban)',
+      'Google Calendar & GitHub Integrations',
       'Audit Logs & Strict Security'
     ]
   },
   {
     id: 'scale',
-    name: 'Scale',
+    name: 'Pro',
     badge: 'High-Velocity Engineering',
     price: '₹0',
     originalPrice: '₹500/mo',
@@ -53,6 +53,7 @@ const TIERS = [
       '10 Workspaces included',
       'Unlimited Team Members',
       'All 8 Agile Methodology Tiers',
+      'All Integrations (Google Calendar, GitHub, Slack, Discord, Vercel)',
       'Dedicated API Webhook Studio',
       'Priority Support & SLAs'
     ]

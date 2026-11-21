@@ -5,6 +5,7 @@ const PLAN_LEVELS = {
   free: 1,
   starter: 1,
   team: 2,
+  pro: 3,
   scale: 3
 }
 
@@ -20,11 +21,12 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
     setLoadingPlan(null)
   }
 
-  const currentLevel = PLAN_LEVELS[currentPlan || 'free'] || 0
+  const normalizedCurrent = (currentPlan || 'pro').toLowerCase()
+  const currentLevel = PLAN_LEVELS[normalizedCurrent] || 3
 
   const getButtonProps = (targetPlanId) => {
     const targetLevel = PLAN_LEVELS[targetPlanId]
-    const planName = targetPlanId.charAt(0).toUpperCase() + targetPlanId.slice(1)
+    const planName = targetPlanId === 'pro' || targetPlanId === 'scale' ? 'Pro' : (targetPlanId.charAt(0).toUpperCase() + targetPlanId.slice(1))
     
     if (targetLevel === currentLevel) {
       return { label: 'Active Plan', disabled: true, className: 'btn-ghost' }
@@ -120,7 +122,7 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
               <li>1 Workspace</li>
               <li>Up to 3 Members</li>
               <li>⚡ 2 Agile Workflows (Ad-hoc, Kanban)</li>
-              <li>GitHub Repository Sync</li>
+              <li>Google Calendar Integration</li>
               <li>Personal Focus Dashboard</li>
               <li>Basic Sprint Tracking</li>
             </ul>
@@ -155,16 +157,16 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
               <li>Up to 5 Workspaces</li>
               <li>Up to 7 Team Members</li>
               <li>⚡ 6 Agile Workflows (Kanban, Scrum, XP, Lean, Scrumban)</li>
-              <li>GitHub &amp; Google Calendar Integrations</li>
+              <li>Google Calendar &amp; GitHub Integrations</li>
               <li>Locked Sprint Scope Control</li>
               <li>Proof of Work Peer Verification</li>
               <li>Sunday Sync Meeting Broadcasts</li>
             </ul>
           </div>
 
-          {/* Scale Tier */}
+          {/* Pro Tier */}
           <div className="pricing-card">
-            <div className="tier-name">Scale</div>
+            <div className="tier-name">Pro</div>
             <div className="tier-price">
               <span className="currency">₹</span>
               <span className="amount">0</span>
@@ -173,15 +175,15 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
             <p className="tier-desc">For mature teams requiring advanced reporting, automation, and support.</p>
             
             {(() => {
-              const btn = getButtonProps('scale')
+              const btn = getButtonProps('pro')
               return (
                 <button 
                   className={`${btn.className} w-full`}
-                  onClick={() => handleSelect('scale')}
-                  disabled={btn.disabled || loadingPlan === 'scale'}
+                  onClick={() => handleSelect('pro')}
+                  disabled={btn.disabled || loadingPlan === 'pro'}
                   style={{ width: '100%' }}
                 >
-                  {loadingPlan === 'scale' ? 'Updating...' : btn.label}
+                  {loadingPlan === 'pro' ? 'Updating...' : btn.label}
                 </button>
               )
             })()}
@@ -190,7 +192,7 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
               <li>Up to 10 Workspaces</li>
               <li>Unlimited Team Members</li>
               <li>⚡ All 8 Agile Workflows (Spotify Model &amp; SAFe Enterprise)</li>
-              <li>All Stack Integrations (Slack, Discord, Vercel, GitHub, Google Calendar)</li>
+              <li>All Stack Integrations (Google Calendar, GitHub, Slack, Discord, Vercel)</li>
               <li>Advanced Velocity &amp; Risk Analytics</li>
               <li>Strict Auditing Mode &amp; CSV Export</li>
               <li>⚡ 1-Click API Webhook &amp; REST Sync Studio</li>
