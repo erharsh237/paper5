@@ -14,7 +14,17 @@ const PLAN_LEVELS = {
   enterprise: 3
 }
 
-export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPlan, initialCycle = 'monthly' }) {
+export default function PricingModal({ 
+  isOpen, 
+  onClose, 
+  currentPlan, 
+  onSelectPlan, 
+  initialCycle = 'monthly',
+  upgradeOnly = false,
+  title,
+  subtitle,
+  requiredWorkspaces
+}) {
   const [isAnnual, setIsAnnual] = useState(initialCycle === 'annual')
   const [loadingPlan, setLoadingPlan] = useState(null)
 
@@ -32,17 +42,49 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
   const normalizedCurrent = (currentPlan || 'starter').toLowerCase().trim()
   const currentLevel = PLAN_LEVELS[normalizedCurrent] || 1
 
+  const isCurrentCard = (targetPlanId) => {
+    const t = targetPlanId.toLowerCase().trim()
+    const c = normalizedCurrent
+    if (t === 'starter' && (c === 'starter' || c === 'free' || c === 'member' || c === 'none' || c === 'unselected')) return true
+    if (t === 'team' && c === 'team') return true
+    if ((t === 'pro' || t === 'scale') && (c === 'pro' || c === 'scale' || c === 'enterprise')) return true
+    return false
+  }
+
   const getButtonProps = (targetPlanId) => {
     const targetLevel = PLAN_LEVELS[targetPlanId] || 1
     const planName = targetPlanId === 'pro' || targetPlanId === 'scale' ? 'Pro' : (targetPlanId.charAt(0).toUpperCase() + targetPlanId.slice(1))
-    
-    if (targetLevel === currentLevel) {
-      return { label: `Continue with ${planName}`, disabled: false, className: 'pm-btn pm-btn-primary' }
+    const isCurrent = isCurrentCard(targetPlanId)
+
+    if (isCurrent) {
+      return { 
+        label: upgradeOnly ? 'Current Plan (Limit Reached)' : 'Current Plan', 
+        disabled: true, 
+        className: 'pm-btn pm-btn-current' 
+      }
     }
+
+    if (upgradeOnly && targetLevel <= currentLevel) {
+      return { 
+        label: 'Limit Reached', 
+        disabled: true, 
+        className: 'pm-btn pm-btn-current' 
+      }
+    }
+
     if (targetLevel < currentLevel) {
-      return { label: `Switch to ${planName}`, disabled: false, className: 'pm-btn pm-btn-ghost' }
+      return { 
+        label: `Switch to ${planName}`, 
+        disabled: false, 
+        className: 'pm-btn pm-btn-ghost' 
+      }
     }
-    return { label: targetPlanId === 'starter' ? 'Start for Free' : `Claim ${planName} Access`, disabled: false, className: 'pm-btn pm-btn-primary' }
+
+    return { 
+      label: upgradeOnly ? `Upgrade to ${planName}` : (targetPlanId === 'starter' ? 'Start for Free' : `Claim ${planName} Access`), 
+      disabled: false, 
+      className: 'pm-btn pm-btn-primary' 
+    }
   }
 
   return (
@@ -53,8 +95,8 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
         </button>
         
         <div className="pm-header">
-          <h2>Launch Special: 100% Free Access</h2>
-          <p>All features, integrations, and workspaces are completely unlocked during our early access period.</p>
+          <h2>{title || (upgradeOnly ? "Workspace Limit Reached — Upgrade to Continue" : "Launch Special: 100% Free Access")}</h2>
+          <p>{subtitle || (upgradeOnly ? "Your current plan has reached its maximum workspace capacity. Upgrade to unlock additional workspaces." : "All features, integrations, and workspaces are completely unlocked during our early access period.")}</p>
 
           {/* Billing Cycle Switcher */}
           <div className="pm-cycle-wrapper">
@@ -80,7 +122,10 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
 
         <div className="pm-grid">
           {/* Starter Tier */}
-          <div className="pm-card">
+          <div className={`pm-card ${isCurrentCard('starter') ? 'current-plan' : ''} ${upgradeOnly && isCurrentCard('starter') ? 'pm-card-disabled' : ''}`}>
+            {isCurrentCard('starter') && (
+              <span className="pm-current-tag">CURRENT PLAN</span>
+            )}
             <div className="pm-card-header">
               <div className="pm-tier-title">Starter</div>
               <p className="pm-tier-desc">For solo builders and small squads establishing initial cadence.</p>
@@ -139,7 +184,10 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
           </div>
 
           {/* Team Tier */}
-          <div className="pm-card recommended">
+          <div className={`pm-card recommended ${isCurrentCard('team') ? 'current-plan' : ''} ${upgradeOnly && isCurrentCard('team') ? 'pm-card-disabled' : ''}`}>
+            {isCurrentCard('team') && (
+              <span className="pm-current-tag">CURRENT PLAN</span>
+            )}
             <div className="pm-card-header">
               <div className="pm-tier-title">Team</div>
               <p className="pm-tier-desc">For growing product squads that need clear ownership, risk radar, and sync.</p>
@@ -199,7 +247,10 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
           </div>
 
           {/* Pro Tier */}
-          <div className="pm-card">
+          <div className={`pm-card ${isCurrentCard('pro') ? 'current-plan' : ''} ${upgradeOnly && isCurrentCard('pro') ? 'pm-card-disabled' : ''}`}>
+            {isCurrentCard('pro') && (
+              <span className="pm-current-tag">CURRENT PLAN</span>
+            )}
             <div className="pm-card-header">
               <div className="pm-tier-title">Pro</div>
               <p className="pm-tier-desc">For multi-squad teams requiring custom methodologies, audit reporting, and API access.</p>

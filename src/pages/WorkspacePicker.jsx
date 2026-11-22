@@ -21,9 +21,7 @@ export default function WorkspacePicker() {
   const [newName, setNewName] = useState('')
   const [teamSize, setTeamSize] = useState('2-5')
   const [selectedWorkflow, setSelectedWorkflow] = useState('kanban')
-  const [showCreateModal, setShowCreateModal] = useState(() => (
-    location.search.includes('create=true') || window.location.search.includes('create=true')
-  ))
+  const [showCreateModal, setShowCreateModal] = useState(false)
   const [showPricingModal, setShowPricingModal] = useState(false)
   const [modalStep, setModalStep] = useState(1) // 1: Details, 2: Data Consent
   const [saveData, setSaveData] = useState(false) // default off
@@ -249,6 +247,26 @@ export default function WorkspacePicker() {
     }
   }, [loading, workspaces.length, isRevokedMember, showCreateModal, isCreating])
 
+  // Handle ?create=true in URL only if user hasn't reached their plan workspace limit
+  useEffect(() => {
+    if (!loading && (location.search.includes('create=true') || window.location.search.includes('create=true'))) {
+      if (ownedCount >= maxWorkspaces) {
+        setShowPricingModal(true)
+        setShowCreateModal(false)
+      } else {
+        setShowCreateModal(true)
+      }
+    }
+  }, [loading, ownedCount, maxWorkspaces, location.search])
+
+  // Quota Safeguard: Never allow Create Workspace modal to remain open if limit is reached
+  useEffect(() => {
+    if (!loading && ownedCount >= maxWorkspaces && showCreateModal) {
+      setShowCreateModal(false)
+      setShowPricingModal(true)
+    }
+  }, [loading, ownedCount, maxWorkspaces, showCreateModal])
+
   const handleNextStep = (e) => {
     if (e) e.preventDefault()
     if (!newName.trim()) return
@@ -284,6 +302,14 @@ export default function WorkspacePicker() {
 
   const handleSelectPlan = async (planId, cycle = 'monthly') => {
     try {
+      const targetLimits = getPlanLimits(planId)
+      // Block selecting a tier that does not have enough capacity for a new workspace
+      if (ownedCount >= targetLimits.maxWorkspaces) {
+        setShowPricingModal(true)
+        setShowCreateModal(false)
+        return
+      }
+
       // Hardened Phase 1: Call trusted server-side plan selection endpoint
       await selectPlanServerSide(planId, cycle)
       if (userData) {
@@ -297,8 +323,7 @@ export default function WorkspacePicker() {
     } catch (err) {
       console.error('Plan selection notice:', err)
       setShowPricingModal(false)
-      setModalStep(1)
-      setShowCreateModal(true)
+      setShowCreateModal(false)
     }
   }
 
@@ -540,7 +565,16 @@ export default function WorkspacePicker() {
               className="wp-create-btn"
               onClick={handleOpenCreateWorkspace}
             >
-              + Create New Workspace
+              {ownedCount >= maxWorkspaces ? (
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <span>+ Upgrade to Create More Workspaces</span>
+                  <span style={{ fontSize: '11px', opacity: 0.85, background: 'rgba(255, 255, 255, 0.2)', padding: '2px 8px', borderRadius: '12px' }}>
+                    {ownedCount}/{maxWorkspaces} Limit Reached
+                  </span>
+                </span>
+              ) : (
+                '+ Create New Workspace'
+              )}
             </button>
           )}
         </div>
@@ -740,6 +774,9 @@ export default function WorkspacePicker() {
         onClose={() => setShowPricingModal(false)}
         currentPlan={userPlan}
         onSelectPlan={handleSelectPlan}
+        upgradeOnly={ownedCount >= maxWorkspaces}
+        title={ownedCount >= maxWorkspaces ? "Workspace Limit Reached" : undefined}
+        subtitle={ownedCount >= maxWorkspaces ? `Your ${formatPlanBadge(userPlan)} plan allows up to ${maxWorkspaces} workspace${maxWorkspaces === 1 ? '' : 's'}. Upgrade your plan to unlock more workspaces.` : undefined}
       />
     </div>
   )
