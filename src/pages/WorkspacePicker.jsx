@@ -55,22 +55,23 @@ export default function WorkspacePicker() {
 
   // Derive effective tier across user record and owned workspaces
   const userPlan = useMemo(() => {
-    const rawUserPlan = (userData?.billing_plan_id || '').toLowerCase().trim()
+    const rawUserPlan = (userData?.billing_plan_id || user?.user_metadata?.plan || '').toLowerCase().trim()
     if (['pro', 'scale', 'enterprise'].includes(rawUserPlan)) return 'pro'
     if (rawUserPlan === 'team') return 'team'
+    if (rawUserPlan === 'starter' || rawUserPlan === 'free') return 'starter'
 
-    // Check if user is owner/admin of any workspace that is on Pro or Team
+    // Check if user is owner/admin of any workspace that is on Pro, Team, or Starter
     for (const ws of workspaces) {
       if (ws.role === 'owner' || ws.role === 'admin') {
         const wsPlan = (ws.plan || '').toLowerCase().trim()
         if (['pro', 'scale', 'enterprise'].includes(wsPlan)) return 'pro'
         if (wsPlan === 'team') return 'team'
+        if (wsPlan === 'starter' || wsPlan === 'free') return 'starter'
       }
     }
 
-    // Default to 'pro' during launch special
-    return 'pro'
-  }, [userData?.billing_plan_id, workspaces])
+    return rawUserPlan || 'starter'
+  }, [userData?.billing_plan_id, user?.user_metadata?.plan, workspaces])
 
   const planLimits = getPlanLimits(userPlan)
   const maxWorkspaces = planLimits.maxWorkspaces || 10
@@ -131,7 +132,7 @@ export default function WorkspacePicker() {
       if (Array.isArray(memberList) && memberList.length > 0) {
         mapped = memberList.map(r => {
           const rawPlan = (r.workspaces?.billing_plan_id || r.workspaces?.settings?.plan || '').toLowerCase().trim()
-          const plan = rawPlan === 'team' ? 'team' : 'pro'
+          const plan = (rawPlan === 'team') ? 'team' : (rawPlan === 'starter' || rawPlan === 'free') ? 'starter' : (rawPlan === 'pro' || rawPlan === 'scale') ? 'pro' : 'starter'
           return {
             workspaceId: r.workspace_id,
             id: r.workspace_id,
@@ -156,7 +157,7 @@ export default function WorkspacePicker() {
           ownedWs.forEach(ow => {
             if (!existingIds.has(ow.id)) {
               const rawPlan = (ow.billing_plan_id || ow.settings?.plan || '').toLowerCase().trim()
-              const plan = rawPlan === 'team' ? 'team' : 'pro'
+              const plan = (rawPlan === 'team') ? 'team' : (rawPlan === 'starter' || rawPlan === 'free') ? 'starter' : (rawPlan === 'pro' || rawPlan === 'scale') ? 'pro' : 'starter'
               mapped.push({
                 workspaceId: ow.id,
                 id: ow.id,
@@ -205,6 +206,10 @@ export default function WorkspacePicker() {
   const handleNextStep = (e) => {
     if (e) e.preventDefault()
     if (!newName.trim()) return
+    if (!isWorkflowUnlocked(selectedWorkflow, userPlan)) {
+      setCreateError(`The selected workflow is not available on your plan. Starter includes Ad-hoc and Kanban workflows. Please select an unlocked workflow or upgrade your plan.`)
+      return
+    }
     setCreateError('')
     setModalStep(2)
   }
@@ -353,6 +358,8 @@ export default function WorkspacePicker() {
       return
     }
     setModalStep(1)
+    const initialWf = isWorkflowUnlocked('kanban', userPlan) ? 'kanban' : 'adhoc'
+    setSelectedWorkflow(initialWf)
     setShowCreateModal(true)
   }
 
@@ -497,8 +504,11 @@ export default function WorkspacePicker() {
                       className="wp-select"
                       value={teamSize}
                       onChange={e => {
-                        setTeamSize(e.target.value)
-                        setSelectedWorkflow(getRecommendedWorkflow(e.target.value))
+                        const newSize = e.target.value
+                        setTeamSize(newSize)
+                        const recWf = getRecommendedWorkflow(newSize)
+                        const targetWf = isWorkflowUnlocked(recWf, userPlan) ? recWf : (isWorkflowUnlocked('kanban', userPlan) ? 'kanban' : 'adhoc')
+                        setSelectedWorkflow(targetWf)
                       }}
                       disabled={isCreating}
                     >
@@ -522,14 +532,19 @@ export default function WorkspacePicker() {
                             key={wf.id}
                             className={`workflow-card-option ${isSelected ? 'selected' : ''} ${!isUnlocked ? 'locked' : ''}`}
                             onClick={() => {
-                              if (isUnlocked) setSelectedWorkflow(wf.id)
+                              if (isUnlocked) {
+                                setSelectedWorkflow(wf.id)
+                              } else {
+                                setShowCreateModal(false)
+                                setShowPricingModal(true)
+                              }
                             }}
                           >
                             <div className="wf-card-header">
                               <span className="wf-name">{wf.name}</span>
                               {!isUnlocked && (
                                 <span className="wf-lock-badge">
-                                  🔒 {wf.plans.includes('team') ? 'Team' : 'Scale'}
+                                  🔒 {wf.plans.includes('team') ? 'Team' : 'Pro'}
                                 </span>
                               )}
                             </div>

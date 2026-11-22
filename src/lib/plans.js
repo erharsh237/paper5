@@ -75,11 +75,11 @@ export function getPlanLimits(planId) {
 }
 
 export function formatPlanBadge(planId) {
-  if (!planId) return 'PRO'
+  if (!planId) return 'STARTER'
   const p = String(planId).toLowerCase().trim()
   if (p === 'pro' || p === 'scale' || p === 'enterprise') return 'PRO'
   if (p === 'team') return 'TEAM'
-  if (p === 'starter' || p === 'free' || p === 'member') return 'PRO'
+  if (p === 'starter' || p === 'free' || p === 'member') return 'STARTER'
   return p.toUpperCase()
 }
 

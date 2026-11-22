@@ -5,7 +5,7 @@ import { createWorkspace, ensureUserRecordExists } from '../lib/workspaces'
 import { supabase } from '../lib/supabase'
 import logo from '../assets/logo.png'
 import { Check, ArrowRight, Database, ShieldAlert, Sparkles, Building2, Users, Layers, ShieldCheck } from 'lucide-react'
-import { TEAM_SIZE_OPTIONS, WORKFLOWS, getRecommendedWorkflow } from '../lib/workflows'
+import { TEAM_SIZE_OPTIONS, WORKFLOWS, getRecommendedWorkflow, isWorkflowUnlocked } from '../lib/workflows'
 
 import { decryptPlanParam } from '../lib/urlSecurity'
 import { safeRedirect } from '../lib/safeRedirect'
@@ -224,8 +224,10 @@ export default function OnboardingWizardModal() {
 
   const handleTeamSizeChange = (val) => {
     setTeamSize(val)
-    const recommended = getRecommendedWorkflow(val)
-    setAgileWorkflow(recommended.id)
+    const recWf = getRecommendedWorkflow(val)
+    const effectivePlan = (selectedTier === 'scale' || selectedTier === 'pro') ? 'pro' : (selectedTier === 'team' ? 'team' : 'starter')
+    const targetWf = isWorkflowUnlocked(recWf, effectivePlan) ? recWf : 'kanban'
+    setAgileWorkflow(targetWf)
   }
 
   const handleCompleteOnboarding = async (e) => {
@@ -439,7 +441,13 @@ export default function OnboardingWizardModal() {
                 return (
                   <div 
                     key={tier.id}
-                    onClick={() => setSelectedTier(tier.id)}
+                    onClick={() => {
+                      setSelectedTier(tier.id)
+                      const effectivePlan = (tier.id === 'scale' || tier.id === 'pro') ? 'pro' : (tier.id === 'team' ? 'team' : 'starter')
+                      if (!isWorkflowUnlocked(agileWorkflow, effectivePlan)) {
+                        setAgileWorkflow('kanban')
+                      }
+                    }}
                     style={{
                       borderRadius: '12px',
                       border: isSelected ? '2px solid #10b981' : '1px solid #e4e4e7',
@@ -791,11 +799,16 @@ export default function OnboardingWizardModal() {
                   fontWeight: 500
                 }}
               >
-                {WORKFLOWS.map(wf => (
-                  <option key={wf.id} value={wf.id}>
-                    {wf.num}. {wf.name} ({wf.teamSizeLabel})
-                  </option>
-                ))}
+                {WORKFLOWS.map(wf => {
+                  const effectivePlan = (selectedTier === 'scale' || selectedTier === 'pro') ? 'pro' : (selectedTier === 'team' ? 'team' : 'starter')
+                  const isUnlocked = isWorkflowUnlocked(wf.id, effectivePlan)
+                  const lockLabel = wf.plans.includes('team') ? ' (🔒 Team Plan)' : ' (🔒 Pro Plan)'
+                  return (
+                    <option key={wf.id} value={wf.id} disabled={!isUnlocked}>
+                      {wf.num}. {wf.name} ({wf.teamSizeLabel}){!isUnlocked ? lockLabel : ''}
+                    </option>
+                  )
+                })}
               </select>
             </div>
 

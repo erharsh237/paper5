@@ -436,13 +436,14 @@ export function WorkspaceProvider({ children }) {
     const rawWsPlan = (workspace?.plan || workspace?.billing_plan_id || workspace?.billing?.planId || '').toLowerCase().trim()
     if (['pro', 'scale', 'enterprise'].includes(rawWsPlan)) return 'pro'
     if (rawWsPlan === 'team') return 'team'
+    if (rawWsPlan === 'starter' || rawWsPlan === 'free') return 'starter'
 
     const ownerPlan = (ownerBilling?.planId || '').toLowerCase().trim()
     if (['pro', 'scale', 'enterprise'].includes(ownerPlan)) return 'pro'
     if (ownerPlan === 'team') return 'team'
+    if (ownerPlan === 'starter' || ownerPlan === 'free') return 'starter'
 
-    // Early Access Launch Special defaults to Pro
-    return 'pro'
+    return rawWsPlan || 'starter'
   }, [workspace?.plan, workspace?.billing_plan_id, workspace?.billing?.planId, ownerBilling?.planId])
 
   const planBadge = formatPlanBadge(planId)
