@@ -72,7 +72,7 @@
           var key = 'p5_chunk_reload';
           var last = sessionStorage.getItem(key);
           var now = Date.now();
-          if (!last || (now - parseInt(last, 10)) > 8000) {
+          if (!last || (now - parseInt(last, 10)) > 30000) {
             sessionStorage.setItem(key, String(now));
             window.location.reload();
           }
@@ -81,14 +81,6 @@
           event.preventDefault();
           reloadOnStaleChunk();
         });
-        window.addEventListener('error', function(event) {
-          var target = event.target || event.srcElement;
-          var isScriptOrLink = target && (target.tagName === 'SCRIPT' || target.tagName === 'LINK');
-          var src = target ? (target.src || target.href || '') : '';
-          if (isScriptOrLink && src && (src.indexOf('/assets/') !== -1 || src.indexOf('.js') !== -1)) {
-            reloadOnStaleChunk();
-          }
-        }, true);
       })();
     </script>
 

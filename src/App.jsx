@@ -25,7 +25,7 @@ function safeLazy(routeKey, { trackLoading = true } = {}) {
       ) {
         const lastReload = sessionStorage.getItem('p5_chunk_reload')
         const now = Date.now()
-        if (!lastReload || now - parseInt(lastReload, 10) > 8000) {
+        if (!lastReload || now - parseInt(lastReload, 10) > 30000) {
           sessionStorage.setItem('p5_chunk_reload', String(now))
           window.location.reload()
           return new Promise(() => {})

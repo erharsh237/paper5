@@ -54,7 +54,12 @@ if (typeof window !== 'undefined') {
 
   window.addEventListener('vite:preloadError', (event) => {
     event.preventDefault()
-    window.location.reload()
+    const lastReload = sessionStorage.getItem('p5_chunk_reload')
+    const now = Date.now()
+    if (!lastReload || now - parseInt(lastReload, 10) > 30000) {
+      sessionStorage.setItem('p5_chunk_reload', String(now))
+      window.location.reload()
+    }
   })
 
   const originalPushState = window.history.pushState.bind(window.history)
