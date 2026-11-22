@@ -12,6 +12,57 @@
 BEGIN;
 
 -- ------------------------------------------------------------------------------
+-- 0. SECURITY HELPER FUNCTIONS (DEFINER FOR ACCURATE RBAC EVALUATION)
+-- ------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.is_workspace_member(ws_id uuid)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.workspaces w
+    WHERE w.id = ws_id AND w.owner_id = auth.uid()
+  ) OR EXISTS (
+    SELECT 1 FROM public.workspace_members wm
+    WHERE wm.workspace_id = ws_id AND wm.user_id = auth.uid()
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_workspace_admin(ws_id uuid)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.workspaces w
+    WHERE w.id = ws_id AND w.owner_id = auth.uid()
+  ) OR EXISTS (
+    SELECT 1 FROM public.workspace_members wm
+    WHERE wm.workspace_id = ws_id 
+      AND wm.user_id = auth.uid() 
+      AND wm.role IN ('admin', 'owner')
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_workspace_owner(ws_id uuid)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.workspaces w
+    WHERE w.id = ws_id AND w.owner_id = auth.uid()
+  );
+$$;
+
+-- ------------------------------------------------------------------------------
 -- 1. SUBSCRIPTION SECURITY: PROTECT USERS BILLING COLUMNS
 -- ------------------------------------------------------------------------------
 
