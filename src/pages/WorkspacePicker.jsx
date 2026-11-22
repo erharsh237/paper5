@@ -56,7 +56,7 @@ export default function WorkspacePicker() {
   // Derive effective tier across user record and owned workspaces
   const userPlan = useMemo(() => {
     let rawUserPlan = (userData?.billing_plan_id || user?.user_metadata?.plan || '').toLowerCase().trim()
-    if (!rawUserPlan || rawUserPlan === 'unselected' || rawUserPlan === 'none') {
+    if (!rawUserPlan || rawUserPlan === 'unselected' || rawUserPlan === 'none' || rawUserPlan === 'member') {
       try {
         const stored = localStorage.getItem('sprintos_selected_plan')
         if (stored) {
@@ -307,66 +307,6 @@ export default function WorkspacePicker() {
     )
   }
 
-  // Only show Access Restricted lockout if user is strictly a member whose workspace access was removed
-  if (workspaces.length === 0 && isRevokedMember) {
-    return (
-      <div className="workspace-picker-page">
-        <div className="wp-bg-elements" aria-hidden="true">
-          <div className="wp-orb wp-orb-1" />
-          <div className="wp-orb wp-orb-2" />
-          <div className="wp-orb wp-orb-3" />
-          <div className="wp-grid" />
-        </div>
-        
-        {workspaceSeo}
-        <div className="wp-container" style={{ maxWidth: '520px', margin: '0 auto', textAlign: 'center', padding: '60px 24px' }}>
-          <div style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '16px',
-            background: 'rgba(99, 102, 241, 0.1)',
-            border: '1px solid rgba(99, 102, 241, 0.2)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '28px',
-            margin: '0 auto 20px'
-          }}>
-            🔒
-          </div>
-          
-          <h2 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary, #111827)', marginBottom: '12px', letterSpacing: '-0.02em' }}>
-            No Active Workspace
-          </h2>
-          
-          <p style={{ fontSize: '14px', color: 'var(--text-secondary, #6B7280)', lineHeight: 1.6, marginBottom: '28px' }}>
-            Your account is not currently a member of any active workspace. You can start your own team workspace with Paper5.
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
-            <button
-              type="button"
-              className="btn-primary"
-              style={{ width: '100%', maxWidth: '280px', padding: '12px 20px', fontSize: '14px', fontWeight: 700, borderRadius: '8px' }}
-              onClick={handleOpenCreateWorkspace}
-            >
-              + Create Your Workspace
-            </button>
-            
-            <button
-              type="button"
-              className="btn-ghost"
-              style={{ color: 'var(--text-secondary, #6B7280)', fontSize: '13px', padding: '8px 16px', cursor: 'pointer' }}
-              onClick={() => logout().then(() => navigate('/login'))}
-            >
-              Sign out securely
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   const isPickerForced = location.search.includes('picker=true') || window.location.search.includes('picker=true') || location.search.includes('create=true')
   
   // Routing logic: only auto-redirect if NOT forced by picker=true or create=true
@@ -378,6 +318,8 @@ export default function WorkspacePicker() {
     }
   }
 
+  const isLockoutView = workspaces.length === 0 && isRevokedMember
+
   return (
     <div className="workspace-picker-page">
       <div className="wp-bg-elements" aria-hidden="true">
@@ -388,21 +330,76 @@ export default function WorkspacePicker() {
       </div>
       
       {workspaceSeo}
-      <div className="wp-container">
+      <div className="wp-container" style={isLockoutView ? { maxWidth: '540px', margin: '0 auto', padding: '60px 24px', textAlign: 'center' } : {}}>
 
-        <div className="wp-header">
-          <div className="wp-brand">
-            <span className="wp-logo-text">Paper5</span>
+        {!isLockoutView && (
+          <div className="wp-header">
+            <div className="wp-brand">
+              <span className="wp-logo-text">Paper5</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: '8px' }}>
+              <ThemeToggle />
+            </div>
+            <h1>Select Workspace</h1>
+            <p>Choose a workspace to continue, or create a new one.</p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: '8px' }}>
-            <ThemeToggle />
-          </div>
-          <h1>Select Workspace</h1>
-          <p>Choose a workspace to continue, or create a new one.</p>
-        </div>
+        )}
 
-        <div className="wp-grid-list">
-          {workspaces.length === 0 && (
+        {isLockoutView ? (
+          <div style={{
+            background: 'var(--surface-card, #ffffff)',
+            border: '1px solid var(--border, rgba(0,0,0,0.08))',
+            borderRadius: '24px',
+            padding: '48px 24px',
+            boxShadow: '0 12px 32px rgba(0,0,0,0.05)',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '16px',
+              background: 'rgba(99, 102, 241, 0.1)',
+              border: '1px solid rgba(99, 102, 241, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '28px',
+              margin: '0 auto 20px'
+            }}>
+              🔒
+            </div>
+            
+            <h2 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary, #111827)', marginBottom: '12px', letterSpacing: '-0.02em' }}>
+              No Active Workspace
+            </h2>
+            
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary, #6B7280)', lineHeight: 1.6, marginBottom: '28px' }}>
+              Your account is not currently a member of any active workspace. You can start your own team workspace with Paper5.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ width: '100%', maxWidth: '280px', padding: '12px 20px', fontSize: '14px', fontWeight: 700, borderRadius: '8px' }}
+                onClick={handleOpenCreateWorkspace}
+              >
+                + Create Your Workspace
+              </button>
+              
+              <button
+                type="button"
+                className="btn-ghost"
+                style={{ color: 'var(--text-secondary, #6B7280)', fontSize: '13px', padding: '8px 16px', cursor: 'pointer' }}
+                onClick={() => logout().then(() => navigate('/login'))}
+              >
+                Sign out securely
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="wp-grid-list">
+            {workspaces.length === 0 && (
             <div style={{
               gridColumn: '1 / -1',
               padding: '36px 24px',
@@ -490,12 +487,15 @@ export default function WorkspacePicker() {
             </button>
           )}
         </div>
+        )}
 
-        <div className="wp-footer">
-          <button type="button" className="wp-logout-btn" onClick={logout}>
-            Sign out securely
-          </button>
-        </div>
+        {!isLockoutView && (
+          <div className="wp-footer">
+            <button type="button" className="wp-logout-btn" onClick={logout}>
+              Sign out securely
+            </button>
+          </div>
+        )}
 
       </div>
 
