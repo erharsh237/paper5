@@ -37,15 +37,15 @@ export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspac
   
   // 1. Retrieve stored invoices from workspace settings (all plans are ₹0 during launch special)
   const storedInvoices = (Array.isArray(workspace?.settings?.invoices) ? workspace.settings.invoices : []).map(inv => {
-    let fixedPlan = inv.plan
-    if (inv.id?.includes('PRO') || inv.planId === 'pro' || inv.planId === 'scale') {
-      fixedPlan = (inv.plan || '').replace(/Starter Plan/gi, 'Pro Plan') || `${getPlanName('pro')} (${inv.cycle || 'Monthly'})`
-    } else if (inv.id?.includes('TEAM') || inv.planId === 'team') {
-      fixedPlan = (inv.plan || '').replace(/Starter Plan/gi, 'Team Plan') || `${getPlanName('team')} (${inv.cycle || 'Monthly'})`
-    }
+    const idLower = (inv.id || '').toLowerCase()
+    const pId = (inv.planId || (idLower.includes('pro') ? 'pro' : (idLower.includes('team') ? 'team' : (idLower.includes('starter') ? 'starter' : effectivePlanId)))).toLowerCase()
+    const planName = getPlanName(pId)
+    const isAnnual = idLower.includes('annual') || (inv.cycle || '').toLowerCase().includes('annual') || (inv.cycle || '').includes('12')
+    const cycleLabel = isAnnual ? 'Annual' : 'Monthly'
     return {
       ...inv,
-      plan: fixedPlan || inv.plan || `${getPlanName(inv.planId || effectivePlanId)} (${inv.cycle || 'Monthly'})`,
+      planId: pId,
+      plan: `${planName} (${cycleLabel})`,
       amount: '₹0'
     }
   })
@@ -104,7 +104,7 @@ export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspac
 
   // Combine stored + fallback, ensuring current active cycle is represented
   let combinedInvoices = matchingStored.length > 0 ? [...matchingStored] : [fallbackCurrentInvoice]
-  if (effectivePlanId !== 'starter' && effectivePlanId !== 'free' && !combinedInvoices.some(i => i.id?.includes('STARTER'))) {
+  if (!isAnnualTab && effectivePlanId !== 'starter' && effectivePlanId !== 'free' && !combinedInvoices.some(i => i.id?.includes('STARTER'))) {
     combinedInvoices.push(fallbackInitialInvoice)
   }
 

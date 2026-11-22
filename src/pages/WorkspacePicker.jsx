@@ -106,14 +106,6 @@ export default function WorkspacePicker() {
         }
       }
 
-      // 1.5 Auto-upgrade user and owned workspaces to Pro in Supabase
-      if (userId) {
-        try {
-          supabase.from('users').update({ billing_plan_id: 'pro', billing_status: 'active' }).eq('id', userId).then()
-          supabase.from('workspaces').update({ billing_plan_id: 'pro' }).eq('created_by', userId).in('billing_plan_id', ['starter', 'free', 'member', null]).then()
-        } catch (_) {}
-      }
-
       // 2. Query workspace_members directly with joined workspace name and tier
       let mapped = []
       const { data: memberList, error: memberErr } = await supabase
@@ -132,7 +124,9 @@ export default function WorkspacePicker() {
       if (Array.isArray(memberList) && memberList.length > 0) {
         mapped = memberList.map(r => {
           const rawPlan = (r.workspaces?.billing_plan_id || r.workspaces?.settings?.plan || '').toLowerCase().trim()
-          const plan = (rawPlan === 'team') ? 'team' : (rawPlan === 'starter' || rawPlan === 'free') ? 'starter' : (rawPlan === 'pro' || rawPlan === 'scale') ? 'pro' : 'starter'
+          const isOwner = r.role === 'owner' || r.role === 'admin'
+          const ownerTier = isOwner && (userPlan === 'pro' || userPlan === 'team') ? userPlan : null
+          const plan = ownerTier || ((rawPlan === 'team') ? 'team' : (rawPlan === 'starter' || rawPlan === 'free') ? 'starter' : (rawPlan === 'pro' || rawPlan === 'scale') ? 'pro' : (userPlan || 'starter'))
           return {
             workspaceId: r.workspace_id,
             id: r.workspace_id,
@@ -157,7 +151,8 @@ export default function WorkspacePicker() {
           ownedWs.forEach(ow => {
             if (!existingIds.has(ow.id)) {
               const rawPlan = (ow.billing_plan_id || ow.settings?.plan || '').toLowerCase().trim()
-              const plan = (rawPlan === 'team') ? 'team' : (rawPlan === 'starter' || rawPlan === 'free') ? 'starter' : (rawPlan === 'pro' || rawPlan === 'scale') ? 'pro' : 'starter'
+              const ownerTier = (userPlan === 'pro' || userPlan === 'team') ? userPlan : null
+              const plan = ownerTier || ((rawPlan === 'team') ? 'team' : (rawPlan === 'starter' || rawPlan === 'free') ? 'starter' : (rawPlan === 'pro' || rawPlan === 'scale') ? 'pro' : (userPlan || 'starter'))
               mapped.push({
                 workspaceId: ow.id,
                 id: ow.id,
