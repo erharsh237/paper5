@@ -2,6 +2,7 @@
 -- SPRINTOS / PAPER5 - PRODUCTION SECURITY HARDENING & ENTITLEMENTS MIGRATION
 -- Generated: 2026-11-23
 -- Purpose:
+--   0. Security helper functions for RBAC with universal text/uuid casting.
 --   1. Protect public.users billing columns against unauthorized direct client updates.
 --   2. Enforce Agile methodology entitlements on public.workspaces with grandfathering.
 --   3. Provide atomic workspace provisioning with plan quota enforcement (auth.uid()).
@@ -24,10 +25,26 @@ STABLE
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.workspaces w
-    WHERE w.id = ws_id AND w.created_by = auth.uid()
+    WHERE w.id::text = ws_id::text AND w.created_by::text = auth.uid()::text
   ) OR EXISTS (
     SELECT 1 FROM public.workspace_members wm
-    WHERE wm.workspace_id = ws_id AND wm.user_id = auth.uid()
+    WHERE wm.workspace_id::text = ws_id::text AND wm.user_id::text = auth.uid()::text
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_workspace_member(ws_id text)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.workspaces w
+    WHERE w.id::text = ws_id::text AND w.created_by::text = auth.uid()::text
+  ) OR EXISTS (
+    SELECT 1 FROM public.workspace_members wm
+    WHERE wm.workspace_id::text = ws_id::text AND wm.user_id::text = auth.uid()::text
   );
 $$;
 
@@ -40,11 +57,29 @@ STABLE
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.workspaces w
-    WHERE w.id = ws_id AND w.created_by = auth.uid()
+    WHERE w.id::text = ws_id::text AND w.created_by::text = auth.uid()::text
   ) OR EXISTS (
     SELECT 1 FROM public.workspace_members wm
-    WHERE wm.workspace_id = ws_id 
-      AND wm.user_id = auth.uid() 
+    WHERE wm.workspace_id::text = ws_id::text 
+      AND wm.user_id::text = auth.uid()::text 
+      AND wm.role IN ('admin', 'owner')
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_workspace_admin(ws_id text)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.workspaces w
+    WHERE w.id::text = ws_id::text AND w.created_by::text = auth.uid()::text
+  ) OR EXISTS (
+    SELECT 1 FROM public.workspace_members wm
+    WHERE wm.workspace_id::text = ws_id::text 
+      AND wm.user_id::text = auth.uid()::text 
       AND wm.role IN ('admin', 'owner')
   );
 $$;
@@ -58,11 +93,29 @@ STABLE
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.workspaces w
-    WHERE w.id = ws_id AND w.created_by = auth.uid()
+    WHERE w.id::text = ws_id::text AND w.created_by::text = auth.uid()::text
   ) OR EXISTS (
     SELECT 1 FROM public.workspace_members wm
-    WHERE wm.workspace_id = ws_id 
-      AND wm.user_id = auth.uid() 
+    WHERE wm.workspace_id::text = ws_id::text 
+      AND wm.user_id::text = auth.uid()::text 
+      AND wm.role = 'owner'
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_workspace_owner(ws_id text)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.workspaces w
+    WHERE w.id::text = ws_id::text AND w.created_by::text = auth.uid()::text
+  ) OR EXISTS (
+    SELECT 1 FROM public.workspace_members wm
+    WHERE wm.workspace_id::text = ws_id::text 
+      AND wm.user_id::text = auth.uid()::text 
       AND wm.role = 'owner'
   );
 $$;
@@ -125,10 +178,10 @@ AS $$
 DECLARE
   owner_tier TEXT;
   target_wf TEXT;
-  creator_uid UUID;
+  creator_uid TEXT;
 BEGIN
   target_wf := COALESCE(NEW.settings->>'agile_workflow', 'kanban');
-  creator_uid := NEW.created_by;
+  creator_uid := NEW.created_by::text;
 
   -- Prevent clients from modifying grandfathered_workflow
   IF TG_OP = 'UPDATE' AND NEW.grandfathered_workflow IS DISTINCT FROM OLD.grandfathered_workflow THEN
@@ -149,7 +202,7 @@ BEGIN
 
   -- Retrieve authoritative owner billing plan
   SELECT COALESCE(billing_plan_id, 'starter') INTO owner_tier
-  FROM public.users WHERE id = creator_uid;
+  FROM public.users WHERE id::text = creator_uid;
 
   IF owner_tier = 'starter' OR owner_tier = 'free' THEN
     IF target_wf NOT IN ('adhoc', 'kanban') THEN
@@ -207,7 +260,7 @@ BEGIN
   END IF;
 
   SELECT COALESCE(billing_plan_id, 'starter'), email INTO user_tier, user_email
-  FROM public.users WHERE id = caller_uid;
+  FROM public.users WHERE id::text = caller_uid::text;
 
   IF user_tier IS NULL THEN
     user_tier := 'starter';
@@ -215,13 +268,13 @@ BEGIN
 
   -- Lock existing owned workspace rows to prevent concurrent creation quota race conditions
   PERFORM 1 FROM public.workspaces 
-  WHERE created_by = caller_uid
+  WHERE created_by::text = caller_uid::text
   FOR UPDATE;
 
   -- Enforce Plan Quota Limits
   SELECT count(*) INTO existing_owned_count
   FROM public.workspaces
-  WHERE created_by = caller_uid;
+  WHERE created_by::text = caller_uid::text;
 
   max_allowed := CASE 
     WHEN user_tier IN ('pro', 'scale', 'enterprise') THEN 10
@@ -323,7 +376,7 @@ DROP FUNCTION IF EXISTS public.create_new_workspace(TEXT);
 
 CREATE OR REPLACE FUNCTION public.create_new_workspace(
   workspace_name TEXT,
-  creator_id UUID,
+  creator_id UUID DEFAULT NULL,
   new_workspace_id UUID DEFAULT NULL
 )
 RETURNS JSONB
@@ -361,12 +414,12 @@ BEGIN
 
   -- Lock rows for this owner to prevent concurrent race conditions
   PERFORM 1 FROM public.workspaces 
-  WHERE created_by = caller_uid
+  WHERE created_by::text = caller_uid::text
   FOR UPDATE;
 
   IF NOT EXISTS (
     SELECT 1 FROM public.workspaces 
-    WHERE id = target_workspace_id AND created_by = caller_uid
+    WHERE id::text = target_workspace_id::text AND created_by::text = caller_uid::text
   ) THEN
     RAISE EXCEPTION 'Access denied: You can only activate a workspace that you own.';
   END IF;
@@ -374,12 +427,12 @@ BEGIN
   -- Deactivate all workspaces owned by this user
   UPDATE public.workspaces 
   SET is_active = false, updated_at = now()
-  WHERE created_by = caller_uid;
+  WHERE created_by::text = caller_uid::text;
 
   -- Activate only the chosen workspace
   UPDATE public.workspaces 
   SET is_active = true, updated_at = now()
-  WHERE id = target_workspace_id;
+  WHERE id::text = target_workspace_id::text;
 
   RETURN jsonb_build_object('success', true, 'active_workspace_id', target_workspace_id);
 END;
@@ -392,7 +445,7 @@ DROP POLICY IF EXISTS "Workspace members can create tasks" ON public.deadlines;
 CREATE POLICY "Workspace members can create tasks" ON public.deadlines
 FOR INSERT WITH CHECK (
   public.is_workspace_member(workspace_id)
-  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id = workspace_id AND w.is_active = true)
+  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id::text = workspace_id::text AND w.is_active = true)
 );
 
 DROP POLICY IF EXISTS "Deadlines update policy" ON public.deadlines;
@@ -402,10 +455,10 @@ FOR UPDATE USING (
     public.is_workspace_admin(workspace_id)
     OR (
       public.is_workspace_member(workspace_id)
-      AND (assignee_id = auth.uid() OR created_by = auth.uid() OR assignee_id IS NULL)
+      AND (assignee_id::text = auth.uid()::text OR created_by::text = auth.uid()::text OR assignee_id IS NULL)
     )
   )
-  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id = workspace_id AND w.is_active = true)
+  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id::text = workspace_id::text AND w.is_active = true)
 );
 
 DROP POLICY IF EXISTS "Admins or creators can delete tasks" ON public.deadlines;
@@ -413,9 +466,9 @@ CREATE POLICY "Admins or creators can delete tasks" ON public.deadlines
 FOR DELETE USING (
   (
     public.is_workspace_admin(workspace_id)
-    OR (public.is_workspace_member(workspace_id) AND created_by = auth.uid())
+    OR (public.is_workspace_member(workspace_id) AND created_by::text = auth.uid()::text)
   )
-  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id = workspace_id AND w.is_active = true)
+  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id::text = workspace_id::text AND w.is_active = true)
 );
 
 -- ------------------------------------------------------------------------------
@@ -438,7 +491,7 @@ BEGIN
   END IF;
 
   -- If parent workspace does not exist or has already been deleted, skip compliance check
-  IF NOT EXISTS (SELECT 1 FROM public.workspaces WHERE id = OLD.workspace_id) THEN
+  IF NOT EXISTS (SELECT 1 FROM public.workspaces WHERE id::text = OLD.workspace_id::text) THEN
     RETURN OLD;
   END IF;
 
@@ -446,11 +499,11 @@ BEGIN
   IF (TG_OP = 'DELETE' AND OLD.role = 'owner') THEN
     IF NOT EXISTS (
       SELECT 1 FROM public.workspace_members
-      WHERE workspace_id = OLD.workspace_id
+      WHERE workspace_id::text = OLD.workspace_id::text
         AND role = 'owner'
-        AND user_id != OLD.user_id
+        AND user_id::text != OLD.user_id::text
     ) THEN
-      IF EXISTS (SELECT 1 FROM public.workspaces WHERE id = OLD.workspace_id) THEN
+      IF EXISTS (SELECT 1 FROM public.workspaces WHERE id::text = OLD.workspace_id::text) THEN
         RAISE EXCEPTION 'Compliance Error: Cannot remove or demote the last owner of a workspace.';
       END IF;
     END IF;
@@ -460,9 +513,9 @@ BEGIN
   IF (TG_OP = 'UPDATE' AND OLD.role = 'owner' AND NEW.role != 'owner') THEN
     IF NOT EXISTS (
       SELECT 1 FROM public.workspace_members
-      WHERE workspace_id = OLD.workspace_id
+      WHERE workspace_id::text = OLD.workspace_id::text
         AND role = 'owner'
-        AND user_id != OLD.user_id
+        AND user_id::text != OLD.user_id::text
     ) THEN
       RAISE EXCEPTION 'Compliance Error: Cannot remove or demote the last owner of a workspace.';
     END IF;
@@ -488,16 +541,16 @@ BEGIN
   caller_uid := auth.uid();
 
   IF caller_uid IS NOT NULL THEN
-    SELECT created_by INTO ws_creator FROM public.workspaces WHERE id = target_workspace_id;
+    SELECT created_by INTO ws_creator FROM public.workspaces WHERE id::text = target_workspace_id::text;
     
     SELECT EXISTS (
       SELECT 1 FROM public.workspace_members
-      WHERE workspace_id = target_workspace_id
-        AND user_id = caller_uid
+      WHERE workspace_id::text = target_workspace_id::text
+        AND user_id::text = caller_uid::text
         AND role = 'owner'
     ) INTO is_admin;
 
-    IF ws_creator != caller_uid AND NOT COALESCE(is_admin, false) THEN
+    IF ws_creator::text != caller_uid::text AND NOT COALESCE(is_admin, false) THEN
       RAISE EXCEPTION 'Access denied: Only workspace owners can permanently delete a workspace.';
     END IF;
   END IF;
@@ -506,22 +559,22 @@ BEGIN
   PERFORM set_config('paper5.deleting_ws', target_workspace_id::text, true);
 
   -- 1. Invalidate all pending invites
-  DELETE FROM public.invites WHERE workspace_id = target_workspace_id;
-  DELETE FROM public.workspace_invites WHERE workspace_id = target_workspace_id;
+  DELETE FROM public.invites WHERE workspace_id::text = target_workspace_id::text;
+  DELETE FROM public.workspace_invites WHERE workspace_id::text = target_workspace_id::text;
 
   -- 2. Delete all operational data
-  DELETE FROM public.deadlines WHERE workspace_id = target_workspace_id;
-  DELETE FROM public.sprints WHERE workspace_id = target_workspace_id;
-  DELETE FROM public.meetings WHERE workspace_id = target_workspace_id;
-  DELETE FROM public.audit_logs WHERE workspace_id = target_workspace_id;
-  DELETE FROM public.evidence WHERE workspace_id = target_workspace_id;
-  DELETE FROM public.extra_work WHERE workspace_id = target_workspace_id;
+  DELETE FROM public.deadlines WHERE workspace_id::text = target_workspace_id::text;
+  DELETE FROM public.sprints WHERE workspace_id::text = target_workspace_id::text;
+  DELETE FROM public.meetings WHERE workspace_id::text = target_workspace_id::text;
+  DELETE FROM public.audit_logs WHERE workspace_id::text = target_workspace_id::text;
+  DELETE FROM public.evidence WHERE workspace_id::text = target_workspace_id::text;
+  DELETE FROM public.extra_work WHERE workspace_id::text = target_workspace_id::text;
 
   -- 3. Delete members cleanly (compliance trigger checks paper5.deleting_ws)
-  DELETE FROM public.workspace_members WHERE workspace_id = target_workspace_id;
+  DELETE FROM public.workspace_members WHERE workspace_id::text = target_workspace_id::text;
 
   -- 4. Delete the workspace row
-  DELETE FROM public.workspaces WHERE id = target_workspace_id;
+  DELETE FROM public.workspaces WHERE id::text = target_workspace_id::text;
 
   RETURN jsonb_build_object(
     'success', true,
@@ -556,7 +609,7 @@ BEGIN
   SELECT COALESCE(billing_plan_id, subscription_tier, 'starter'), COALESCE(is_active, true)
   INTO ws_plan, ws_active
   FROM public.workspaces
-  WHERE id = NEW.workspace_id;
+  WHERE id::text = NEW.workspace_id::text;
 
   -- Block additions to inactive workspaces
   IF ws_active = false THEN
@@ -575,7 +628,7 @@ BEGIN
 
   SELECT count(*) INTO current_count
   FROM public.workspace_members
-  WHERE workspace_id = NEW.workspace_id;
+  WHERE workspace_id::text = NEW.workspace_id::text;
 
   IF current_count >= max_allowed THEN
     RAISE EXCEPTION 'Member limit exceeded: The % plan allows a maximum of % members per workspace.', ws_plan, max_allowed;
@@ -596,42 +649,42 @@ DROP POLICY IF EXISTS "Workspace members can create sprints" ON public.sprints;
 CREATE POLICY "Workspace members can create sprints" ON public.sprints
 FOR INSERT WITH CHECK (
   public.is_workspace_admin(workspace_id)
-  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id = workspace_id AND w.is_active = true)
+  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id::text = workspace_id::text AND w.is_active = true)
 );
 
 DROP POLICY IF EXISTS "Workspace admins can update sprints" ON public.sprints;
 CREATE POLICY "Workspace admins can update sprints" ON public.sprints
 FOR UPDATE USING (
   public.is_workspace_admin(workspace_id)
-  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id = workspace_id AND w.is_active = true)
+  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id::text = workspace_id::text AND w.is_active = true)
 );
 
 DROP POLICY IF EXISTS "Workspace admins can delete sprints" ON public.sprints;
 CREATE POLICY "Workspace admins can delete sprints" ON public.sprints
 FOR DELETE USING (
   public.is_workspace_admin(workspace_id)
-  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id = workspace_id AND w.is_active = true)
+  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id::text = workspace_id::text AND w.is_active = true)
 );
 
 DROP POLICY IF EXISTS "Workspace members can create meetings" ON public.meetings;
 CREATE POLICY "Workspace members can create meetings" ON public.meetings
 FOR INSERT WITH CHECK (
   public.is_workspace_member(workspace_id)
-  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id = workspace_id AND w.is_active = true)
+  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id::text = workspace_id::text AND w.is_active = true)
 );
 
 DROP POLICY IF EXISTS "Workspace members can update meetings" ON public.meetings;
 CREATE POLICY "Workspace members can update meetings" ON public.meetings
 FOR UPDATE USING (
   public.is_workspace_member(workspace_id)
-  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id = workspace_id AND w.is_active = true)
+  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id::text = workspace_id::text AND w.is_active = true)
 );
 
 DROP POLICY IF EXISTS "Workspace members can delete meetings" ON public.meetings;
 CREATE POLICY "Workspace members can delete meetings" ON public.meetings
 FOR DELETE USING (
-  (public.is_workspace_admin(workspace_id) OR created_by = auth.uid())
-  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id = workspace_id AND w.is_active = true)
+  (public.is_workspace_admin(workspace_id) OR created_by::text = auth.uid()::text)
+  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id::text = workspace_id::text AND w.is_active = true)
 );
 
 COMMIT;
