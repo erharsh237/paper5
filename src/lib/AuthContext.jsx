@@ -11,8 +11,18 @@ const sessionCookieApi = {
   /** Restore a persisted session from httpOnly cookies on page load. */
   async get() {
     try {
+      if (typeof document !== 'undefined') {
+        const cookieStr = document.cookie || ''
+        const hasSessionCookie = cookieStr.includes('sb_has_session=1') || 
+                                 cookieStr.includes('sb_expires_at=') ||
+                                 cookieStr.includes('sb_2fa_pending=')
+        if (!hasSessionCookie) {
+          // Instant 0ms return for anonymous/first-time visitors without network round trips
+          return null
+        }
+      }
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 4000)
+      const timeoutId = setTimeout(() => controller.abort(), 2500)
       const res = await fetch('/api/auth/session', { 
         credentials: 'same-origin',
         signal: controller.signal 
@@ -40,6 +50,9 @@ const sessionCookieApi = {
   async set(session) {
     if (!session?.access_token || !session?.refresh_token) return
     try {
+      if (typeof document !== 'undefined') {
+        document.cookie = 'sb_has_session=1; Path=/; SameSite=Lax; Secure'
+      }
       await fetch('/api/auth/session', {
         method: 'POST',
         credentials: 'same-origin',
@@ -58,6 +71,9 @@ const sessionCookieApi = {
   /** Clear session cookies on sign-out. */
   async clear() {
     try {
+      if (typeof document !== 'undefined') {
+        document.cookie = 'sb_has_session=; Path=/; SameSite=Lax; Max-Age=0'
+      }
       await fetch('/api/auth/session', { method: 'DELETE', credentials: 'same-origin' })
     } catch {
       console.warn('[SessionCookieApi] Failed to clear session cookie.')
@@ -126,9 +142,23 @@ export function AuthProvider({ children }) {
         emailVerified: !!session.user.email_confirmed_at || !!session.user.confirmed_at || !!session.access_token 
       }
       // In Supabase, the user profile is created by the Postgres trigger
-      setUser(u)
+      const cleanEmail = u.email ? u.email.trim().toLowerCase() : ''
+      const defaultUsername = u.user_metadata?.username || (cleanEmail ? cleanEmail.split('@')[0].replace(/[^a-z0-9_]/g, '') : `user_${u.id.slice(0, 6)}`)
 
-      // Fetch user data
+      // Fast Path: Immediately unlock the app shell without waiting for background DB queries
+      setUser(u)
+      setUserData({
+        id: u.id,
+        email: cleanEmail,
+        username: defaultUsername,
+        billing_plan_id: u.user_metadata?.plan || 'starter',
+        billingPlanId: u.user_metadata?.plan || 'starter',
+        requires_password_reset: !!u.user_metadata?.must_change_password,
+        requiresPasswordReset: !!u.user_metadata?.must_change_password
+      })
+      setLoading(false)
+
+      // Fetch authoritative user profile and entitlements asynchronously
       const fetchUserData = async () => {
         let { data, error } = await supabase.from('users').select('*').eq('id', u.id).maybeSingle()
         if (!data) {

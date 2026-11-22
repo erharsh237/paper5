@@ -159,6 +159,7 @@ export default async function handler(req, res) {
   // 3. OVERVIEW: REAL WORKSPACE EXECUTIVE AGGREGATE
   // ─────────────────────────────────────────────────────────────
   res.setHeader('Content-Type', 'application/json')
+  res.setHeader('Cache-Control', 'private, no-cache, stale-while-revalidate=10')
   try {
     const now = new Date()
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
@@ -174,12 +175,12 @@ export default async function handler(req, res) {
         .eq('workspace_id', workspaceId),
       supabaseAdmin
         .from('sprints')
-        .select('*')
+        .select('id, workspace_id, name, status, start_date, end_date, goal, created_at, archived')
         .eq('workspace_id', workspaceId)
         .order('created_at', { ascending: false }),
       supabaseAdmin
         .from('deadlines')
-        .select('*')
+        .select('id, workspace_id, title, status, priority, due_date, assignee_id, sprint_id, created_at, description, tags, custom_fields')
         .eq('workspace_id', workspaceId)
         .order('due_date', { ascending: true }),
       supabaseAdmin
@@ -189,7 +190,7 @@ export default async function handler(req, res) {
         .maybeSingle(),
       supabaseAdmin
         .from('audit_logs')
-        .select('*')
+        .select('id, workspace_id, action, resource, actor_id, created_at, metadata')
         .eq('workspace_id', workspaceId)
         .order('created_at', { ascending: false })
         .limit(10)

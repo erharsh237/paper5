@@ -10,9 +10,26 @@ const WorkspaceContext = createContext(null);
 export function WorkspaceProvider({ children }) {
   const { workspaceId } = useParams();
   const { user } = useAuth();
-  const [workspace, setWorkspace] = useState(null);
-  const [workspaceRole, setWorkspaceRole] = useState(null);
-  const [loadingWorkspace, setLoadingWorkspace] = useState(true);
+
+  // Instant Cache Hydration: If workspace was loaded in this session, hydrate immediately with 0ms delay
+  const [workspace, setWorkspace] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem(`workspace_cache_${workspaceId}`)
+      return cached ? JSON.parse(cached) : null
+    } catch (_) { return null }
+  });
+  const [workspaceRole, setWorkspaceRole] = useState(() => {
+    try {
+      return sessionStorage.getItem(`workspace_role_${workspaceId}`) || null
+    } catch (_) { return null }
+  });
+  const [loadingWorkspace, setLoadingWorkspace] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem(`workspace_cache_${workspaceId}`)
+      const role = sessionStorage.getItem(`workspace_role_${workspaceId}`)
+      return !(cached && role)
+    } catch (_) { return true }
+  });
   const [workspaceError, setWorkspaceError] = useState(null);
   const [ownerBilling, setOwnerBilling] = useState(null);
   const [aalLevel, setAalLevel] = useState('aal1');
@@ -61,36 +78,27 @@ export function WorkspaceProvider({ children }) {
       return;
     }
 
-    setLoadingWorkspace(true);
+    // If we have cached workspace data, don't flash loading screen during background revalidation
+    setLoadingWorkspace(prev => workspace ? false : true);
     setWorkspaceError(null);
 
     let checkedInvitesOnce = false
 
     const fetchAll = async () => {
       try {
-        // Step 1: Accept any pending invites once on mount via serverless API (uses service role key to bypass RLS)
-        if (user?.email && !checkedInvitesOnce) {
-          checkedInvitesOnce = true
-          try {
-            await fetch('/api/accept-invite', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email: user.email, userId: user.id, workspaceId })
-            })
-          } catch (apiErr) {
-            console.warn('WorkspaceContext accept-invite notice:', apiErr)
-          }
-        }
-
-        // Step 2: Query workspace + membership. Use service bypass API for workspace data
+        // Step 1: Query workspace + membership directly in parallel (Fastest path: ~50-80ms)
         const [wsResult, memberResult] = await Promise.all([
           supabase.from('workspaces').select('*').eq('id', workspaceId).maybeSingle(),
-          supabase.from('workspace_members').select('role').eq('workspace_id', workspaceId).eq('user_id', user.id).maybeSingle()
+          supabase.from('workspace_members').select('role, permissions').eq('workspace_id', workspaceId).eq('user_id', user.id).maybeSingle()
         ])
 
-        // Step 3: If workspace still null due to RLS, try fetching it via the service API
         let wsData = wsResult?.data
-        if (!wsData && !wsResult?.error) {
+        let myRole = memberResult?.data?.role || null
+        let myPerms = Array.isArray(memberResult?.data?.permissions) ? memberResult.data.permissions : []
+
+        // Step 2: Fallback to accept-invite only if user has no role or workspace is null
+        if ((!wsData || !myRole) && user?.email && !checkedInvitesOnce) {
+          checkedInvitesOnce = true
           try {
             const resp = await fetch('/api/accept-invite', {
               method: 'POST',
@@ -99,6 +107,7 @@ export function WorkspaceProvider({ children }) {
             })
             const json = await resp.json()
             if (json?.workspace) wsData = json.workspace
+            if (json?.role) myRole = json.role
           } catch (_) {}
         }
 
@@ -106,6 +115,7 @@ export function WorkspaceProvider({ children }) {
           setWorkspace(wsData)
           setWorkspaceError(null)
           try {
+            sessionStorage.setItem(`workspace_cache_${workspaceId}`, JSON.stringify(wsData))
             localStorage.setItem('current_workspace_id', workspaceId)
             sessionStorage.setItem('current_workspace_id', workspaceId)
           } catch (_) {}
@@ -116,10 +126,7 @@ export function WorkspaceProvider({ children }) {
           setWorkspaceError('Workspace not found')
         }
 
-        let myRole = memberResult?.data?.role || null
-        let myPerms = []
-
-        // Extract direct permissions from workspace settings
+        // Direct permissions from settings fallback
         if (wsData?.settings?.member_permissions) {
           if (wsData.settings.member_permissions[user.id] !== undefined) {
             myPerms = wsData.settings.member_permissions[user.id] || []
@@ -128,40 +135,7 @@ export function WorkspaceProvider({ children }) {
           }
         }
 
-        // Query serverless API (POST) to ensure accurate enriched permissions and verify membership
-        let seatCount = 0
-        try {
-          const memResp = await fetch(`/api/workspace-members?workspaceId=${encodeURIComponent(workspaceId)}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'fetch_members', workspaceId })
-          })
-          if (memResp.ok) {
-            const memJson = await memResp.json()
-            const memberList = memJson?.members || []
-            seatCount = memberList.length
-            const myMember = memberList.find(m => m.id === user.id || m.userId === user.id || (m.email && user.email && m.email.toLowerCase() === user.email.toLowerCase()))
-            if (myMember) {
-              myRole = myMember.role || myRole || 'member'
-              if (Array.isArray(myMember.permissions)) {
-                myPerms = myMember.permissions
-              }
-            }
-          }
-        } catch (_) {}
-
-        // Fetch pending invites to add to total seats count
-        try {
-          const { data: invList } = await supabase.from('invites').select('id').eq('workspace_id', workspaceId)
-          seatCount += (invList || []).length
-        } catch (_) {}
-
-        setTotalSeatsUsed(seatCount)
-        const currentPlan = wsData?.billing_plan_id || wsData?.billing?.planId || wsData?.plan || 'pro'
-        const planLimits = getPlanLimits(currentPlan)
-        setMaxAllowedMembers(planLimits.maxMembers)
-
-        // Fallback 1: If user is workspace owner directly
+        // Fallback: If user is workspace owner directly
         if (!myRole && wsData && (wsData.owner_id === user.id || wsData.created_by === user.id)) {
           myRole = 'owner'
         }
@@ -169,6 +143,9 @@ export function WorkspaceProvider({ children }) {
         if (myRole) {
           setWorkspaceRole(myRole)
           setUserPermissions(myPerms)
+          try { sessionStorage.setItem(`workspace_role_${workspaceId}`, myRole) } catch (_) {}
+          // PROGRESSIVE UNLOCK: The UI shell unblocks as soon as workspace & role are verified!
+          setLoadingWorkspace(false)
         } else {
           setWorkspaceRole(null)
           setUserPermissions([])
@@ -183,8 +160,24 @@ export function WorkspaceProvider({ children }) {
               sessionStorage.removeItem('current_workspace_id')
             }
             localStorage.removeItem(`workspace_cache_${workspaceId}`)
+            sessionStorage.removeItem(`workspace_cache_${workspaceId}`)
+            sessionStorage.removeItem(`workspace_role_${workspaceId}`)
           } catch (_) {}
         }
+
+        // Step 3: Fetch secondary metrics (seat count, pending invites) in background without blocking shell
+        const currentPlan = wsData?.billing_plan_id || wsData?.billing?.planId || wsData?.plan || 'pro'
+        const planLimits = getPlanLimits(currentPlan)
+        setMaxAllowedMembers(planLimits.maxMembers)
+
+        Promise.allSettled([
+          supabase.from('workspace_members').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId),
+          supabase.from('invites').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId)
+        ]).then(([mCountRes, iCountRes]) => {
+          const membersCount = mCountRes.status === 'fulfilled' && typeof mCountRes.value?.count === 'number' ? mCountRes.value.count : 1
+          const invitesCount = iCountRes.status === 'fulfilled' && typeof iCountRes.value?.count === 'number' ? iCountRes.value.count : 0
+          setTotalSeatsUsed(membersCount + invitesCount)
+        }).catch(() => {})
       } catch (err) {
         console.error('WorkspaceContext fetchAll error:', err)
         setWorkspaceError(err?.message || 'Error loading workspace')

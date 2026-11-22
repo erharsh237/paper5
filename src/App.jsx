@@ -123,14 +123,16 @@ function WorkspaceGuard({ children }) {
   const { isLocked, isCapacityFrozen, capacityDetails, is2FABlocked, loadingWorkspace, workspace, workspaceRole, workspaceError, isAdmin, isOwner } = useWorkspace()
   const location = useLocation()
 
-  if (loadingWorkspace) return <WorkspaceSkeleton showHeader />
+  if (loadingWorkspace && !workspace) return <WorkspaceSkeleton showHeader />
   
-  if (workspaceError === 'Workspace not found' || (!workspace && !workspaceError)) {
-    return <NotFound />
-  }
+  if (!loadingWorkspace) {
+    if (workspaceError === 'Workspace not found' || (!workspace && !workspaceError)) {
+      return <NotFound />
+    }
 
-  if (workspaceError || !workspace || !workspaceRole) {
-    return <Navigate to="/workspace" replace />
+    if (workspaceError || !workspace || !workspaceRole) {
+      return <Navigate to="/workspace" replace />
+    }
   }
 
   if (is2FABlocked) {
@@ -306,9 +308,6 @@ export default function App() {
       <ScrollToTop />
       <FloatingNotice />
       <Suspense fallback={<RouteSkeleton />}>
-        {isRouteChunkLoading ? (
-          <RouteSkeleton />
-        ) : (
         <Routes>
           {/* Subdomain-aware Root Path */}
           <Route path="/" element={
@@ -399,7 +398,6 @@ export default function App() {
           
           <Route path="*" element={<NotFound />} />
         </Routes>
-        )}
       </Suspense>
       {isAppSubdomain && user && user.emailVerified && (
         <Suspense fallback={null}>

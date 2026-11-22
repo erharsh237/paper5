@@ -48,6 +48,7 @@ import {
 import { useWorkspaceBento } from './WorkspaceBentoLayout'
 import PricingModal from './PricingModal'
 import { getPlanLimits, formatPlanBadge } from '../lib/plans'
+import { fetchWorkspaceOverview, getCachedWorkspaceOverview, invalidateWorkspaceOverview } from '../lib/workspaceDataCache'
 import './AdminCommandCenter.css'
 
 export default function AdminCommandCenter({ onSwitchToPersonal }) {
@@ -68,9 +69,9 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
   // Real-time Presence
   const onlineUserIds = contextOnlineUserIds || new Set()
 
-  // State
-  const [loading, setLoading] = useState(true)
-  const [data, setData] = useState(null)
+  // Progressive Instant Hydration
+  const [data, setData] = useState(() => bentoLayout?.overviewData || getCachedWorkspaceOverview(workspaceId))
+  const [loading, setLoading] = useState(() => !bentoLayout?.overviewData && !getCachedWorkspaceOverview(workspaceId))
   const [activeTab, setActiveTab] = useState('tasks') // 'tasks' | 'projects' | 'team' | 'audit'
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedProjectFilter, setSelectedProjectFilter] = useState('all')
@@ -78,6 +79,14 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
   const [selectedPriorityFilter, setSelectedPriorityFilter] = useState('all')
   const [quickFilter, setQuickFilter] = useState('all') // 'all' | 'mine' | 'overdue' | 'stalled' | 'unassigned' | 'urgent'
   const [auditResourceFilter, setAuditResourceFilter] = useState('all')
+
+  // Sync immediately when bentoLayout overviewData is updated
+  useEffect(() => {
+    if (bentoLayout?.overviewData) {
+      setData(bentoLayout.overviewData)
+      setLoading(false)
+    }
+  }, [bentoLayout?.overviewData])
 
   // Modals
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false)
@@ -97,15 +106,12 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
     }
   }, [actionError, actionSuccess])
 
-  // Fetch Admin Overview Data
-  const fetchOverview = useCallback(async () => {
+  // Fetch Admin Overview Data with in-flight deduplication
+  const fetchOverview = useCallback(async (force = false) => {
     if (!workspaceId) return
     try {
-      const res = await fetch(`/api/admin-overview?workspaceId=${encodeURIComponent(workspaceId)}`, {
-        credentials: 'same-origin'
-      })
-      if (res.ok) {
-        const json = await res.json()
+      const json = await fetchWorkspaceOverview(workspaceId, { force })
+      if (json) {
         setData(json)
       }
     } catch (err) {
@@ -121,7 +127,10 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
 
   // Realtime updates
   useEffect(() => {
-    const handleSync = () => fetchOverview()
+    const handleSync = () => {
+      invalidateWorkspaceOverview(workspaceId)
+      fetchOverview(true)
+    }
     window.addEventListener('sprintos:data-sync', handleSync)
     window.addEventListener('sprintos:deadlines-updated', handleSync)
     window.addEventListener('sprintos:sprints-updated', handleSync)
@@ -132,7 +141,7 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
       window.removeEventListener('sprintos:sprints-updated', handleSync)
       window.removeEventListener('p5:workspace-updated', handleSync)
     }
-  }, [fetchOverview])
+  }, [fetchOverview, workspaceId])
 
   const overview = data?.overview || {}
   const projects = data?.projects || []

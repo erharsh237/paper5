@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate, Link } from 'react-router-dom'
 import { useWorkspace } from '../lib/WorkspaceContext'
 import { useAuth } from '../lib/AuthContext'
 import { formatPlanBadge } from '../lib/plans'
+import { fetchWorkspaceOverview, getCachedWorkspaceOverview, invalidateWorkspaceOverview } from '../lib/workspaceDataCache'
 import Paper5Logo from './Paper5Logo'
 import NotificationBell from './NotificationBell'
 import UserMenu from './UserMenu'
@@ -54,16 +55,17 @@ export default function WorkspaceBentoLayout({ children }) {
   // Real-time Presence
   const onlineUserIds = contextOnlineUserIds || new Set()
 
-  // Workspace cached data for topbar modals and presence
-  const [teamMembers, setTeamMembers] = useState([])
-  const [projects, setProjects] = useState([])
+  // Workspace cached data for topbar modals, presence, and child views
+  const [overviewData, setOverviewData] = useState(() => getCachedWorkspaceOverview(workspaceId))
+  const [teamMembers, setTeamMembers] = useState(() => getCachedWorkspaceOverview(workspaceId)?.members || [])
+  const [projects, setProjects] = useState(() => getCachedWorkspaceOverview(workspaceId)?.sprints || [])
 
-  const fetchWorkspaceData = useCallback(async () => {
+  const fetchWorkspaceData = useCallback(async (force = false) => {
     if (!workspaceId) return
     try {
-      const resp = await fetch(`/api/admin?workspaceId=${encodeURIComponent(workspaceId)}&action=overview`)
-      if (resp.ok) {
-        const json = await resp.json()
+      const json = await fetchWorkspaceOverview(workspaceId, { force })
+      if (json) {
+        setOverviewData(json)
         setTeamMembers(json.members || [])
         setProjects(json.sprints || [])
       }
@@ -77,11 +79,18 @@ export default function WorkspaceBentoLayout({ children }) {
   // Listen for cross-component workspace updates
   useEffect(() => {
     const handleWorkspaceUpdated = () => {
-      fetchWorkspaceData()
+      invalidateWorkspaceOverview(workspaceId)
+      fetchWorkspaceData(true)
     }
     window.addEventListener('p5:workspace-updated', handleWorkspaceUpdated)
-    return () => window.removeEventListener('p5:workspace-updated', handleWorkspaceUpdated)
-  }, [fetchWorkspaceData])
+    window.addEventListener('sprintos:data-sync', handleWorkspaceUpdated)
+    window.addEventListener('sprintos:deadlines-updated', handleWorkspaceUpdated)
+    return () => {
+      window.removeEventListener('p5:workspace-updated', handleWorkspaceUpdated)
+      window.removeEventListener('sprintos:data-sync', handleWorkspaceUpdated)
+      window.removeEventListener('sprintos:deadlines-updated', handleWorkspaceUpdated)
+    }
+  }, [fetchWorkspaceData, workspaceId])
 
   // Member online check
   const isMemberOnline = useCallback((member) => {
@@ -201,10 +210,14 @@ export default function WorkspaceBentoLayout({ children }) {
   const contextValue = useMemo(() => ({
     openNewTask: () => setIsNewTaskOpen(true),
     openNewProject: () => setIsNewProjectOpen(true),
-    refreshWorkspace: fetchWorkspaceData,
+    refreshWorkspace: () => {
+      invalidateWorkspaceOverview(workspaceId)
+      return fetchWorkspaceData(true)
+    },
+    overviewData,
     teamMembers,
     projects
-  }), [fetchWorkspaceData, teamMembers, projects])
+  }), [fetchWorkspaceData, workspaceId, overviewData, teamMembers, projects])
 
   return (
     <WorkspaceBentoContext.Provider value={contextValue}>

@@ -105,6 +105,7 @@ export default function handler(req, res) {
         `sb_access_token=; ${cookieDefaults}; Max-Age=0`,
         `sb_refresh_token=; ${cookieDefaults}; Max-Age=0`,
         `sb_expires_at=; ${clientCookieDefaults}; Max-Age=0`,
+        `sb_has_session=; ${clientCookieDefaults}; Max-Age=0`,
       ])
       return res.status(200).json({ ok: true, pending_2fa: true })
     }
@@ -125,6 +126,7 @@ export default function handler(req, res) {
       `sb_access_token=${access_token}; ${cookieDefaults}; Max-Age=${accessMaxAge}`,
       `sb_refresh_token=${refresh_token}; ${cookieDefaults}; Max-Age=${REFRESH_TOKEN_MAX_AGE}`,
       `sb_expires_at=${expires_at ?? ''}; ${clientCookieDefaults}; Max-Age=${accessMaxAge}`,
+      `sb_has_session=1; ${clientCookieDefaults}; Max-Age=${REFRESH_TOKEN_MAX_AGE}`,
       `sb_2fa_pending=; ${cookieDefaults}; Max-Age=0`,
       `sb_2fa_email=; ${cookieDefaults}; Max-Age=0`,
     ])
@@ -138,6 +140,7 @@ export default function handler(req, res) {
       `sb_access_token=; ${cookieDefaults}; Max-Age=0`,
       `sb_refresh_token=; ${cookieDefaults}; Max-Age=0`,
       `sb_expires_at=; ${clientCookieDefaults}; Max-Age=0`,
+      `sb_has_session=; ${clientCookieDefaults}; Max-Age=0`,
       `sb_2fa_pending=; ${cookieDefaults}; Max-Age=0`,
       `sb_2fa_email=; ${cookieDefaults}; Max-Age=0`,
     ])

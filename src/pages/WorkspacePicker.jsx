@@ -87,29 +87,16 @@ export default function WorkspacePicker() {
       const cleanEmail = user?.email ? user.email.trim().toLowerCase() : ''
       let targetWsId = null
 
-      // 1. Accept any real pending invites via serverless API
-      if (cleanEmail) {
-        try {
-          const resp = await fetch('/api/accept-invite', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: cleanEmail, userId })
-          })
-          const apiData = await resp.json()
-          if (apiData?.workspaceId) {
-            targetWsId = apiData.workspaceId
-          }
-        } catch (e) {
-          console.warn('Invite auto-acceptance notice in WorkspacePicker:', e)
-        }
-      }
+      // Run accept-invite check and workspace queries CONCURRENTLY to eliminate waterfall delay
+      const acceptInvitePromise = cleanEmail ? (
+        fetch('/api/accept-invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: cleanEmail, userId })
+        }).then(r => r.json()).catch(() => null)
+      ) : Promise.resolve(null)
 
-      // 2. Query workspace_members directly with joined workspace name, tier, and is_active status
-      let mapped = []
-      let memberList = null
-      let memberErr = null
-
-      const resExplicit = await supabase
+      const memberQueryPromise = supabase
         .from('workspace_members')
         .select(`
           role,
@@ -117,6 +104,16 @@ export default function WorkspacePicker() {
           workspaces!workspace_members_workspace_id_fkey ( id, name, billing_plan_id, is_active, settings )
         `)
         .eq('user_id', userId)
+
+      const [inviteRes, resExplicit] = await Promise.all([acceptInvitePromise, memberQueryPromise])
+      if (inviteRes?.workspaceId) {
+        targetWsId = inviteRes.workspaceId
+      }
+
+      // 2. Map query results
+      let mapped = []
+      let memberList = null
+      let memberErr = null
 
       if (!resExplicit.error && resExplicit.data) {
         memberList = resExplicit.data
