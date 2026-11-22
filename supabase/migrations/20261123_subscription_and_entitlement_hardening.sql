@@ -5,9 +5,10 @@
 --   0. Security helper functions for RBAC with universal text/uuid casting.
 --   1. Protect public.users billing columns against unauthorized direct client updates.
 --   2. Enforce Agile methodology entitlements on public.workspaces with grandfathering.
---   3. Provide atomic workspace provisioning with plan quota enforcement (auth.uid()).
---   4. Implement downgrade workspace management (is_active, atomic activation RPC, read-only RLS).
---   5. Refactor delete_workspace_completely to remove ALTER TABLE DISABLE TRIGGER ALL locks.
+--   3. Database-level trigger on public.workspaces to enforce plan workspace quota on ALL inserts.
+--   4. Provide atomic workspace provisioning with multi-membership quota enforcement (auth.uid()).
+--   5. Implement downgrade workspace management (is_active, atomic activation RPC, read-only RLS).
+--   6. Refactor delete_workspace_completely to remove ALTER TABLE DISABLE TRIGGER ALL locks.
 -- ==============================================================================
 
 BEGIN;
@@ -75,10 +76,10 @@ STABLE
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.workspaces w
-    WHERE w.id::text = ws_id::text AND w.created_by::text = auth.uid()::text
+    WHERE w.id::text = ws_id AND w.created_by::text = auth.uid()::text
   ) OR EXISTS (
     SELECT 1 FROM public.workspace_members wm
-    WHERE wm.workspace_id::text = ws_id::text 
+    WHERE wm.workspace_id::text = ws_id 
       AND wm.user_id::text = auth.uid()::text 
       AND wm.role IN ('admin', 'owner')
   );
@@ -111,10 +112,10 @@ STABLE
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.workspaces w
-    WHERE w.id::text = ws_id::text AND w.created_by::text = auth.uid()::text
+    WHERE w.id::text = ws_id AND w.created_by::text = auth.uid()::text
   ) OR EXISTS (
     SELECT 1 FROM public.workspace_members wm
-    WHERE wm.workspace_id::text = ws_id::text 
+    WHERE wm.workspace_id::text = ws_id 
       AND wm.user_id::text = auth.uid()::text 
       AND wm.role = 'owner'
   );
@@ -153,12 +154,20 @@ FOR EACH ROW
 EXECUTE FUNCTION public.protect_user_subscription_fields();
 
 -- ------------------------------------------------------------------------------
--- 2. AGILE ENTITLEMENT ENFORCEMENT & GRANDFATHERING
+-- 2. AGILE ENTITLEMENT ENFORCEMENT & GRANDFATHERING & WORKSPACE BACKFILL
 -- ------------------------------------------------------------------------------
 
 ALTER TABLE public.workspaces 
   ADD COLUMN IF NOT EXISTS grandfathered_workflow TEXT DEFAULT NULL,
   ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
+
+-- Backfill any workspaces where created_by is null from workspace_members
+UPDATE public.workspaces w
+SET created_by = wm.user_id
+FROM public.workspace_members wm
+WHERE wm.workspace_id = w.id
+  AND wm.role = 'owner'
+  AND (w.created_by IS NULL OR w.created_by::text = '');
 
 -- Snapshot existing methodology configurations so existing workspaces retain them
 UPDATE public.workspaces
@@ -225,7 +234,66 @@ FOR EACH ROW
 EXECUTE FUNCTION public.enforce_workspace_workflow_entitlements();
 
 -- ------------------------------------------------------------------------------
--- 3. ATOMIC WORKSPACE PROVISIONING WITH TRUSTED CREATOR AND QUOTA ENFORCEMENT
+-- 3. STRICT WORKSPACE CREATION QUOTA TRIGGER ON PUBLIC.WORKSPACES
+-- ------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.enforce_workspace_quota()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  creator_uid UUID;
+  user_tier TEXT;
+  existing_owned_count INT;
+  max_allowed INT;
+BEGIN
+  creator_uid := COALESCE(auth.uid(), NEW.created_by::uuid);
+  IF creator_uid IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  -- Ensure NEW.created_by is set to the authenticated creator
+  NEW.created_by := creator_uid;
+
+  -- Retrieve authoritative user tier from public.users
+  SELECT COALESCE(billing_plan_id, 'starter') INTO user_tier
+  FROM public.users WHERE id::text = creator_uid::text;
+
+  IF user_tier IS NULL THEN
+    user_tier := 'starter';
+  END IF;
+
+  max_allowed := CASE 
+    WHEN user_tier IN ('pro', 'scale', 'enterprise') THEN 10
+    WHEN user_tier = 'team' THEN 5
+    ELSE 1
+  END;
+
+  -- Count all existing workspaces created by or owned/administrated by this user
+  SELECT count(DISTINCT w.id) INTO existing_owned_count
+  FROM public.workspaces w
+  LEFT JOIN public.workspace_members wm ON wm.workspace_id = w.id
+  WHERE (w.created_by::text = creator_uid::text)
+     OR (wm.user_id::text = creator_uid::text AND wm.role IN ('owner', 'admin'));
+
+  IF existing_owned_count >= max_allowed THEN
+    RAISE EXCEPTION 'Workspace quota exceeded: Your % plan allows a maximum of % workspace(s). Please upgrade to create more.', user_tier, max_allowed;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_enforce_workspace_quota ON public.workspaces;
+CREATE TRIGGER trg_enforce_workspace_quota
+BEFORE INSERT ON public.workspaces
+FOR EACH ROW
+EXECUTE FUNCTION public.enforce_workspace_quota();
+
+-- ------------------------------------------------------------------------------
+-- 4. ATOMIC WORKSPACE PROVISIONING WITH MULTI-MEMBERSHIP QUOTA ENFORCEMENT
 -- ------------------------------------------------------------------------------
 
 DROP FUNCTION IF EXISTS public.provision_new_workspace_atomic(TEXT, TEXT, TEXT, BOOLEAN, TEXT);
@@ -266,15 +334,12 @@ BEGIN
     user_tier := 'starter';
   END IF;
 
-  -- Lock existing owned workspace rows to prevent concurrent creation quota race conditions
-  PERFORM 1 FROM public.workspaces 
-  WHERE created_by::text = caller_uid::text
-  FOR UPDATE;
-
-  -- Enforce Plan Quota Limits
-  SELECT count(*) INTO existing_owned_count
-  FROM public.workspaces
-  WHERE created_by::text = caller_uid::text;
+  -- Enforce Plan Quota Limits across both created_by and workspace_members
+  SELECT count(DISTINCT w.id) INTO existing_owned_count
+  FROM public.workspaces w
+  LEFT JOIN public.workspace_members wm ON wm.workspace_id = w.id
+  WHERE (w.created_by::text = caller_uid::text)
+     OR (wm.user_id::text = caller_uid::text AND wm.role IN ('owner', 'admin'));
 
   max_allowed := CASE 
     WHEN user_tier IN ('pro', 'scale', 'enterprise') THEN 10
@@ -393,7 +458,25 @@ $$;
 GRANT EXECUTE ON FUNCTION public.create_new_workspace(TEXT, UUID, UUID) TO authenticated, service_role;
 
 -- ------------------------------------------------------------------------------
--- 4. DOWNGRADE & READ-ONLY WORKSPACE DATA PROTECTION
+-- 5. WORKSPACE AND MEMBERS ROBUST SELECT RLS POLICIES
+-- ------------------------------------------------------------------------------
+
+DROP POLICY IF EXISTS "Members can view their workspaces" ON public.workspaces;
+CREATE POLICY "Members can view their workspaces" ON public.workspaces
+FOR SELECT USING (
+  created_by::text = auth.uid()::text 
+  OR public.is_workspace_member(id)
+);
+
+DROP POLICY IF EXISTS "Members can view workspace member roster" ON public.workspace_members;
+CREATE POLICY "Members can view workspace member roster" ON public.workspace_members
+FOR SELECT USING (
+  user_id::text = auth.uid()::text
+  OR public.is_workspace_member(workspace_id)
+);
+
+-- ------------------------------------------------------------------------------
+-- 6. DOWNGRADE & READ-ONLY WORKSPACE DATA PROTECTION
 -- ------------------------------------------------------------------------------
 
 DROP FUNCTION IF EXISTS public.set_single_active_workspace(UUID);
@@ -463,7 +546,7 @@ FOR DELETE USING (
 );
 
 -- ------------------------------------------------------------------------------
--- 5. SAFE WORKSPACE DELETION (REMOVING TABLE LOCKS)
+-- 7. SAFE WORKSPACE DELETION (REMOVING TABLE LOCKS)
 -- ------------------------------------------------------------------------------
 
 -- Update compliance trigger to check transaction-scoped setting
@@ -567,7 +650,7 @@ $$;
 GRANT EXECUTE ON FUNCTION public.delete_workspace_completely(UUID) TO authenticated, service_role;
 
 -- ------------------------------------------------------------------------------
--- 6. MEMBER QUOTA ENFORCEMENT & INACTIVE WORKSPACE RLS ON OPERATIONAL TABLES
+-- 8. MEMBER QUOTA ENFORCEMENT & INACTIVE WORKSPACE RLS ON OPERATIONAL TABLES
 -- ------------------------------------------------------------------------------
 
 DROP TRIGGER IF EXISTS trg_enforce_workspace_member_limit ON public.workspace_members;
