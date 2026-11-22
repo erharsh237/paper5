@@ -51,18 +51,9 @@ export default function WorkspacePicker() {
     return null
   }, [location.search])
 
-  // Derive effective tier across user record and owned workspaces
+  // Derive authoritative tier exclusively from database-backed user record and verified workspaces (never localStorage)
   const userPlan = useMemo(() => {
     let rawUserPlan = (userData?.billing_plan_id || user?.user_metadata?.plan || '').toLowerCase().trim()
-    if (!rawUserPlan || rawUserPlan === 'unselected' || rawUserPlan === 'none' || rawUserPlan === 'member') {
-      try {
-        const stored = localStorage.getItem('sprintos_selected_plan')
-        if (stored) {
-          const clean = stored.toLowerCase().trim()
-          rawUserPlan = (clean === 'free') ? 'starter' : (clean === 'scale' ? 'pro' : clean)
-        }
-      } catch (_) {}
-    }
     if (['pro', 'scale', 'enterprise'].includes(rawUserPlan)) return 'pro'
     if (rawUserPlan === 'team') return 'team'
     if (rawUserPlan === 'starter' || rawUserPlan === 'free') return 'starter'

@@ -43,10 +43,14 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required workspaceId parameter' })
   }
 
-  // 1. Authenticate caller and verify admin/owner rights
+  // 1. Authenticate caller and strictly enforce workspace OWNER authorization
   const authRes = await verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { requireAdmin: true })
   if (authRes.error) {
     return res.status(authRes.status || 403).json({ error: authRes.error })
+  }
+
+  if (!authRes.isOwner) {
+    return res.status(403).json({ error: 'Forbidden: Only the workspace owner is authorized to permanently delete this workspace.' })
   }
 
   const actorId = authRes.user.id

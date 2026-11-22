@@ -63,10 +63,9 @@ export default async function handler(req, res) {
           .maybeSingle()
 
         if (existing) {
-          if (body.billing_plan_id || body.billing_status || body.legal_accepted_at) {
+          // Security: Never permit client callers to manipulate billing fields via ensure_user.
+          if (body.legal_accepted_version || body.legal_accepted_at) {
             const updateData = {}
-            if (body.billing_plan_id) updateData.billing_plan_id = body.billing_plan_id
-            if (body.billing_status) updateData.billing_status = body.billing_status
             if (body.legal_accepted_version) updateData.legal_accepted_version = body.legal_accepted_version
             if (body.legal_accepted_at) updateData.legal_accepted_at = body.legal_accepted_at
             await supabaseAdmin.from('users').update(updateData).eq('id', targetUid)
@@ -81,8 +80,8 @@ export default async function handler(req, res) {
           id: targetUid,
           email: targetEmail,
           username,
-          billing_plan_id: body.billing_plan_id || 'unselected',
-          billing_status: body.billing_status || 'active',
+          billing_plan_id: 'starter',
+          billing_status: 'active',
           legal_accepted_version: body.legal_accepted_version || '1.0.0',
           legal_accepted_at: body.legal_accepted_at || new Date().toISOString()
         }
@@ -127,8 +126,8 @@ export default async function handler(req, res) {
       return await handleGetMembers(req, res, supabaseAdmin, workspaceId, serviceKey, authRes)
     }
 
-    // All modification actions REQUIRE workspace admin or owner privileges
-    const authRes = await verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { requireAdmin: true })
+    // All modification actions REQUIRE workspace admin or owner privileges and active workspace
+    const authRes = await verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { requireAdmin: true, requireActive: true })
     if (authRes.error) {
       return res.status(authRes.status || 403).json({ error: authRes.error })
     }
@@ -137,6 +136,18 @@ export default async function handler(req, res) {
       if (action === 'create_invite' || action === 'add_member_by_email') {
         const targetEmail = (body.email || '').trim().toLowerCase()
         if (!targetEmail) return res.status(400).json({ error: 'Missing email' })
+        
+        // Enforce member quota server-side
+        const { count: currentMemberCount } = await supabaseAdmin
+          .from('workspace_members')
+          .select('id', { count: 'exact', head: true })
+          .eq('workspace_id', workspaceId)
+
+        if (currentMemberCount !== null && currentMemberCount >= authRes.maxMembers) {
+          return res.status(403).json({
+            error: `Member quota exceeded: Your ${authRes.plan.toUpperCase()} plan allows up to ${authRes.maxMembers} members per workspace. Please upgrade to add more squad members.`
+          })
+        }
         
         let matchedUid = null
         let matchedName = null

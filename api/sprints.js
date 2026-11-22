@@ -46,9 +46,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing workspaceId' })
   }
 
-  // Sprints are managerial: deleting, locking, closing, archiving require workspace admin privileges
+  // Sprints are managerial: deleting, locking, closing, archiving require workspace admin privileges; all mutations require active workspace
   const requireAdmin = ['delete_sprint', 'lock_sprint', 'unlock_sprint', 'close_sprint', 'reopen_sprint', 'archive_sprint', 'unarchive_sprint'].includes(action)
-  const authRes = await verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { requireAdmin })
+  const authRes = await verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { requireAdmin, requireActive: true })
   if (authRes.error) {
     return res.status(authRes.status || 403).json({ error: authRes.error })
   }

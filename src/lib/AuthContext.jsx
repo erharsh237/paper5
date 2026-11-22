@@ -447,10 +447,22 @@ export function AuthProvider({ children }) {
         id: data.user.id, 
         email: data.user.email,
         username: cleanUsername,
-        billing_plan_id: selectedPlan,
-        billing_interval: selectedCycle,
+        billing_plan_id: 'starter',
+        billing_interval: 'monthly',
         billing_status: 'active'
-      })
+      }, { onConflict: 'id', ignoreDuplicates: true })
+
+      if (selectedPlan && selectedPlan !== 'starter') {
+        try {
+          const { selectPlanServerSide } = await import('./plans')
+          await selectPlanServerSide(selectedPlan, selectedCycle)
+        } catch (_) {}
+      }
+
+      try {
+        localStorage.removeItem('sprintos_selected_plan')
+        localStorage.removeItem('sprintos_selected_cycle')
+      } catch (_) {}
 
       // Refetch updated user profile into AuthContext state so route guards see username immediately
       const { data: updatedProfile } = await supabase.from('users').select('*').eq('id', data.user.id).maybeSingle()

@@ -62,10 +62,10 @@ export default async function handler(req, res) {
       .maybeSingle()
 
     if (existing) {
-      if (body.billing_plan_id || body.billing_status || body.legal_accepted_at) {
+      // Security: Never permit client callers to manipulate billing fields via ensure-user.
+      // Use the trusted /api/select-plan endpoint for verified subscription tier selection.
+      if (body.legal_accepted_version || body.legal_accepted_at) {
         const updateData = {}
-        if (body.billing_plan_id) updateData.billing_plan_id = body.billing_plan_id
-        if (body.billing_status) updateData.billing_status = body.billing_status
         if (body.legal_accepted_version) updateData.legal_accepted_version = body.legal_accepted_version
         if (body.legal_accepted_at) updateData.legal_accepted_at = body.legal_accepted_at
         await supabaseAdmin.from('users').update(updateData).eq('id', targetUid)
@@ -77,13 +77,13 @@ export default async function handler(req, res) {
     let username = body.username || (targetEmail ? targetEmail.split('@')[0].replace(/[^a-z0-9_]/g, '') : `user_${targetUid.slice(0, 6)}`)
     if (!username || username.length < 3) username = `user_${targetUid.slice(0, 6)}`
 
-    // 3. Upsert user record
+    // 3. Upsert user record with safe defaults (starter tier)
     const payload = {
       id: targetUid,
       email: targetEmail,
       username,
-      billing_plan_id: body.billing_plan_id || 'unselected',
-      billing_status: body.billing_status || 'active',
+      billing_plan_id: 'starter',
+      billing_status: 'active',
       legal_accepted_version: body.legal_accepted_version || '1.0.0',
       legal_accepted_at: body.legal_accepted_at || new Date().toISOString()
     }

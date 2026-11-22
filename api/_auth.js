@@ -64,7 +64,7 @@ export async function authenticateUser(req, supabaseAdmin) {
  * Enforces strict multi-tenant isolation: users cannot view or manipulate
  * data outside their assigned workspaces.
  */
-export async function verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { requireAdmin = false } = {}) {
+export async function verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { requireAdmin = false, requireActive = false } = {}) {
   const authRes = await authenticateUser(req, supabaseAdmin)
   if (authRes.error) return authRes
 
@@ -75,15 +75,23 @@ export async function verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { r
   }
 
   try {
-    // 1. Check workspace existence and ownership
+    // 1. Check workspace existence, ownership, active status, and tier
     const { data: wsRecord, error: wsErr } = await supabaseAdmin
       .from('workspaces')
-      .select('id, created_by, settings')
+      .select('id, created_by, owner_id, settings, billing_plan_id, subscription_tier, is_active')
       .eq('id', workspaceId)
       .maybeSingle()
 
     if (wsErr || !wsRecord) {
       return { error: 'Workspace not found.', status: 404 }
+    }
+
+    const isActive = wsRecord.is_active ?? true
+    if (requireActive && !isActive) {
+      return {
+        error: 'Workspace is inactive (read only). Please activate or upgrade the workspace to make changes.',
+        status: 403
+      }
     }
 
     const isDirectOwner = (wsRecord.created_by || wsRecord.owner_id) === user.id
@@ -116,10 +124,17 @@ export async function verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { r
     }
 
     const memberPermissions = wsRecord.settings?.member_permissions?.[user.id] || []
+    const rawPlan = (wsRecord.billing_plan_id || wsRecord.subscription_tier || 'starter').toLowerCase().trim()
+    const plan = (rawPlan === 'scale' || rawPlan === 'pro' || rawPlan === 'enterprise') ? 'pro' : (rawPlan === 'team' ? 'team' : 'starter')
+    const maxMembers = plan === 'pro' ? Infinity : (plan === 'team' ? 7 : 3)
 
     return {
       user,
       workspaceId,
+      workspace: wsRecord,
+      isActive,
+      plan,
+      maxMembers,
       role,
       isAdmin,
       isOwner,

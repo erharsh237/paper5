@@ -87,7 +87,38 @@ export default async function handler(req, res) {
 
     const idsList = Array.from(targetUserIds)
 
-    // 2. Clean up workspaces created or owned by this user, revoking access for all linked accounts
+    // Security Hardening: If caller is NOT deleting themselves (i.e. admin removing member from workspace),
+    // ONLY revoke membership from this specific workspace. NEVER purge their external account or other workspaces.
+    if (!isSelf) {
+      for (const id of idsList) {
+        await supabaseAdmin
+          .from('workspace_members')
+          .delete()
+          .eq('workspace_id', workspaceId)
+          .eq('user_id', id)
+      }
+
+      try {
+        const { data: wsRecord } = await supabaseAdmin.from('workspaces').select('settings').eq('id', workspaceId).maybeSingle()
+        if (wsRecord?.settings) {
+          const s = { ...wsRecord.settings }
+          if (Array.isArray(s.members)) {
+            s.members = s.members.filter(m => !idsList.includes(m.id) && !idsList.includes(m.userId) && (m.email?.toLowerCase() !== cleanEmail))
+          }
+          if (s.member_permissions) {
+            for (const id of idsList) delete s.member_permissions[id]
+            if (cleanEmail) delete s.member_permissions[cleanEmail]
+          }
+          await supabaseAdmin.from('workspaces').update({ settings: s }).eq('id', workspaceId)
+        }
+      } catch (_) {}
+
+      return res.status(200).json({
+        success: true,
+        message: 'Member removed from workspace successfully.',
+        workspaceId
+      })
+    }
     const ownedWorkspaceIds = new Set()
     for (const id of idsList) {
       try {

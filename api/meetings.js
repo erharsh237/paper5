@@ -38,7 +38,7 @@ export default async function handler(req, res) {
 
   if (!workspaceId) return res.status(400).json({ error: 'Missing workspaceId' })
 
-  const authRes = await verifyWorkspaceAccess(req, supabaseAdmin, workspaceId)
+  const authRes = await verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { requireActive: true })
   if (authRes.error) {
     return res.status(authRes.status || 403).json({ error: authRes.error })
   }

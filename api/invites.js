@@ -55,9 +55,21 @@ export default async function handler(req, res) {
     }
 
     if (workspaceId) {
-      const wsAuth = await verifyWorkspaceAccess(req, supabaseAdmin, workspaceId)
+      const wsAuth = await verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { requireAdmin: true, requireActive: true })
       if (wsAuth.error) {
         return res.status(wsAuth.status || 403).json({ error: wsAuth.error })
+      }
+
+      // Enforce member quota before dispatching invite email
+      const { count: currentMemberCount } = await supabaseAdmin
+        .from('workspace_members')
+        .select('id', { count: 'exact', head: true })
+        .eq('workspace_id', workspaceId)
+
+      if (currentMemberCount !== null && currentMemberCount >= wsAuth.maxMembers) {
+        return res.status(403).json({
+          error: `Member quota exceeded: Your ${wsAuth.plan.toUpperCase()} plan allows up to ${wsAuth.maxMembers} members per workspace. Please upgrade your plan to invite more squad members.`
+        })
       }
     } else {
       const userAuth = await authenticateUser(req, supabaseAdmin)
@@ -185,6 +197,27 @@ export default async function handler(req, res) {
                   })
                   .eq('id', existingMember.id)
               } else {
+                // Enforce plan member quota before accepting and inserting new membership
+                const { data: wsTarget } = await supabaseAdmin
+                  .from('workspaces')
+                  .select('billing_plan_id, subscription_tier, is_active')
+                  .eq('id', inv.workspace_id)
+                  .maybeSingle()
+
+                const rawPlan = (wsTarget?.billing_plan_id || wsTarget?.subscription_tier || 'starter').toLowerCase().trim()
+                const maxMembers = (rawPlan === 'pro' || rawPlan === 'scale' || rawPlan === 'enterprise') ? Infinity : (rawPlan === 'team' ? 7 : 3)
+
+                const { count: currentCount } = await supabaseAdmin
+                  .from('workspace_members')
+                  .select('id', { count: 'exact', head: true })
+                  .eq('workspace_id', inv.workspace_id)
+
+                if (currentCount !== null && currentCount >= maxMembers) {
+                  return res.status(403).json({
+                    error: `Workspace member capacity reached: This workspace has already reached its maximum allowed members (${maxMembers}). The owner must upgrade to add more members.`
+                  })
+                }
+
                 await supabaseAdmin
                   .from('workspace_members')
                   .insert({

@@ -422,11 +422,11 @@ BEGIN
       SELECT 1 FROM public.workspace_members
       WHERE workspace_id = target_workspace_id
         AND user_id = caller_uid
-        AND role IN ('owner', 'admin')
+        AND role = 'owner'
     ) INTO is_admin;
 
     IF ws_creator != caller_uid AND NOT COALESCE(is_admin, false) THEN
-      RAISE EXCEPTION 'Access denied: Only workspace owners and admins can permanently delete a workspace.';
+      RAISE EXCEPTION 'Access denied: Only workspace owners can permanently delete a workspace.';
     END IF;
   END IF;
 
@@ -460,5 +460,103 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.delete_workspace_completely(UUID) TO authenticated, service_role;
+
+-- ------------------------------------------------------------------------------
+-- 6. MEMBER QUOTA ENFORCEMENT & INACTIVE WORKSPACE RLS ON OPERATIONAL TABLES
+-- ------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.enforce_workspace_member_limit()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  ws_plan TEXT;
+  ws_active BOOLEAN;
+  current_count INT;
+  max_allowed INT;
+BEGIN
+  -- Retrieve workspace billing plan and active status
+  SELECT COALESCE(billing_plan_id, subscription_tier, 'starter'), COALESCE(is_active, true)
+  INTO ws_plan, ws_active
+  FROM public.workspaces
+  WHERE id = NEW.workspace_id;
+
+  -- Block additions to inactive workspaces
+  IF ws_active = false THEN
+    RAISE EXCEPTION 'Entitlement error: Cannot add members to an inactive workspace.';
+  END IF;
+
+  -- Pro / Scale plans have unlimited members
+  IF ws_plan IN ('pro', 'scale', 'enterprise') THEN
+    RETURN NEW;
+  END IF;
+
+  max_allowed := CASE
+    WHEN ws_plan = 'team' THEN 7
+    ELSE 3 -- Starter / Free
+  END;
+
+  SELECT count(*) INTO current_count
+  FROM public.workspace_members
+  WHERE workspace_id = NEW.workspace_id;
+
+  IF current_count >= max_allowed THEN
+    RAISE EXCEPTION 'Member limit exceeded: The % plan allows a maximum of % members per workspace.', ws_plan, max_allowed;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_enforce_workspace_member_limit ON public.workspace_members;
+CREATE TRIGGER trg_enforce_workspace_member_limit
+BEFORE INSERT ON public.workspace_members
+FOR EACH ROW
+EXECUTE FUNCTION public.enforce_workspace_member_limit();
+
+-- Operational tables inactive write blocking: sprints, meetings, evidence, extra_work
+DROP POLICY IF EXISTS "Workspace members can create sprints" ON public.sprints;
+CREATE POLICY "Workspace members can create sprints" ON public.sprints
+FOR INSERT WITH CHECK (
+  public.is_workspace_admin(workspace_id)
+  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id = workspace_id AND w.is_active = true)
+);
+
+DROP POLICY IF EXISTS "Workspace admins can update sprints" ON public.sprints;
+CREATE POLICY "Workspace admins can update sprints" ON public.sprints
+FOR UPDATE USING (
+  public.is_workspace_admin(workspace_id)
+  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id = workspace_id AND w.is_active = true)
+);
+
+DROP POLICY IF EXISTS "Workspace admins can delete sprints" ON public.sprints;
+CREATE POLICY "Workspace admins can delete sprints" ON public.sprints
+FOR DELETE USING (
+  public.is_workspace_admin(workspace_id)
+  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id = workspace_id AND w.is_active = true)
+);
+
+DROP POLICY IF EXISTS "Workspace members can create meetings" ON public.meetings;
+CREATE POLICY "Workspace members can create meetings" ON public.meetings
+FOR INSERT WITH CHECK (
+  public.is_workspace_member(workspace_id)
+  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id = workspace_id AND w.is_active = true)
+);
+
+DROP POLICY IF EXISTS "Workspace members can update meetings" ON public.meetings;
+CREATE POLICY "Workspace members can update meetings" ON public.meetings
+FOR UPDATE USING (
+  public.is_workspace_member(workspace_id)
+  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id = workspace_id AND w.is_active = true)
+);
+
+DROP POLICY IF EXISTS "Workspace members can delete meetings" ON public.meetings;
+CREATE POLICY "Workspace members can delete meetings" ON public.meetings
+FOR DELETE USING (
+  (public.is_workspace_admin(workspace_id) OR created_by = auth.uid())
+  AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id = workspace_id AND w.is_active = true)
+);
 
 COMMIT;
