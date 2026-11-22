@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Check, X, Sparkles } from 'lucide-react'
 import './PricingModal.css'
 
 const PLAN_LEVELS = {
@@ -21,8 +22,11 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
 
   const handleSelect = async (planId) => {
     setLoadingPlan(planId)
-    await onSelectPlan(planId, isAnnual ? 'annual' : 'monthly')
-    setLoadingPlan(null)
+    try {
+      await onSelectPlan(planId, isAnnual ? 'annual' : 'monthly')
+    } finally {
+      setLoadingPlan(null)
+    }
   }
 
   const normalizedCurrent = (currentPlan || 'starter').toLowerCase().trim()
@@ -33,173 +37,234 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
     const planName = targetPlanId === 'pro' || targetPlanId === 'scale' ? 'Pro' : (targetPlanId.charAt(0).toUpperCase() + targetPlanId.slice(1))
     
     if (targetLevel === currentLevel) {
-      return { label: `Continue with ${planName}`, disabled: false, className: 'btn-ghost' }
+      return { label: `Current Plan (${planName})`, disabled: true, className: 'pm-btn pm-btn-current' }
     }
     if (targetLevel < currentLevel) {
-      return { label: `Downgrade to ${planName}`, disabled: false, className: 'btn-ghost' }
+      return { label: `Switch to ${planName}`, disabled: false, className: 'pm-btn pm-btn-ghost' }
     }
-    return { label: `Select ${planName}`, disabled: false, className: 'btn-primary' }
+    return { label: targetPlanId === 'starter' ? 'Start for Free' : `Claim ${planName} Access`, disabled: false, className: 'pm-btn pm-btn-primary' }
   }
 
   return (
     <div className="pricing-modal-overlay" onClick={onClose}>
       <div className="pricing-modal-content" onClick={e => e.stopPropagation()}>
-        <button className="pricing-modal-close" onClick={onClose}>&times;</button>
+        <button className="pricing-modal-close" onClick={onClose} aria-label="Close modal">
+          <X size={18} />
+        </button>
         
-        <div className="pricing-modal-header">
+        <div className="pm-header">
+          <div className="pm-header-pill">
+            <Sparkles size={12} />
+            <span>Launch Special Offer</span>
+          </div>
           <h2>Launch Special: 100% Free Access</h2>
           <p>All features, integrations, and workspaces are completely unlocked during our early access period.</p>
 
           {/* Billing Cycle Switcher */}
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '18px' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', background: 'var(--surface-2, #EEF0F9)', padding: '4px', borderRadius: '10px', border: '1px solid var(--border-soft, #EAECF6)' }}>
+          <div className="pm-cycle-wrapper">
+            <div className="pm-cycle-container">
               <button
                 type="button"
+                className={`pm-cycle-btn ${!isAnnual ? 'active' : ''}`}
                 onClick={() => setIsAnnual(false)}
-                style={{
-                  border: 'none',
-                  padding: '6px 16px',
-                  borderRadius: '7px',
-                  fontSize: '12.5px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  background: !isAnnual ? '#FFFFFF' : 'transparent',
-                  color: !isAnnual ? 'var(--accent, #4F46E5)' : 'var(--muted, #6E7091)',
-                  boxShadow: !isAnnual ? '0 1px 4px rgba(30, 32, 80, 0.12)' : 'none',
-                  transition: 'all 0.15s ease'
-                }}
               >
                 Monthly Billing
               </button>
               <button
                 type="button"
+                className={`pm-cycle-btn ${isAnnual ? 'active' : ''}`}
                 onClick={() => setIsAnnual(true)}
-                style={{
-                  border: 'none',
-                  padding: '6px 16px',
-                  borderRadius: '7px',
-                  fontSize: '12.5px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  background: isAnnual ? '#FFFFFF' : 'transparent',
-                  color: isAnnual ? 'var(--accent, #4F46E5)' : 'var(--muted, #6E7091)',
-                  boxShadow: isAnnual ? '0 1px 4px rgba(30, 32, 80, 0.12)' : 'none',
-                  transition: 'all 0.15s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
               >
                 <span>Annual Billing</span>
-                <span style={{ fontSize: '10px', background: 'rgba(16, 185, 129, 0.12)', color: '#059669', padding: '2px 6px', borderRadius: '100px', fontWeight: 800 }}>
-                  2 Months Free (Save 20%)
-                </span>
+                <span className="pm-discount-tag">Save 20%</span>
               </button>
             </div>
           </div>
         </div>
 
-        <div className="pricing-modal-grid">
+        <div className="pm-grid">
           {/* Starter Tier */}
-          <div className="pricing-card">
-            <div className="tier-name">Starter</div>
-            <div className="tier-price">
-              <span className="amount">Free</span>
+          <div className="pm-card">
+            <div className="pm-card-header">
+              <div className="pm-tier-title">Starter</div>
+              <p className="pm-tier-desc">For solo builders and small squads establishing initial cadence.</p>
             </div>
-            <p className="tier-desc">Perfect for solo founders and tiny indie teams testing the waters.</p>
+
+            <div className="pm-price-box">
+              <div className="pm-strikethrough">
+                <span className="free-forever">Free Forever Plan</span>
+              </div>
+              <div className="pm-price-main">
+                <span className="pm-price-currency">₹</span>
+                <span className="pm-price-amount">0</span>
+                <span className="pm-price-period">/ month · forever</span>
+              </div>
+            </div>
             
             {(() => {
               const btn = getButtonProps('starter')
               return (
                 <button 
-                  className={`${btn.className} w-full`}
+                  className={btn.className}
                   onClick={() => handleSelect('starter')}
                   disabled={btn.disabled || loadingPlan === 'starter'}
-                  style={{ width: '100%' }}
                 >
                   {loadingPlan === 'starter' ? 'Updating...' : btn.label}
                 </button>
               )
             })()}
 
-            <ul className="tier-features">
-              <li>1 Workspace</li>
-              <li>Up to 3 Members</li>
-              <li>⚡ 2 Agile Workflows (Ad-hoc, Kanban)</li>
-              <li>Google Calendar Integration</li>
-              <li>Personal Focus Dashboard</li>
-              <li>Basic Sprint Tracking</li>
+            <ul className="pm-features">
+              <li className="pm-feature-item">
+                <Check size={16} className="pm-check-icon" />
+                <span>1 Active Workspace</span>
+              </li>
+              <li className="pm-feature-item">
+                <Check size={16} className="pm-check-icon" />
+                <span>Up to 3 squad members</span>
+              </li>
+              <li className="pm-feature-item">
+                <Check size={16} className="pm-check-icon" />
+                <span><strong>2 Agile Workflows</strong> (Ad-hoc, Kanban)</span>
+              </li>
+              <li className="pm-feature-item">
+                <Check size={16} className="pm-check-icon" />
+                <span>Google Calendar Sync &amp; Meeting Notes</span>
+              </li>
+              <li className="pm-feature-item">
+                <Check size={16} className="pm-check-icon" />
+                <span>Personal focus dashboard &amp; Sprint tracking</span>
+              </li>
+              <li className="pm-feature-item">
+                <Check size={16} className="pm-check-icon" />
+                <span>Community developer support</span>
+              </li>
             </ul>
           </div>
 
-          {/* Team Tier */}
-          <div className="pricing-card recommended">
-            <div className="recommended-badge">Most Popular</div>
-            <div className="tier-name">Team</div>
-            <div className="tier-price">
-              <span className="currency">₹</span>
-              <span className="amount">0</span>
-              <span className="period">{isAnnual ? '/year' : '/mo'}</span>
+          {/* Team Tier (Recommended) */}
+          <div className="pm-card recommended">
+            <div className="pm-card-badge">Recommended • Launch Access</div>
+            
+            <div className="pm-card-header">
+              <div className="pm-tier-title">Team</div>
+              <p className="pm-tier-desc">For growing product squads that need clear ownership, risk radar, and sync.</p>
             </div>
-            <p className="tier-desc">For growing startups that need to collaborate and integrate their stack.</p>
+
+            <div className="pm-price-box">
+              <div className="pm-strikethrough">
+                <span className="struck">{isAnnual ? '₹160' : '₹200'}</span>
+                <span>{isAnnual ? '/ month billed annually' : '/ month after launch'}</span>
+              </div>
+              <div className="pm-price-main">
+                <span className="pm-price-currency">₹</span>
+                <span className="pm-price-amount">0</span>
+                <span className="pm-price-period">during launch</span>
+              </div>
+            </div>
             
             {(() => {
               const btn = getButtonProps('team')
               return (
                 <button 
-                  className={`${btn.className} w-full`}
+                  className={btn.className}
                   onClick={() => handleSelect('team')}
                   disabled={btn.disabled || loadingPlan === 'team'}
-                  style={{ width: '100%' }}
                 >
                   {loadingPlan === 'team' ? 'Updating...' : btn.label}
                 </button>
               )
             })()}
 
-            <ul className="tier-features">
-              <li>Up to 5 Workspaces</li>
-              <li>Up to 7 Team Members</li>
-              <li>⚡ 6 Agile Workflows (Kanban, Scrum, XP, Lean, Scrumban)</li>
-              <li>Google Calendar &amp; GitHub Integrations</li>
-              <li>Locked Sprint Scope Control</li>
-              <li>Proof of Work Peer Verification</li>
-              <li>Sunday Sync Meeting Broadcasts</li>
+            <ul className="pm-features">
+              <li className="pm-feature-item pm-feature-lead">
+                <Check size={16} className="pm-check-icon" />
+                <span>Everything in Starter, plus:</span>
+              </li>
+              <li className="pm-feature-item">
+                <Check size={16} className="pm-check-icon" />
+                <span>Up to 5 workspaces and 7 squad members</span>
+              </li>
+              <li className="pm-feature-item">
+                <Check size={16} className="pm-check-icon" />
+                <span><strong>6 Agile Workflows</strong> (Kanban, Scrum, XP, Lean, Scrumban)</span>
+              </li>
+              <li className="pm-feature-item">
+                <Check size={16} className="pm-check-icon" />
+                <span>Google Calendar &amp; GitHub PR Sync</span>
+              </li>
+              <li className="pm-feature-item">
+                <Check size={16} className="pm-check-icon" />
+                <span>Locked sprint boundary control &amp; peer verification</span>
+              </li>
+              <li className="pm-feature-item">
+                <Check size={16} className="pm-check-icon" />
+                <span>Connected meeting decisions &amp; sync digests</span>
+              </li>
             </ul>
           </div>
 
           {/* Pro Tier */}
-          <div className="pricing-card">
-            <div className="tier-name">Pro</div>
-            <div className="tier-price">
-              <span className="currency">₹</span>
-              <span className="amount">0</span>
-              <span className="period">{isAnnual ? '/year' : '/mo'}</span>
+          <div className="pm-card">
+            <div className="pm-card-header">
+              <div className="pm-tier-title">Pro</div>
+              <p className="pm-tier-desc">For multi-squad teams requiring custom methodologies, audit reporting, and API access.</p>
             </div>
-            <p className="tier-desc">For mature teams requiring advanced reporting, automation, and support.</p>
+
+            <div className="pm-price-box">
+              <div className="pm-strikethrough">
+                <span className="struck">{isAnnual ? '₹400' : '₹500'}</span>
+                <span>{isAnnual ? '/ month billed annually' : '/ month after launch'}</span>
+              </div>
+              <div className="pm-price-main">
+                <span className="pm-price-currency">₹</span>
+                <span className="pm-price-amount">0</span>
+                <span className="pm-price-period">during launch</span>
+              </div>
+            </div>
             
             {(() => {
               const btn = getButtonProps('pro')
               return (
                 <button 
-                  className={`${btn.className} w-full`}
+                  className={btn.className}
                   onClick={() => handleSelect('pro')}
                   disabled={btn.disabled || loadingPlan === 'pro'}
-                  style={{ width: '100%' }}
                 >
                   {loadingPlan === 'pro' ? 'Updating...' : btn.label}
                 </button>
               )
             })()}
 
-            <ul className="tier-features">
-              <li>Up to 10 Workspaces</li>
-              <li>Unlimited Team Members</li>
-              <li>⚡ All 8 Agile Workflows (Spotify Model &amp; SAFe Enterprise)</li>
-              <li>All Stack Integrations (Google Calendar, GitHub, Slack, Discord, Vercel)</li>
-              <li>Advanced Velocity &amp; Risk Analytics</li>
-              <li>Strict Auditing Mode &amp; CSV Export</li>
-              <li>⚡ 1-Click API Webhook &amp; REST Sync Studio</li>
+            <ul className="pm-features">
+              <li className="pm-feature-item pm-feature-lead">
+                <Check size={16} className="pm-check-icon" />
+                <span>Everything in Team, plus:</span>
+              </li>
+              <li className="pm-feature-item">
+                <Check size={16} className="pm-check-icon" />
+                <span>Up to 10 workspaces &amp; unlimited squad members</span>
+              </li>
+              <li className="pm-feature-item">
+                <Check size={16} className="pm-check-icon" />
+                <span><strong>All 8 Agile Workflows</strong> (Spotify Squads, SAFe Enterprise)</span>
+              </li>
+              <li className="pm-feature-item">
+                <Check size={16} className="pm-check-icon" />
+                <span>All Integrations (Google Calendar, GitHub, Slack, Discord, Vercel)</span>
+              </li>
+              <li className="pm-feature-item">
+                <Check size={16} className="pm-check-icon" />
+                <span>1-Click API Webhooks &amp; REST Sync Studio</span>
+              </li>
+              <li className="pm-feature-item">
+                <Check size={16} className="pm-check-icon" />
+                <span>Compliance audit logs &amp; CSV export</span>
+              </li>
+              <li className="pm-feature-item">
+                <Check size={16} className="pm-check-icon" />
+                <span>Priority developer support</span>
+              </li>
             </ul>
           </div>
         </div>
