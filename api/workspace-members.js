@@ -323,6 +323,30 @@ export default async function handler(req, res) {
           .eq('workspace_id', workspaceId)
           .eq('user_id', memberId)
 
+        // Clean from settings.members and settings.member_permissions
+        try {
+          const { data: ws } = await supabaseAdmin
+            .from('workspaces')
+            .select('settings')
+            .eq('id', workspaceId)
+            .maybeSingle()
+          if (ws?.settings) {
+            let updated = false
+            const s = { ...ws.settings }
+            if (Array.isArray(s.members)) {
+              s.members = s.members.filter(m => (m.id || m.userId) !== memberId)
+              updated = true
+            }
+            if (s.member_permissions?.[memberId]) {
+              delete s.member_permissions[memberId]
+              updated = true
+            }
+            if (updated) {
+              await supabaseAdmin.from('workspaces').update({ settings: s }).eq('id', workspaceId)
+            }
+          }
+        } catch (_) {}
+
         await logAdminAction(supabaseAdmin, {
           workspaceId,
           actorId: authRes.user.id,

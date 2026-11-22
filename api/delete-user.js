@@ -87,38 +87,65 @@ export default async function handler(req, res) {
 
     const idsList = Array.from(targetUserIds)
 
-    // 2. Clean up workspaces created or owned by this user
+    // 2. Clean up workspaces created or owned by this user, revoking access for all linked accounts
+    const ownedWorkspaceIds = new Set()
     for (const id of idsList) {
       try {
-        const { data: ownedWorkspaces } = await supabaseAdmin
+        const { data: createdWs } = await supabaseAdmin
           .from('workspaces')
           .select('id')
-          .eq('created_by', id)
-
-        for (const ws of (ownedWorkspaces || [])) {
-          const wsId = ws.id
-          // Attempt atomic stored RPC first
-          try {
-            await supabaseAdmin.rpc('delete_workspace_completely', { target_workspace_id: wsId })
-          } catch (_) {}
-
-          // Purge invites and invites tables
-          await Promise.allSettled([
-            supabaseAdmin.from('invites').delete().eq('workspace_id', wsId),
-            supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', wsId),
-            supabaseAdmin.from('deadlines').delete().eq('workspace_id', wsId),
-            supabaseAdmin.from('sprints').delete().eq('workspace_id', wsId),
-            supabaseAdmin.from('meetings').delete().eq('workspace_id', wsId),
-            supabaseAdmin.from('audit_logs').delete().eq('workspace_id', wsId),
-            supabaseAdmin.from('evidence').delete().eq('workspace_id', wsId),
-            supabaseAdmin.from('extra_work').delete().eq('workspace_id', wsId)
-          ])
-
-          try { await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', wsId) } catch (_) {}
-          try { await supabaseAdmin.from('workspaces').delete().eq('id', wsId) } catch (_) {}
+          .or(`created_by.eq.${id},owner_id.eq.${id}`)
+        for (const w of (createdWs || [])) {
+          if (w.id) ownedWorkspaceIds.add(w.id)
         }
+      } catch (_) {}
+
+      try {
+        const { data: memberOwnedWs } = await supabaseAdmin
+          .from('workspace_members')
+          .select('workspace_id')
+          .eq('user_id', id)
+          .eq('role', 'owner')
+        for (const w of (memberOwnedWs || [])) {
+          if (w.workspace_id) ownedWorkspaceIds.add(w.workspace_id)
+        }
+      } catch (_) {}
+    }
+
+    for (const wsId of ownedWorkspaceIds) {
+      try {
+        // Attempt atomic stored RPC first
+        try {
+          await supabaseAdmin.rpc('delete_workspace_completely', { target_workspace_id: wsId })
+        } catch (_) {}
+
+        // Invalidate all pending invites immediately (invite links become dead)
+        await Promise.allSettled([
+          supabaseAdmin.from('invites').delete().eq('workspace_id', wsId),
+          supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', wsId)
+        ])
+
+        // Purge all operational data
+        await Promise.allSettled([
+          supabaseAdmin.from('deadlines').delete().eq('workspace_id', wsId),
+          supabaseAdmin.from('sprints').delete().eq('workspace_id', wsId),
+          supabaseAdmin.from('meetings').delete().eq('workspace_id', wsId),
+          supabaseAdmin.from('audit_logs').delete().eq('workspace_id', wsId),
+          supabaseAdmin.from('evidence').delete().eq('workspace_id', wsId),
+          supabaseAdmin.from('extra_work').delete().eq('workspace_id', wsId)
+        ])
+
+        // Explicitly revoke access for ALL linked accounts by purging all members
+        try {
+          await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', wsId)
+        } catch (_) {}
+
+        // Delete the workspace row
+        try {
+          await supabaseAdmin.from('workspaces').delete().eq('id', wsId)
+        } catch (_) {}
       } catch (wsErr) {
-        console.warn('Error purging owned workspaces in delete-user:', wsErr.message)
+        console.warn('Error purging owned workspace in delete-user:', wsErr.message)
       }
     }
 

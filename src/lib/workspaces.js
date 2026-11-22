@@ -895,9 +895,9 @@ export async function deleteWorkspace(workspaceId) {
       supabase.from('extra_work').delete().eq('workspace_id', workspaceId),
     ])
 
-    // Delete non-owner members first
+    // Delete all members from workspace_members to revoke access across all accounts
     try {
-      await supabase.from('workspace_members').delete().eq('workspace_id', workspaceId).neq('role', 'owner')
+      await supabase.from('workspace_members').delete().eq('workspace_id', workspaceId)
     } catch (_) {}
 
     // Delete the workspace record

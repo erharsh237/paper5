@@ -173,6 +173,16 @@ export default function WorkspacePicker() {
       }
 
       if (isMounted) {
+        // Clean stale current_workspace_id if it's no longer in the active mapped workspaces
+        try {
+          const activeIds = new Set(mapped.map(m => m.workspaceId))
+          const stored = localStorage.getItem('current_workspace_id')
+          if (stored && !activeIds.has(stored)) {
+            localStorage.removeItem('current_workspace_id')
+            sessionStorage.removeItem('current_workspace_id')
+          }
+        } catch (_) {}
+
         setWorkspaces(mapped)
         setLoading(false)
 

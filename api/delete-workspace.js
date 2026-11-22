@@ -84,13 +84,12 @@ export default async function handler(req, res) {
       supabaseAdmin.from('extra_work').delete().eq('workspace_id', workspaceId)
     ])
 
-    // 3C. Delete non-owner members from workspace_members first
+    // 3C. Delete all members from workspace_members immediately so access is revoked across all accounts
     try {
       await supabaseAdmin
         .from('workspace_members')
         .delete()
         .eq('workspace_id', workspaceId)
-        .neq('role', 'owner')
     } catch (_) {}
 
     // 3D. Delete the workspace record
@@ -102,22 +101,30 @@ export default async function handler(req, res) {
 
     if (!wsDelErr) {
       wsDeleted = true
-      // Clean up remaining membership row(s)
+      // Double clean up any remaining membership row(s)
       try {
         await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', workspaceId)
       } catch (_) {}
     } else {
       // If direct workspace delete encountered trigger or constraint:
-      // Try elevating another user or demoting first if needed, then re-delete
       console.warn('Direct workspace delete warning:', wsDelErr.message)
 
       // Fallback: If trigger on workspace_members tripped cascade:
       try {
-        // Demote all members in workspace_members to avoid owner constraint if trigger allows
         await supabaseAdmin.from('workspace_members').delete().eq('workspace_id', workspaceId)
       } catch (_) {}
 
       const { error: retryErr } = await supabaseAdmin
+        .from('workspaces')
+        .delete()
+        .eq('id', workspaceId)
+
+      if (retryErr) {
+        // If workspace deletion failed, throw sanitized error
+        throw retryErr
+      }
+      wsDeleted = true
+    }
         .from('workspaces')
         .delete()
         .eq('id', workspaceId)

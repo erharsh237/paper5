@@ -166,11 +166,6 @@ export function WorkspaceProvider({ children }) {
           myRole = 'owner'
         }
 
-        // Fallback 2: Default to member if user accepted invite or workspace data was loaded for user
-        if (!myRole && wsData) {
-          myRole = 'member'
-        }
-
         if (myRole) {
           setWorkspaceRole(myRole)
           setUserPermissions(myPerms)
@@ -178,8 +173,17 @@ export function WorkspaceProvider({ children }) {
           setWorkspaceRole(null)
           setUserPermissions([])
           if (wsData) {
-            setWorkspaceError('Access denied: You are not a member of this workspace.')
+            setWorkspaceError('Access revoked: You are not a member of this workspace.')
           }
+          try {
+            if (localStorage.getItem('current_workspace_id') === workspaceId) {
+              localStorage.removeItem('current_workspace_id')
+            }
+            if (sessionStorage.getItem('current_workspace_id') === workspaceId) {
+              sessionStorage.removeItem('current_workspace_id')
+            }
+            localStorage.removeItem(`workspace_cache_${workspaceId}`)
+          } catch (_) {}
         }
       } catch (err) {
         console.error('WorkspaceContext fetchAll error:', err)
@@ -190,16 +194,65 @@ export function WorkspaceProvider({ children }) {
     }
 
     const channelW = supabase.channel(`public:workspaces:id=eq.${workspaceId}:ws:${Math.random().toString(36).substring(7)}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'workspaces', filter: `id=eq.${workspaceId}` }, () => fetchAll())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'workspaces', filter: `id=eq.${workspaceId}` }, (payload) => {
+        if (payload?.eventType === 'DELETE') {
+          setWorkspace(null)
+          setWorkspaceRole(null)
+          setWorkspaceError('Workspace has been deleted.')
+          try {
+            localStorage.removeItem('current_workspace_id')
+            sessionStorage.removeItem('current_workspace_id')
+            localStorage.removeItem(`workspace_cache_${workspaceId}`)
+          } catch (_) {}
+        } else {
+          fetchAll()
+        }
+      })
       .subscribe()
 
-    const channelM = supabase.channel(`public:workspace_members:workspace_id=eq.${workspaceId}_user_id=eq.${user.id}:ws:${Math.random().toString(36).substring(7)}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_members', filter: `workspace_id=eq.${workspaceId}` }, () => {
+    const channelM = supabase.channel(`public:workspace_members:workspace_id=eq.${workspaceId}:ws:${Math.random().toString(36).substring(7)}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_members', filter: `workspace_id=eq.${workspaceId}` }, (payload) => {
+        if (payload?.eventType === 'DELETE' && (!payload?.old?.user_id || payload?.old?.user_id === user.id)) {
+          setWorkspaceRole(null)
+          setWorkspaceError('Access revoked: You are no longer a member of this workspace.')
+          try {
+            localStorage.removeItem('current_workspace_id')
+            sessionStorage.removeItem('current_workspace_id')
+            localStorage.removeItem(`workspace_cache_${workspaceId}`)
+          } catch (_) {}
+        }
         fetchAll()
       })
       .subscribe()
 
     const onDataSync = () => fetchAll()
+    const onWorkspaceDeleted = (e) => {
+      const delId = e?.detail?.workspaceId
+      if (!delId || delId === workspaceId) {
+        setWorkspace(null)
+        setWorkspaceRole(null)
+        setWorkspaceError('Workspace has been deleted.')
+        try {
+          localStorage.removeItem('current_workspace_id')
+          sessionStorage.removeItem('current_workspace_id')
+          localStorage.removeItem(`workspace_cache_${workspaceId}`)
+        } catch (_) {}
+      }
+    }
+
+    const onAccessRevoked = (e) => {
+      const revWsId = e?.detail?.workspaceId
+      if (!revWsId || revWsId === workspaceId) {
+        setWorkspaceRole(null)
+        setWorkspaceError('Access to this workspace has been revoked.')
+        try {
+          localStorage.removeItem('current_workspace_id')
+          sessionStorage.removeItem('current_workspace_id')
+          localStorage.removeItem(`workspace_cache_${workspaceId}`)
+        } catch (_) {}
+      }
+    }
+
     const onStorageSync = (e) => {
       if (e?.key?.startsWith('sprintos:')) {
         fetchAll()
@@ -213,6 +266,8 @@ export function WorkspaceProvider({ children }) {
 
     if (typeof window !== 'undefined') {
       window.addEventListener('sprintos:data-sync', onDataSync)
+      window.addEventListener('sprintos:workspace-deleted', onWorkspaceDeleted)
+      window.addEventListener('sprintos:access-revoked', onAccessRevoked)
       window.addEventListener('sprintos:permissions-updated', onDataSync)
       window.addEventListener('sprintos:deadlines-updated', onDataSync)
       window.addEventListener('storage', onStorageSync)
@@ -236,6 +291,8 @@ export function WorkspaceProvider({ children }) {
       clearInterval(heartbeatTimer)
       if (typeof window !== 'undefined') {
         window.removeEventListener('sprintos:data-sync', onDataSync)
+        window.removeEventListener('sprintos:workspace-deleted', onWorkspaceDeleted)
+        window.removeEventListener('sprintos:access-revoked', onAccessRevoked)
         window.removeEventListener('sprintos:permissions-updated', onDataSync)
         window.removeEventListener('sprintos:deadlines-updated', onDataSync)
         window.removeEventListener('storage', onStorageSync)
@@ -462,8 +519,106 @@ export function WorkspaceProvider({ children }) {
     updateWorkspacePlan,
   }
 
-  if (!loadingWorkspace && !workspace) {
-    return <NotFound />
+  if (!loadingWorkspace && (!workspace || !workspaceRole)) {
+    const isDeleted = !workspace
+    const title = isDeleted ? 'Workspace Unavailable' : 'Access Revoked'
+    const message = isDeleted 
+      ? 'This workspace has been permanently deleted or is no longer available. All access has been revoked.'
+      : 'Your access to this workspace has been revoked by an administrator or the workspace owner.'
+
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--bg, #FAFAFC)',
+        padding: '24px',
+        fontFamily: 'inherit',
+        color: 'var(--text, #1C1D2B)'
+      }}>
+        <div style={{
+          maxWidth: '480px',
+          width: '100%',
+          background: '#ffffff',
+          borderRadius: '16px',
+          padding: '36px 28px',
+          textAlign: 'center',
+          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.08)',
+          border: '1px solid rgba(0, 0, 0, 0.06)'
+        }}>
+          <div style={{
+            width: '60px',
+            height: '60px',
+            borderRadius: '50%',
+            background: 'rgba(239, 68, 68, 0.1)',
+            color: '#ef4444',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '26px',
+            margin: '0 auto 18px'
+          }}>
+            🔒
+          </div>
+          <h2 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 8px 0', letterSpacing: '-0.02em', color: '#111827' }}>
+            {title}
+          </h2>
+          <p style={{ fontSize: '14px', color: '#6B7280', lineHeight: 1.6, margin: '0 0 24px 0' }}>
+            {message}
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  localStorage.removeItem('current_workspace_id')
+                  sessionStorage.removeItem('current_workspace_id')
+                } catch (_) {}
+                window.location.href = '/workspace?picker=true'
+              }}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '8px',
+                background: '#09090b',
+                color: '#ffffff',
+                fontSize: '14px',
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              Choose Another Workspace
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  localStorage.clear()
+                  sessionStorage.clear()
+                  await supabase.auth.signOut()
+                } catch (_) {}
+                window.location.href = '/login'
+              }}
+              style={{
+                width: '100%',
+                padding: '10px',
+                borderRadius: '8px',
+                background: 'transparent',
+                color: '#6B7280',
+                fontSize: '13px',
+                fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              Sign out securely
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
