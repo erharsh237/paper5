@@ -41,10 +41,10 @@ STABLE
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.workspaces w
-    WHERE w.id::text = ws_id::text AND w.created_by::text = auth.uid()::text
+    WHERE w.id::text = ws_id AND w.created_by::text = auth.uid()::text
   ) OR EXISTS (
     SELECT 1 FROM public.workspace_members wm
-    WHERE wm.workspace_id::text = ws_id::text AND wm.user_id::text = auth.uid()::text
+    WHERE wm.workspace_id::text = ws_id AND wm.user_id::text = auth.uid()::text
   );
 $$;
 
@@ -451,23 +451,14 @@ FOR INSERT WITH CHECK (
 DROP POLICY IF EXISTS "Deadlines update policy" ON public.deadlines;
 CREATE POLICY "Deadlines update policy" ON public.deadlines
 FOR UPDATE USING (
-  (
-    public.is_workspace_admin(workspace_id)
-    OR (
-      public.is_workspace_member(workspace_id)
-      AND (assignee_id::text = auth.uid()::text OR created_by::text = auth.uid()::text OR assignee_id IS NULL)
-    )
-  )
+  public.is_workspace_member(workspace_id)
   AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id::text = workspace_id::text AND w.is_active = true)
 );
 
 DROP POLICY IF EXISTS "Admins or creators can delete tasks" ON public.deadlines;
 CREATE POLICY "Admins or creators can delete tasks" ON public.deadlines
 FOR DELETE USING (
-  (
-    public.is_workspace_admin(workspace_id)
-    OR (public.is_workspace_member(workspace_id) AND created_by::text = auth.uid()::text)
-  )
+  public.is_workspace_member(workspace_id)
   AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id::text = workspace_id::text AND w.is_active = true)
 );
 
@@ -535,23 +526,12 @@ SET search_path = public
 AS $$
 DECLARE
   caller_uid UUID;
-  ws_creator UUID;
-  is_admin BOOLEAN;
 BEGIN
   caller_uid := auth.uid();
 
   IF caller_uid IS NOT NULL THEN
-    SELECT created_by INTO ws_creator FROM public.workspaces WHERE id::text = target_workspace_id::text;
-    
-    SELECT EXISTS (
-      SELECT 1 FROM public.workspace_members
-      WHERE workspace_id::text = target_workspace_id::text
-        AND user_id::text = caller_uid::text
-        AND role = 'owner'
-    ) INTO is_admin;
-
-    IF ws_creator::text != caller_uid::text AND NOT COALESCE(is_admin, false) THEN
-      RAISE EXCEPTION 'Access denied: Only workspace owners can permanently delete a workspace.';
+    IF NOT (public.is_workspace_owner(target_workspace_id) OR public.is_workspace_admin(target_workspace_id)) THEN
+      RAISE EXCEPTION 'Access denied: Only workspace owners and admins can permanently delete a workspace.';
     END IF;
   END IF;
 
@@ -683,7 +663,7 @@ FOR UPDATE USING (
 DROP POLICY IF EXISTS "Workspace members can delete meetings" ON public.meetings;
 CREATE POLICY "Workspace members can delete meetings" ON public.meetings
 FOR DELETE USING (
-  (public.is_workspace_admin(workspace_id) OR created_by::text = auth.uid()::text)
+  public.is_workspace_member(workspace_id)
   AND EXISTS (SELECT 1 FROM public.workspaces w WHERE w.id::text = workspace_id::text AND w.is_active = true)
 );
 
