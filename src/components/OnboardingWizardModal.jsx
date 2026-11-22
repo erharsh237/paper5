@@ -103,24 +103,26 @@ export default function OnboardingWizardModal() {
   const publicAuthPaths = ['/login', '/signup', '/forgot-password', '/verify', '/auth/action']
   const isAuthPage = publicAuthPaths.some(p => location.pathname.startsWith(p))
 
-  // Auto-detect tier pre-selected from marketing site / signup
+  // Auto-detect tier pre-selected from marketing site / signup / user profile
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     const rawToken = params.get('p') || params.get('plan') || localStorage.getItem('sprintos_selected_plan')
     const rawCycle = params.get('cycle') || localStorage.getItem('sprintos_selected_cycle') || 'monthly'
     const decrypted = rawToken ? decryptPlanParam(rawToken) : null
+    const existingUserPlan = (userData?.billing_plan_id && userData.billing_plan_id !== 'unselected' && userData.billing_plan_id !== 'none') ? userData.billing_plan_id : null
+    const activePlan = decrypted || existingUserPlan
 
-    if (decrypted) {
-      const normalized = decrypted === 'starter' ? 'free' : (decrypted === 'scale' ? 'scale' : decrypted)
+    if (activePlan) {
+      const normalized = (activePlan === 'starter' || activePlan === 'free') ? 'free' : (activePlan === 'scale' || activePlan === 'pro') ? 'scale' : activePlan
       setSelectedTier(normalized)
       setBillingCycle(rawCycle === 'annual' ? 'annual' : 'monthly')
-      // User already selected their account tier on the marketing site — jump past Step 1 directly to Step 2
+      // User already selected their account tier on the marketing site or user profile — jump past Step 1 directly to Step 2
       setStep(2)
     } else {
-      // Direct account creation — user did NOT pick a plan on the website, show Step 1
+      // Direct account creation without a selected plan — show Step 1
       setStep(1)
     }
-  }, [location.search])
+  }, [location.search, userData?.billing_plan_id])
 
   // Determine if the user is the FIRST ADMIN creator vs an invited member/co-admin
   useEffect(() => {

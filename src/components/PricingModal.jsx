@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, X, Sparkles } from 'lucide-react'
+import { Check, X } from 'lucide-react'
 import './PricingModal.css'
 
 const PLAN_LEVELS = {
@@ -37,7 +37,7 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
     const planName = targetPlanId === 'pro' || targetPlanId === 'scale' ? 'Pro' : (targetPlanId.charAt(0).toUpperCase() + targetPlanId.slice(1))
     
     if (targetLevel === currentLevel) {
-      return { label: `Current Plan (${planName})`, disabled: true, className: 'pm-btn pm-btn-current' }
+      return { label: `Continue with ${planName}`, disabled: false, className: 'pm-btn pm-btn-primary' }
     }
     if (targetLevel < currentLevel) {
       return { label: `Switch to ${planName}`, disabled: false, className: 'pm-btn pm-btn-ghost' }
@@ -53,10 +53,6 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
         </button>
         
         <div className="pm-header">
-          <div className="pm-header-pill">
-            <Sparkles size={12} />
-            <span>Launch Special Offer</span>
-          </div>
           <h2>Launch Special: 100% Free Access</h2>
           <p>All features, integrations, and workspaces are completely unlocked during our early access period.</p>
 
@@ -142,10 +138,8 @@ export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPla
             </ul>
           </div>
 
-          {/* Team Tier (Recommended) */}
+          {/* Team Tier */}
           <div className="pm-card recommended">
-            <div className="pm-card-badge">Recommended • Launch Access</div>
-            
             <div className="pm-card-header">
               <div className="pm-tier-title">Team</div>
               <p className="pm-tier-desc">For growing product squads that need clear ownership, risk radar, and sync.</p>

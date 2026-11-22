@@ -55,7 +55,16 @@ export default function WorkspacePicker() {
 
   // Derive effective tier across user record and owned workspaces
   const userPlan = useMemo(() => {
-    const rawUserPlan = (userData?.billing_plan_id || user?.user_metadata?.plan || '').toLowerCase().trim()
+    let rawUserPlan = (userData?.billing_plan_id || user?.user_metadata?.plan || '').toLowerCase().trim()
+    if (!rawUserPlan || rawUserPlan === 'unselected' || rawUserPlan === 'none') {
+      try {
+        const stored = localStorage.getItem('sprintos_selected_plan')
+        if (stored) {
+          const clean = stored.toLowerCase().trim()
+          rawUserPlan = (clean === 'free') ? 'starter' : (clean === 'scale' ? 'pro' : clean)
+        }
+      } catch (_) {}
+    }
     if (['pro', 'scale', 'enterprise'].includes(rawUserPlan)) return 'pro'
     if (rawUserPlan === 'team') return 'team'
     if (rawUserPlan === 'starter' || rawUserPlan === 'free') return 'starter'
@@ -70,12 +79,12 @@ export default function WorkspacePicker() {
       }
     }
 
-    return rawUserPlan || 'starter'
+    return 'starter'
   }, [userData?.billing_plan_id, user?.user_metadata?.plan, workspaces])
 
   const planLimits = getPlanLimits(userPlan)
   const maxWorkspaces = planLimits.maxWorkspaces || 10
-  const hasActivePaidPlan = ['starter', 'team', 'scale', 'pro'].includes(userPlan?.toLowerCase()) || (userData?.billing_status === 'active' && userPlan !== 'free' && userPlan !== 'member')
+  const isRevokedMember = userData?.billing_plan_id === 'member'
 
   useEffect(() => {
     if (!userId) {
@@ -276,8 +285,8 @@ export default function WorkspacePicker() {
     )
   }
 
-  // If user has 0 workspaces and no paid plan: Show Access Restricted / Upgrade Screen
-  if (workspaces.length === 0 && !hasActivePaidPlan) {
+  // Only show Access Restricted lockout if user is strictly a member whose workspace access was removed
+  if (workspaces.length === 0 && isRevokedMember) {
     return (
       <div className="workspace-picker-page">
         <div className="wp-bg-elements" aria-hidden="true">
@@ -309,7 +318,7 @@ export default function WorkspacePicker() {
           </h2>
           
           <p style={{ fontSize: '14px', color: 'var(--text-secondary, #6B7280)', lineHeight: 1.6, marginBottom: '28px' }}>
-            Your account is not currently a member of any active workspace. To access Paper5, you must either be invited by a workspace administrator or subscribe to a plan.
+            Your account is not currently a member of any active workspace. You can start your own team workspace with Paper5.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
@@ -317,9 +326,9 @@ export default function WorkspacePicker() {
               type="button"
               className="btn-primary"
               style={{ width: '100%', maxWidth: '280px', padding: '12px 20px', fontSize: '14px', fontWeight: 700, borderRadius: '8px' }}
-              onClick={() => setShowPricingModal(true)}
+              onClick={handleOpenCreateWorkspace}
             >
-              View Plans & Upgrade
+              + Create Your Workspace
             </button>
             
             <button
@@ -332,13 +341,6 @@ export default function WorkspacePicker() {
             </button>
           </div>
         </div>
-
-        <PricingModal
-          isOpen={showPricingModal}
-          onClose={() => setShowPricingModal(false)}
-          currentPlan={userPlan}
-          onSelectPlan={handleSelectPlan}
-        />
       </div>
     )
   }
@@ -357,6 +359,13 @@ export default function WorkspacePicker() {
     setSelectedWorkflow(initialWf)
     setShowCreateModal(true)
   }
+
+  // Auto-open workspace creation modal if the user has 0 workspaces so they can start immediately
+  useEffect(() => {
+    if (!loading && workspaces.length === 0 && !isRevokedMember && !showCreateModal && !isCreating) {
+      handleOpenCreateWorkspace()
+    }
+  }, [loading, workspaces.length, isRevokedMember])
 
   const isPickerForced = location.search.includes('picker=true') || window.location.search.includes('picker=true') || location.search.includes('create=true')
   
@@ -393,6 +402,34 @@ export default function WorkspacePicker() {
         </div>
 
         <div className="wp-grid-list">
+          {workspaces.length === 0 && (
+            <div style={{
+              gridColumn: '1 / -1',
+              padding: '36px 24px',
+              textAlign: 'center',
+              background: '#ffffff',
+              border: '1px dashed #d4d4d8',
+              borderRadius: '16px',
+              marginBottom: '16px'
+            }}>
+              <div style={{ fontSize: '32px', marginBottom: '12px' }}>🚀</div>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 6px 0', color: '#09090b' }}>
+                Create Your First Workspace
+              </h3>
+              <p style={{ fontSize: '13.5px', color: '#71717a', margin: '0 0 20px 0', maxWidth: '420px', marginLeft: 'auto', marginRight: 'auto' }}>
+                You are on the <strong>{formatPlanBadge(userPlan)}</strong> plan. Configure your workspace preferences to get started.
+              </p>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={handleOpenCreateWorkspace}
+                style={{ padding: '12px 28px', fontSize: '14px', fontWeight: 700, borderRadius: '8px' }}
+              >
+                + Create Workspace
+              </button>
+            </div>
+          )}
+
           {workspaces.map((ws) => {
             const isCurrent = Boolean(
               currentWsId && (
@@ -443,13 +480,15 @@ export default function WorkspacePicker() {
             )
           })}
 
-          <button 
-            type="button"
-            className="wp-create-btn"
-            onClick={handleOpenCreateWorkspace}
-          >
-            + Create New Workspace
-          </button>
+          {workspaces.length > 0 && (
+            <button 
+              type="button"
+              className="wp-create-btn"
+              onClick={handleOpenCreateWorkspace}
+            >
+              + Create New Workspace
+            </button>
+          )}
         </div>
 
         <div className="wp-footer">

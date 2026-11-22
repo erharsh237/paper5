@@ -95,28 +95,6 @@
   margin-bottom: 32px;
 }
 
-.pm-header-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  color: #059669;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  padding: 4px 12px;
-  border-radius: 100px;
-  margin-bottom: 12px;
-}
-
-[data-theme="dark"] .pm-header-pill {
-  background: rgba(16, 185, 129, 0.15);
-  border-color: rgba(16, 185, 129, 0.3);
-  color: #34d399;
-}
-
 .pm-header h2 {
   font-size: 26px;
   font-weight: 800;
@@ -251,27 +229,6 @@
 [data-theme="dark"] .pm-card.recommended {
   border-color: #818cf8;
   box-shadow: 0 16px 36px -10px rgba(99, 102, 241, 0.25);
-}
-
-.pm-card-badge {
-  position: absolute;
-  top: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #09090b;
-  color: #ffffff;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 4px 14px;
-  border-radius: 100px;
-  white-space: nowrap;
-}
-
-[data-theme="dark"] .pm-card-badge {
-  background: #818cf8;
-  color: #09090b;
 }
 
 /* Card Header */

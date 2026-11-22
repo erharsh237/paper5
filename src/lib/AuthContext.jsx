@@ -416,7 +416,7 @@ export function AuthProvider({ children }) {
       throw error
     }
     
-    // Update public.users with guaranteed unique username
+    // Update public.users with guaranteed unique username and selected plan
     if (data?.user) {
       setUser({
         ...data.user,
@@ -424,11 +424,32 @@ export function AuthProvider({ children }) {
         emailVerified: true
       })
 
+      let selectedPlan = 'starter'
+      let selectedCycle = 'monthly'
+      try {
+        const storedPlan = localStorage.getItem('sprintos_selected_plan')
+        if (storedPlan) {
+          const cleanP = storedPlan.toLowerCase().trim()
+          if (['starter', 'free', 'team', 'pro', 'scale'].includes(cleanP)) {
+            selectedPlan = (cleanP === 'free') ? 'starter' : (cleanP === 'scale' ? 'pro' : cleanP)
+          }
+        }
+        const storedCycle = localStorage.getItem('sprintos_selected_cycle')
+        if (storedCycle) {
+          const cleanC = storedCycle.toLowerCase().trim()
+          if (['monthly', 'annual'].includes(cleanC)) {
+            selectedCycle = cleanC
+          }
+        }
+      } catch (_) {}
+
       await supabase.from('users').upsert({ 
         id: data.user.id, 
         email: data.user.email,
         username: cleanUsername,
-        billing_plan_id: 'unselected'
+        billing_plan_id: selectedPlan,
+        billing_interval: selectedCycle,
+        billing_status: 'active'
       })
 
       // Refetch updated user profile into AuthContext state so route guards see username immediately
@@ -436,8 +457,8 @@ export function AuthProvider({ children }) {
       if (updatedProfile) {
         updatedProfile.legalAcceptedVersion = updatedProfile.legal_accepted_version
         updatedProfile.legalAcceptedAt = updatedProfile.legal_accepted_at
-        updatedProfile.billingStatus = updatedProfile.billing_status
-        updatedProfile.billingPlanId = updatedProfile.billing_plan_id
+        updatedProfile.billingStatus = updatedProfile.billing_status || 'active'
+        updatedProfile.billingPlanId = updatedProfile.billing_plan_id || selectedPlan
         updatedProfile.requiresPasswordReset = updatedProfile.requires_password_reset
         setUserData(updatedProfile)
       } else {
@@ -445,8 +466,10 @@ export function AuthProvider({ children }) {
           id: data.user.id,
           email: data.user.email,
           username,
-          billing_plan_id: 'unselected',
-          billingPlanId: 'unselected'
+          billing_plan_id: selectedPlan,
+          billingPlanId: selectedPlan,
+          billing_interval: selectedCycle,
+          billing_status: 'active'
         })
       }
     }
