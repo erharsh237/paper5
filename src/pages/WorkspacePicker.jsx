@@ -207,6 +207,28 @@ export default function WorkspacePicker() {
     }
   }, [userId, user?.email, navigate])
 
+  const isAdmin = useMemo(() => workspaces.some(w => w.role === 'owner' || w.role === 'admin'), [workspaces])
+  const ownedCount = useMemo(() => workspaces.filter(w => w.role === 'owner' || w.role === 'admin').length, [workspaces])
+  const canCreateDirectly = ownedCount < maxWorkspaces
+
+  const handleOpenCreateWorkspace = () => {
+    if (ownedCount >= maxWorkspaces) {
+      setShowPricingModal(true)
+      return
+    }
+    setModalStep(1)
+    const initialWf = isWorkflowUnlocked('kanban', userPlan) ? 'kanban' : 'adhoc'
+    setSelectedWorkflow(initialWf)
+    setShowCreateModal(true)
+  }
+
+  // Auto-open workspace creation modal if the user has 0 workspaces so they can start immediately
+  useEffect(() => {
+    if (!loading && workspaces.length === 0 && !isRevokedMember && !showCreateModal && !isCreating) {
+      handleOpenCreateWorkspace()
+    }
+  }, [loading, workspaces.length, isRevokedMember, showCreateModal, isCreating])
+
   const handleNextStep = (e) => {
     if (e) e.preventDefault()
     if (!newName.trim()) return
@@ -344,28 +366,6 @@ export default function WorkspacePicker() {
       </div>
     )
   }
-
-  const isAdmin = workspaces.some(w => w.role === 'owner' || w.role === 'admin')
-  const ownedCount = workspaces.filter(w => w.role === 'owner' || w.role === 'admin').length
-  const canCreateDirectly = ownedCount < maxWorkspaces
-
-  const handleOpenCreateWorkspace = () => {
-    if (ownedCount >= maxWorkspaces) {
-      setShowPricingModal(true)
-      return
-    }
-    setModalStep(1)
-    const initialWf = isWorkflowUnlocked('kanban', userPlan) ? 'kanban' : 'adhoc'
-    setSelectedWorkflow(initialWf)
-    setShowCreateModal(true)
-  }
-
-  // Auto-open workspace creation modal if the user has 0 workspaces so they can start immediately
-  useEffect(() => {
-    if (!loading && workspaces.length === 0 && !isRevokedMember && !showCreateModal && !isCreating) {
-      handleOpenCreateWorkspace()
-    }
-  }, [loading, workspaces.length, isRevokedMember])
 
   const isPickerForced = location.search.includes('picker=true') || window.location.search.includes('picker=true') || location.search.includes('create=true')
   
