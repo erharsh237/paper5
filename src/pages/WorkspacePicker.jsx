@@ -210,7 +210,8 @@ export default function WorkspacePicker() {
     setCreateError('')
     setIsCreating(true)
     try {
-      const newId = await createWorkspace(userId, user.email, newName.trim(), teamSize, selectedWorkflow, saveData, userPlan)
+      const userCycle = userData?.billing_interval || 'monthly'
+      const newId = await createWorkspace(userId, user.email, newName.trim(), teamSize, selectedWorkflow, saveData, userPlan, userCycle)
       navigate(`/${newId}`)
     } catch (err) {
       console.error('Failed to create workspace:', err)
@@ -220,13 +221,14 @@ export default function WorkspacePicker() {
     }
   }
 
-  const handleSelectPlan = async (planId) => {
+  const handleSelectPlan = async (planId, cycle = 'monthly') => {
     try {
-      await ensureUserRecordExists(userId, user?.email, { billing_plan_id: planId, billing_status: 'active' })
-      await supabase.from('users').update({ billing_plan_id: planId, billing_status: 'active' }).eq('id', userId)
+      await ensureUserRecordExists(userId, user?.email, { billing_plan_id: planId, billing_status: 'active', billing_interval: cycle })
+      await supabase.from('users').update({ billing_plan_id: planId, billing_status: 'active', billing_interval: cycle }).eq('id', userId)
       if (userData) {
         userData.billing_plan_id = planId
         userData.billingPlanId = planId
+        userData.billing_interval = cycle
       }
       setShowPricingModal(false)
       setModalStep(1)

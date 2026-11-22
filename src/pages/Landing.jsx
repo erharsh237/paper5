@@ -110,6 +110,7 @@ export default function Landing() {
   const [activeFeatureTab, setActiveFeatureTab] = useState('github')
   const [mobileActivePillar, setMobileActivePillar] = useState(0)
   const [activeOriginIndex, setActiveOriginIndex] = useState(0)
+  const [billingCycle, setBillingCycle] = useState('monthly')
   const { user } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
@@ -139,8 +140,8 @@ export default function Landing() {
   }
 
   const handlePlanClick = (planId) => {
-    trackEvent('pricing_plan_click', { plan: planId, source: 'landing_pricing' })
-    window.open(getAppUrl(`/signup?plan=${planId}`), '_blank', 'noopener,noreferrer')
+    trackEvent('pricing_plan_click', { plan: planId, cycle: billingCycle, source: 'landing_pricing' })
+    window.open(getAppUrl(`/signup?plan=${planId}&cycle=${billingCycle}`), '_blank', 'noopener,noreferrer')
   }
 
   const scrollToSection = (e, sectionId) => {
@@ -905,6 +906,54 @@ export default function Landing() {
               </p>
             </div>
 
+            {/* Monthly / Annual Billing Toggle */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '32px' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', background: 'var(--surface-2, #EEF0F9)', padding: '4px', borderRadius: '12px', border: '1px solid var(--border-soft, #EAECF6)' }}>
+                <button
+                  type="button"
+                  onClick={() => setBillingCycle('monthly')}
+                  style={{
+                    border: 'none',
+                    padding: '8px 20px',
+                    borderRadius: '8px',
+                    fontSize: '13.5px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: billingCycle === 'monthly' ? '#FFFFFF' : 'transparent',
+                    color: billingCycle === 'monthly' ? 'var(--text, #1C1D2B)' : 'var(--muted, #6E7091)',
+                    boxShadow: billingCycle === 'monthly' ? '0 2px 6px rgba(0, 0, 0, 0.08)' : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  Monthly Billing
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBillingCycle('annual')}
+                  style={{
+                    border: 'none',
+                    padding: '8px 20px',
+                    borderRadius: '8px',
+                    fontSize: '13.5px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: billingCycle === 'annual' ? '#FFFFFF' : 'transparent',
+                    color: billingCycle === 'annual' ? 'var(--text, #1C1D2B)' : 'var(--muted, #6E7091)',
+                    boxShadow: billingCycle === 'annual' ? '0 2px 6px rgba(0, 0, 0, 0.08)' : 'none',
+                    transition: 'all 0.15s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <span>Annual Billing</span>
+                  <span style={{ fontSize: '11px', background: 'rgba(16, 185, 129, 0.15)', color: '#059669', padding: '2px 8px', borderRadius: '100px', fontWeight: 800 }}>
+                    Save 20%
+                  </span>
+                </button>
+              </div>
+            </div>
+
             <div className="pricing-grid ">
               {/* Starter Tier */}
               <div className="pricing-card">
@@ -946,8 +995,8 @@ export default function Landing() {
                 </div>
                 <div className="tier-price-box">
                   <div className="tier-future-strikethrough">
-                    <span className="struck-price">{PLANS.team.futurePrice}</span>
-                    <span className="future-period">{PLANS.team.period}</span>
+                    <span className="struck-price">{billingCycle === 'annual' ? '₹160' : PLANS.team.futurePrice}</span>
+                    <span className="future-period">{billingCycle === 'annual' ? '/ month billed annually' : PLANS.team.period}</span>
                   </div>
                   <div className="tier-launch-active">
                     <span className="currency">₹</span>
@@ -976,8 +1025,8 @@ export default function Landing() {
                 </div>
                 <div className="tier-price-box">
                   <div className="tier-future-strikethrough">
-                    <span className="struck-price">{PLANS.scale.futurePrice}</span>
-                    <span className="future-period">{PLANS.scale.period}</span>
+                    <span className="struck-price">{billingCycle === 'annual' ? '₹400' : PLANS.scale.futurePrice}</span>
+                    <span className="future-period">{billingCycle === 'annual' ? '/ month billed annually' : PLANS.scale.period}</span>
                   </div>
                   <div className="tier-launch-active">
                     <span className="currency">₹</span>
@@ -987,7 +1036,7 @@ export default function Landing() {
                 </div>
                 <button 
                   className="btn-ghost w-full"
-                  onClick={() => handlePlanClick('scale')}
+                  onClick={() => handlePlanClick('pro')}
                 >
                   {PLANS.scale.ctaText}
                 </button>

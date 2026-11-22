@@ -7,11 +7,11 @@ export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspac
   const [alertMessage, setAlertMessage] = useState(null)
   
   // Auto-detect or toggle billing cycle (Monthly vs Annual)
-  const initialCycle = workspace?.billing_interval || workspace?.billing?.interval || 'monthly'
+  const initialCycle = workspace?.billing_interval || workspace?.settings?.billing_interval || workspace?.billing?.interval || 'monthly'
   const [billingCycle, setBillingCycle] = useState(initialCycle)
 
   const effectivePlanId = useMemo(() => {
-    const p = (currentPlanId || workspace?.billing_plan_id || workspace?.plan || workspace?.billing?.planId || 'pro').toLowerCase().trim()
+    const p = (currentPlanId || workspace?.billing_plan_id || workspace?.plan || workspace?.subscription_tier || workspace?.settings?.plan || workspace?.billing?.planId || 'pro').toLowerCase().trim()
     if (['pro', 'scale', 'enterprise'].includes(p)) return 'pro'
     if (p === 'team') return 'team'
     if (p === 'starter' || p === 'free') return 'starter'
@@ -50,7 +50,7 @@ export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspac
     }
   })
 
-  // 2. Build baseline fallback invoices if history is missing
+  // 2. Build baseline fallback invoices if history is missing or for tab cycle preview
   const createdAtDate = workspace?.created_at ? new Date(workspace.created_at) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
   const formattedCreationDate = createdAtDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
   
@@ -91,14 +91,21 @@ export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspac
     status: 'Paid'
   }
 
-  // Combine stored + fallback, deduplicating by invoice id
-  let combinedInvoices = [...storedInvoices]
-  if (combinedInvoices.length === 0) {
-    if (effectivePlanId !== 'starter' && effectivePlanId !== 'free') {
-      combinedInvoices = [fallbackCurrentInvoice, fallbackInitialInvoice]
+  // Filter invoices matching active cycle tab (Monthly vs Annual)
+  const isAnnualTab = billingCycle === 'annual'
+  const matchingStored = storedInvoices.filter(inv => {
+    const cycleStr = (inv.cycle || inv.id || '').toLowerCase()
+    if (isAnnualTab) {
+      return cycleStr.includes('annual') || cycleStr.includes('12')
     } else {
-      combinedInvoices = [fallbackCurrentInvoice]
+      return cycleStr.includes('monthly') || cycleStr.includes('1 month')
     }
+  })
+
+  // Combine stored + fallback, ensuring current active cycle is represented
+  let combinedInvoices = matchingStored.length > 0 ? [...matchingStored] : [fallbackCurrentInvoice]
+  if (effectivePlanId !== 'starter' && effectivePlanId !== 'free' && !combinedInvoices.some(i => i.id?.includes('STARTER'))) {
+    combinedInvoices.push(fallbackInitialInvoice)
   }
 
   // Generate downloadable PDF invoice using window.print()

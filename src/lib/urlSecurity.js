@@ -8,18 +8,20 @@ const PLAN_TOKENS = {
   starter: 'enc_s7a91b',
   free: 'enc_s7a91b',
   team: 'enc_t3c84f',
-  scale: 'enc_x9d20e'
+  scale: 'enc_x9d20e',
+  pro: 'enc_x9d20e'
 }
 
 const TOKEN_TO_PLAN = {
   'enc_s7a91b': 'starter',
   'enc_t3c84f': 'team',
-  'enc_x9d20e': 'scale',
+  'enc_x9d20e': 'pro',
 
   // Also support base64url encoded tokens
   'c3RhcnRlcg': 'starter',
   'dGVhbQ': 'team',
-  'c2NhbGU': 'scale'
+  'c2NhbGU': 'pro',
+  'cHJv': 'pro'
 }
 
 /**
@@ -48,8 +50,8 @@ export function decryptPlanParam(tokenOrPlan) {
   // Try base64 decoding
   try {
     const decoded = atob(clean).toLowerCase()
-    if (['starter', 'free', 'team', 'scale'].includes(decoded)) {
-      return decoded === 'free' ? 'starter' : decoded
+    if (['starter', 'free', 'team', 'scale', 'pro'].includes(decoded)) {
+      return decoded === 'free' ? 'starter' : (decoded === 'scale' ? 'pro' : decoded)
     }
   } catch (err) {
     // Silent catch
@@ -57,8 +59,8 @@ export function decryptPlanParam(tokenOrPlan) {
 
   // Support legacy plain text parameter if valid
   const lower = clean.toLowerCase()
-  if (['starter', 'free', 'team', 'scale'].includes(lower)) {
-    return lower === 'free' ? 'starter' : lower
+  if (['starter', 'free', 'team', 'scale', 'pro'].includes(lower)) {
+    return lower === 'free' ? 'starter' : (lower === 'scale' ? 'pro' : lower)
   }
 
   return null

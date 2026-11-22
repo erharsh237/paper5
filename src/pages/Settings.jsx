@@ -933,10 +933,10 @@ export default function Settings() {
     })
   }
 
-  const handleSelectPlan = async (newPlanId) => {
+  const handleSelectPlan = async (newPlanId, selectedCycle) => {
     try {
       const prevPlan = planId || 'free'
-      const cycle = workspace?.billing_interval || 'monthly'
+      const cycle = selectedCycle || workspace?.billing_interval || workspace?.settings?.billing_interval || 'monthly'
       const now = new Date()
       const issueDate = now.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
       const expDate = new Date(now)
@@ -981,6 +981,7 @@ export default function Settings() {
 
       const updatedSettings = {
         ...(workspace?.settings || {}),
+        billing_interval: cycle,
         invoices: updatedInvoices
       }
 
@@ -991,6 +992,8 @@ export default function Settings() {
       await updateWorkspaceSettings(workspaceId, { 
         plan: newPlanId,
         billing_plan_id: newPlanId,
+        subscription_tier: newPlanId,
+        billing_interval: cycle,
         settings: updatedSettings
       })
 
@@ -1427,7 +1430,7 @@ export default function Settings() {
                       </span>
                     </div>
                     <p style={{ margin: 0, fontSize: '13px', color: 'var(--muted, #6E7091)' }}>
-                      Billing Cycle: <strong style={{ color: 'var(--text, #1C1D2B)' }}>{(workspace?.billing_interval === 'annual' ? 'Annual' : 'Monthly')}</strong> · Expiry / Next Renewal: <strong style={{ color: 'var(--accent, #4F46E5)' }}>{new Date(Date.now() + ((workspace?.billing_interval === 'annual' ? 365 : 30) * 24 * 60 * 60 * 1000)).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</strong>
+                      Billing Cycle: <strong style={{ color: 'var(--text, #1C1D2B)' }}>{((workspace?.billing_interval === 'annual' || workspace?.settings?.billing_interval === 'annual') ? 'Annual' : 'Monthly')}</strong> · Expiry / Next Renewal: <strong style={{ color: 'var(--accent, #4F46E5)' }}>{new Date(Date.now() + (((workspace?.billing_interval === 'annual' || workspace?.settings?.billing_interval === 'annual') ? 365 : 30) * 24 * 60 * 60 * 1000)).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</strong>
                     </p>
                   </div>
                   <div>
@@ -2015,6 +2018,7 @@ export default function Settings() {
         onClose={() => setIsPricingModalOpen(false)} 
         currentPlan={planId}
         onSelectPlan={handleSelectPlan}
+        initialCycle={(workspace?.billing_interval === 'annual' || workspace?.settings?.billing_interval === 'annual') ? 'annual' : 'monthly'}
       />
       <InvoicesModal 
         isOpen={isInvoicesModalOpen} 

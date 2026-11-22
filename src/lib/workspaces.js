@@ -475,7 +475,7 @@ export async function ensureUserRecordExists(uid, email, metadata = {}) {
   }
 }
 
-export async function createWorkspace(uid, email, name, teamSize, agileWorkflow, saveData, planId = 'pro') {
+export async function createWorkspace(uid, email, name, teamSize, agileWorkflow, saveData, planId = 'pro', billingInterval = 'monthly') {
   // 1. Pre-flight: ensure user exists in public.users to satisfy foreign key constraint workspaces_created_by_fkey
   await ensureUserRecordExists(uid, email)
 
@@ -504,17 +504,54 @@ export async function createWorkspace(uid, email, name, teamSize, agileWorkflow,
     throw error
   }
 
-  // 3. Save initial workspace settings & active plan
+  // 3. Save initial workspace settings, active plan, billing interval, and initial invoice
   try {
+    const cleanPlan = (planId || 'pro').toLowerCase().trim()
+    const effectivePlan = cleanPlan === 'scale' ? 'pro' : (cleanPlan === 'free' ? 'starter' : cleanPlan)
+    const cycle = billingInterval === 'annual' ? 'annual' : 'monthly'
+    
+    const now = new Date()
+    const issueDate = now.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+    const expDate = new Date(now)
+    if (cycle === 'annual') expDate.setFullYear(expDate.getFullYear() + 1)
+    else expDate.setMonth(expDate.getMonth() + 1)
+    const expiryDate = expDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+
+    const getPlanTitle = (id) => {
+      if (id === 'team') return 'Team Plan'
+      if (id === 'pro' || id === 'scale') return 'Pro Plan'
+      if (id === 'starter' || id === 'free') return 'Starter Plan'
+      return 'Pro Plan'
+    }
+    const planName = getPlanTitle(effectivePlan)
+
+    const initialInvoice = {
+      id: `INV-${effectivePlan.toUpperCase()}-${cycle.toUpperCase()}-${now.getFullYear()}-001`,
+      invoiceNumber: `INV-${now.getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`,
+      date: issueDate,
+      rawDate: now.toISOString(),
+      expiryDate,
+      cycle: cycle === 'annual' ? 'Annual (12 Months)' : 'Monthly (1 Month)',
+      plan: `${planName} (${cycle === 'annual' ? 'Annual' : 'Monthly'})`,
+      planId: effectivePlan,
+      changeType: (effectivePlan !== 'starter' && effectivePlan !== 'free') ? 'Subscription' : 'Initial Workspace Setup',
+      amount: '₹0',
+      status: 'Paid',
+      workspaceName: name || 'Workspace'
+    }
+
     await updateWorkspaceSettings(newWorkspaceId, {
-      plan: planId || 'pro',
-      billing_plan_id: planId || 'pro',
-      subscription_tier: planId || 'pro',
+      plan: effectivePlan,
+      billing_plan_id: effectivePlan,
+      subscription_tier: effectivePlan,
       billing_status: 'active',
+      billing_interval: cycle,
       settings: {
         team_size: teamSize || '2-5',
         agile_workflow: agileWorkflow || 'scrum',
-        save_data: saveData || false
+        save_data: saveData || false,
+        billing_interval: cycle,
+        invoices: [initialInvoice]
       }
     })
   } catch (settErr) {
@@ -529,6 +566,12 @@ export async function updateWorkspaceSettings(workspaceId, patch) {
   
   if (patch.name !== undefined) mappedPatch.name = patch.name
   if (patch.settings !== undefined) mappedPatch.settings = patch.settings
+  if (patch.billing_interval !== undefined) {
+    mappedPatch.settings = {
+      ...(mappedPatch.settings || {}),
+      billing_interval: patch.billing_interval
+    }
+  }
   if (patch.subscription_tier !== undefined) mappedPatch.subscription_tier = patch.subscription_tier
   if (patch.billing_plan_id !== undefined) mappedPatch.billing_plan_id = patch.billing_plan_id
   if (patch.plan !== undefined) mappedPatch.billing_plan_id = patch.plan

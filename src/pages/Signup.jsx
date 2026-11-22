@@ -99,8 +99,13 @@ export default function Signup() {
   }
 
   useEffect(() => {
+    const cycleParam = searchParams.get('cycle') || 'monthly'
     if (decryptedPlan) {
       localStorage.setItem('sprintos_selected_plan', decryptedPlan)
+      localStorage.setItem('sprintos_selected_cycle', cycleParam)
+    } else if (!rawToken) {
+      localStorage.removeItem('sprintos_selected_plan')
+      localStorage.removeItem('sprintos_selected_cycle')
     }
     const queryEmail = searchParams.get('email')
     if (queryEmail && !email) {
@@ -110,7 +115,7 @@ export default function Signup() {
       if (base && !username) setUsername(base)
       handleCheckEmail(clean)
     }
-  }, [decryptedPlan, searchParams])
+  }, [decryptedPlan, rawToken, searchParams])
 
   useEffect(() => {
     let timer

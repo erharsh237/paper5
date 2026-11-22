@@ -35,7 +35,8 @@ const TIERS = [
     badge: 'Launch Special - Recommended',
     recommended: true,
     price: '₹0',
-    originalPrice: '₹200/mo',
+    originalMonthlyPrice: '₹200/mo',
+    originalAnnualPrice: '₹160/mo',
     subtext: '100% Unlocked during Launch',
     workspaces: '5 Workspaces',
     seats: 'Up to 7 Seats',
@@ -53,7 +54,8 @@ const TIERS = [
     name: 'Pro',
     badge: 'High-Velocity Engineering',
     price: '₹0',
-    originalPrice: '₹500/mo',
+    originalMonthlyPrice: '₹500/mo',
+    originalAnnualPrice: '₹400/mo',
     subtext: '100% Unlocked during Launch',
     workspaces: '10 Workspaces',
     seats: 'Unlimited Seats',
@@ -76,6 +78,7 @@ export default function OnboardingWizardModal() {
   // 4-Step Wizard: 1: Pricing/Tier, 2: T&C Consent, 3: Workspace Creation, 4: Data Storing Consent
   const [step, setStep] = useState(1)
   const [selectedTier, setSelectedTier] = useState('team')
+  const [billingCycle, setBillingCycle] = useState('monthly')
 
   // Step 2: Legal Consent State (Default unchecked)
   const [termsAccepted, setTermsAccepted] = useState(false)
@@ -104,13 +107,18 @@ export default function OnboardingWizardModal() {
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     const rawToken = params.get('p') || params.get('plan') || localStorage.getItem('sprintos_selected_plan')
-    const decrypted = decryptPlanParam(rawToken)
+    const rawCycle = params.get('cycle') || localStorage.getItem('sprintos_selected_cycle') || 'monthly'
+    const decrypted = rawToken ? decryptPlanParam(rawToken) : null
 
     if (decrypted) {
-      const normalized = decrypted === 'starter' ? 'free' : decrypted
+      const normalized = decrypted === 'starter' ? 'free' : (decrypted === 'scale' ? 'scale' : decrypted)
       setSelectedTier(normalized)
+      setBillingCycle(rawCycle === 'annual' ? 'annual' : 'monthly')
       // User already selected their account tier on the marketing site — jump past Step 1 directly to Step 2
       setStep(2)
+    } else {
+      // Direct account creation — user did NOT pick a plan on the website, show Step 1
+      setStep(1)
     }
   }, [location.search])
 
@@ -232,11 +240,14 @@ export default function OnboardingWizardModal() {
     setError('')
 
     try {
+      const effectivePlan = (selectedTier === 'scale' || selectedTier === 'pro') ? 'pro' : (selectedTier === 'team' ? 'team' : 'starter')
+
       // 1. Ensure user record exists & update Supabase users table with selected Account Tier & Legal Consent
       await ensureUserRecordExists(user.id, user.email, {
         username: userData?.username,
-        billing_plan_id: selectedTier,
+        billing_plan_id: effectivePlan,
         billing_status: 'active',
+        billing_interval: billingCycle,
         legal_accepted_version: '1.0.0',
         legal_accepted_at: new Date().toISOString()
       })
@@ -244,7 +255,7 @@ export default function OnboardingWizardModal() {
       const { error: dbError } = await supabase
         .from('users')
         .update({ 
-          billing_plan_id: selectedTier,
+          billing_plan_id: effectivePlan,
           billing_status: 'active',
           legal_accepted_version: '1.0.0',
           legal_accepted_at: new Date().toISOString()
@@ -260,14 +271,21 @@ export default function OnboardingWizardModal() {
         wsName.trim(), 
         teamSize, 
         agileWorkflow, 
-        saveData
+        saveData,
+        effectivePlan,
+        billingCycle
       )
 
       const targetWsId = typeof newWs === 'object' ? (newWs?.id || newWs?.workspaceId) : newWs
 
+      try {
+        localStorage.removeItem('sprintos_selected_plan')
+        localStorage.removeItem('sprintos_selected_cycle')
+      } catch (_) {}
+
       // 3. Update AuthContext state locally so app unblocks instantly
       if (updateUserData) {
-        await updateUserData({ billing_plan_id: selectedTier, billing_status: 'active' })
+        await updateUserData({ billing_plan_id: effectivePlan, billing_status: 'active' })
       }
 
       // 4. Navigate directly into the newly created workspace
@@ -366,9 +384,58 @@ export default function OnboardingWizardModal() {
         {/* STEP 1: Account Tier Selection */}
         {step === 1 && (
           <div>
+            {/* Monthly / Annual Billing Toggle */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', background: '#f4f4f5', padding: '4px', borderRadius: '10px', border: '1px solid #e4e4e7' }}>
+                <button
+                  type="button"
+                  onClick={() => setBillingCycle('monthly')}
+                  style={{
+                    border: 'none',
+                    padding: '6px 16px',
+                    borderRadius: '7px',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: billingCycle === 'monthly' ? '#ffffff' : 'transparent',
+                    color: billingCycle === 'monthly' ? '#09090b' : '#71717a',
+                    boxShadow: billingCycle === 'monthly' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  Monthly Billing
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBillingCycle('annual')}
+                  style={{
+                    border: 'none',
+                    padding: '6px 16px',
+                    borderRadius: '7px',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: billingCycle === 'annual' ? '#ffffff' : 'transparent',
+                    color: billingCycle === 'annual' ? '#09090b' : '#71717a',
+                    boxShadow: billingCycle === 'annual' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                    transition: 'all 0.15s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <span>Annual Billing</span>
+                  <span style={{ fontSize: '10px', background: 'rgba(16, 185, 129, 0.15)', color: '#059669', padding: '2px 6px', borderRadius: '100px', fontWeight: 800 }}>
+                    Save 20%
+                  </span>
+                </button>
+              </div>
+            </div>
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '28px', textAlign: 'left' }}>
               {TIERS.map(tier => {
                 const isSelected = selectedTier === tier.id
+                const struckPrice = billingCycle === 'annual' ? tier.originalAnnualPrice : tier.originalMonthlyPrice
                 return (
                   <div 
                     key={tier.id}
@@ -411,8 +478,8 @@ export default function OnboardingWizardModal() {
 
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '4px' }}>
                       <span style={{ fontSize: '28px', fontWeight: 900, color: '#09090b' }}>{tier.price}</span>
-                      {tier.originalPrice && (
-                        <span style={{ fontSize: '13px', color: '#a1a1aa', textDecoration: 'line-through' }}>{tier.originalPrice}</span>
+                      {struckPrice && (
+                        <span style={{ fontSize: '13px', color: '#a1a1aa', textDecoration: 'line-through' }}>{struckPrice}</span>
                       )}
                     </div>
                     <div style={{ fontSize: '11px', color: '#10b981', fontWeight: 700, marginBottom: '16px' }}>

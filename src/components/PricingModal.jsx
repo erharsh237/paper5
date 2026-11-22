@@ -13,15 +13,15 @@ const PLAN_LEVELS = {
   enterprise: 3
 }
 
-export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPlan }) {
-  const [isAnnual, setIsAnnual] = useState(false)
+export default function PricingModal({ isOpen, onClose, currentPlan, onSelectPlan, initialCycle = 'monthly' }) {
+  const [isAnnual, setIsAnnual] = useState(initialCycle === 'annual')
   const [loadingPlan, setLoadingPlan] = useState(null)
 
   if (!isOpen) return null
 
   const handleSelect = async (planId) => {
     setLoadingPlan(planId)
-    await onSelectPlan(planId)
+    await onSelectPlan(planId, isAnnual ? 'annual' : 'monthly')
     setLoadingPlan(null)
   }
 
