@@ -24,7 +24,7 @@ STABLE
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.workspaces w
-    WHERE w.id = ws_id AND w.owner_id = auth.uid()
+    WHERE w.id = ws_id AND w.created_by = auth.uid()
   ) OR EXISTS (
     SELECT 1 FROM public.workspace_members wm
     WHERE wm.workspace_id = ws_id AND wm.user_id = auth.uid()
@@ -40,7 +40,7 @@ STABLE
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.workspaces w
-    WHERE w.id = ws_id AND w.owner_id = auth.uid()
+    WHERE w.id = ws_id AND w.created_by = auth.uid()
   ) OR EXISTS (
     SELECT 1 FROM public.workspace_members wm
     WHERE wm.workspace_id = ws_id 
@@ -58,7 +58,12 @@ STABLE
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.workspaces w
-    WHERE w.id = ws_id AND w.owner_id = auth.uid()
+    WHERE w.id = ws_id AND w.created_by = auth.uid()
+  ) OR EXISTS (
+    SELECT 1 FROM public.workspace_members wm
+    WHERE wm.workspace_id = ws_id 
+      AND wm.user_id = auth.uid() 
+      AND wm.role = 'owner'
   );
 $$;
 
@@ -123,7 +128,7 @@ DECLARE
   creator_uid UUID;
 BEGIN
   target_wf := COALESCE(NEW.settings->>'agile_workflow', 'kanban');
-  creator_uid := COALESCE(NEW.created_by, NEW.owner_id);
+  creator_uid := NEW.created_by;
 
   -- Prevent clients from modifying grandfathered_workflow
   IF TG_OP = 'UPDATE' AND NEW.grandfathered_workflow IS DISTINCT FROM OLD.grandfathered_workflow THEN
@@ -210,13 +215,13 @@ BEGIN
 
   -- Lock existing owned workspace rows to prevent concurrent creation quota race conditions
   PERFORM 1 FROM public.workspaces 
-  WHERE (created_by = caller_uid OR owner_id = caller_uid)
+  WHERE created_by = caller_uid
   FOR UPDATE;
 
   -- Enforce Plan Quota Limits
   SELECT count(*) INTO existing_owned_count
   FROM public.workspaces
-  WHERE (created_by = caller_uid OR owner_id = caller_uid);
+  WHERE created_by = caller_uid;
 
   max_allowed := CASE 
     WHEN user_tier IN ('pro', 'scale', 'enterprise') THEN 10
@@ -258,7 +263,6 @@ BEGIN
     id,
     name,
     created_by,
-    owner_id,
     billing_plan_id,
     subscription_tier,
     billing_status,
@@ -270,7 +274,6 @@ BEGIN
   ) VALUES (
     new_ws_id,
     workspace_name,
-    caller_uid,
     caller_uid,
     user_tier,
     user_tier,
@@ -358,12 +361,12 @@ BEGIN
 
   -- Lock rows for this owner to prevent concurrent race conditions
   PERFORM 1 FROM public.workspaces 
-  WHERE (created_by = caller_uid OR owner_id = caller_uid)
+  WHERE created_by = caller_uid
   FOR UPDATE;
 
   IF NOT EXISTS (
     SELECT 1 FROM public.workspaces 
-    WHERE id = target_workspace_id AND (created_by = caller_uid OR owner_id = caller_uid)
+    WHERE id = target_workspace_id AND created_by = caller_uid
   ) THEN
     RAISE EXCEPTION 'Access denied: You can only activate a workspace that you own.';
   END IF;
@@ -371,7 +374,7 @@ BEGIN
   -- Deactivate all workspaces owned by this user
   UPDATE public.workspaces 
   SET is_active = false, updated_at = now()
-  WHERE (created_by = caller_uid OR owner_id = caller_uid);
+  WHERE created_by = caller_uid;
 
   -- Activate only the chosen workspace
   UPDATE public.workspaces 
