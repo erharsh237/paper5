@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import logo from '../assets/logo.png'
 import { Check, ArrowRight, Database, ShieldAlert, Sparkles, Building2, Users, Layers, ShieldCheck } from 'lucide-react'
 import { TEAM_SIZE_OPTIONS, WORKFLOWS, getRecommendedWorkflow, isWorkflowUnlocked } from '../lib/workflows'
+import { selectPlanServerSide } from '../lib/plans'
 
 import { decryptPlanParam } from '../lib/urlSecurity'
 import { safeRedirect } from '../lib/safeRedirect'
@@ -245,36 +246,41 @@ export default function OnboardingWizardModal() {
 
     try {
       const effectivePlan = (selectedTier === 'scale' || selectedTier === 'pro') ? 'pro' : (selectedTier === 'team' ? 'team' : 'starter')
+      const validatedWorkflow = isWorkflowUnlocked(agileWorkflow, effectivePlan) ? agileWorkflow : 'kanban'
 
-      // 1. Ensure user record exists & update Supabase users table with selected Account Tier & Legal Consent
+      // 1. Hardened Phase 1: Call trusted server-side plan selection endpoint
+      try {
+        await selectPlanServerSide(effectivePlan, billingCycle)
+      } catch (planErr) {
+        console.warn('Server-side plan selection notice:', planErr)
+      }
+
       await ensureUserRecordExists(user.id, user.email, {
         username: userData?.username,
-        billing_plan_id: effectivePlan,
-        billing_status: 'active',
-        billing_interval: billingCycle,
         legal_accepted_version: '1.0.0',
         legal_accepted_at: new Date().toISOString()
       })
 
-      const { error: dbError } = await supabase
-        .from('users')
-        .update({ 
-          billing_plan_id: effectivePlan,
-          billing_status: 'active',
-          legal_accepted_version: '1.0.0',
-          legal_accepted_at: new Date().toISOString()
-        })
-        .eq('id', user.id)
+      // Update legal terms acceptance without mutating protected billing columns
+      try {
+        await supabase
+          .from('users')
+          .update({ 
+            legal_accepted_version: '1.0.0',
+            legal_accepted_at: new Date().toISOString()
+          })
+          .eq('id', user.id)
+      } catch (dbError) {
+        console.warn('Users legal terms update notice:', dbError)
+      }
 
-      if (dbError) console.warn('Users table update notice:', dbError)
-
-      // 2. Create Initial Workspace with Save Data Preference & Workflow
+      // 2. Create Initial Workspace with validated methodology & plan
       const newWs = await createWorkspace(
         user.id, 
         user.email, 
         wsName.trim(), 
         teamSize, 
-        agileWorkflow, 
+        validatedWorkflow, 
         saveData,
         effectivePlan,
         billingCycle

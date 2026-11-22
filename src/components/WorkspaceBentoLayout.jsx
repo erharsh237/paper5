@@ -334,7 +334,33 @@ export default function WorkspaceBentoLayout({ children }) {
                   <span className="bento-plan-badge">
                     {planBadge || formatPlanBadge(planId || workspace?.plan || workspace?.billing_plan_id || 'pro')}
                   </span>
+                  {workspace?.is_active === false && (
+                    <span className="bento-plan-badge" style={{ background: '#fee2e2', color: '#991b1b', border: '1px solid #fca5a5' }}>
+                      INACTIVE (READ ONLY)
+                    </span>
+                  )}
                 </div>
+                {workspace?.is_active === false && (
+                  <div style={{
+                    background: '#fffbeb',
+                    border: '1px solid #fde68a',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    margin: '8px 0',
+                    color: '#92400e',
+                    fontSize: '12.5px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <span><strong>Read-Only Mode:</strong> This workspace is currently inactive under your plan limits. Data is preserved.</span>
+                    {isOwner && (
+                      <Link to="/workspaces?picker=true" style={{ color: '#2563eb', fontWeight: 700, textDecoration: 'underline', marginLeft: 'auto' }}>
+                        Manage Workspaces
+                      </Link>
+                    )}
+                  </div>
+                )}
                 <h1 className="bento-greeting">
                   {headerMeta.title}
                 </h1>

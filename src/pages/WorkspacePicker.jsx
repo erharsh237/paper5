@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
-import { createWorkspace, ensureUserRecordExists } from '../lib/workspaces'
+import { createWorkspace, ensureUserRecordExists, setActiveWorkspace } from '../lib/workspaces'
 import { TEAM_SIZE_OPTIONS, WORKFLOWS, getRecommendedWorkflow, isWorkflowUnlocked } from '../lib/workflows'
 import { supabase } from '../lib/supabase'
 import PricingModal from '../components/PricingModal'
-import { getPlanLimits, formatPlanBadge } from '../lib/plans'
+import { getPlanLimits, formatPlanBadge, selectPlanServerSide } from '../lib/plans'
 import ThemeToggle from '../components/ThemeToggle'
 import SEOHead from '../components/SEOHead'
 import './WorkspacePicker.css'
@@ -115,16 +115,34 @@ export default function WorkspacePicker() {
         }
       }
 
-      // 2. Query workspace_members directly with joined workspace name and tier
+      // 2. Query workspace_members directly with joined workspace name, tier, and is_active status
       let mapped = []
-      const { data: memberList, error: memberErr } = await supabase
+      let memberList = null
+      let memberErr = null
+
+      const resExplicit = await supabase
         .from('workspace_members')
         .select(`
           role,
           workspace_id,
-          workspaces ( id, name, billing_plan_id, settings )
+          workspaces!workspace_members_workspace_id_fkey ( id, name, billing_plan_id, is_active, settings )
         `)
         .eq('user_id', userId)
+
+      if (!resExplicit.error && resExplicit.data) {
+        memberList = resExplicit.data
+      } else {
+        const resFallback = await supabase
+          .from('workspace_members')
+          .select(`
+            role,
+            workspace_id,
+            workspaces ( id, name, billing_plan_id, is_active, settings )
+          `)
+          .eq('user_id', userId)
+        memberList = resFallback.data
+        memberErr = resFallback.error
+      }
 
       if (memberErr) {
         console.warn('workspace_members query notice in WorkspacePicker:', memberErr)
@@ -141,7 +159,8 @@ export default function WorkspacePicker() {
             id: r.workspace_id,
             role: r.role || 'member',
             name: r.workspaces?.name || 'My Workspace',
-            plan
+            plan,
+            isActive: r.workspaces?.is_active ?? true
           }
         })
       }
@@ -150,7 +169,7 @@ export default function WorkspacePicker() {
       try {
         const { data: ownedWs, error: ownedWsErr } = await supabase
           .from('workspaces')
-          .select('id, name, billing_plan_id, settings')
+          .select('id, name, billing_plan_id, is_active, settings')
           .eq('created_by', userId)
         
         if (ownedWsErr) {
@@ -167,7 +186,8 @@ export default function WorkspacePicker() {
                 id: ow.id,
                 role: 'owner',
                 name: ow.name || 'My Workspace',
-                plan
+                plan,
+                isActive: ow.is_active ?? true
               })
               existingIds.add(ow.id)
             }
@@ -264,8 +284,8 @@ export default function WorkspacePicker() {
 
   const handleSelectPlan = async (planId, cycle = 'monthly') => {
     try {
-      await ensureUserRecordExists(userId, user?.email, { billing_plan_id: planId, billing_status: 'active', billing_interval: cycle })
-      await supabase.from('users').update({ billing_plan_id: planId, billing_status: 'active', billing_interval: cycle }).eq('id', userId)
+      // Hardened Phase 1: Call trusted server-side plan selection endpoint
+      await selectPlanServerSide(planId, cycle)
       if (userData) {
         userData.billing_plan_id = planId
         userData.billingPlanId = planId
@@ -279,6 +299,20 @@ export default function WorkspacePicker() {
       setShowPricingModal(false)
       setModalStep(1)
       setShowCreateModal(true)
+    }
+  }
+
+  const handleActivateWorkspace = async (e, wsId) => {
+    e.stopPropagation()
+    try {
+      await setActiveWorkspace(wsId)
+      setWorkspaces(prev => prev.map(w => ({
+        ...w,
+        isActive: (w.id === wsId || w.workspaceId === wsId)
+      })))
+    } catch (err) {
+      console.error('Failed to activate workspace:', err)
+      alert(err.message || 'Unable to activate workspace. Please ensure you are an owner.')
     }
   }
 
@@ -462,16 +496,39 @@ export default function WorkspacePicker() {
                         <span className="wp-current-badge">CURRENT</span>
                       )}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                       <span className="wp-role-badge">{ws.role || 'member'}</span>
                       <span className="wp-plan-badge">{formatPlanBadge(ws.plan || userPlan)}</span>
+                      {ws.isActive === false && (
+                        <span className="wp-plan-badge" style={{ background: '#fee2e2', color: '#991b1b', border: '1px solid #fca5a5' }}>
+                          INACTIVE (READ ONLY)
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
-                <div className="wp-card-footer">
+                <div className="wp-card-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span className={isCurrent ? 'wp-enter-text--disabled' : ''}>
                     {isCurrent ? 'Current Workspace' : 'Enter Workspace \u2192'}
                   </span>
+                  {ws.isActive === false && (ws.role === 'owner' || ws.role === 'admin') && (
+                    <button
+                      type="button"
+                      onClick={(e) => handleActivateWorkspace(e, ws.workspaceId)}
+                      style={{
+                        padding: '4px 10px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        borderRadius: '6px',
+                        background: '#2563eb',
+                        color: '#ffffff',
+                        border: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Make Active
+                    </button>
+                  )}
                 </div>
               </div>
             )

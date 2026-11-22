@@ -89,14 +89,34 @@ export function subscribeUserWorkspaces(uid, callback) {
     if (!isSubscribed || isFetching) return
     isFetching = true
     try {
-      const { data, error } = await supabase
+      // First attempt explicit foreign key join for maximum PostgREST compatibility
+      let data = null
+      let error = null
+      
+      const res1 = await supabase
         .from('workspace_members')
         .select(`
           role,
           workspace_id,
-          workspaces ( name )
+          workspaces!workspace_members_workspace_id_fkey ( id, name, billing_plan_id, is_active, settings )
         `)
         .eq('user_id', uid)
+
+      if (!res1.error && res1.data) {
+        data = res1.data
+      } else {
+        // Fallback to standard join syntax
+        const res2 = await supabase
+          .from('workspace_members')
+          .select(`
+            role,
+            workspace_id,
+            workspaces ( id, name, billing_plan_id, is_active, settings )
+          `)
+          .eq('user_id', uid)
+        data = res2.data
+        error = res2.error
+      }
       
       if (error || !data) {
         if (error) console.error('subscribeUserWorkspaces Error:', error)
@@ -108,7 +128,9 @@ export function subscribeUserWorkspaces(uid, callback) {
         workspaceId: row.workspace_id,
         id: row.workspace_id,
         role: row.role,
-        name: row.workspaces?.name
+        name: row.workspaces?.name,
+        isActive: row.workspaces?.is_active ?? true,
+        plan: row.workspaces?.billing_plan_id || 'starter'
       }))
       if (isSubscribed) callback(mapped)
     } catch (err) {
@@ -476,9 +498,41 @@ export async function ensureUserRecordExists(uid, email, metadata = {}) {
 }
 
 export async function createWorkspace(uid, email, name, teamSize, agileWorkflow, saveData, planId = 'pro', billingInterval = 'monthly') {
-  // 1. Pre-flight: ensure user exists in public.users to satisfy foreign key constraint workspaces_created_by_fkey
+  // 1. Pre-flight: ensure user exists in public.users to satisfy foreign key constraints
   await ensureUserRecordExists(uid, email)
 
+  const cleanPlan = (planId || 'pro').toLowerCase().trim()
+  const effectivePlan = cleanPlan === 'scale' ? 'pro' : (cleanPlan === 'free' ? 'starter' : cleanPlan)
+  const cycle = billingInterval === 'annual' ? 'annual' : 'monthly'
+  const cleanWf = agileWorkflow || 'kanban'
+
+  // Attempt atomic provisioning via RPC (Phase 3 Hardening: derives creator from auth.uid(), enforces plan quota atomically)
+  try {
+    const { data: atomicRes, error: atomicErr } = await supabase.rpc('provision_new_workspace_atomic', {
+      workspace_name: name,
+      team_size: teamSize || '2-5',
+      agile_workflow: cleanWf,
+      save_data: Boolean(saveData),
+      billing_interval: cycle
+    })
+
+    if (!atomicErr && atomicRes && (atomicRes.workspace_id || atomicRes.id)) {
+      return atomicRes.workspace_id || atomicRes.id
+    }
+    if (atomicErr) {
+      if (atomicErr.message?.includes('quota exceeded') || atomicErr.message?.includes('Entitlement violation')) {
+        throw new Error(atomicErr.message)
+      }
+      console.warn('provision_new_workspace_atomic fallback notice:', atomicErr)
+    }
+  } catch (err) {
+    if (err.message?.includes('quota exceeded') || err.message?.includes('Entitlement violation')) {
+      throw err
+    }
+    console.warn('Atomic provision attempt notice:', err)
+  }
+
+  // Fallback to create_new_workspace for backward compatibility
   const newWorkspaceId = crypto.randomUUID()
 
   let { error } = await supabase.rpc('create_new_workspace', {
@@ -506,10 +560,6 @@ export async function createWorkspace(uid, email, name, teamSize, agileWorkflow,
 
   // 3. Save initial workspace settings, active plan, billing interval, and initial invoice
   try {
-    const cleanPlan = (planId || 'pro').toLowerCase().trim()
-    const effectivePlan = cleanPlan === 'scale' ? 'pro' : (cleanPlan === 'free' ? 'starter' : cleanPlan)
-    const cycle = billingInterval === 'annual' ? 'annual' : 'monthly'
-    
     const now = new Date()
     const issueDate = now.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
     const expDate = new Date(now)
@@ -548,7 +598,7 @@ export async function createWorkspace(uid, email, name, teamSize, agileWorkflow,
       billing_interval: cycle,
       settings: {
         team_size: teamSize || '2-5',
-        agile_workflow: agileWorkflow || 'scrum',
+        agile_workflow: cleanWf,
         save_data: saveData || false,
         billing_interval: cycle,
         invoices: [initialInvoice]
@@ -560,6 +610,19 @@ export async function createWorkspace(uid, email, name, teamSize, agileWorkflow,
 
   return newWorkspaceId
 }
+
+/**
+ * Activates a single target workspace for an owner (e.g. after a downgrade)
+ * while deactivating their other workspaces, preserving all data in read-only mode.
+ */
+export async function setActiveWorkspace(targetWorkspaceId) {
+  const { data, error } = await supabase.rpc('set_single_active_workspace', {
+    target_workspace_id: targetWorkspaceId
+  })
+  if (error) throw error
+  return data
+}
+
 
 export async function updateWorkspaceSettings(workspaceId, patch) {
   const mappedPatch = {}

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../lib/AuthContext'
 import { supabase } from '../lib/supabase'
 import { ensureUserRecordExists } from '../lib/workspaces'
+import { selectPlanServerSide } from '../lib/plans'
 import logo from '../assets/logo.png'
 import { Check, ShieldCheck, Zap, Sparkles } from 'lucide-react'
 
@@ -79,21 +80,8 @@ export default function AccountTierModal() {
     setSaving(true)
     setError('')
     try {
-      // 1. Ensure user record exists & update Supabase users table
-      await ensureUserRecordExists(user.id, user.email, { 
-        billing_plan_id: selectedTier, 
-        billing_status: 'active' 
-      })
-
-      const { error: dbError } = await supabase
-        .from('users')
-        .update({ 
-          billing_plan_id: selectedTier,
-          billing_status: 'active'
-        })
-        .eq('id', user.id)
-
-      if (dbError) console.warn('Users table update notice:', dbError)
+      // 1. Call trusted server-side plan selection endpoint
+      await selectPlanServerSide(selectedTier)
 
       // 2. Update AuthContext state locally so app unblocks immediately
       if (updateUserData) {

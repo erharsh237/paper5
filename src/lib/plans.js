@@ -110,3 +110,38 @@ export function checkWorkspaceCapacity(planId, currentWorkspaceCount) {
     excess: Math.max(0, excess)
   }
 }
+
+/**
+ * Trusted server-side plan selection.
+ * Calls /api/select-plan which validates session credentials and updates
+ * public.users and active workspace billing records via service role.
+ */
+export async function selectPlanServerSide(planId, billingInterval = 'monthly') {
+  const { supabase } = await import('./supabase')
+  const headers = { 'Content-Type': 'application/json' }
+
+  if (supabase) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`
+      }
+    } catch (_) {}
+  }
+
+  const response = await fetch('/api/select-plan', {
+    method: 'POST',
+    headers,
+    credentials: 'same-origin',
+    body: JSON.stringify({ planId, billingInterval })
+  })
+
+  const resData = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    throw new Error(resData.error || `Failed to update subscription plan (${response.status})`)
+  }
+
+  return resData
+}
+

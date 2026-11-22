@@ -481,11 +481,8 @@ export function WorkspaceProvider({ children }) {
   const updateWorkspacePlan = async (newPlanId) => {
     if (!workspaceId) return
     try {
-      const { updateWorkspaceSettings } = await import('./workspaces')
-      await updateWorkspaceSettings(workspaceId, {
-        plan: newPlanId,
-        billing_plan_id: newPlanId
-      })
+      const { selectPlanServerSide } = await import('./plans')
+      await selectPlanServerSide(newPlanId)
       setWorkspace(prev => prev ? { ...prev, plan: newPlanId, billing_plan_id: newPlanId } : prev)
       const limits = getPlanLimits(newPlanId)
       setMaxAllowedMembers(limits.maxMembers)
@@ -498,6 +495,7 @@ export function WorkspaceProvider({ children }) {
   const value = {
     workspaceId,
     workspace: workspace ? { ...workspace, plan: planId, billing_plan_id: planId } : null,
+    isActive: workspace?.is_active ?? true,
     workspaceRole,
     userPermissions,
     loadingWorkspace,
