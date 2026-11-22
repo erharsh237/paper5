@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, CheckCircle2 } from 'lucide-react'
 import { safeRedirect } from '../lib/safeRedirect'
 import { trackEvent } from '../lib/metrics'
 import { useAuth } from '../lib/AuthContext'
@@ -51,6 +51,54 @@ export default function Signup() {
   const rawToken = searchParams.get('p') || searchParams.get('plan')
   const decryptedPlan = rawToken ? decryptPlanParam(rawToken) : null
   const isInvalidPlan = Boolean(rawToken && !decryptedPlan)
+
+  const activePlanId = useMemo(() => {
+    if (decryptedPlan) return decryptedPlan
+    try {
+      const stored = localStorage.getItem('sprintos_selected_plan')
+      if (stored && ['starter', 'free', 'team', 'pro', 'scale'].includes(stored.toLowerCase())) {
+        return stored.toLowerCase() === 'free' ? 'starter' : (stored.toLowerCase() === 'scale' ? 'pro' : stored.toLowerCase())
+      }
+    } catch (_) {}
+    return null
+  }, [decryptedPlan])
+
+  const activeCycle = useMemo(() => {
+    const fromQuery = searchParams.get('cycle')
+    if (fromQuery && ['monthly', 'annual'].includes(fromQuery.toLowerCase())) return fromQuery.toLowerCase()
+    try {
+      const stored = localStorage.getItem('sprintos_selected_cycle')
+      if (stored && ['monthly', 'annual'].includes(stored.toLowerCase())) return stored.toLowerCase()
+    } catch (_) {}
+    return 'monthly'
+  }, [searchParams])
+
+  const PLAN_CONFIRMATION_META = {
+    starter: {
+      name: 'Starter Plan',
+      badge: 'Free Forever',
+      period: '₹0 / month · forever',
+      features: '2 Agile Workflows (Ad-hoc, Kanban) • Up to 3 Squad Members • 1 Workspace',
+      badgeColor: '#10b981',
+      badgeBg: 'rgba(16, 185, 129, 0.1)'
+    },
+    team: {
+      name: 'Team Plan',
+      badge: activeCycle === 'annual' ? 'Annual Subscription (Save 20%)' : 'Monthly Subscription',
+      period: activeCycle === 'annual' ? '₹160 / month billed annually • ₹0 during launch' : '₹200 / month • ₹0 during launch',
+      features: '6 Agile Workflows (Scrum, Kanban, XP, Lean, Scrumban) • Up to 7 Members • 5 Workspaces',
+      badgeColor: '#4f46e5',
+      badgeBg: 'rgba(79, 70, 229, 0.1)'
+    },
+    pro: {
+      name: 'Pro Plan',
+      badge: activeCycle === 'annual' ? 'Annual Subscription (Save 20%)' : 'Monthly Subscription',
+      period: activeCycle === 'annual' ? '₹400 / month billed annually • ₹0 during launch' : '₹500 / month • ₹0 during launch',
+      features: 'All 8 Agile Workflows (Spotify & SAFe Enterprise) • Unlimited Members • 10 Workspaces',
+      badgeColor: '#7c3aed',
+      badgeBg: 'rgba(124, 58, 237, 0.1)'
+    }
+  }
 
   const [step, setStep] = useState(1) // 1: Info, 2: OTP Sent, 3: Verified
   
@@ -302,7 +350,8 @@ export default function Signup() {
       
       await finalizeSignup(password, username)
       trackEvent('sign_up', { method: 'email_otp' })
-      setMessage('Account created successfully! Redirecting to workspace...')
+      const planName = PLAN_CONFIRMATION_META[activePlanId]?.name || 'Plan'
+      setMessage(`Account created successfully! ${planName} confirmed. Redirecting to workspace...`)
       setTimeout(() => {
         safeRedirect('/workspace')
       }, 500)
@@ -352,6 +401,58 @@ export default function Signup() {
           </div>
           <h1>Create your account</h1>
           <p className="auth-subtitle">Enter your email below to create your account</p>
+
+          {activePlanId && PLAN_CONFIRMATION_META[activePlanId] && (
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(79, 70, 229, 0.08) 100%)',
+              border: '1px solid rgba(16, 185, 129, 0.25)',
+              borderRadius: '12px',
+              padding: '12px 16px',
+              marginBottom: '20px',
+              textAlign: 'left',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '12px'
+            }}>
+              <div style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '8px',
+                background: '#10b981',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                marginTop: '1px'
+              }}>
+                <CheckCircle2 size={16} strokeWidth={2.5} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap', marginBottom: '2px' }}>
+                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-primary, #09090b)', letterSpacing: '-0.01em' }}>
+                    {PLAN_CONFIRMATION_META[activePlanId].name}
+                  </span>
+                  <span style={{
+                    fontSize: '10.5px',
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: '100px',
+                    background: PLAN_CONFIRMATION_META[activePlanId].badgeBg,
+                    color: PLAN_CONFIRMATION_META[activePlanId].badgeColor
+                  }}>
+                    {PLAN_CONFIRMATION_META[activePlanId].badge}
+                  </span>
+                </div>
+                <div style={{ fontSize: '12px', color: '#059669', fontWeight: 700, marginBottom: '2px' }}>
+                  {PLAN_CONFIRMATION_META[activePlanId].period}
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary, #6b7280)', lineHeight: 1.4 }}>
+                  {PLAN_CONFIRMATION_META[activePlanId].features}
+                </div>
+              </div>
+            </div>
+          )}
 
           {lockoutTimer > 0 ? (
             <div style={{ marginBottom: 16 }}>

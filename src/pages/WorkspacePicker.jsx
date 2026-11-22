@@ -511,6 +511,25 @@ export default function WorkspacePicker() {
                 <div className="wp-modal-header">
                   <h2>Create Workspace</h2>
                   <p>Configure your workspace name and preferences</p>
+                  
+                  <div style={{
+                    marginTop: '12px',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    background: 'rgba(16, 185, 129, 0.08)',
+                    border: '1px solid rgba(16, 185, 129, 0.25)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    fontSize: '12.5px'
+                  }}>
+                    <span style={{ color: '#047857', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ color: '#10b981', fontWeight: 800 }}>✓</span> Active Plan: <strong>{userPlan === 'pro' ? 'Pro Plan' : (userPlan === 'team' ? 'Team Plan' : 'Starter Plan')}</strong>
+                    </span>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#065f46', background: 'rgba(16, 185, 129, 0.15)', padding: '2px 8px', borderRadius: '100px' }}>
+                      {userPlan === 'pro' ? 'All 8 Workflows' : (userPlan === 'team' ? '6 Workflows' : '2 Workflows (Ad-hoc, Kanban)')}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="wp-modal-body-scroll">

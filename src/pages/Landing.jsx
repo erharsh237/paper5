@@ -111,6 +111,7 @@ export default function Landing() {
   const [mobileActivePillar, setMobileActivePillar] = useState(0)
   const [activeOriginIndex, setActiveOriginIndex] = useState(0)
   const [billingCycle, setBillingCycle] = useState('monthly')
+  const [claimedNotice, setClaimedNotice] = useState(null)
   const { user } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
@@ -141,6 +142,11 @@ export default function Landing() {
 
   const handlePlanClick = (planId) => {
     trackEvent('pricing_plan_click', { plan: planId, cycle: billingCycle, source: 'landing_pricing' })
+    const pTitle = planId === 'starter' ? 'Starter Plan (Free)' : (planId === 'team' ? `Team Plan (${billingCycle === 'annual' ? 'Annual' : 'Monthly'})` : `Pro Plan (${billingCycle === 'annual' ? 'Annual' : 'Monthly'})`)
+    setClaimedNotice(`✓ Claimed ${pTitle}! Opening registration...`)
+    setTimeout(() => {
+      setClaimedNotice(null)
+    }, 4500)
     window.open(getAppUrl(`/signup?plan=${planId}&cycle=${billingCycle}`), '_blank', 'noopener,noreferrer')
   }
 
@@ -1163,6 +1169,31 @@ export default function Landing() {
       {/* Modals */}
       <AlertModal message={alertMessage} onClose={() => setAlertMessage(null)} />
       <ContactModal isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
+
+      {claimedNotice && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 99999,
+          background: '#09090b',
+          color: '#ffffff',
+          padding: '12px 24px',
+          borderRadius: '100px',
+          fontSize: '13.5px',
+          fontWeight: 700,
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.35)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          pointerEvents: 'none'
+        }}>
+          <span style={{ color: '#10b981', fontWeight: 900 }}>✓</span>
+          <span>{claimedNotice}</span>
+        </div>
+      )}
     </div>
   )
 }
