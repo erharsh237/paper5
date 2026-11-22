@@ -15,6 +15,9 @@ BEGIN;
 -- 1. SUBSCRIPTION SECURITY: PROTECT USERS BILLING COLUMNS
 -- ------------------------------------------------------------------------------
 
+DROP TRIGGER IF EXISTS trg_protect_user_subscription_fields ON public.users;
+DROP FUNCTION IF EXISTS public.protect_user_subscription_fields() CASCADE;
+
 CREATE OR REPLACE FUNCTION public.protect_user_subscription_fields()
 RETURNS TRIGGER 
 LANGUAGE plpgsql 
@@ -53,6 +56,9 @@ UPDATE public.workspaces
 SET grandfathered_workflow = settings->>'agile_workflow'
 WHERE grandfathered_workflow IS NULL 
   AND settings->>'agile_workflow' IS NOT NULL;
+
+DROP TRIGGER IF EXISTS trg_enforce_workspace_workflow_entitlements ON public.workspaces;
+DROP FUNCTION IF EXISTS public.enforce_workspace_workflow_entitlements() CASCADE;
 
 CREATE OR REPLACE FUNCTION public.enforce_workspace_workflow_entitlements()
 RETURNS TRIGGER 
@@ -112,6 +118,8 @@ EXECUTE FUNCTION public.enforce_workspace_workflow_entitlements();
 -- ------------------------------------------------------------------------------
 -- 3. ATOMIC WORKSPACE PROVISIONING WITH TRUSTED CREATOR AND QUOTA ENFORCEMENT
 -- ------------------------------------------------------------------------------
+
+DROP FUNCTION IF EXISTS public.provision_new_workspace_atomic(TEXT, TEXT, TEXT, BOOLEAN, TEXT);
 
 CREATE OR REPLACE FUNCTION public.provision_new_workspace_atomic(
   workspace_name TEXT,
@@ -255,6 +263,10 @@ $$;
 GRANT EXECUTE ON FUNCTION public.provision_new_workspace_atomic(TEXT, TEXT, TEXT, BOOLEAN, TEXT) TO authenticated;
 
 -- Maintain backward compatibility for existing callers of create_new_workspace
+DROP FUNCTION IF EXISTS public.create_new_workspace(TEXT, UUID, UUID);
+DROP FUNCTION IF EXISTS public.create_new_workspace(TEXT, UUID);
+DROP FUNCTION IF EXISTS public.create_new_workspace(TEXT);
+
 CREATE OR REPLACE FUNCTION public.create_new_workspace(
   workspace_name TEXT,
   creator_id UUID,
@@ -276,6 +288,8 @@ GRANT EXECUTE ON FUNCTION public.create_new_workspace(TEXT, UUID, UUID) TO authe
 -- ------------------------------------------------------------------------------
 -- 4. DOWNGRADE & READ-ONLY WORKSPACE DATA PROTECTION
 -- ------------------------------------------------------------------------------
+
+DROP FUNCTION IF EXISTS public.set_single_active_workspace(UUID);
 
 CREATE OR REPLACE FUNCTION public.set_single_active_workspace(target_workspace_id UUID)
 RETURNS JSONB
@@ -355,6 +369,8 @@ FOR DELETE USING (
 -- ------------------------------------------------------------------------------
 
 -- Update compliance trigger to check transaction-scoped setting
+DROP FUNCTION IF EXISTS public.check_last_workspace_owner() CASCADE;
+
 CREATE OR REPLACE FUNCTION public.check_last_workspace_owner()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -401,6 +417,8 @@ BEGIN
   RETURN OLD;
 END;
 $$;
+
+DROP FUNCTION IF EXISTS public.delete_workspace_completely(UUID);
 
 CREATE OR REPLACE FUNCTION public.delete_workspace_completely(target_workspace_id UUID)
 RETURNS JSONB
@@ -464,6 +482,9 @@ GRANT EXECUTE ON FUNCTION public.delete_workspace_completely(UUID) TO authentica
 -- ------------------------------------------------------------------------------
 -- 6. MEMBER QUOTA ENFORCEMENT & INACTIVE WORKSPACE RLS ON OPERATIONAL TABLES
 -- ------------------------------------------------------------------------------
+
+DROP TRIGGER IF EXISTS trg_enforce_workspace_member_limit ON public.workspace_members;
+DROP FUNCTION IF EXISTS public.enforce_workspace_member_limit() CASCADE;
 
 CREATE OR REPLACE FUNCTION public.enforce_workspace_member_limit()
 RETURNS TRIGGER
