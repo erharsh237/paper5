@@ -548,7 +548,18 @@ export default function Signup() {
                     <Link 
                       to={`/login?email=${encodeURIComponent(email)}`}
                       className="auth-submit-btn"
-                      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textDecoration: 'none', height: '42px', fontSize: '14px' }}
+                      style={{ 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        gap: '8px', 
+                        textDecoration: 'none', 
+                        height: '42px', 
+                        fontSize: '14px',
+                        color: '#ffffff',
+                        background: '#09090b',
+                        fontWeight: 600
+                      }}
                     >
                       Sign In With This Email &rarr;
                     </Link>

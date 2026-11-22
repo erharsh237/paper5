@@ -267,16 +267,17 @@ input::-webkit-credentials-auto-fill-button {
   opacity: 1;
 }
 
-.btn-primary, a.btn-primary {
-  background: var(--text-primary);
+.btn-primary, a.btn-primary, .auth-submit-btn, a.auth-submit-btn {
+  background: var(--text-primary, #09090b);
   color: #fff !important;
   border-radius: var(--radius-sm);
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
-.btn-primary:not(:disabled):hover, a.btn-primary:not(:disabled):hover {
-  background: #000;
+.btn-primary:not(:disabled):hover, a.btn-primary:not(:disabled):hover,
+.auth-submit-btn:not(:disabled):hover, a.auth-submit-btn:hover {
+  background: #27272a !important;
   color: #fff !important;
-  transform: translateY(-2px) scale(1.02);
+  transform: translateY(-2px) scale(1.01);
   box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.3);
 }
 .btn-primary:not(:disabled):active {
@@ -616,7 +617,8 @@ a {
 /* Global Button & Link Contrast Guarantees in Dark Mode */
 [data-theme="dark"] .btn-primary,
 [data-theme="dark"] a.btn-primary,
-[data-theme="dark"] .auth-submit-btn {
+[data-theme="dark"] .auth-submit-btn,
+[data-theme="dark"] a.auth-submit-btn {
   background: #ffffff !important;
   color: #09090b !important;
   box-shadow: 0 4px 16px rgba(255, 255, 255, 0.15) !important;
@@ -624,7 +626,8 @@ a {
 
 [data-theme="dark"] .btn-primary *,
 [data-theme="dark"] a.btn-primary *,
-[data-theme="dark"] .auth-submit-btn * {
+[data-theme="dark"] .auth-submit-btn *,
+[data-theme="dark"] a.auth-submit-btn * {
   color: #09090b !important;
   stroke: #09090b !important;
   fill: currentColor;
@@ -632,7 +635,8 @@ a {
 
 [data-theme="dark"] .btn-primary:not(:disabled):hover,
 [data-theme="dark"] a.btn-primary:not(:disabled):hover,
-[data-theme="dark"] .auth-submit-btn:not(:disabled):hover {
+[data-theme="dark"] .auth-submit-btn:not(:disabled):hover,
+[data-theme="dark"] a.auth-submit-btn:hover {
   background: #e4e4e7 !important;
   color: #000000 !important;
   box-shadow: 0 6px 20px rgba(255, 255, 255, 0.25) !important;
@@ -640,7 +644,8 @@ a {
 
 [data-theme="dark"] .btn-primary:not(:disabled):hover *,
 [data-theme="dark"] a.btn-primary:not(:disabled):hover *,
-[data-theme="dark"] .auth-submit-btn:not(:disabled):hover * {
+[data-theme="dark"] .auth-submit-btn:not(:disabled):hover *,
+[data-theme="dark"] a.auth-submit-btn:hover * {
   color: #000000 !important;
   stroke: #000000 !important;
 }

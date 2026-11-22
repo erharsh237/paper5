@@ -175,11 +175,12 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
-.auth-submit-btn {
+.auth-submit-btn,
+a.auth-submit-btn {
   width: 100%;
   padding: 10px;
   background: #09090b;
-  color: #ffffff;
+  color: #ffffff !important;
   border: 1px solid transparent;
   border-radius: 8px;
   font-size: 14px;
@@ -187,17 +188,46 @@
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   margin-top: 12px;
+  text-decoration: none !important;
+  box-sizing: border-box;
 }
 
-.auth-submit-btn:hover:not(:disabled) {
-  background: #27272a;
+.auth-submit-btn *,
+a.auth-submit-btn * {
+  color: #ffffff !important;
+  fill: currentColor;
+}
+
+.auth-submit-btn:hover:not(:disabled),
+a.auth-submit-btn:hover:not(:disabled),
+a.auth-submit-btn:hover {
+  background: #27272a !important;
+  color: #ffffff !important;
+  text-decoration: none !important;
   transform: translateY(-1px);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
 }
 
-.auth-submit-btn:active:not(:disabled) {
+.auth-submit-btn:hover:not(:disabled) *,
+a.auth-submit-btn:hover:not(:disabled) *,
+a.auth-submit-btn:hover * {
+  color: #ffffff !important;
+  fill: currentColor;
+}
+
+.auth-submit-btn:active:not(:disabled),
+a.auth-submit-btn:active:not(:disabled),
+a.auth-submit-btn:active {
   transform: translateY(0);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  color: #ffffff !important;
+}
+
+.auth-submit-btn:focus-visible,
+a.auth-submit-btn:focus-visible {
+  outline: 2px solid var(--accent, #4f46e5);
+  outline-offset: 2px;
+  color: #ffffff !important;
 }
 
 .auth-submit-btn:disabled,
