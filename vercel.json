@@ -76,6 +76,22 @@
       "destination": "/api/invites?action=accept"
     },
     {
+      "source": "/api/delete-workspace",
+      "destination": "/api/workspace-members?action=delete_workspace"
+    },
+    {
+      "source": "/api/delete-user",
+      "destination": "/api/workspace-members?action=delete_user"
+    },
+    {
+      "source": "/api/request-account-deletion",
+      "destination": "/api/workspace-members?action=request_account_deletion"
+    },
+    {
+      "source": "/api/ensure-user",
+      "destination": "/api/workspace-members?action=ensure_user"
+    },
+    {
       "source": "/(pricing|features|about|about-us|vs|vs/:tool|contact|product-integrations|changelog|docs|docs/api|security|legal|legal/terms|legal/privacy|legal/dpa|legal/subprocessors|terms|privacy|dpa|subprocessors|thank-you|error|500|404|login|signup|forgot-password|verify|join|workspace|auth/action|reset-password)",
       "destination": "/index.html"
     },
