@@ -118,7 +118,7 @@ export default function CalendarWidget({ user, onSelectEvent, selectedEventId })
     } catch (e) {}
   }
 
-  const isConnected = (googleCalendar.actions.hasValidToken() || isDemoMode) && calendarEvents.length > 0
+  const isConnected = Boolean(googleCalendar.actions.hasValidToken() || isDemoMode)
 
   return (
     <section className="sprint-overview meeting-panel" style={{ padding: '16px 20px', marginBottom: 0, borderRadius: '12px', background: 'var(--surface, #FFFFFF)', border: '1px solid var(--border-soft, #E2E8F0)' }}>
@@ -209,7 +209,7 @@ export default function CalendarWidget({ user, onSelectEvent, selectedEventId })
           {calendarEvents.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '24px 0', background: 'var(--surface-2, #F8FAFC)', borderRadius: '10px', border: '1px solid var(--border-soft, #E2E8F0)' }}>
               <p style={{ margin: 0, fontSize: '13px', color: 'var(--muted, #64748B)' }}>
-                No upcoming meetings found for this week.
+                {fetchingEvents ? 'Syncing upcoming meetings…' : 'No upcoming meetings found for this week.'}
               </p>
             </div>
           ) : (
