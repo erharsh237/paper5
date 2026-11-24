@@ -3,7 +3,7 @@ import { NavLink, Link } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { useWorkspace } from '../lib/WorkspaceContext'
 import { subscribeUserWorkspaces } from '../lib/workspaces'
-import FeedbackModal from './FeedbackModal'
+import ProductFeedbackModal from './ProductFeedbackModal'
 import ThemeToggle from './ThemeToggle'
 import './NavTabs.css'
 
@@ -147,7 +147,7 @@ export default function UserMenu() {
         )}
       </div>
 
-      <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
+      <ProductFeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
     </div>
   )
 }

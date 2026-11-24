@@ -2,6 +2,11 @@
  * Server-side in-memory sliding-window rate limiter for Vercel Serverless Functions
  */
 const rateLimitMap = new Map()
+const bannedIpsSet = new Set()
+
+export function registerBannedIp(ip) {
+  if (ip && typeof ip === 'string') bannedIpsSet.add(ip.trim())
+}
 
 // Clean up expired entries every 5 minutes
 setInterval(() => {
@@ -30,14 +35,29 @@ export function checkRateLimit(req, res, { max = 60, windowMs = 60000 } = {}) {
     return false
   }
 
-  const forwarded = req.headers['x-forwarded-for']
-  const ip = (typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : '') ||
-             req.headers['x-real-ip'] ||
-             req.socket?.remoteAddress ||
-             'unknown'
+  // Authoritative proxy header priority: prefer x-real-ip or x-vercel-ip over client-supplied x-forwarded-for
+  const realIp = (typeof req.headers['x-real-ip'] === 'string' && req.headers['x-real-ip'].trim()) ||
+                 (typeof req.headers['x-vercel-ip'] === 'string' && req.headers['x-vercel-ip'].trim())
+
+  let ip = realIp
+  if (!ip) {
+    const forwarded = req.headers['x-forwarded-for']
+    ip = (typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : '') ||
+         req.socket?.remoteAddress ||
+         'unknown'
+  }
 
   const endpoint = req.url?.split('?')[0] || ''
   const key = `${ip}:${endpoint}`
+
+  if (ip && bannedIpsSet.has(ip)) {
+    res.status(403).json({
+      error: 'Forbidden',
+      message: 'Your IP address has been permanently suspended from the platform.'
+    })
+    return true
+  }
+
   const now = Date.now()
 
   let record = rateLimitMap.get(key)

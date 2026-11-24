@@ -1,6 +1,7 @@
 import {
   handleContact,
   handleFeedback,
+  handleProductFeedback,
   handleForgotPassword,
   handleNotFound,
   handleServerError,
@@ -10,6 +11,7 @@ import {
 const ACTION_HANDLERS = {
   contact: handleContact,
   feedback: handleFeedback,
+  'product-feedback': handleProductFeedback,
   'forgot-password': handleForgotPassword,
   'not-found': handleNotFound,
   '500': handleServerError,
@@ -29,6 +31,7 @@ function resolveAction(req) {
   const pathname = String(req.url || '').split('?')[0].toLowerCase()
   if (pathname === '/api/contact') return 'contact'
   if (pathname === '/api/feedback') return 'feedback'
+  if (pathname === '/api/product-feedback') return 'product-feedback'
   if (pathname === '/api/forgot-password') return 'forgot-password'
   if (pathname === '/api/check-account') return 'check-account'
   if (pathname === '/api/500' || pathname === '/500') return '500'

@@ -63,6 +63,10 @@ pnpm-debug.log*
 coverage
 .nyc_output
 
+# Temporary Render & Video Exports
+temp_render/
+exports/
+
 # Temp & Cache
 .cache
 .parcel-cache

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { randomUUID } from 'crypto'
 import { setCorsHeaders } from './_cors.js'
 import { checkRateLimit } from './_rateLimit.js'
 import {
@@ -109,7 +110,7 @@ export async function handleFeedback(req, res) {
     return res.status(turnstileCheck.status || 400).json({ error: turnstileCheck.error })
   }
 
-  const endpoint = process.env.FORMSPREE_FEEDBACK_ENDPOINT || 'https://formspree.io/f/xwlekeea'
+  const endpoint = process.env.FORMSPREE_FEEDBACK_ENDPOINT || 'https://formspree.io/f/myewlnba'
   try {
     await forwardToFormspree(endpoint, {
       name,
@@ -124,6 +125,159 @@ export async function handleFeedback(req, res) {
     console.error('[api/feedback] Delivery error:', err)
     return res.status(502).json({
       error: 'Unable to submit feedback right now. Please try again shortly.'
+    })
+  }
+}
+
+const ALLOWED_PRODUCT_CATEGORIES = new Set([
+  'Bug / Glitch',
+  'Feature Request',
+  'UI / UX Improvement',
+  'Performance Issue',
+  'Other'
+])
+
+const ALLOWED_IMAGE_MIMES = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp'])
+const ALLOWED_IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'webp'])
+
+function validateImageMagicBytes(buffer, declaredMime) {
+  if (!buffer || buffer.length < 12) return false
+  
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  const isPng = buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47 &&
+                buffer[4] === 0x0D && buffer[5] === 0x0A && buffer[6] === 0x1A && buffer[7] === 0x0A
+  
+  // JPEG: FF D8 FF
+  const isJpeg = buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF
+  
+  // WebP: RIFF .... WEBP
+  const isWebp = buffer.slice(0, 4).toString('ascii') === 'RIFF' && 
+                 buffer.slice(8, 12).toString('ascii') === 'WEBP'
+  
+  if (declaredMime === 'image/png') return isPng
+  if (declaredMime === 'image/jpeg' || declaredMime === 'image/jpg') return isJpeg
+  if (declaredMime === 'image/webp') return isWebp
+  
+  return isPng || isJpeg || isWebp
+}
+
+export async function handleProductFeedback(req, res) {
+  setCorsHeaders(req, res)
+  res.setHeader('Content-Type', 'application/json')
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end()
+  }
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+  if (checkRateLimit(req, res, { max: 10, windowMs: 600000 })) {
+    return
+  }
+  if (isHoneypotTriggered(req.body)) {
+    return res.status(400).json({ error: 'Submission rejected by spam protection.' })
+  }
+
+  const rawCat = sanitizeText(req.body.category || 'Bug / Glitch', { maxLen: 50 })
+  const category = ALLOWED_PRODUCT_CATEGORIES.has(rawCat) ? rawCat : 'Bug / Glitch'
+  const title = sanitizeText(req.body.title || '', { maxLen: 150 })
+  const message = sanitizeText(req.body.message || '', { maxLen: 4000, preserveNewlines: true })
+  const severity = sanitizeText(req.body.severity || 'Medium', { maxLen: 30 })
+  const userName = sanitizeText(req.body.userName || 'Logged-in User', { maxLen: 100 })
+  const userEmail = typeof req.body.userEmail === 'string' ? req.body.userEmail.trim().toLowerCase() : ''
+  const workspaceId = sanitizeText(req.body.workspaceId || 'N/A', { maxLen: 100 })
+  const workspaceName = sanitizeText(req.body.workspaceName || 'N/A', { maxLen: 100 })
+  const currentUrl = sanitizeText(req.body.currentUrl || '', { maxLen: 300 })
+  const environment = req.body.environment || {}
+
+  if (message.length < 5) {
+    return res.status(400).json({ error: 'Please describe the issue or feedback (minimum 5 characters).' })
+  }
+
+  let evidenceUrl = null
+
+  // Strict File Security Validation for Image Evidence
+  if (req.body.imageAttachment && req.body.imageAttachment.base64Data) {
+    const { fileName, mimeType, base64Data } = req.body.imageAttachment
+    const cleanFileName = sanitizeText(fileName || '', { maxLen: 100 }).replace(/[^a-zA-Z0-9._-]/g, '')
+    const ext = cleanFileName.split('.').pop()?.toLowerCase() || ''
+
+    if (!ALLOWED_IMAGE_EXTS.has(ext) || !ALLOWED_IMAGE_MIMES.has(mimeType)) {
+      return res.status(400).json({
+        error: 'Security rejection: Only genuine PNG, JPG, or WebP screenshot files are accepted as evidence.'
+      })
+    }
+
+    try {
+      const rawBase64 = String(base64Data).replace(/^data:[^;]+;base64,/, '')
+      const fileBuffer = Buffer.from(rawBase64, 'base64')
+
+      if (fileBuffer.length > 5 * 1024 * 1024) {
+        return res.status(400).json({
+          error: 'File size limit exceeded: Screenshots must be under 5MB.'
+        })
+      }
+
+      if (!validateImageMagicBytes(fileBuffer, mimeType)) {
+        return res.status(400).json({
+          error: 'Malicious or invalid file rejected: The uploaded file contents do not match genuine image headers.'
+        })
+      }
+
+      // Upload to Supabase Storage with service role key
+      const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://sdbglndhjkqhkphzqmum.supabase.co'
+      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+      if (serviceKey) {
+        const supabaseAdmin = createClient(supabaseUrl, serviceKey)
+        const safeObjectKey = `evidence-${Date.now()}-${randomUUID().slice(0, 8)}.${ext}`
+        const { error: uploadError } = await supabaseAdmin.storage
+          .from('feedback-attachments')
+          .upload(safeObjectKey, fileBuffer, {
+            contentType: mimeType,
+            upsert: false
+          })
+
+        if (!uploadError) {
+          const { data: pubData } = supabaseAdmin.storage
+            .from('feedback-attachments')
+            .getPublicUrl(safeObjectKey)
+          evidenceUrl = pubData?.publicUrl || null
+        } else {
+          console.warn('[api/product-feedback] Supabase storage upload warning:', uploadError.message)
+        }
+      }
+    } catch (parseErr) {
+      console.error('[api/product-feedback] File parsing error:', parseErr)
+      return res.status(400).json({ error: 'Failed to process evidence file.' })
+    }
+  }
+
+  const endpoint = process.env.FORMSPREE_PRODUCT_FEEDBACK_ENDPOINT || 'https://formspree.io/f/xyewlnla'
+  try {
+    await forwardToFormspree(endpoint, {
+      category,
+      title: title || `${category} reported from dashboard`,
+      severity,
+      message,
+      evidence_screenshot_url: evidenceUrl || 'No image attached',
+      user_name: userName,
+      user_email: userEmail || 'not-provided',
+      workspace_id: workspaceId,
+      workspace_name: workspaceName,
+      current_route: currentUrl,
+      browser: environment.browser || 'Unknown',
+      operating_system: environment.os || 'Unknown',
+      screen_resolution: environment.screen || 'Unknown',
+      source: 'Paper5 In-App Dashboard'
+    })
+    return res.status(200).json({
+      ok: true,
+      message: 'Product report received successfully. Thank you for helping us improve Paper5!',
+      evidenceUrl
+    })
+  } catch (err) {
+    console.error('[api/product-feedback] Delivery error:', err)
+    return res.status(502).json({
+      error: 'Unable to submit product report right now. Please try again shortly.'
     })
   }
 }

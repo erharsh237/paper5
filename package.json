@@ -6,7 +6,17 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "console": "vite owner-console --config owner-console/vite.config.js",
+    "console:build": "vite build owner-console --config owner-console/vite.config.js",
+    "video:export": "node .agents/skills/paper5-video-production/scripts/render.mjs --aspect portrait --fps 60",
+    "video:preview": "node .agents/skills/paper5-video-production/scripts/render.mjs --aspect portrait --fps 60 --preview",
+    "video:landscape": "node .agents/skills/paper5-video-production/scripts/render.mjs --aspect landscape --fps 60",
+    "video:square": "node .agents/skills/paper5-video-production/scripts/render.mjs --preset square",
+    "video:reel": "node .agents/skills/paper5-video-production/scripts/render.mjs --preset reel",
+    "video:youtube": "node .agents/skills/paper5-video-production/scripts/render.mjs --preset youtube",
+    "video:test": "node .agents/skills/paper5-video-production/scripts/render.mjs --preset reel --duration 5 --out exports/test-5s.mp4",
+    "video:launch": "node .agents/skills/paper5-video-production/scripts/render.mjs --preset reel --out exports/paper5-instagram-launch.mp4"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
@@ -31,7 +41,12 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@vitejs/plugin-react": "^6.0.4",
+    "autoprefixer": "^10.7.0",
+    "playwright-core": "^1.65.1",
+    "postcss": "^8.5.33",
+    "tailwindcss": "^3.4.19",
     "vite": "^8.1.5"
   }
 }

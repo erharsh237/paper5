@@ -51,6 +51,31 @@ export async function authenticateUser(req, supabaseAdmin) {
     if (error || !data?.user) {
       return { error: 'Invalid or expired authentication session.', status: 401 }
     }
+
+    // Enforcement: Check if user email or caller IP has been permanently suspended / banned
+    const callerIp = req.headers?.['x-real-ip'] || req.headers?.['x-vercel-ip'] || req.headers?.['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress
+    const userEmail = data.user.email?.toLowerCase()
+
+    try {
+      const { data: banFlag } = await supabaseAdmin
+        .from('feature_flags')
+        .select('metadata')
+        .eq('key', 'platform_ban_list')
+        .maybeSingle()
+
+      if (banFlag?.metadata) {
+        const bannedEmails = (banFlag.metadata.banned_emails || []).map(e => e.toLowerCase())
+        const bannedIps = banFlag.metadata.banned_ips || []
+
+        if ((userEmail && bannedEmails.includes(userEmail)) || (callerIp && bannedIps.includes(callerIp))) {
+          return {
+            error: 'Security Policy: This account or IP address has been permanently suspended from the platform.',
+            status: 403
+          }
+        }
+      }
+    } catch (_) {}
+
     return { user: data.user, token }
   } catch (err) {
     return { error: 'Authentication verification failed.', status: 401 }

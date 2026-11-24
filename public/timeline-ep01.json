@@ -1,0 +1,251 @@
+{
+  "version": "2.0.0",
+  "title": "Paper5 — Startup Chronicles (Episode 01: The 6 PM Deadline)",
+  "fps": 60,
+  "resolution": {
+    "width": 1080,
+    "height": 1920,
+    "aspect": "9:16"
+  },
+  "durationSec": 35,
+  "silenceWindow": {
+    "start": 21.17,
+    "end": 26.94
+  },
+  "scenes": [
+    {
+      "id": "scene_01",
+      "name": "Morning Standup",
+      "startTime": 0,
+      "endTime": 6.260000000000001,
+      "camera": {
+        "x": 0,
+        "y": 0,
+        "zoom": 1
+      },
+      "characters": {
+        "max": {
+          "state": "idle_confident",
+          "x": 260,
+          "y": 1280
+        },
+        "alex": {
+          "state": "desk_typing",
+          "x": 820,
+          "y": 1320
+        },
+        "sam": {
+          "state": "sipping_coffee",
+          "x": 120,
+          "y": 1300
+        },
+        "mia": {
+          "state": "tablet_review",
+          "x": 420,
+          "y": 1310
+        }
+      },
+      "dialogue": [
+        {
+          "id": "narrator_01",
+          "start": 0.4,
+          "end": 5.86,
+          "text": "Monday morning at Paper5. Sprint 42 was completely on schedule."
+        }
+      ]
+    },
+    {
+      "id": "scene_02",
+      "name": "The Idea Drop",
+      "startTime": 6.260000000000001,
+      "endTime": 12.940000000000001,
+      "camera": {
+        "x": -120,
+        "y": -40,
+        "zoom": 1.15
+      },
+      "characters": {
+        "max": {
+          "state": "speaking_gesturing",
+          "x": 300,
+          "y": 1260
+        },
+        "sam": {
+          "state": "eyebrow_raise",
+          "x": 140,
+          "y": 1300
+        }
+      },
+      "dialogue": [
+        {
+          "id": "max_01",
+          "start": 6.460000000000001,
+          "end": 9.780000000000001,
+          "text": "Team! One tiny priority before tomorrow's launch."
+        },
+        {
+          "id": "sam_01",
+          "start": 10.23,
+          "end": 12.440000000000001,
+          "text": "Define \"tiny\", Max."
+        }
+      ]
+    },
+    {
+      "id": "scene_03",
+      "name": "The Task Assignment",
+      "startTime": 12.940000000000001,
+      "endTime": 17.67,
+      "camera": {
+        "x": 0,
+        "y": -70,
+        "zoom": 1.25
+      },
+      "characters": {
+        "max": {
+          "state": "submitting_deadline",
+          "x": 280,
+          "y": 1250
+        }
+      },
+      "dialogue": [
+        {
+          "id": "max_02",
+          "start": 13.240000000000002,
+          "end": 17.07,
+          "text": "Zero-downtime cluster security audit. Due by 6 PM today."
+        }
+      ],
+      "modal": {
+        "title": "Pen-test report — Paper5 core",
+        "assignee": "Alex Rivera",
+        "priority": "High",
+        "due": "18:00 today",
+        "openTime": 13.240000000000002
+      }
+    },
+    {
+      "id": "scene_04",
+      "name": "The Notification Ping",
+      "startTime": 17.67,
+      "endTime": 21.17,
+      "camera": {
+        "x": 240,
+        "y": -50,
+        "zoom": 1.35
+      },
+      "characters": {
+        "alex": {
+          "state": "flow_coding_to_shock",
+          "x": 540,
+          "y": 1320
+        }
+      },
+      "dialogue": [
+        {
+          "id": "alex_01",
+          "start": 18.07,
+          "end": 20.87,
+          "text": "Wait... 6 PM today?!"
+        }
+      ],
+      "toast": {
+        "text": "New deadline assigned: Pen-test report (Due 18:00)",
+        "pingTime": 17.87
+      }
+    },
+    {
+      "id": "scene_05",
+      "name": "The Comedic Reaction",
+      "startTime": 21.17,
+      "endTime": 26.94,
+      "camera": {
+        "x": 0,
+        "y": -40,
+        "zoom": 1.55
+      },
+      "characters": {
+        "alex": {
+          "state": "deadpan_camera_turn",
+          "x": 540,
+          "y": 1280,
+          "reactionKeyframes": [
+            {
+              "time": 21.37,
+              "action": "eyes_widen",
+              "pupilScale": 1.4
+            },
+            {
+              "time": 21.770000000000003,
+              "action": "head_tilt",
+              "degrees": -6
+            },
+            {
+              "time": 22.17,
+              "action": "shoulders_drop",
+              "weightShiftY": 18
+            },
+            {
+              "time": 22.57,
+              "action": "turn_to_camera",
+              "headAngle": 0
+            },
+            {
+              "time": 22.970000000000002,
+              "action": "deadpan_blink_1"
+            },
+            {
+              "time": 23.37,
+              "action": "deadpan_blink_2"
+            }
+          ]
+        }
+      },
+      "dialogue": [
+        {
+          "id": "alex_02",
+          "start": 23.57,
+          "end": 26.34,
+          "text": "I am going to need way more coffee."
+        }
+      ]
+    },
+    {
+      "id": "scene_06",
+      "name": "Paper5 Resolution & Brand Reveal",
+      "startTime": 26.94,
+      "endTime": 35,
+      "camera": {
+        "x": 0,
+        "y": 0,
+        "zoom": 1
+      },
+      "characters": {
+        "alex": {
+          "state": "relieved_smile",
+          "x": 380,
+          "y": 1320
+        },
+        "max": {
+          "state": "thumbs_up",
+          "x": 700,
+          "y": 1320
+        }
+      },
+      "dialogue": [
+        {
+          "id": "narrator_02",
+          "start": 27.34,
+          "end": 32.5,
+          "text": "Everything on paper. Nothing on trust. Paper5."
+        }
+      ],
+      "brand": {
+        "logoTime": 27.44,
+        "confettiTime": 27.64,
+        "url": "https://paper5.co",
+        "tagline": "Everything on paper. Nothing on trust."
+      }
+    }
+  ]
+}

@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paper5 — Startup Chronicles (Ep. 01: The 6 PM Deadline)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: #06070b;
+      color: #f8fafc;
+      width: 100vw;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 9:16 Vertical Instagram Reel Master Canvas (1080 x 1920) */
+    #viewportStage {
+      position: relative;
+      width: 1080px;
+      height: 1920px;
+      background: #090b14;
+      overflow: hidden;
+      transform-origin: center center;
+      box-shadow: 0 0 100px rgba(0, 0, 0, 0.9);
+    }
+
+    /* Studio camera container for cinematic motivated pans, match cuts, and push-ins */
+    #cameraRig {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1080px;
+      height: 1920px;
+      transform-origin: 540px 960px;
+      will-change: transform;
+      transition: none; /* Controlled deterministically by renderAtTime */
+    }
+
+    /* Office Environment Layers */
+    .bg-wall {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 30%, #161b2d 0%, #0d101d 60%, #06070c 100%);
+    }
+
+    .office-grid {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 80px 80px;
+      opacity: 0.7;
+    }
+
+    .window-blinds {
+      position: absolute;
+      top: 120px;
+      left: 60px;
+      width: 320px;
+      height: 600px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      border: 2px solid rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      opacity: 0.6;
+    }
+
+    .window-light {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(255, 255, 255, 0.04) 0px,
+        rgba(255, 255, 255, 0.04) 14px,
+        transparent 14px,
+        transparent 28px
+      );
+    }
+
+    .whiteboard {
+      position: absolute;
+      top: 160px;
+      right: 70px;
+      width: 360px;
+      height: 480px;
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(20px);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 28px;
+      padding: 32px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .office-floor {
+      position: absolute;
+      bottom: 0;
+      left: -200px;
+      width: 1480px;
+      height: 680px;
+      background: linear-gradient(180deg, #0e1220 0%, #080a12 100%);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .standing-desk {
+      position: absolute;
+      bottom: 380px;
+      border-radius: 12px;
+      background: #1e2438;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Modular Character Rig Styles */
+    .character-rig {
+      position: absolute;
+      transform-origin: bottom center;
+      will-change: transform;
+      pointer-events: none;
+    }
+
+    .rig-head {
+      transform-origin: 50% 90%;
+      transition: none;
+    }
+
+    .rig-eye {
+      transition: none;
+    }
+
+    .rig-pupil {
+      transition: none;
+    }
+
+    .rig-mouth {
+      transition: none;
+    }
+
+    .rig-arm-left, .rig-arm-right {
+      transform-origin: top center;
+      transition: none;
+    }
+
+    .rig-torso {
+      transform-origin: bottom center;
+      transition: none;
+    }
+
+    /* Subtitle Banner */
+    #subtitleBanner {
+      position: absolute;
+      bottom: 140px;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 880px;
+      width: 90%;
+      background: rgba(10, 12, 22, 0.88);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 28px;
+      padding: 24px 36px;
+      text-align: center;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7);
+      z-index: 80;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    #subtitleSpeaker {
+      font-size: 18px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 6px;
+    }
+
+    #subtitleText {
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1.35;
+      color: #ffffff;
+    }
+
+    /* Floating Paper5 Toast Notification */
+    #paper5Toast {
+      position: absolute;
+      top: 180px;
+      left: 50%;
+      transform: translate(-50%, -80px) scale(0.9);
+      opacity: 0;
+      width: 760px;
+      background: rgba(17, 24, 39, 0.94);
+      backdrop-filter: blur(28px);
+      border: 1.5px solid rgba(99, 102, 241, 0.4);
+      border-radius: 28px;
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      box-shadow: 0 30px 70px rgba(0, 0, 0, 0.8), 0 0 40px rgba(99, 102, 241, 0.2);
+      z-index: 90;
+      will-change: transform, opacity;
+    }
+
+    /* Interactive UI Modal Stage (Scene 3) */
+    #modalChassis {
+      position: absolute;
+      top: 480px;
+      left: 50%;
+      transform: translateX(-50%) scale(0.9);
+      opacity: 0;
+      width: 860px;
+      background: #ffffff;
+      color: #0f172a;
+      border-radius: 36px;
+      padding: 48px;
+      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.85);
+      z-index: 70;
+      will-change: transform, opacity;
+    }
+
+    /* Finale Brand Overlay */
+    #finaleOverlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 35%, #15182d 0%, #080a14 70%, #030408 100%);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 95;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      will-change: opacity;
+    }
+
+    /* Particle Canvas for Confetti */
+    #confettiCanvas {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 96;
+    }
+
+    /* Preview Player Controls (hidden during automated render) */
+    .preview-bar {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 9999px;
+      padding: 12px 28px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      z-index: 200;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 9:16 Vertical Video Canvas -->
+  <div id="viewportStage">
+
+    <!-- Motivated Camera Rig -->
+    <div id="cameraRig">
+
+      <!-- Background: Startup Architectural Office -->
+      <div class="bg-wall"></div>
+      <div class="office-grid"></div>
+
+      <!-- Window with soft morning daylight blinds -->
+      <div class="window-blinds">
+        <div class="window-light"></div>
+      </div>
+
+      <!-- Startup Whiteboard -->
+      <div class="whiteboard">
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-xs font-black uppercase tracking-wider text-indigo-400">Sprint 42 Plan</span>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">ON TRACK</span>
+        </div>
+        <div class="space-y-3 font-mono text-xs text-slate-300">
+          <div class="p-2.5 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
+            <span>Core Engine v2.4</span>
+            <span class="text-emerald-400 font-bold">100%</span>
+          </div>
+          <div class="p-2.5 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
+            <span>Payment Webhooks</span>
+            <span class="text-emerald-400 font-bold">100%</span>
+          </div>
+          <div class="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-between text-indigo-300">
+            <span>Launch Deployment</span>
+            <span class="font-bold">Tomorrow 09:00</span>
+          </div>
+        </div>
+        <!-- Sticky notes -->
+        <div class="mt-6 grid grid-cols-2 gap-3">
+          <div class="p-3 bg-amber-400 text-amber-950 font-bold text-xs rounded-xl shadow-lg transform -rotate-2">
+            No Scope Creep! 🚀
+          </div>
+          <div class="p-3 bg-rose-400 text-rose-950 font-bold text-xs rounded-xl shadow-lg transform rotate-3">
+            Hard Launch @ 9 AM
+          </div>
+        </div>
+      </div>
+
+      <!-- Studio Floor -->
+      <div class="office-floor"></div>
+
+      <!-- Desk 1: Alex's Engineering Station -->
+      <div class="standing-desk" style="left: 480px; width: 560px; height: 32px;"></div>
+      <div style="position: absolute; left: 620px; bottom: 412px; width: 140px; height: 90px; background: #0f172a; border: 2px solid #334155; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+        <!-- Monitor screen with code -->
+        <div style="padding: 8px; font-family: var(--font-mono); font-size: 8px; color: #38bdf8; line-height: 1.4;">
+          const auth = await verify();<br>
+          <span style="color: #34d399;">// 0 errors, 142 tests passing</span><br>
+          server.listen(8080);
+        </div>
+      </div>
+
+      <!-- Desk 2: Max's Presentation Laptop Stand -->
+      <div class="standing-desk" style="left: 140px; width: 360px; height: 32px;"></div>
+      <div style="position: absolute; left: 240px; bottom: 412px; width: 110px; height: 75px; background: #1e293b; border: 2px solid #475569; border-radius: 8px; transform: skewY(-4deg);">
+        <div style="padding: 6px; font-family: var(--font-sans); font-size: 7px; color: #e2e8f0;">
+          <div style="font-weight: 800; color: #818cf8;">Paper5 Admin</div>
+          <div>Sprint 42 • Live</div>
+        </div>
+      </div>
+
+      <!-- =============================================================== -->
+      <!-- CHARACTER 1: MAX (The Ambitious Founder) -->
+      <!-- =============================================================== -->
+      <div id="charMax" class="character-rig" style="left: 200px; bottom: 412px; width: 280px; height: 720px;">
+        <!-- Torso & Blazer -->
+        <div class="rig-torso" style="position: absolute; bottom: 0; left: 50px; width: 180px; height: 380px;">
+          <!-- Tailored Blazer / Dark Navy Jacket -->
+          <svg viewBox="0 0 180 380" width="180" height="380">
+            <!-- Torso Body -->
+            <path d="M 30,80 L 150,80 L 165,370 L 15,370 Z" fill="#1e2238" stroke="#2a304e" stroke-width="2"/>
+            <!-- Inner Shirt -->
+            <polygon points="75,80 105,80 90,160" fill="#f8fafc"/>
+            <polygon points="86,150 94,150 92,260 88,260" fill="#6366f1"/>
+            <!-- Lapels -->
+            <path d="M 30,80 L 75,180 L 90,180 L 30,80" fill="#2d3556"/>
+            <path d="M 150,80 L 105,180 L 90,180 L 150,80" fill="#2d3556"/>
+          </svg>
+        </div>
+
+        <!-- Left Arm (Gesturing / Pointing) -->
+        <div id="maxArmLeft" class="rig-arm-left" style="position: absolute; top: 320px; left: 10px; width: 60px; height: 260px;">
+          <svg viewBox="0 0 60 260" width="60" height="260">
+            <path d="M 25,0 C 10,60 5,140 25,230 C 28,245 45,250 48,230 C 35,140 40,60 45,0 Z" fill="#1e2238"/>
+            <!-- Hand / Fingers -->
+            <circle cx="36" cy="242" r="14" fill="#fcd34d"/>
+          </svg>
+        </div>
+
+        <!-- Right Arm (Thumbs up / Keyboard) -->
+        <div id="maxArmRight" class="rig-arm-right" style="position: absolute; top: 320px; right: 10px; width: 70px; height: 260px;">
+          <svg viewBox="0 0 70 260" width="70" height="260">
+            <path d="M 35,0 C 50,60 55,140 35,230 C 32,245 15,250 12,230 C 25,140 20,60 15,0 Z" fill="#1e2238"/>
+            <!-- Hand -->
+            <circle cx="24" cy="242" r="14" fill="#fcd34d"/>
+          </svg>
+        </div>
+
+        <!-- Head, Face, Hair, Eyes, Mouth -->
+        <div id="maxHead" class="rig-head" style="position: absolute; top: 130px; left: 45px; width: 190px; height: 210px;">
+          <svg viewBox="0 0 190 210" width="190" height="210">
+            <!-- Neck -->
+            <rect x="75" y="150" width="40" height="50" rx="8" fill="#fcd34d"/>
+            <!-- Ears -->
+            <circle cx="28" cy="115" r="14" fill="#fbbf24"/>
+            <circle cx="162" cy="115" r="14" fill="#fbbf24"/>
+            <!-- Face Base -->
+            <path d="M 35,70 C 35,20 155,20 155,70 C 155,145 130,175 95,175 C 60,175 35,145 35,70 Z" fill="#fcd34d"/>
+            <!-- Stylish Hair (Short modern quiff) -->
+            <path d="M 28,65 C 25,10 70,-10 115,-5 C 160,-2 170,30 162,65 C 152,35 125,18 95,20 C 65,22 40,40 28,65 Z" fill="#33241b"/>
+            <!-- Eyebrows -->
+            <path id="maxEyebrowLeft" d="M 50,75 Q 68,68 82,74" fill="none" stroke="#271a14" stroke-width="4.5" stroke-linecap="round"/>
+            <path id="maxEyebrowRight" d="M 108,74 Q 122,68 140,75" fill="none" stroke="#271a14" stroke-width="4.5" stroke-linecap="round"/>
+            <!-- Glasses -->
+            <rect x="44" y="80" width="42" height="32" rx="10" fill="none" stroke="#475569" stroke-width="3.5"/>
+            <rect x="104" y="80" width="42" height="32" rx="10" fill="none" stroke="#475569" stroke-width="3.5"/>
+            <line x1="86" y1="94" x2="104" y2="94" stroke="#475569" stroke-width="3"/>
+            <!-- Left Eye & Pupil -->
+            <circle cx="65" cy="96" r="8" fill="#ffffff"/>
+            <circle id="maxPupilLeft" cx="65" cy="96" r="4.5" fill="#1e293b"/>
+            <!-- Right Eye & Pupil -->
+            <circle cx="125" cy="96" r="8" fill="#ffffff"/>
+            <circle id="maxPupilRight" cx="125" cy="96" r="4.5" fill="#1e293b"/>
+            <!-- Eyelids for blinking -->
+            <rect id="maxEyelidLeft" x="48" y="82" width="34" height="0" fill="#fcd34d"/>
+            <rect id="maxEyelidRight" x="108" y="82" width="34" height="0" fill="#fcd34d"/>
+            <!-- Nose -->
+            <path d="M 95,95 Q 98,118 92,122" fill="none" stroke="#eab308" stroke-width="3" stroke-linecap="round"/>
+            <!-- Expressive Mouth (Morphs during speech) -->
+            <path id="maxMouth" d="M 76,144 Q 95,152 114,144" fill="none" stroke="#881337" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- =============================================================== -->
+      <!-- CHARACTER 2: ALEX RIVERA (The Lead Engineer / Protagonist) -->
+      <!-- =============================================================== -->
+      <div id="charAlex" class="character-rig" style="left: 600px; bottom: 412px; width: 320px; height: 720px;">
+        <!-- Torso & Forest Green Tech Hoodie -->
+        <div id="alexTorso" class="rig-torso" style="position: absolute; bottom: 0; left: 60px; width: 200px; height: 380px;">
+          <svg viewBox="0 0 200 380" width="200" height="380">
+            <!-- Hoodie Body -->
+            <path d="M 30,85 C 45,70 155,70 170,85 L 185,370 L 15,370 Z" fill="#1b382b" stroke="#254d3b" stroke-width="2"/>
+            <!-- Hoodie Zipper & Kangaroo Pocket -->
+            <line x1="100" y1="120" x2="100" y2="370" stroke="#13271e" stroke-width="3"/>
+            <path d="M 50,260 L 150,260 L 140,340 L 60,340 Z" fill="#163024"/>
+            <!-- Drawstrings -->
+            <path d="M 85,115 Q 85,170 82,185" stroke="#a7f3d0" stroke-width="3" stroke-linecap="round"/>
+            <path d="M 115,115 Q 115,170 118,185" stroke="#a7f3d0" stroke-width="3" stroke-linecap="round"/>
+            <!-- Headphones around neck -->
+            <path d="M 40,85 C 40,140 160,140 160,85" fill="none" stroke="#334155" stroke-width="14" stroke-linecap="round"/>
+            <rect x="32" y="75" width="20" height="30" rx="8" fill="#0f172a"/>
+            <rect x="148" y="75" width="20" height="30" rx="8" fill="#0f172a"/>
+          </svg>
+        </div>
+
+        <!-- Alex Left Arm (Typing / Raising in Disbelief) -->
+        <div id="alexArmLeft" class="rig-arm-left" style="position: absolute; top: 320px; left: 15px; width: 80px; height: 260px;">
+          <svg viewBox="0 0 80 260" width="80" height="260">
+            <path d="M 35,0 C 20,70 15,150 45,240 C 48,252 65,250 62,238 C 45,150 50,70 55,0 Z" fill="#1b382b"/>
+            <!-- Hand on Keyboard -->
+            <circle cx="54" cy="245" r="14" fill="#fed7aa"/>
+          </svg>
+        </div>
+
+        <!-- Alex Right Arm -->
+        <div id="alexArmRight" class="rig-arm-right" style="position: absolute; top: 320px; right: 25px; width: 80px; height: 260px;">
+          <svg viewBox="0 0 80 260" width="80" height="260">
+            <path d="M 45,0 C 60,70 65,150 35,240 C 32,252 15,250 18,238 C 35,150 30,70 25,0 Z" fill="#1b382b"/>
+            <circle cx="26" cy="245" r="14" fill="#fed7aa"/>
+          </svg>
+        </div>
+
+        <!-- Alex Head (Capable of natural head turns & deadpan camera stare) -->
+        <div id="alexHead" class="rig-head" style="position: absolute; top: 120px; left: 55px; width: 210px; height: 220px;">
+          <svg viewBox="0 0 210 220" width="210" height="220">
+            <!-- Neck -->
+            <rect x="85" y="160" width="40" height="50" rx="8" fill="#fed7aa"/>
+            <!-- Ears -->
+            <circle cx="32" cy="120" r="14" fill="#fdba74"/>
+            <circle cx="178" cy="120" r="14" fill="#fdba74"/>
+            <!-- Face Base -->
+            <path d="M 40,75 C 40,25 170,25 170,75 C 170,150 145,182 105,182 C 65,182 40,150 40,75 Z" fill="#fed7aa"/>
+            <!-- Messy Developer Hair -->
+            <path d="M 32,70 C 25,15 65,-15 110,-10 C 160,-8 185,25 178,70 C 168,35 140,15 105,18 C 70,20 45,45 32,70 Z" fill="#1c1917"/>
+            <path d="M 70,15 Q 85,-5 105,12" stroke="#1c1917" stroke-width="8" stroke-linecap="round"/>
+            <path d="M 120,10 Q 140,-5 155,18" stroke="#1c1917" stroke-width="8" stroke-linecap="round"/>
+            <!-- Eyebrows (Furrow in shock / flatten in deadpan) -->
+            <path id="alexEyebrowLeft" d="M 55,80 Q 75,76 90,82" fill="none" stroke="#1c1917" stroke-width="5" stroke-linecap="round"/>
+            <path id="alexEyebrowRight" d="M 120,82 Q 135,76 155,80" fill="none" stroke="#1c1917" stroke-width="5" stroke-linecap="round"/>
+            <!-- Left Eye Socket -->
+            <ellipse id="alexEyeSocketLeft" cx="72" cy="102" rx="14" ry="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+            <!-- Pupil (Dilates in shock) -->
+            <circle id="alexPupilLeft" cx="72" cy="102" r="6" fill="#0f172a"/>
+            <!-- Right Eye Socket -->
+            <ellipse id="alexEyeSocketRight" cx="138" cy="102" rx="14" ry="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+            <circle id="alexPupilRight" cx="138" cy="102" r="6" fill="#0f172a"/>
+            <!-- Eyelids (Blinking & Deadpan) -->
+            <rect id="alexEyelidLeft" x="54" y="86" width="36" height="0" fill="#fed7aa"/>
+            <rect id="alexEyelidRight" x="120" y="86" width="36" height="0" fill="#fed7aa"/>
+            <!-- Nose -->
+            <path d="M 105,102 Q 109,126 102,130" fill="none" stroke="#fb923c" stroke-width="3.5" stroke-linecap="round"/>
+            <!-- Expressive Mouth (Speaking / Shock / Deadpan Line) -->
+            <path id="alexMouth" d="M 82,152 Q 105,152 128,152" fill="none" stroke="#7f1d1d" stroke-width="4.5" stroke-linecap="round"/>
+            <!-- Stubble Beard Texture -->
+            <circle cx="85" cy="165" r="1" fill="#78716c"/>
+            <circle cx="105" cy="170" r="1" fill="#78716c"/>
+            <circle cx="125" cy="165" r="1" fill="#78716c"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- =============================================================== -->
+      <!-- CHARACTER 3: SAM (Senior QA / Product Lead) -->
+      <!-- =============================================================== -->
+      <div id="charSam" class="character-rig" style="left: 60px; bottom: 412px; width: 220px; height: 680px; opacity: 0.85;">
+        <div class="rig-torso" style="position: absolute; bottom: 0; left: 30px; width: 160px; height: 350px;">
+          <!-- Mustard Knit Sweater -->
+          <svg viewBox="0 0 160 350" width="160" height="350">
+            <path d="M 25,80 C 40,70 120,70 135,80 L 145,340 L 15,340 Z" fill="#d97706" stroke="#b45309" stroke-width="2"/>
+            <!-- Coffee Mug in Hand -->
+            <rect x="110" y="210" width="32" height="40" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+            <path d="M 142,220 C 152,220 152,240 142,240" fill="none" stroke="#cbd5e1" stroke-width="3"/>
+          </svg>
+        </div>
+        <!-- Head & Curly Hair -->
+        <div id="samHead" class="rig-head" style="position: absolute; top: 140px; left: 25px; width: 170px; height: 190px;">
+          <svg viewBox="0 0 170 190" width="170" height="190">
+            <circle cx="85" cy="100" r="48" fill="#fed7aa"/>
+            <!-- Curly Hair Silhouette -->
+            <circle cx="50" cy="70" r="28" fill="#451a03"/>
+            <circle cx="85" cy="55" r="32" fill="#451a03"/>
+            <circle cx="120" cy="70" r="28" fill="#451a03"/>
+            <!-- Raised Skeptical Eyebrow -->
+            <path id="samEyebrow" d="M 98,82 Q 112,68 126,80" fill="none" stroke="#451a03" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="68" cy="98" r="5" fill="#1e293b"/>
+            <circle cx="112" cy="98" r="5" fill="#1e293b"/>
+            <!-- Sarcastic Smirk Mouth -->
+            <path id="samMouth" d="M 76,128 Q 95,134 114,124" fill="none" stroke="#881337" stroke-width="3.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+
+    </div><!-- /#cameraRig -->
+
+    <!-- =============================================================== -->
+    <!-- SCENE 3: PAPER5 "NEW DEADLINE" MODAL DIALOG -->
+    <!-- =============================================================== -->
+    <div id="modalChassis">
+      <div class="flex items-center justify-between pb-6 border-b border-slate-100">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-indigo-600"></span>
+            <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">New deadline</h2>
+          </div>
+          <p class="text-sm font-semibold text-slate-400 mt-1">Sprint 42 • Paper5 Core Engine</p>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 font-bold">✕</div>
+      </div>
+
+      <div class="mt-6 space-y-5">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Title</label>
+          <div class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-xl font-bold text-slate-900">
+            Pen-test report — Paper5 core
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Description</label>
+          <div class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-base text-slate-600">
+            Security scope, zero downtime cluster verification & audit.
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Assignee</label>
+            <div class="px-4 py-3 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-emerald-500 text-white font-bold flex items-center justify-center text-xs">AR</div>
+              <span class="text-base font-extrabold text-indigo-950">Alex Rivera</span>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Priority</label>
+            <div class="px-4 py-3 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-between">
+              <span class="text-base font-black text-rose-600 uppercase tracking-wide">High Priority</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Due Date & Time</label>
+            <div class="px-4 py-3 bg-amber-50 border border-amber-300 rounded-2xl font-mono text-base font-bold text-amber-900 flex items-center justify-between">
+              <span>Today 18:00</span>
+              <span class="text-xs font-sans font-bold bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full">4 hrs remaining</span>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Verification Gate</label>
+            <div class="px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 flex items-center gap-2">
+              <span class="text-emerald-500">✓</span> GitHub Commit + Pull Request
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =============================================================== -->
+    <!-- SCENE 4: FLOATING PAPER5 NOTIFICATION TOAST -->
+    <!-- =============================================================== -->
+    <div id="paper5Toast">
+      <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-rose-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 flex-shrink-0">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+      </div>
+      <div class="flex-1">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-black uppercase tracking-wider text-rose-400">HIGH PRIORITY DEADLINE</span>
+          <span class="text-xs font-mono text-slate-400">Just now</span>
+        </div>
+        <h3 class="text-2xl font-black text-white mt-1">Pen-test report — Paper5 core</h3>
+        <p class="text-sm font-semibold text-slate-300 mt-1">Assigned by Max • Due by 18:00 Today</p>
+      </div>
+    </div>
+
+    <!-- =============================================================== -->
+    <!-- SCENE 6: FINALE & BRAND REVEAL OVERLAY -->
+    <!-- =============================================================== -->
+    <div id="finaleOverlay">
+      <!-- Confetti Canvas -->
+      <canvas id="confettiCanvas" width="1080" height="1920"></canvas>
+
+      <div class="relative z-10 flex flex-direction flex-col items-center text-center px-12">
+        <!-- Paper5 Emblem Shield -->
+        <div class="w-32 h-32 rounded-3xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-1 shadow-2xl shadow-indigo-500/40 mb-8">
+          <div class="w-full h-full bg-[#0a0d18] rounded-[22px] flex items-center justify-center">
+            <svg viewBox="0 0 48 48" width="64" height="64" fill="none">
+              <path d="M12 8 H36 V34 L28 42 H12 Z" fill="url(#p5g)" stroke="#ffffff" stroke-width="2"/>
+              <path d="M28 34 V42 L36 34 Z" fill="#818cf8"/>
+              <defs>
+                <linearGradient id="p5g" x1="12" y1="8" x2="36" y2="42" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#6366f1"/>
+                  <stop offset="1" stop-color="#ec4899"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+        </div>
+
+        <h1 class="text-6xl font-black tracking-tight text-white mb-4">
+          Paper<span class="text-indigo-400">5</span>
+        </h1>
+        <p class="text-3xl font-extrabold text-slate-200 max-w-xl leading-snug mb-8">
+          "Everything on paper.<br><span class="text-indigo-400">Nothing on trust.</span>"
+        </p>
+
+        <!-- Product Buffer Resolution Badge -->
+        <div class="px-6 py-3 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono text-lg font-bold mb-10 flex items-center gap-3">
+          <span class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Buffer protection active: Launch protected</span>
+        </div>
+
+        <!-- URL Pill -->
+        <div class="px-10 py-5 rounded-2xl bg-white text-slate-950 font-black text-2xl shadow-2xl tracking-tight">
+          paper5.co
+        </div>
+      </div>
+    </div>
+
+    <!-- Subtitle Banner (Driven by Timeline) -->
+    <div id="subtitleBanner">
+      <div id="subtitleSpeaker" class="text-indigo-400">NARRATOR</div>
+      <div id="subtitleText">Monday morning at Paper5. Sprint 42 was completely on schedule.</div>
+    </div>
+
+  </div><!-- /#viewportStage -->
+
+  <!-- Interactive Preview Controls (Hidden in video-render-mode) -->
+  <div id="previewControls" class="preview-bar">
+    <button id="btnPlay" class="px-5 py-2 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow">
+      ▶ Play Episode 01
+    </button>
+    <div class="font-mono text-xs text-slate-400">
+      <span id="timecodeDisplay">00.00s</span> / 35.00s
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // AUTHORITATIVE DETERMINISTIC ANIMATION ENGINE
+    // =========================================================================
+    let timelineData = null;
+    let audioContext = null;
+    let masterAudioBuffer = null;
+    let audioSourceNode = null;
+    let isPlaying = false;
+    let playbackStartTime = 0;
+    let animFrameId = null;
+
+    // Viewport Elements
+    const viewportStage = document.getElementById('viewportStage');
+    const cameraRig = document.getElementById('cameraRig');
+    const modalChassis = document.getElementById('modalChassis');
+    const paper5Toast = document.getElementById('paper5Toast');
+    const finaleOverlay = document.getElementById('finaleOverlay');
+    const subtitleBanner = document.getElementById('subtitleBanner');
+    const subtitleSpeaker = document.getElementById('subtitleSpeaker');
+    const subtitleText = document.getElementById('subtitleText');
+    const timecodeDisplay = document.getElementById('timecodeDisplay');
+    const btnPlay = document.getElementById('btnPlay');
+
+    // Max Rig Elements
+    const charMax = document.getElementById('charMax');
+    const maxHead = document.getElementById('maxHead');
+    const maxMouth = document.getElementById('maxMouth');
+    const maxEyebrowLeft = document.getElementById('maxEyebrowLeft');
+    const maxEyebrowRight = document.getElementById('maxEyebrowRight');
+    const maxEyelidLeft = document.getElementById('maxEyelidLeft');
+    const maxEyelidRight = document.getElementById('maxEyelidRight');
+    const maxArmLeft = document.getElementById('maxArmLeft');
+    const maxArmRight = document.getElementById('maxArmRight');
+
+    // Alex Rig Elements
+    const charAlex = document.getElementById('charAlex');
+    const alexTorso = document.getElementById('alexTorso');
+    const alexHead = document.getElementById('alexHead');
+    const alexMouth = document.getElementById('alexMouth');
+    const alexEyebrowLeft = document.getElementById('alexEyebrowLeft');
+    const alexEyebrowRight = document.getElementById('alexEyebrowRight');
+    const alexEyeSocketLeft = document.getElementById('alexEyeSocketLeft');
+    const alexEyeSocketRight = document.getElementById('alexEyeSocketRight');
+    const alexPupilLeft = document.getElementById('alexPupilLeft');
+    const alexPupilRight = document.getElementById('alexPupilRight');
+    const alexEyelidLeft = document.getElementById('alexEyelidLeft');
+    const alexEyelidRight = document.getElementById('alexEyelidRight');
+    const alexArmLeft = document.getElementById('alexArmLeft');
+    const alexArmRight = document.getElementById('alexArmRight');
+
+    // Sam Rig Elements
+    const charSam = document.getElementById('charSam');
+    const samHead = document.getElementById('samHead');
+    const samMouth = document.getElementById('samMouth');
+    const samEyebrow = document.getElementById('samEyebrow');
+
+    // Confetti particles
+    const confettiCanvas = document.getElementById('confettiCanvas');
+    const confettiCtx = confettiCanvas.getContext('2d');
+    const confettiParticles = [];
+    const CONFETTI_COUNT = 140;
+    const CONFETTI_COLORS = ['#6366f1', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
+
+    for (let i = 0; i < CONFETTI_COUNT; i++) {
+      confettiParticles.push({
+        x: Math.random() * 1080,
+        y: -100 - Math.random() * 800,
+        size: 10 + Math.random() * 16,
+        color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        vx: (Math.random() - 0.5) * 6,
+        vy: 4 + Math.random() * 8,
+        rot: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 0.2
+      });
+    }
+
+    // Auto-scale viewport stage to fit browser window comfortably
+    function updateResponsiveScale() {
+      if (document.body.classList.contains('video-render-mode')) {
+        viewportStage.style.transform = 'none';
+        return;
+      }
+      const availableW = window.innerWidth - 40;
+      const availableH = window.innerHeight - 100;
+      const scale = Math.min(availableW / 1080, availableH / 1920, 0.48);
+      viewportStage.style.transform = `scale(${scale})`;
+    }
+    window.addEventListener('resize', updateResponsiveScale);
+    updateResponsiveScale();
+
+    // Load Timeline & Master Audio
+    async function initProduction() {
+      try {
+        const resp = await fetch('/timeline-ep01.json');
+        timelineData = await resp.json();
+        console.log('✓ Master Timeline Loaded:', timelineData);
+      } catch (err) {
+        console.warn('Could not load timeline-ep01.json via fetch:', err);
+      }
+
+      // Pre-render state at t = 0
+      renderAtTime(0);
+    }
+
+    // Easing helpers
+    function easeInOutCubic(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+    function easeOutBack(t) {
+      const c1 = 1.70158;
+      const c3 = c1 + 1;
+      return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    }
+    function clamp(val, min, max) {
+      return Math.max(min, Math.min(max, val));
+    }
+
+    // =========================================================================
+    // DETERMINISTIC RENDER FUNCTION (Called for each frame at exact time T)
+    // =========================================================================
+    function renderAtTime(t) {
+      if (!timelineData) return;
+
+      // 1. SCENE DISCOVERY & CINEMATIC CAMERA POSITIONING
+      const scenes = timelineData.scenes;
+      let activeScene = scenes[0];
+      for (const sc of scenes) {
+        if (t >= sc.startTime && t <= sc.endTime) {
+          activeScene = sc;
+          break;
+        }
+      }
+
+      // Smooth camera interpolation across scenes
+      const scIdx = scenes.indexOf(activeScene);
+      let camX = activeScene.camera.x;
+      let camY = activeScene.camera.y;
+      let camZoom = activeScene.camera.zoom;
+
+      // Transition easing into current scene (0.65s transition window)
+      const sceneElapsed = t - activeScene.startTime;
+      if (sceneElapsed < 0.65 && scIdx > 0) {
+        const prevScene = scenes[scIdx - 1];
+        const progress = easeInOutCubic(sceneElapsed / 0.65);
+        camX = prevScene.camera.x + (activeScene.camera.x - prevScene.camera.x) * progress;
+        camY = prevScene.camera.y + (activeScene.camera.y - prevScene.camera.y) * progress;
+        camZoom = prevScene.camera.zoom + (activeScene.camera.zoom - prevScene.camera.zoom) * progress;
+      }
+
+      // Apply motivated camera pan and zoom
+      cameraRig.style.transform = `scale(${camZoom}) translate(${camX}px, ${camY}px)`;
+
+      // 2. PROCEDURAL BREATHING & IDLE MOTION
+      const breath = Math.sin(t * 2.8) * 4;
+      const microSway = Math.cos(t * 1.4) * 2;
+
+      // 3. CHARACTER ACTING & SECONDARY MOTION
+
+      // --- MAX ANIMATION ---
+      let maxArmRotL = 0;
+      let maxArmRotR = 0;
+      let maxHeadTilt = Math.sin(t * 2.2) * 2;
+      let maxTalking = false;
+
+      // Check if Max is speaking in current scene
+      for (const d of (activeScene.dialogue || [])) {
+        if ((d.id === 'max_01' || d.id === 'max_02') && t >= d.start && t <= d.end) {
+          maxTalking = true;
+          break;
+        }
+      }
+
+      if (maxTalking) {
+        // Confident founder gestures & speech phoneme animation
+        maxArmRotL = Math.sin(t * 12) * 22 - 15;
+        maxArmRotR = Math.cos(t * 10) * 18 + 12;
+        maxHeadTilt = Math.sin(t * 8) * 5;
+        // Phoneme mouth opening
+        const mouthOpen = Math.abs(Math.sin(t * 18)) * 14;
+        maxMouth.setAttribute('d', `M 76,144 Q 95,${148 + mouthOpen} 114,144`);
+      } else {
+        // Natural resting smile
+        maxMouth.setAttribute('d', `M 76,144 Q 95,152 114,144`);
+        maxArmRotL = microSway;
+        maxArmRotR = -microSway;
+      }
+
+      // Max eye blinking (every 3.6s)
+      const maxBlinkPhase = (t % 3.6);
+      const isMaxBlinking = maxBlinkPhase > 3.45;
+      maxEyelidLeft.setAttribute('height', isMaxBlinking ? '28' : '0');
+      maxEyelidRight.setAttribute('height', isMaxBlinking ? '28' : '0');
+
+      charMax.style.transform = `translateY(${breath * 0.5}px)`;
+      maxHead.style.transform = `rotate(${maxHeadTilt}deg)`;
+      maxArmLeft.style.transform = `rotate(${maxArmRotL}deg)`;
+      maxArmRight.style.transform = `rotate(${maxArmRotR}deg)`;
+
+      // --- ALEX ANIMATION (HERO COMEDIC PROTAGONIST) ---
+      let alexArmRotL = 0;
+      let alexArmRotR = 0;
+      let alexHeadAngle = 0;
+      let alexHeadTilt = 0;
+      let alexShoulderDropY = 0;
+      let alexPupilRadius = 6;
+      let alexEyeSocketScale = 1.0;
+      let alexTalking = false;
+      let isAlexBlinking = false;
+
+      // Check if Alex is speaking
+      for (const d of (activeScene.dialogue || [])) {
+        if ((d.id === 'alex_01' || d.id === 'alex_02') && t >= d.start && t <= d.end) {
+          alexTalking = true;
+          break;
+        }
+      }
+
+      // SCENE 1-3: FLOW STATE CODING
+      if (t < 17.67) {
+        // Fast mechanical typing
+        alexArmRotL = Math.sin(t * 24) * 8;
+        alexArmRotR = Math.cos(t * 24) * 8;
+        // Looking at monitor
+        alexPupilLeft.setAttribute('cx', '76');
+        alexPupilLeft.setAttribute('cy', '100');
+        alexPupilRight.setAttribute('cx', '142');
+        alexPupilRight.setAttribute('cy', '100');
+        alexMouth.setAttribute('d', 'M 82,152 Q 105,152 128,152');
+      }
+      // SCENE 4: NOTIFICATION SHOCK ("Wait... 6 PM today?!")
+      else if (t >= 17.67 && t < 21.17) {
+        // Pupil expands, mouth opens in vocal disbelief
+        alexPupilRadius = 9;
+        alexEyeSocketScale = 1.25;
+        alexArmRotL = -25 + Math.sin(t * 14) * 6;
+        alexArmRotR = -20;
+        const mouthOpen = Math.abs(Math.sin(t * 16)) * 16;
+        alexMouth.setAttribute('d', `M 82,${148 - mouthOpen * 0.3} Q 105,${156 + mouthOpen} 128,${148 - mouthOpen * 0.3}`);
+        alexEyebrowLeft.setAttribute('d', 'M 55,72 Q 75,66 90,78');
+        alexEyebrowRight.setAttribute('d', 'M 120,78 Q 135,66 155,72');
+      }
+      // SCENE 5: THE COMEDIC REACTION (DEADPAN CAMERA TURN & COMEDIC BEAT)
+      else if (t >= 21.17 && t < 26.94) {
+        const silElapsed = t - 21.17;
+
+        // Step 1: Eyes widen in horror (21.17s - 21.8s)
+        alexEyeSocketScale = 1.35;
+        alexPupilRadius = 10;
+
+        // Step 2: Head tilts slightly in disbelief (21.5s - 22.0s)
+        alexHeadTilt = -7;
+
+        // Step 3: Shoulders visibly drop with heavy weight shift (21.8s - 22.5s)
+        const dropProgress = clamp((silElapsed - 0.6) / 0.7, 0, 1);
+        alexShoulderDropY = easeInOutCubic(dropProgress) * 22;
+
+        // Step 4: Slow comedic turn directly to lock eyes with the camera (22.2s - 23.0s)
+        const turnProgress = clamp((silElapsed - 1.0) / 0.8, 0, 1);
+        const pupilTrackCenter = easeInOutCubic(turnProgress);
+        // Pupils lock dead-center into the viewer's soul
+        alexPupilLeft.setAttribute('cx', String(76 - pupilTrackCenter * 4));
+        alexPupilLeft.setAttribute('cy', '102');
+        alexPupilRight.setAttribute('cx', String(142 - pupilTrackCenter * 4));
+        alexPupilRight.setAttribute('cy', '102');
+
+        // Step 5: Deadpan blinks (Two slow iconic comedic blinks)
+        // Blink 1 at 23.0s - 23.2s
+        if (silElapsed >= 1.8 && silElapsed <= 2.05) isAlexBlinking = true;
+        // Blink 2 at 23.8s - 24.05s
+        if (silElapsed >= 2.6 && silElapsed <= 2.85) isAlexBlinking = true;
+
+        // Eyebrows flattened into deadpan surrender
+        alexEyebrowLeft.setAttribute('d', 'M 55,84 L 90,84');
+        alexEyebrowRight.setAttribute('d', 'M 120,84 L 155,84');
+
+        // Deadpan flat mouth line during silence, moving slightly during Alex's line
+        if (alexTalking) {
+          const mOpen = Math.abs(Math.sin(t * 14)) * 8;
+          alexMouth.setAttribute('d', `M 84,152 Q 105,${154 + mOpen} 126,152`);
+        } else {
+          alexMouth.setAttribute('d', 'M 82,154 L 128,154');
+        }
+
+        // Arm slumped down on desk
+        alexArmRotL = 8;
+        alexArmRotR = 8;
+      }
+      // SCENE 6: BRAND RESOLUTION (RELIEF & SMILE)
+      else {
+        alexShoulderDropY = 0;
+        alexPupilRadius = 6;
+        alexEyeSocketScale = 1.0;
+        // Warm relieved smile
+        alexMouth.setAttribute('d', 'M 80,148 Q 105,164 130,148');
+        alexEyebrowLeft.setAttribute('d', 'M 55,78 Q 75,74 90,80');
+        alexEyebrowRight.setAttribute('d', 'M 120,80 Q 135,74 155,78');
+      }
+
+      // Apply Alex transforms
+      charAlex.style.transform = `translateY(${breath * 0.4 + alexShoulderDropY}px)`;
+      alexTorso.style.transform = `translateY(${alexShoulderDropY * 0.6}px)`;
+      alexHead.style.transform = `rotate(${alexHeadTilt}deg)`;
+      alexArmLeft.style.transform = `rotate(${alexArmRotL}deg)`;
+      alexArmRight.style.transform = `rotate(${alexArmRotR}deg)`;
+
+      alexEyeSocketLeft.setAttribute('rx', String(14 * alexEyeSocketScale));
+      alexEyeSocketLeft.setAttribute('ry', String(14 * alexEyeSocketScale));
+      alexEyeSocketRight.setAttribute('rx', String(14 * alexEyeSocketScale));
+      alexEyeSocketRight.setAttribute('ry', String(14 * alexEyeSocketScale));
+      alexPupilLeft.setAttribute('r', String(alexPupilRadius));
+      alexPupilRight.setAttribute('r', String(alexPupilRadius));
+
+      alexEyelidLeft.setAttribute('height', isAlexBlinking ? '32' : '0');
+      alexEyelidRight.setAttribute('height', isAlexBlinking ? '32' : '0');
+
+      // --- SAM ANIMATION ---
+      let samSipping = false;
+      if (t >= 6.26 && t <= 12.94) {
+        // Skeptical eyebrow raise during Scene 2
+        samEyebrow.setAttribute('d', 'M 98,72 Q 112,56 126,70');
+        samMouth.setAttribute('d', 'M 76,128 Q 95,138 114,124');
+      } else {
+        samEyebrow.setAttribute('d', 'M 98,82 Q 112,68 126,80');
+      }
+
+      // 4. SCENE UI OVERLAYS (MODAL, TOAST, BRAND)
+
+      // Scene 3: Paper5 "New deadline" Modal Reveal
+      if (t >= 12.94 && t < 17.67) {
+        const modalElapsed = t - 12.94;
+        const modalOpenProgress = easeOutBack(clamp(modalElapsed / 0.5, 0, 1));
+        modalChassis.style.opacity = String(clamp(modalElapsed / 0.3, 0, 1));
+        modalChassis.style.transform = `translateX(-50%) scale(${0.85 + modalOpenProgress * 0.15})`;
+      } else {
+        modalChassis.style.opacity = '0';
+        modalChassis.style.transform = 'translateX(-50%) scale(0.8)';
+      }
+
+      // Scene 4: Notification Toast (High Priority Ping)
+      if (t >= 17.67 && t < 21.17) {
+        const toastElapsed = t - 17.67;
+        const toastProgress = easeOutBack(clamp(toastElapsed / 0.45, 0, 1));
+        paper5Toast.style.opacity = String(clamp(toastElapsed / 0.25, 0, 1));
+        paper5Toast.style.transform = `translate(-50%, ${toastProgress * 40}px) scale(1.0)`;
+      } else {
+        paper5Toast.style.opacity = '0';
+        paper5Toast.style.transform = 'translate(-50%, -80px) scale(0.9)';
+      }
+
+      // Scene 6: Finale Brand & Confetti Shimmer
+      if (t >= 26.94) {
+        const finaleElapsed = t - 26.94;
+        const overlayOpacity = clamp(finaleElapsed / 0.8, 0, 1);
+        finaleOverlay.style.opacity = String(overlayOpacity);
+
+        // Render confetti
+        confettiCtx.clearRect(0, 0, 1080, 1920);
+        confettiParticles.forEach(p => {
+          const cy = p.y + p.vy * (finaleElapsed * 60);
+          const cx = p.x + Math.sin(finaleElapsed * 4 + p.vx) * 30;
+          if (cy > 0 && cy < 1920) {
+            confettiCtx.save();
+            confettiCtx.translate(cx, cy);
+            confettiCtx.rotate(p.rot + finaleElapsed * p.vRot * 60);
+            confettiCtx.fillStyle = p.color;
+            confettiCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+            confettiCtx.restore();
+          }
+        });
+      } else {
+        finaleOverlay.style.opacity = '0';
+      }
+
+      // 5. SYNCHRONIZED SUBTITLES
+      let currentDialogue = null;
+      for (const d of (activeScene.dialogue || [])) {
+        if (t >= d.start && t <= d.end) {
+          currentDialogue = d;
+          break;
+        }
+      }
+
+      if (currentDialogue) {
+        subtitleBanner.style.opacity = '1';
+        subtitleBanner.style.transform = 'translateX(-50%) translateY(0)';
+        const speakerName = currentDialogue.id.split('_')[0].toUpperCase();
+        subtitleSpeaker.textContent = speakerName;
+        subtitleSpeaker.style.color = (speakerName === 'MAX') ? '#818cf8' : (speakerName === 'ALEX' ? '#34d399' : (speakerName === 'SAM' ? '#fbbf24' : '#a5b4fc'));
+        subtitleText.textContent = currentDialogue.text;
+      } else {
+        subtitleBanner.style.opacity = '0';
+        subtitleBanner.style.transform = 'translateX(-50%) translateY(20px)';
+      }
+
+      // Update timecode display in preview controls
+      if (timecodeDisplay) {
+        timecodeDisplay.textContent = `${t.toFixed(2)}s`;
+      }
+    }
+
+    // Expose deterministic renderer to window for Playwright Compositor
+    window.renderAtTime = renderAtTime;
+
+    // Realtime playback loop for browser preview mode
+    function startRealtimePlayback() {
+      if (isPlaying) {
+        stopRealtimePlayback();
+        return;
+      }
+
+      isPlaying = true;
+      btnPlay.textContent = '⏸ Pause';
+
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+
+      // Load master audio for realtime browser preview
+      fetch('/master_audio_ep01.wav')
+        .then(r => r.arrayBuffer())
+        .then(ab => audioContext.decodeAudioData(ab))
+        .then(buf => {
+          masterAudioBuffer = buf;
+          audioSourceNode = audioContext.createBufferSource();
+          audioSourceNode.buffer = masterAudioBuffer;
+          audioSourceNode.connect(audioContext.destination);
+          audioSourceNode.start(0);
+
+          playbackStartTime = performance.now();
+          function tick() {
+            if (!isPlaying) return;
+            const elapsedSec = (performance.now() - playbackStartTime) / 1000;
+            if (elapsedSec > (timelineData ? timelineData.durationSec : 35.0)) {
+              stopRealtimePlayback();
+              renderAtTime(0);
+              return;
+            }
+            renderAtTime(elapsedSec);
+            animFrameId = requestAnimationFrame(tick);
+          }
+          animFrameId = requestAnimationFrame(tick);
+        })
+        .catch(err => {
+          console.warn('Realtime audio fetch failed, playing visual only:', err);
+          playbackStartTime = performance.now();
+          function tick() {
+            if (!isPlaying) return;
+            const elapsedSec = (performance.now() - playbackStartTime) / 1000;
+            if (elapsedSec > 35.0) {
+              stopRealtimePlayback();
+              return;
+            }
+            renderAtTime(elapsedSec);
+            animFrameId = requestAnimationFrame(tick);
+          }
+          animFrameId = requestAnimationFrame(tick);
+        });
+    }
+
+    function stopRealtimePlayback() {
+      isPlaying = false;
+      btnPlay.textContent = '▶ Play Episode 01';
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      if (audioSourceNode) {
+        try { audioSourceNode.stop(); } catch (_) {}
+        audioSourceNode = null;
+      }
+    }
+
+    btnPlay.addEventListener('click', startRealtimePlayback);
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', initProduction);
+  </script>
+</body>
+</html>

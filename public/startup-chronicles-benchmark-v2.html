@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Startup Chronicles — Benchmark Scene (Production v2)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; user-select: none; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #05060a;
+      color: #f8fafc;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100vw;
+      height: 100vh;
+    }
+    #viewportStage {
+      position: relative;
+      width: 1080px;
+      height: 1920px;
+      background: #090c16;
+      overflow: hidden;
+      transform-origin: center center;
+      box-shadow: 0 0 120px rgba(0,0,0,0.95);
+    }
+    #cameraRig {
+      position: absolute;
+      inset: 0;
+      transform-origin: 540px 960px;
+      will-change: transform;
+    }
+    .multiplane-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 35%, #182038 0%, #0d1222 55%, #05070e 100%);
+    }
+    .character-rig {
+      position: absolute;
+      transform-origin: bottom center;
+      will-change: transform;
+    }
+    .subtitle-banner {
+      position: absolute;
+      bottom: 110px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 88%;
+      max-width: 880px;
+      background: rgba(12, 16, 28, 0.94);
+      backdrop-filter: blur(28px);
+      border: 1.5px solid rgba(255, 255, 255, 0.14);
+      border-radius: 28px;
+      padding: 24px 36px;
+      text-align: center;
+      z-index: 100;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.7);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="viewportStage">
+    <div id="cameraRig">
+
+      <!-- =============================================================== -->
+      <!-- MULTIPLANE DIEGETIC SITCOM ENVIRONMENT (NO DASHBOARD UI) -->
+      <!-- =============================================================== -->
+      
+      <!-- LAYER 1: DUSK SKYLINE WINDOW -->
+      <div style="position: absolute; top: 180px; left: 80px; width: 420px; height: 580px; border-radius: 20px; background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 60%, #311042 100%); border: 8px solid #1e293b; overflow: hidden; opacity: 0.85;">
+        <!-- Distant skyscrapers at dusk -->
+        <svg viewBox="0 0 420 580" width="420" height="580">
+          <polygon points="60,580 60,340 120,340 120,580" fill="#090d18"/>
+          <polygon points="140,580 140,260 210,260 210,580" fill="#060912"/>
+          <polygon points="230,580 230,380 300,380 300,580" fill="#090d18"/>
+          <polygon points="320,580 320,300 390,300 390,580" fill="#060912"/>
+          <!-- Window grid bars -->
+          <line x1="210" y1="0" x2="210" y2="580" stroke="#1e293b" stroke-width="6"/>
+          <line x1="0" y1="290" x2="420" y2="290" stroke="#1e293b" stroke-width="6"/>
+        </svg>
+      </div>
+
+      <!-- LAYER 2: INDUSTRIAL BRICK WALL & PHYSICAL WHITEBOARD -->
+      <div style="position: absolute; top: 160px; right: 80px; width: 440px; height: 560px; background: #f8fafc; border: 8px solid #64748b; border-radius: 28px; box-shadow: 0 30px 60px rgba(0,0,0,0.6); padding: 32px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 20px;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 800; color: #0f172a;">SPRINT 42 // CRITICAL PATH</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; color: #dc2626; background: #fee2e2; padding: 2px 8px; rounded: 4px;">DUE 18:00</span>
+        </div>
+        <!-- Hand-drawn architecture boxes -->
+        <svg viewBox="0 0 380 280" width="380" height="280">
+          <rect x="10" y="20" width="90" height="60" rx="6" fill="none" stroke="#2563eb" stroke-width="3"/>
+          <text x="55" y="55" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="bold" fill="#1e3a8a" text-anchor="middle">CORE API</text>
+          
+          <path d="M 100,50 L 150,50" stroke="#2563eb" stroke-width="3"/>
+          <polygon points="150,46 160,50 150,54" fill="#2563eb"/>
+
+          <rect x="160" y="20" width="100" height="60" rx="6" fill="none" stroke="#dc2626" stroke-width="3.5"/>
+          <text x="210" y="55" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="bold" fill="#991b1b" text-anchor="middle">PEN-TEST</text>
+
+          <path d="M 260,50 L 310,50" stroke="#2563eb" stroke-width="3"/>
+          <polygon points="310,46 320,50 310,54" fill="#2563eb"/>
+
+          <rect x="320" y="20" width="50" height="60" rx="6" fill="none" stroke="#16a34a" stroke-width="3"/>
+          <text x="345" y="55" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="bold" fill="#14532d" text-anchor="middle">SHIP</text>
+
+          <!-- Marker Scribbles & Sticky Note -->
+          <text x="210" y="120" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="900" fill="#dc2626" text-anchor="middle">NO CRUNCH! 🚀</text>
+          <rect x="40" y="150" width="120" height="100" fill="#fef08a" stroke="#ca8a04" stroke-width="1.5" transform="rotate(-3, 100, 200)"/>
+          <text x="100" y="200" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="bold" fill="#713f12" text-anchor="middle">Max: "Momentum!"</text>
+        </svg>
+      </div>
+
+      <!-- LAYER 3: SOLID WALNUT DESK & WORKSTATION (Physical Floor Plane) -->
+      <div style="position: absolute; bottom: 0; left: -100px; width: 1280px; height: 500px; background: linear-gradient(180deg, #101524 0%, #070910 100%); border-top: 2px solid rgba(255,255,255,0.06);"></div>
+      <!-- Walnut Standing Desk Top (Height: 460px from bottom) -->
+      <div style="position: absolute; bottom: 440px; left: -50px; width: 1180px; height: 38px; background: linear-gradient(180deg, #5c260b 0%, #3f1606 60%, #240c03 100%); border-top: 3px solid #78350f; border-bottom: 4px solid #1c0a02; box-shadow: 0 35px 70px rgba(0,0,0,0.8);"></div>
+
+      <!-- Steaming Ceramic Coffee Mug on Max's Desk -->
+      <div style="position: absolute; left: 440px; bottom: 478px; width: 34px; height: 44px; background: #ffffff; border: 2.5px solid #cbd5e1; border-radius: 6px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
+        <div style="position: absolute; right: -12px; top: 10px; width: 12px; height: 22px; border: 3px solid #cbd5e1; border-radius: 0 8px 8px 0;"></div>
+      </div>
+
+      <!-- Alex's Terminal Monitor on Walnut Desk -->
+      <div style="position: absolute; left: 700px; bottom: 478px; width: 240px; height: 160px; background: #0b1120; border: 3px solid #334155; border-radius: 16px; padding: 14px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #38bdf8; line-height: 1.5; box-shadow: 0 20px 40px rgba(0,0,0,0.7);">
+        <div style="color: #f43f5e; font-weight: bold; font-size: 11px;">FAIL (14/15 tests)</div>
+        <div style="color: #94a3b8; margin-top: 4px;">// Cluster verification</div>
+        <div style="color: #f43f5e;">✕ expected 200, got 504</div>
+        <div style="color: #34d399; margin-top: 6px;">> Alex: debugging...</div>
+      </div>
+
+      <!-- =============================================================== -->
+      <!-- MAX CHARACTER RIG (OFFICIAL BIBLE: 32yo, WHITE SHIRT, WATCH) -->
+      <!-- =============================================================== -->
+      <div id="rigMax" class="character-rig" style="left: 180px; bottom: 440px; width: 320px; height: 820px;">
+        
+        <!-- Max Torso & White Rolled-Sleeve Shirt -->
+        <div id="maxTorso" style="position: absolute; bottom: 0; left: 50px; width: 220px; height: 460px; transform-origin: bottom center;">
+          <svg viewBox="0 0 220 460" width="220" height="460">
+            <!-- Trousers (Dark Charcoal) -->
+            <path d="M 44,240 L 96,240 L 92,440 L 48,440 Z" fill="#27272a" stroke="#18181b" stroke-width="2.5"/>
+            <path d="M 104,240 L 156,240 L 148,440 L 108,440 Z" fill="#18181b" stroke="#18181b" stroke-width="2.5"/>
+            <!-- White Sneakers -->
+            <rect x="42" y="435" width="48" height="18" rx="6" fill="#f8fafc" stroke="#1e1815" stroke-width="2"/>
+            <rect x="104" y="435" width="48" height="18" rx="6" fill="#f8fafc" stroke="#1e1815" stroke-width="2"/>
+
+            <!-- White Rolled-Sleeve Shirt Torso -->
+            <path d="M 38,90 L 162,90 L 172,240 L 28,240 Z" fill="#ffffff" stroke="#1e1815" stroke-width="3"/>
+            <!-- Open Collar (Buttons open showing neck) -->
+            <polygon points="80,90 120,90 100,135" fill="#f8c8a0" stroke="#1e1815" stroke-width="2"/>
+            <path d="M 38,90 L 80,135 L 100,135 L 38,90" fill="#f1f5f9" stroke="#1e1815" stroke-width="2.5"/>
+            <path d="M 162,90 L 120,135 L 100,135 L 162,90" fill="#f1f5f9" stroke="#1e1815" stroke-width="2.5"/>
+            <!-- Placket & Buttons -->
+            <line x1="100" y1="135" x2="100" y2="240" stroke="#cbd5e1" stroke-width="2.5"/>
+            <circle cx="100" cy="160" r="2.5" fill="#94a3b8"/>
+            <circle cx="100" cy="190" r="2.5" fill="#94a3b8"/>
+            <circle cx="100" cy="220" r="2.5" fill="#94a3b8"/>
+            <!-- Fabric Tension Creases -->
+            <path d="M 50,115 Q 68,140 60,175" fill="none" stroke="#cbd5e1" stroke-width="2"/>
+            <path d="M 150,115 Q 132,140 140,175" fill="none" stroke="#cbd5e1" stroke-width="2"/>
+          </svg>
+        </div>
+
+        <!-- Max Left Arm (Resting on Desk, WRISTWATCH CLEARLY VISIBLE) -->
+        <div id="maxArmL" style="position: absolute; top: 380px; left: 10px; width: 90px; height: 300px; transform-origin: top center;">
+          <svg viewBox="0 0 90 300" width="90" height="300">
+            <!-- White shirt sleeve with rolled cuff -->
+            <path d="M 45,0 L 25,120 L 55,120 L 65,0" fill="#ffffff" stroke="#1e1815" stroke-width="2.5"/>
+            <rect x="20" y="115" width="38" height="15" rx="4" fill="#e2e8f0" stroke="#1e1815" stroke-width="2.5"/>
+            <!-- Forearm -->
+            <path d="M 30,130 L 25,230 C 25,245 45,245 48,230 L 48,130" fill="#f8c8a0" stroke="#1e1815" stroke-width="2.5"/>
+            <!-- WRISTWATCH (Brown leather strap, brushed metallic dial) -->
+            <rect x="22" y="215" width="28" height="10" rx="3" fill="#78350f" stroke="#1e1815" stroke-width="2"/>
+            <circle cx="36" cy="220" r="7.5" fill="#f1f5f9" stroke="#1e1815" stroke-width="2"/>
+            <line x1="36" y1="220" x2="36" y2="215" stroke="#0f172a" stroke-width="1.5"/>
+            <line x1="36" y1="220" x2="40" y2="220" stroke="#0f172a" stroke-width="1.5"/>
+            <!-- Hand resting on desk surface -->
+            <path d="M 24,235 L 20,265 C 20,275 48,275 48,265 L 46,235" fill="#f8c8a0" stroke="#1e1815" stroke-width="2"/>
+            <circle cx="28" cy="265" r="4" fill="#f8c8a0"/>
+            <circle cx="36" cy="268" r="4" fill="#f8c8a0"/>
+            <circle cx="44" cy="265" r="4" fill="#f8c8a0"/>
+          </svg>
+        </div>
+
+        <!-- Max Right Arm (Gesturing: Visionary Precision Point) -->
+        <div id="maxArmR" style="position: absolute; top: 380px; right: 10px; width: 120px; height: 320px; transform-origin: top center;">
+          <svg viewBox="0 0 120 320" width="120" height="320">
+            <!-- White sleeve with rolled cuff -->
+            <path d="M 35,0 L 55,120 L 85,120 L 55,0" fill="#ffffff" stroke="#1e1815" stroke-width="2.5"/>
+            <rect x="50" y="115" width="38" height="15" rx="4" fill="#e2e8f0" stroke="#1e1815" stroke-width="2.5"/>
+            <!-- Forearm & Articulated Gesturing Hand -->
+            <path d="M 60,130 L 85,225 C 90,235 72,245 68,230 L 52,130" fill="#f8c8a0" stroke="#1e1815" stroke-width="2.5"/>
+            <!-- Hand Slot (Swapped to Visionary Precision Point) -->
+            <g id="maxHandRSlot" transform="translate(80, 230)">
+              <!-- Extended index finger -->
+              <path d="M -6,0 L 22,-14 C 26,-16 28,-12 24,-8 L 2,12 Z" fill="#f8c8a0" stroke="#1e1815" stroke-width="2"/>
+              <!-- Curled thumb & fingers -->
+              <circle cx="0" cy="8" r="7" fill="#f8c8a0" stroke="#1e1815" stroke-width="1.5"/>
+              <rect x="-6" y="2" width="14" height="7" rx="3" fill="#d99b6e" stroke="#1e1815" stroke-width="1.5"/>
+              <rect x="-8" y="9" width="14" height="7" rx="3" fill="#d99b6e" stroke="#1e1815" stroke-width="1.5"/>
+            </g>
+          </svg>
+        </div>
+
+        <!-- Max Head & Expressive Facial Rig (32yo Founder) -->
+        <div id="maxHead" style="position: absolute; top: 140px; left: 60px; width: 200px; height: 240px; transform-origin: 50% 90%;">
+          <svg viewBox="0 0 200 240" width="200" height="240">
+            <rect x="85" y="165" width="30" height="42" fill="#d99b6e"/>
+            <ellipse cx="100" cy="105" rx="64" ry="76" fill="#f8c8a0" stroke="#1e1815" stroke-width="3"/>
+            <!-- Textured Modern Quiff with Side Taper -->
+            <path d="M 38,98 C 34,26 94,-12 152,6 C 162,32 154,52 148,68 C 134,34 104,20 70,26 Z" fill="#241712" stroke="#120c09" stroke-width="3"/>
+            <path d="M 36,98 C 34,115 42,125 42,130 C 38,120 34,108 36,98 Z" fill="#241712"/>
+
+            <!-- Ears -->
+            <circle cx="36" cy="115" r="12" fill="#f8c8a0" stroke="#1e1815" stroke-width="2"/>
+            <circle cx="164" cy="115" r="12" fill="#f8c8a0" stroke="#1e1815" stroke-width="2"/>
+
+            <!-- Refined Glasses with Specular Sheen -->
+            <rect x="52" y="90" width="40" height="32" rx="8" fill="rgba(255,255,255,0.15)" stroke="#1e293b" stroke-width="3.5"/>
+            <rect x="108" y="90" width="40" height="32" rx="8" fill="rgba(255,255,255,0.15)" stroke="#1e293b" stroke-width="3.5"/>
+            <line x1="92" y1="104" x2="108" y2="104" stroke="#1e293b" stroke-width="3"/>
+            <line x1="58" y1="96" x2="72" y2="96" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+            <line x1="114" y1="96" x2="128" y2="96" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+
+            <!-- Eyes & Saccadic Pupils -->
+            <circle cx="72" cy="106" r="7.5" fill="#ffffff"/>
+            <circle id="maxPupilL" cx="74" cy="106" r="4.2" fill="#0f172a"/>
+            <circle cx="75" cy="104" r="1.2" fill="#ffffff"/>
+            <circle cx="128" cy="106" r="7.5" fill="#ffffff"/>
+            <circle id="maxPupilR" cx="130" cy="106" r="4.2" fill="#0f172a"/>
+            <circle cx="131" cy="104" r="1.2" fill="#ffffff"/>
+
+            <!-- Eyelids -->
+            <rect id="maxLidL" x="54" y="92" width="36" height="0" fill="#f8c8a0"/>
+            <rect id="maxLidR" x="110" y="92" width="36" height="0" fill="#f8c8a0"/>
+
+            <!-- Dynamic Eyebrows -->
+            <path id="maxBrowL" d="M 52,82 Q 72,70 88,80" fill="none" stroke="#241712" stroke-width="5" stroke-linecap="round"/>
+            <path id="maxBrowR" d="M 112,80 Q 128,70 148,82" fill="none" stroke="#241712" stroke-width="5" stroke-linecap="round"/>
+
+            <!-- Defined Nose Bridge with Cel Shadow -->
+            <path d="M 100,102 L 96,128 L 102,132" fill="none" stroke="#ba7548" stroke-width="3" stroke-linecap="round"/>
+
+            <!-- 10-Phoneme Mouth Slot -->
+            <g id="maxMouthSlot" transform="translate(100, 165)">
+              <path d="M -18,0 Q 0,4 18,0" fill="none" stroke="#7f1d1d" stroke-width="3.5" stroke-linecap="round"/>
+            </g>
+          </svg>
+        </div>
+
+      </div>
+
+      <!-- =============================================================== -->
+      <!-- ALEX CHARACTER RIG (OFFICIAL BIBLE: 26yo, LIGHT-BLUE SHIRT) -->
+      <!-- =============================================================== -->
+      <div id="rigAlex" class="character-rig" style="left: 620px; bottom: 440px; width: 340px; height: 820px;">
+        
+        <!-- Alex Torso & Light-Blue Shirt -->
+        <div id="alexTorso" style="position: absolute; bottom: 0; left: 60px; width: 220px; height: 460px; transform-origin: bottom center;">
+          <svg viewBox="0 0 220 460" width="220" height="460">
+            <!-- Trousers (Dark Charcoal) -->
+            <path d="M 44,240 L 96,240 L 92,440 L 48,440 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2.5"/>
+            <path d="M 104,240 L 156,240 L 148,440 L 108,440 Z" fill="#1e293b" stroke="#0f172a" stroke-width="2.5"/>
+            <!-- Sneakers -->
+            <rect x="42" y="435" width="48" height="18" rx="6" fill="#f8fafc" stroke="#1e1815" stroke-width="2"/>
+            <rect x="104" y="435" width="48" height="18" rx="6" fill="#f8fafc" stroke="#1e1815" stroke-width="2"/>
+
+            <!-- Light-Blue Button-Down Shirt (Character Bible) -->
+            <path d="M 38,92 L 164,92 L 174,240 L 28,240 Z" fill="#bae6fd" stroke="#0369a1" stroke-width="3"/>
+            <!-- Open Collar -->
+            <polygon points="80,92 120,92 100,138" fill="#f8c8a0" stroke="#0369a1" stroke-width="2"/>
+            <path d="M 38,92 L 80,138 L 100,138 L 38,92" fill="#7dd3fc" stroke="#0369a1" stroke-width="2.5"/>
+            <path d="M 164,92 L 120,138 L 100,138 L 164,92" fill="#7dd3fc" stroke="#0369a1" stroke-width="2.5"/>
+            <!-- Placket & Buttons -->
+            <line x1="100" y1="138" x2="100" y2="240" stroke="#38bdf8" stroke-width="2.5"/>
+            <circle cx="100" cy="165" r="2.5" fill="#0284c7"/>
+            <circle cx="100" cy="195" r="2.5" fill="#0284c7"/>
+            <circle cx="100" cy="225" r="2.5" fill="#0284c7"/>
+          </svg>
+        </div>
+
+        <!-- Alex Left Arm (Typing / Stopping Mid-Stroke) -->
+        <div id="alexArmL" style="position: absolute; top: 380px; left: 15px; width: 90px; height: 300px; transform-origin: top center;">
+          <svg viewBox="0 0 90 300" width="90" height="300">
+            <path d="M 40,0 L 20,130 C 15,190 35,230 45,250 C 48,255 60,250 56,240 C 45,190 45,130 50,0" fill="#bae6fd" stroke="#0369a1" stroke-width="2.5"/>
+            <!-- Articulated hand with typing fingers -->
+            <circle cx="48" cy="254" r="8" fill="#f8c8a0" stroke="#1e1815" stroke-width="2"/>
+            <rect x="36" y="258" width="8" height="12" rx="3" fill="#f8c8a0" stroke="#1e1815" stroke-width="1.5"/>
+            <rect x="46" y="260" width="8" height="14" rx="3" fill="#f8c8a0" stroke="#1e1815" stroke-width="1.5"/>
+            <rect x="56" y="258" width="8" height="12" rx="3" fill="#f8c8a0" stroke="#1e1815" stroke-width="1.5"/>
+          </svg>
+        </div>
+
+        <!-- Alex Right Arm -->
+        <div id="alexArmR" style="position: absolute; top: 380px; right: 20px; width: 90px; height: 300px; transform-origin: top center;">
+          <svg viewBox="0 0 90 300" width="90" height="300">
+            <path d="M 50,0 C 65,70 65,140 45,235 C 42,248 25,245 28,235 C 45,140 40,70 35,0 Z" fill="#bae6fd" stroke="#0369a1" stroke-width="2.5"/>
+            <circle cx="36" cy="245" r="8" fill="#f8c8a0" stroke="#1e1815" stroke-width="2"/>
+          </svg>
+        </div>
+
+        <!-- Alex Head (Messy Dark Hair, Sarcastic Eyebrows, Smirk) -->
+        <div id="alexHead" style="position: absolute; top: 130px; left: 55px; width: 220px; height: 260px; transform-origin: 50% 90%;">
+          <svg viewBox="0 0 220 260" width="220" height="260">
+            <rect x="94" y="180" width="34" height="42" fill="#d99b6e"/>
+            <ellipse cx="110" cy="115" rx="68" ry="82" fill="#f8c8a0" stroke="#1e1815" stroke-width="3"/>
+            <!-- Messy Dark Hair (Canonical 26yo Silhouette) -->
+            <path d="M 34,105 C 26,35 72,-12 126,-6 C 178,-4 202,38 194,92 C 182,48 150,22 110,26 Z" fill="#1c1917" stroke="#09090b" stroke-width="3"/>
+            <path d="M 75,18 Q 90,-4 112,14" stroke="#1c1917" stroke-width="8" stroke-linecap="round"/>
+            <path d="M 130,12 Q 150,-4 168,20" stroke="#1c1917" stroke-width="8" stroke-linecap="round"/>
+
+            <!-- Left Eye Socket -->
+            <ellipse cx="74" cy="118" rx="16" ry="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+            <circle id="alexPupilL" cx="68" cy="118" r="6" fill="#0f172a"/>
+            <circle cx="69" cy="116" r="1.5" fill="#ffffff"/>
+
+            <!-- Right Eye Socket (Squints skeptically) -->
+            <ellipse id="alexEyeSocketR" cx="146" cy="118" rx="16" ry="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+            <circle id="alexPupilR" cx="140" cy="118" r="6" fill="#0f172a"/>
+            <circle cx="141" cy="116" r="1.5" fill="#ffffff"/>
+
+            <!-- Eyelids -->
+            <rect id="alexLidL" x="56" y="100" width="38" height="0" fill="#f8c8a0"/>
+            <rect id="alexLidR" x="128" y="100" width="38" height="0" fill="#f8c8a0"/>
+
+            <!-- Sarcastic Eyebrows (Left high arch, right skeptic furrow) -->
+            <path id="alexBrowL" d="M 56,100 Q 76,84 94,98" fill="none" stroke="#1c1917" stroke-width="5.5" stroke-linecap="round"/>
+            <path id="alexBrowR" d="M 126,102 L 162,98" fill="none" stroke="#1c1917" stroke-width="5.5" stroke-linecap="round"/>
+
+            <!-- Nose with shadow -->
+            <path d="M 110,114 Q 115,142 106,146" fill="none" stroke="#ba7548" stroke-width="3.5" stroke-linecap="round"/>
+
+            <!-- Sarcastic Smirk Lip-Sync Slot -->
+            <g id="alexMouthSlot" transform="translate(110, 180)">
+              <path d="M -18,2 Q 0,2 20,-6" fill="none" stroke="#7f1d1d" stroke-width="4.5" stroke-linecap="round"/>
+            </g>
+          </svg>
+        </div>
+
+      </div>
+
+      <!-- LAYER 4: FOREGROUND MONSTERA DEPTH LEAVES -->
+      <div style="position: absolute; bottom: 0; left: -20px; pointer-events: none; z-index: 80;">
+        <svg viewBox="0 0 240 340" width="240" height="340">
+          <path d="M 0,340 C 20,200 80,140 160,160 C 180,180 140,280 40,340 Z" fill="#04120a" opacity="0.92"/>
+          <path d="M 40,340 C 60,180 160,120 220,150 C 230,170 170,280 100,340 Z" fill="#061c10" opacity="0.92"/>
+        </svg>
+      </div>
+
+    </div><!-- /#cameraRig -->
+
+    <!-- Subtitle Banner -->
+    <div id="subtitleBanner" class="subtitle-banner">
+      <div id="subtitleSpeaker" class="text-xs font-black uppercase tracking-wider text-indigo-400 mb-1">MAX</div>
+      <div id="subtitleText" class="text-3xl font-extrabold text-white leading-snug">"We don't need sleep, Alex. We have momentum."</div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 10-PHONEME ANATOMICAL MOUTH SVGS (Standard Lip-Sync Bank)
+    // =========================================================================
+    const MOUTH_PHONEMES = {
+      REST: `<path d="M -18,0 Q 0,3 18,0" fill="none" stroke="#7f1d1d" stroke-width="3.5" stroke-linecap="round"/>`,
+      AI: `<ellipse cx="0" cy="0" rx="18" ry="12" fill="#3b0712" stroke="#7f1d1d" stroke-width="2.5"/><path d="M -12,-6 Q 0,-3 12,-6" stroke="#ffffff" stroke-width="3" fill="none"/><path d="M -8,5 Q 0,-1 8,5" fill="#f43f5e"/>`,
+      E: `<path d="M -18,-2 C -10,-8 10,-8 18,-2 C 14,8 -14,8 -18,-2 Z" fill="#3b0712" stroke="#7f1d1d" stroke-width="2.5"/><rect x="-14" y="-3" width="28" height="5" fill="#ffffff"/>`,
+      O: `<ellipse cx="0" cy="0" rx="12" ry="15" fill="#3b0712" stroke="#7f1d1d" stroke-width="2.5"/><path d="M -6,-6 Q 0,-4 6,-6" stroke="#ffffff" stroke-width="2" fill="none"/>`,
+      U: `<circle cx="0" cy="0" r="8" fill="#3b0712" stroke="#7f1d1d" stroke-width="2.5"/>`,
+      MBP: `<line x1="-18" y1="0" x2="18" y2="0" stroke="#7f1d1d" stroke-width="4.5" stroke-linecap="round"/>`,
+      FV: `<path d="M -16,0 Q 0,5 16,0" fill="none" stroke="#7f1d1d" stroke-width="3" stroke-linecap="round"/><rect x="-6" y="-6" width="12" height="6" rx="2" fill="#ffffff"/>`,
+      LTH: `<ellipse cx="0" cy="0" rx="16" ry="10" fill="#3b0712" stroke="#7f1d1d" stroke-width="2.5"/><path d="M -5,0 Q 0,-6 5,0 Z" fill="#f43f5e"/><path d="M -10,-4 Q 0,-1 10,-4" stroke="#ffffff" stroke-width="2.5" fill="none"/>`,
+      CDG: `<path d="M -16,-2 Q 0,-5 16,-2 Q 0,6 -16,-2" fill="#3b0712" stroke="#7f1d1d" stroke-width="2.5"/><line x1="-10" y1="-2" x2="10" y2="-2" stroke="#ffffff" stroke-width="3"/>`,
+      SMIRK: `<path d="M -16,2 Q 0,2 18,-6" fill="none" stroke="#7f1d1d" stroke-width="4.5" stroke-linecap="round"/>`
+    };
+
+    const cameraRig = document.getElementById('cameraRig');
+    const subtitleBanner = document.getElementById('subtitleBanner');
+    const subtitleSpeaker = document.getElementById('subtitleSpeaker');
+    const subtitleText = document.getElementById('subtitleText');
+
+    const rigMax = document.getElementById('rigMax');
+    const maxTorso = document.getElementById('maxTorso');
+    const maxHead = document.getElementById('maxHead');
+    const maxArmR = document.getElementById('maxArmR');
+    const maxArmL = document.getElementById('maxArmL');
+    const maxPupilL = document.getElementById('maxPupilL');
+    const maxPupilR = document.getElementById('maxPupilR');
+    const maxLidL = document.getElementById('maxLidL');
+    const maxLidR = document.getElementById('maxLidR');
+    const maxMouthSlot = document.getElementById('maxMouthSlot');
+
+    const rigAlex = document.getElementById('rigAlex');
+    const alexTorso = document.getElementById('alexTorso');
+    const alexHead = document.getElementById('alexHead');
+    const alexArmL = document.getElementById('alexArmL');
+    const alexArmR = document.getElementById('alexArmR');
+    const alexPupilL = document.getElementById('alexPupilL');
+    const alexPupilR = document.getElementById('alexPupilR');
+    const alexLidL = document.getElementById('alexLidL');
+    const alexLidR = document.getElementById('alexLidR');
+    const alexEyeSocketR = document.getElementById('alexEyeSocketR');
+    const alexMouthSlot = document.getElementById('alexMouthSlot');
+
+    function easeInOutCubic(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    // =========================================================================
+    // DETERMINISTIC PRODUCTION V2 BENCHMARK RENDER FUNCTION (10.0s Locked)
+    // =========================================================================
+    function renderAtTime(t) {
+      // 1. CINEMATIC 5-SHOT CAMERA RIG
+      // Shot 1 (0.0s - 2.0s): Wide Establishing (camX = 0, zoom = 1.05)
+      // Shot 2 (2.0s - 4.5s): Push to Medium Max (camX = 80, zoom = 1.25)
+      // Shot 3 (4.5s - 6.0s): Dynamic Whip-Pan to Alex (camX: 80 -> -200, zoom = 1.30)
+      // Shot 4 (6.0s - 9.2s): Expressive Close-Up on Alex (camX = -220, zoom = 1.38)
+      // Shot 5 (9.2s - 10.0s): Two-Shot Settle (camX = -70, zoom = 1.15)
+      let camX = 0;
+      let camZoom = 1.05;
+
+      if (t < 2.0) {
+        // Establishing drift
+        camX = (t / 2.0) * 40;
+        camZoom = 1.05 + (t / 2.0) * 0.08;
+      } else if (t >= 2.0 && t < 4.5) {
+        // Medium shot Max delivering visionary pitch
+        const p = (t - 2.0) / 2.5;
+        camX = 40 + p * 40;
+        camZoom = 1.13 + p * 0.12;
+      } else if (t >= 4.5 && t < 6.0) {
+        // Whip-pan across desk
+        const p = easeInOutCubic((t - 4.5) / 1.5);
+        camX = 80 + (-220 - 80) * p;
+        camZoom = 1.25 + (1.38 - 1.25) * p;
+      } else if (t >= 6.0 && t < 9.2) {
+        // Close-up on Alex sarcastic response
+        const p = (t - 6.0) / 3.2;
+        camX = -220 - p * 10;
+        camZoom = 1.38 + p * 0.04;
+      } else {
+        // Two-shot settle
+        const p = easeInOutCubic((t - 9.2) / 0.8);
+        camX = -230 + (-70 - (-230)) * p;
+        camZoom = 1.42 + (1.15 - 1.42) * p;
+      }
+
+      cameraRig.style.transform = `scale(${camZoom}) translate(${camX}px, 0px)`;
+
+      // 2. MAX ACTING PASS: Anticipation, Gesture, Wristwatch, Lip-Sync
+      const maxSpeechStart = 0.8;
+      const maxSpeechEnd = 4.55;
+
+      let maxArmRot = 0;
+      let maxHeadTilt = 0;
+      let maxPhoneme = 'REST';
+
+      // Anticipation (0.0s - 0.8s): Chest rises on inhale, arm pulls back
+      if (t < maxSpeechStart) {
+        const ant = t / maxSpeechStart;
+        maxArmRot = -16 * ant;
+        maxHeadTilt = -5 * ant;
+        maxTorso.style.transform = `scaleY(${1 + ant * 0.03}) rotate(${-ant * 2}deg)`;
+      } else if (t >= maxSpeechStart && t < maxSpeechEnd) {
+        // Delivery with visionary point deceleration
+        const sTime = t - maxSpeechStart;
+        maxArmRot = 16 + Math.sin(sTime * 7) * 10;
+        maxHeadTilt = Math.sin(sTime * 5) * 3;
+        maxTorso.style.transform = `scaleY(1.0) rotate(1deg)`;
+
+        // Authentic 10-phoneme lip-sync cycle
+        const phonemeCycle = ['WQ', 'E', 'REST', 'CDG', 'O', 'REST', 'CDG', 'E', 'MBP', 'REST', 'AI', 'LTH', 'E', 'CDG', 'REST', 'WQ', 'E', 'REST', 'MBP', 'O', 'MBP', 'E', 'CDG'];
+        const pIdx = Math.floor(sTime * 6.5) % phonemeCycle.length;
+        maxPhoneme = phonemeCycle[pIdx];
+      } else {
+        // Follow-through settle
+        maxArmRot = 5;
+        maxHeadTilt = 2;
+        maxPhoneme = 'REST';
+        maxTorso.style.transform = 'none';
+      }
+
+      // Max Blinks (at 0.4s and 3.8s)
+      const isMaxBlinking = (t >= 0.4 && t <= 0.55) || (t >= 3.8 && t <= 3.95);
+      maxLidL.setAttribute('height', isMaxBlinking ? '28' : '0');
+      maxLidR.setAttribute('height', isMaxBlinking ? '28' : '0');
+
+      // Pupils track Alex across the room
+      maxPupilL.setAttribute('cx', '76');
+      maxPupilR.setAttribute('cx', '132');
+
+      maxArmR.style.transform = `rotate(${maxArmRot}deg)`;
+      maxHead.style.transform = `rotate(${maxHeadTilt}deg)`;
+      maxMouthSlot.innerHTML = MOUTH_PHONEMES[maxPhoneme] || MOUTH_PHONEMES.REST;
+
+      // 3. ALEX ACTING PASS: Typing Stop, Head Turn, Asymmetrical Brow, Smirk
+      const alexSpeechStart = 5.6;
+      const alexSpeechEnd = 9.62;
+
+      let alexHeadTurn = 0;
+      let alexArmTyping = 0;
+      let alexPhoneme = 'SMIRK';
+
+      if (t < 4.5) {
+        // Typing at keyboard, looking at terminal screen
+        alexArmTyping = Math.sin(t * 22) * 8;
+        alexPupilL.setAttribute('cx', '68');
+        alexPupilR.setAttribute('cx', '140');
+        alexHeadTurn = 0;
+      } else if (t >= 4.5 && t < 5.6) {
+        // Sarcastic Turn: Head turns 45 degrees, eyebrow arches asymmetrically
+        const p = easeInOutCubic((t - 4.5) / 1.1);
+        alexHeadTurn = -9 * p;
+        alexArmTyping = 0; // Stops typing mid-stroke
+        // Pupil darts to lock on Max
+        alexPupilL.setAttribute('cx', String(68 - p * 8));
+        alexPupilR.setAttribute('cx', String(140 - p * 8));
+        // Right eye squints into deadpan glare
+        alexEyeSocketR.setAttribute('ry', String(16 - p * 6));
+      } else if (t >= alexSpeechStart && t < alexSpeechEnd) {
+        // Sarcastic dialogue delivery with deadpan lip-sync
+        const aTime = t - alexSpeechStart;
+        const alexCycle = ['MBP', 'O', 'MBP', 'E', 'CDG', 'REST', 'CDG', 'O', 'E', 'CDG', 'REST', 'MBP', 'AI', 'CDG', 'REST', 'E', 'CDG'];
+        const aIdx = Math.floor(aTime * 5.5) % alexCycle.length;
+        alexPhoneme = alexCycle[aIdx];
+      } else {
+        alexPhoneme = 'SMIRK';
+      }
+
+      // Alex comedic double-blink during sarcastic turn (at 4.9s and 5.3s)
+      const isAlexBlinking = (t >= 4.9 && t <= 5.05) || (t >= 5.3 && t <= 5.45);
+      alexLidL.setAttribute('height', isAlexBlinking ? '32' : '0');
+      alexLidR.setAttribute('height', isAlexBlinking ? '32' : '0');
+
+      alexHead.style.transform = `rotate(${alexHeadTurn}deg)`;
+      alexArmL.style.transform = `rotate(${alexArmTyping}deg)`;
+      alexMouthSlot.innerHTML = MOUTH_PHONEMES[alexPhoneme] || MOUTH_PHONEMES.SMIRK;
+
+      // 4. SUBTITLE BANNER
+      if (t >= maxSpeechStart && t < 5.0) {
+        subtitleBanner.style.opacity = '1';
+        subtitleSpeaker.textContent = 'MAX';
+        subtitleSpeaker.className = 'text-xs font-black uppercase tracking-wider text-indigo-400 mb-1';
+        subtitleText.textContent = '"We don\'t need sleep, Alex. We have momentum."';
+      } else if (t >= alexSpeechStart && t < 9.8) {
+        subtitleBanner.style.opacity = '1';
+        subtitleSpeaker.textContent = 'ALEX';
+        subtitleSpeaker.className = 'text-xs font-black uppercase tracking-wider text-emerald-400 mb-1';
+        subtitleText.textContent = '"Momentum doesn\'t pass unit tests, Max."';
+      } else {
+        subtitleBanner.style.opacity = '0';
+      }
+    }
+
+    window.renderAtTime = renderAtTime;
+    window.addEventListener('DOMContentLoaded', () => renderAtTime(0));
+  </script>
+</body>
+</html>

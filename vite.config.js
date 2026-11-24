@@ -1,13 +1,70 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
-import { fileURLToPath } from 'url'
+import { fileURLToPath, pathToFileURL } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, __dirname, '')
+  Object.assign(process.env, env)
+
+  return {
   plugins: [
     react(),
+    {
+      name: 'local-owner-api-handler',
+      configureServer(server) {
+        server.middlewares.use(async (req, res, next) => {
+          const host = req.headers.host || 'localhost:5173'
+          const url = new URL(req.url, `http://${host}`)
+
+          if (url.pathname === '/api/owner') {
+            try {
+              req.query = Object.fromEntries(url.searchParams.entries())
+
+              if (!res.status) {
+                res.status = function(code) {
+                  this.statusCode = code
+                  return this
+                }
+              }
+              if (!res.json) {
+                res.json = function(data) {
+                  this.setHeader('Content-Type', 'application/json')
+                  this.end(JSON.stringify(data))
+                  return this
+                }
+              }
+
+              if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+                let rawBody = ''
+                for await (const chunk of req) {
+                  rawBody += chunk
+                }
+                try {
+                  req.body = JSON.parse(rawBody)
+                } catch (_) {
+                  req.body = rawBody
+                }
+              }
+
+              const ownerFilePath = path.resolve(__dirname, 'api/owner.js')
+              const ownerModule = await import(pathToFileURL(ownerFilePath).href + '?t=' + Date.now())
+              await ownerModule.default(req, res)
+              return
+            } catch (err) {
+              console.error('[Local Owner API Error]', err)
+              res.statusCode = 500
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ error: err.message }))
+              return
+            }
+          }
+          next()
+        })
+      }
+    },
     {
       name: 'block-cloudflare-config',
       configureServer(server) {
@@ -94,5 +151,6 @@ export default defineConfig({
         }
       }
     }
-  },
+  }
+}
 })

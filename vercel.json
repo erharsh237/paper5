@@ -56,6 +56,10 @@
       "destination": "/api/public?action=feedback"
     },
     {
+      "source": "/api/product-feedback",
+      "destination": "/api/public?action=product-feedback"
+    },
+    {
       "source": "/api/forgot-password",
       "destination": "/api/public?action=forgot-password"
     },
