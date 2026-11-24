@@ -11,6 +11,7 @@ import {
   changeMemberRole,
   removeMember,
   cancelInvite,
+  resendInvite,
   createInvite,
   updateMemberPermissions,
   deleteWorkspace,
@@ -422,6 +423,7 @@ export default function Settings() {
   const [invitePermissions, setInvitePermissions] = useState([])
   const [selectedMembers, setSelectedMembers] = useState([])
   const [lastCreatedInvite, setLastCreatedInvite] = useState(null)
+  const [resendingInviteId, setResendingInviteId] = useState(null)
   
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false)
   const [isInvoicesModalOpen, setIsInvoicesModalOpen] = useState(false)
@@ -645,6 +647,23 @@ export default function Settings() {
         setSelectedMembers([])
       }
     })
+  }
+
+  const handleResendInviteLink = async (inv) => {
+    setResendingInviteId(inv.id)
+    try {
+      const res = await resendInvite(workspaceId, inv.id, inv.email)
+      const newInvite = res?.newInvite || res
+      if (newInvite?.id) {
+        setInvites(prev => prev.map(i => i.id === inv.id ? newInvite : i))
+      }
+      setAlertMessage(`New invitation link dispatched to ${inv.email}. The old link was deactivated.`)
+    } catch (err) {
+      console.error('Resend invite error:', err)
+      setAlertMessage(err?.message || 'Failed to resend invite. Please try again.')
+    } finally {
+      setResendingInviteId(null)
+    }
   }
 
   const handleIndividualResend = (inv) => {
@@ -1911,23 +1930,34 @@ export default function Settings() {
                                   </div>
                                 </td>
                                 <td>
-                                  <button className="btn-ghost btn-sm" onClick={() => openConfirm({
-                                    title: 'Cancel Invite',
-                                    message: `Cancel the pending invite for ${inv.email}? They will no longer be able to join.`,
-                                    confirmText: 'Cancel Invite',
-                                    variant: 'danger',
-                                    onConfirm: async () => {
-                                      closeConfirm()
-                                      const targetEmail = (inv.email || '').toLowerCase().trim()
-                                      setInvites(prev => prev.filter(i => i.id !== inv.id && (i.email || '').toLowerCase().trim() !== targetEmail))
-                                      try {
-                                        await cancelInvite(workspaceId, inv.id, inv.email)
-                                      } catch (err) {
-                                        console.error('Cancel invite error:', err)
-                                        setAlertMessage('Failed to cancel invite. Please try again.')
+                                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    <button 
+                                      className="btn-ghost btn-sm" 
+                                      disabled={resendingInviteId === inv.id}
+                                      onClick={() => handleResendInviteLink(inv)}
+                                      style={{ color: 'var(--accent, #4F46E5)', fontWeight: 500 }}
+                                      title="Generate and email a new invitation link, deactivating the old one"
+                                    >
+                                      {resendingInviteId === inv.id ? 'Resending…' : 'Resend'}
+                                    </button>
+                                    <button className="btn-ghost btn-sm" onClick={() => openConfirm({
+                                      title: 'Cancel Invite',
+                                      message: `Cancel the pending invite for ${inv.email}? They will no longer be able to join.`,
+                                      confirmText: 'Cancel Invite',
+                                      variant: 'danger',
+                                      onConfirm: async () => {
+                                        closeConfirm()
+                                        const targetEmail = (inv.email || '').toLowerCase().trim()
+                                        setInvites(prev => prev.filter(i => i.id !== inv.id && (i.email || '').toLowerCase().trim() !== targetEmail))
+                                        try {
+                                          await cancelInvite(workspaceId, inv.id, inv.email)
+                                        } catch (err) {
+                                          console.error('Cancel invite error:', err)
+                                          setAlertMessage('Failed to cancel invite. Please try again.')
+                                        }
                                       }
-                                    }
-                                  })}>Cancel</button>
+                                    })}>Cancel</button>
+                                  </div>
                                 </td>
                               </tr>
                             ))}

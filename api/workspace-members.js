@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import crypto from 'crypto'
 import { setCorsHeaders } from './_cors.js'
 import { authenticateUser, verifyWorkspaceAccess } from './_auth.js'
 import { sanitizeError } from './_errors.js'
@@ -819,17 +820,83 @@ export default async function handler(req, res) {
           return res.status(404).json({ error: 'Invite not found' })
         }
 
-        await supabaseAdmin.from('invites').update({ created_at: new Date().toISOString() }).eq('id', targetInvite.id)
+        // 1. Instantly deactivate old invite by deleting previous records
+        await Promise.allSettled([
+          supabaseAdmin.from('invites').delete().eq('id', targetInvite.id),
+          supabaseAdmin.from('workspace_invites').delete().eq('workspace_id', workspaceId).eq('email', targetInvite.email)
+        ])
+
+        // 2. Insert new invite record with a brand-new ID and fresh timestamp
+        const newInviteId = crypto.randomUUID()
+        const { data: newInvite, error: insErr } = await supabaseAdmin.from('invites').insert({
+          id: newInviteId,
+          workspace_id: workspaceId,
+          email: targetInvite.email,
+          role: targetInvite.role || 'member',
+          permissions: Array.isArray(targetInvite.permissions) ? targetInvite.permissions : [],
+          invited_by: authRes.user.id,
+          sent_count: (targetInvite.sent_count || 1) + 1,
+          created_at: new Date().toISOString()
+        }).select().maybeSingle()
+
+        if (insErr) {
+          throw new Error(insErr.message || 'Failed to generate new invitation record')
+        }
+
+        // Ensure member_permissions settings map is preserved
+        try {
+          const { data: wsData } = await supabaseAdmin.from('workspaces').select('settings, name').eq('id', workspaceId).maybeSingle()
+          if (wsData?.settings && Array.isArray(targetInvite.permissions)) {
+            const currentSettings = wsData.settings || {}
+            const permsMap = { ...(currentSettings.member_permissions || {}) }
+            permsMap[targetInvite.email] = targetInvite.permissions
+            await supabaseAdmin.from('workspaces').update({
+              settings: { ...currentSettings, member_permissions: permsMap }
+            }).eq('id', workspaceId)
+          }
+        } catch (_) {}
+
+        // 3. Dispatch fresh email with the new invite link containing newInviteId
+        try {
+          const { data: wsInfo } = await supabaseAdmin.from('workspaces').select('name').eq('id', workspaceId).maybeSingle()
+          const targetUrl = process.env.VITE_APP_URL || process.env.APP_URL || 'https://app.paper5.co'
+          const newInviteLink = `${targetUrl}/join?workspace=${encodeURIComponent(workspaceId)}&inviteId=${encodeURIComponent(newInviteId)}&email=${encodeURIComponent(targetInvite.email)}`
+          
+          const resendApiKey = process.env.RESEND_API_KEY || process.env.VITE_RESEND_API_KEY
+          if (resendApiKey) {
+            await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${resendApiKey}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                from: process.env.SENDER_EMAIL || 'Paper5 <no-reply@paper5.co>',
+                to: [targetInvite.email],
+                reply_to: process.env.REPLY_TO_EMAIL || 'support@paper5.co',
+                subject: `You've been invited to join ${wsInfo?.name || 'a team workspace'} on Paper5`,
+                html: `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:24px;background:#f8fafc;"><div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;padding:32px;border:1px solid #e2e8f0;"><div style="display:inline-block;background:#e0e7ff;color:#4338ca;padding:4px 10px;border-radius:9999px;font-weight:700;font-size:12px;margin-bottom:12px;">NEW INVITATION LINK</div><h2 style="font-size:20px;font-weight:800;color:#0f172a;margin:0 0 12px;">Join ${wsInfo?.name || 'your team'} on Paper5</h2><p style="font-size:14px;color:#475569;line-height:1.6;margin:0 0 20px;">A fresh invitation link has been generated for you to collaborate in <strong>${wsInfo?.name || 'a private workspace'}</strong> as a <strong>${targetInvite.role || 'member'}</strong>.<br/><br/><em>Note: Any previous invitation links have been deactivated for security.</em></p><a href="${newInviteLink}" style="display:inline-block;background:#4f46e5;color:#fff!important;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:700;font-size:14px;margin:16px 0;">Accept Invitation &rarr;</a></div></body></html>`,
+                text: `Join ${wsInfo?.name || 'your team'} on Paper5\n\nA fresh invitation link has been generated for you. Previous links have been deactivated.\n\nAccept invitation:\n${newInviteLink}`
+              })
+            })
+          }
+        } catch (emailErr) {
+          console.warn('Resend invite email dispatch warning:', emailErr)
+        }
 
         await logAdminAction(supabaseAdmin, {
           workspaceId,
           actorId: authRes.user.id,
           action: 'invite.resend',
           resource: 'invites',
-          metadata: { email: targetInvite.email, inviteId: targetInvite.id }
+          metadata: { email: targetInvite.email, oldInviteId: targetInvite.id, newInviteId }
         })
 
-        return res.status(200).json({ success: true, message: 'Invitation resent successfully' })
+        return res.status(200).json({
+          success: true,
+          newInvite,
+          message: 'New invitation sent. Previous link deactivated instantly.'
+        })
       }
     } catch (postErr) {
       console.error('Update member error:', postErr?.message || postErr)

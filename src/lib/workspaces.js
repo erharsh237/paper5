@@ -746,11 +746,11 @@ export async function resendInvite(workspaceId, inviteId, email = null) {
       email: email ? email.trim().toLowerCase() : null
     })
   })
+  const json = await res.json().catch(() => ({}))
   if (!res.ok) {
-    const json = await res.json().catch(() => ({}))
     throw new Error(json.error || 'Failed to resend invitation')
   }
-  return true
+  return json.newInvite || json || true
 }
 
 export async function createInvite(workspaceId, email, role, permissions = [], password, sendEmail = false) {

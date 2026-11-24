@@ -99,10 +99,10 @@ export default async function handler(req, res) {
       textBody = `Blocker Flagged\n\n${reporterName} flagged a blocker on "${title || 'Task'}".\n\nReason: ${blockerReason || 'No blocker reason provided.'}\n\nResolve or view details: ${targetUrl}`
       htmlBody = `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:24px;background:#f8fafc;"><div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;padding:32px;border:1px solid #fecaca;"><div style="display:inline-block;background:#fee2e2;color:#b91c1c;padding:4px 10px;border-radius:9999px;font-weight:700;font-size:12px;margin-bottom:12px;">BLOCKER ALERT</div><h2 style="font-size:18px;font-weight:800;color:#991b1b;margin:0 0 12px;">A blocker has been reported</h2><p style="font-size:14px;color:#334155;"><strong>${reporterName}</strong> reported an obstacle on <strong>"${title || 'Untitled Task'}"</strong>.</p><div style="background:#fff1f2;border-radius:8px;padding:16px;margin:16px 0;border:1px solid #fecdd3;"><strong style="color:#991b1b;">Blocker Reason:</strong><p style="margin:8px 0 0;font-size:14px;color:#4c0519;">${blockerReason || 'No details provided.'}</p></div><a href="${targetUrl}" style="display:inline-block;background:#dc2626;color:#fff!important;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:700;font-size:14px;margin-top:16px;">View Blocker on Dashboard &rarr;</a></div></body></html>`
     } else {
-      const inviteLink = `${targetUrl}/join?email=${encodeURIComponent(cleanEmail)}`
-      subject = `You've been invited to join ${workspaceName || 'a team workspace'} on SprintOS`
-      textBody = `You've been invited to join ${workspaceName || 'a workspace'} on SprintOS as ${role || 'member'}.\n\nClick the link below to accept your invitation:\n${inviteLink}\n\nSign in to get started.`
-      htmlBody = `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:24px;background:#f8fafc;"><div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;padding:32px;border:1px solid #e2e8f0;"><div style="display:inline-block;background:#e0e7ff;color:#4338ca;padding:4px 10px;border-radius:9999px;font-weight:700;font-size:12px;margin-bottom:12px;">WORKSPACE INVITATION</div><h2 style="font-size:20px;font-weight:800;color:#0f172a;margin:0 0 12px;">Join ${workspaceName || 'your team'} on SprintOS</h2><p style="font-size:14px;color:#475569;line-height:1.6;margin:0 0 20px;">You've been invited to collaborate in <strong>${workspaceName || 'a private workspace'}</strong> as a <strong>${role || 'member'}</strong>.</p><a href="${inviteLink}" style="display:inline-block;background:#4f46e5;color:#fff!important;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:700;font-size:14px;margin:16px 0;">Accept Invitation &rarr;</a></div></body></html>`
+      const inviteLink = `${targetUrl}/join?workspace=${encodeURIComponent(workspaceId || '')}&inviteId=${encodeURIComponent(inviteId || '')}&email=${encodeURIComponent(cleanEmail)}`
+      subject = `You've been invited to join ${workspaceName || 'a team workspace'} on Paper5`
+      textBody = `You've been invited to join ${workspaceName || 'a workspace'} on Paper5 as ${role || 'member'}.\n\nClick the link below to accept your invitation:\n${inviteLink}\n\nSign in to get started.`
+      htmlBody = `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:24px;background:#f8fafc;"><div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;padding:32px;border:1px solid #e2e8f0;"><div style="display:inline-block;background:#e0e7ff;color:#4338ca;padding:4px 10px;border-radius:9999px;font-weight:700;font-size:12px;margin-bottom:12px;">WORKSPACE INVITATION</div><h2 style="font-size:20px;font-weight:800;color:#0f172a;margin:0 0 12px;">Join ${workspaceName || 'your team'} on Paper5</h2><p style="font-size:14px;color:#475569;line-height:1.6;margin:0 0 20px;">You've been invited to collaborate in <strong>${workspaceName || 'a private workspace'}</strong> as a <strong>${role || 'member'}</strong>.</p><a href="${inviteLink}" style="display:inline-block;background:#4f46e5;color:#fff!important;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:700;font-size:14px;margin:16px 0;">Accept Invitation &rarr;</a></div></body></html>`
     }
 
     let emailSent = false
@@ -145,12 +145,23 @@ export default async function handler(req, res) {
   // 2. ACCEPT INVITATION / JOIN WORKSPACE
   // ─────────────────────────────────────────────────────────────
   const payload = { ...(req.query || {}), ...(body || {}) }
-  const { email, userId, workspaceId } = payload
+  const { email, userId, workspaceId, inviteId } = payload
   if (!email && !userId) {
     return res.status(400).json({ error: 'Missing email or userId parameter' })
   }
 
   const cleanEmail = email ? email.trim().toLowerCase() : ''
+
+  // If a specific inviteId was passed in the link, verify it is still active and not superseded/deactivated
+  if (inviteId && hasElevatedAccess) {
+    const [{ data: sp1 }, { data: sp2 }] = await Promise.all([
+      supabaseAdmin.from('invites').select('id, workspace_id').eq('id', inviteId).maybeSingle(),
+      supabaseAdmin.from('workspace_invites').select('id, workspace_id').eq('id', inviteId).maybeSingle()
+    ])
+    if (!sp1 && !sp2) {
+      return res.status(404).json({ error: 'This invitation link is no longer valid or has been replaced by a newer invitation.' })
+    }
+  }
 
   try {
     let acceptedWorkspaceId = workspaceId || null

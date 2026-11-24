@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
-// removed firebase imports
 import './Auth.css'
 import SEOHead from '../components/SEOHead'
 
@@ -13,12 +12,13 @@ export default function JoinWorkspace() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const workspaceId = searchParams.get('workspace')
+  const workspaceId = searchParams.get('workspace') || searchParams.get('workspaceId')
   const inviteId = searchParams.get('inviteId')
   const rawToken = searchParams.get('token')
+  const emailParam = searchParams.get('email')
 
   useEffect(() => {
-    if (!workspaceId || !inviteId || !rawToken) {
+    if (!workspaceId && !emailParam && !inviteId) {
       setError('Authentication failed: The invite link is invalid or missing required parameters.')
       setLoading(false)
       return
@@ -29,27 +29,52 @@ export default function JoinWorkspace() {
       return
     }
 
-
     const redeem = async () => {
       try {
-        const { supabase } = await import('../lib/supabase')
-        const { data, error } = await supabase.functions.invoke('redeem-invite', {
-          body: { workspaceId, inviteId, rawToken: rawToken }
+        // Step 1: Accept invite via secure serverless endpoint
+        const resp = await fetch('/api/accept-invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: user.email,
+            userId: user.id,
+            workspaceId,
+            inviteId
+          })
         })
-        if (error) throw error
-        if (data?.error) throw new Error(data.error)
+        const data = await resp.json().catch(() => ({}))
+        
+        if (resp.ok && data?.success) {
+          const targetWs = data.workspaceId || workspaceId
+          if (targetWs) {
+            navigate(`/${targetWs}`)
+            return
+          }
+        }
 
-        navigate(`/${workspaceId}`)
+        // If rawToken was supplied, try fallback edge function
+        if (rawToken && workspaceId && inviteId) {
+          const { supabase } = await import('../lib/supabase')
+          const { data: edgeData, error: edgeError } = await supabase.functions.invoke('redeem-invite', {
+            body: { workspaceId, inviteId, rawToken: rawToken }
+          })
+          if (!edgeError && edgeData?.success) {
+            navigate(`/${workspaceId}`)
+            return
+          }
+        }
+
+        throw new Error(data?.error || 'Workspace access denied. The invitation link may have expired or been replaced by a newer invitation.')
       } catch (err) {
         console.error('Invite redemption failed:', err)
-        setError('Workspace access denied. The invitation link may have expired or been revoked.')
+        setError(err.message || 'Workspace access denied. The invitation link may have expired or been revoked.')
       } finally {
         setLoading(false)
       }
     }
 
     redeem()
-  }, [workspaceId, inviteId, rawToken, navigate])
+  }, [workspaceId, inviteId, rawToken, emailParam, user, navigate])
 
   return (
     <div className="auth-layout">
