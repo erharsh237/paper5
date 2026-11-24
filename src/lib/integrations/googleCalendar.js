@@ -94,16 +94,31 @@ async function ensureAccessToken(clientId, forceSelectAccount = false) {
         scope: 'https://www.googleapis.com/auth/calendar.events.readonly https://www.googleapis.com/auth/calendar.events',
         error_callback: (err) => {
           console.error('Google OAuth Error:', err)
-          reject(new Error(err.message || err.type || 'Failed to initialize Google Login. Check your Client ID.'))
+          const errType = err?.type || err?.message || ''
+          if (errType === 'popup_closed_by_user') {
+            reject(new Error('Sign-in popup was closed before authorization was completed.'))
+          } else if (errType === 'access_denied') {
+            reject(new Error('Access was denied. Please allow calendar permissions to connect.'))
+          } else {
+            reject(new Error(err?.message || errType || 'Failed to initialize Google Login. Check your Client ID.'))
+          }
         },
         callback: (response) => {
-          if (response.error) return reject(new Error(`Google auth failed: ${response.error}`))
+          if (response.error) {
+            if (response.error === 'access_denied') {
+              return reject(new Error('Google authorization was cancelled or denied.'))
+            }
+            return reject(new Error(`Google auth failed: ${response.error}`))
+          }
+          if (!response.access_token) {
+            return reject(new Error('No access token received from Google.'))
+          }
           storeToken(response.access_token, response.expires_in)
           resolve(response.access_token)
         },
       })
-      // prompt: 'select_account' ensures the account chooser popup appears so user chooses their account
-      client.requestAccessToken({ prompt: forceSelectAccount ? 'select_account' : '' })
+      const requestOptions = forceSelectAccount ? { prompt: 'select_account' } : {}
+      client.requestAccessToken(requestOptions)
     } catch (err) {
       console.error('Popup blocked or error:', err)
       reject(new Error('Failed to open Google Login popup. Please ensure popups are allowed for this site.'))
