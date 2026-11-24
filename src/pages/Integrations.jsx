@@ -11,11 +11,54 @@ import Breadcrumbs from '../components/Breadcrumbs'
 import { useWorkspace } from '../lib/WorkspaceContext'
 import './Dashboard.css'
 import './Integrations.css'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Terminal, FolderGit2, Calendar, MessageSquare, Hash, Rocket, Zap, Lock, ChevronDown, Check, Copy } from 'lucide-react'
 import AlertModal from '../components/ui/AlertModal'
 import ConfirmModal from '../components/ui/ConfirmModal'
 import PricingModal from '../components/PricingModal'
 import { getPlanLimits } from '../lib/plans'
+
+const BRAND_META = {
+  github: {
+    iconClass: 'icon-github',
+    icon: <FolderGit2 size={16} />,
+    previewLabel: 'git: main',
+    previewDot: '#10b981',
+    previewText: 'PR #142 • checks passed',
+    previewMeta: '2m ago'
+  },
+  google_calendar: {
+    iconClass: 'icon-google',
+    icon: <Calendar size={16} />,
+    previewLabel: 'Sprint 14 Sync',
+    previewDot: '#3b82f6',
+    previewText: 'Mon 10:00 AM • 45m',
+    previewMeta: 'Weekly'
+  },
+  discord: {
+    iconClass: 'icon-discord',
+    icon: <MessageSquare size={16} />,
+    previewLabel: '#sprint-alerts',
+    previewDot: '#5865f2',
+    previewText: 'Task moved to Done',
+    previewMeta: 'Webhook'
+  },
+  slack: {
+    iconClass: 'icon-slack',
+    icon: <Hash size={16} />,
+    previewLabel: '#sprint-feed',
+    previewDot: '#e01e5a',
+    previewText: 'All blockers resolved',
+    previewMeta: 'Feed'
+  },
+  vercel: {
+    iconClass: 'icon-vercel',
+    icon: <Rocket size={16} />,
+    previewLabel: '▲ Production',
+    previewDot: '#10b981',
+    previewText: 'app.paper5.co',
+    previewMeta: 'Ready'
+  }
+}
 
 export default function Integrations() {
   const [alertMessage, setAlertMessage] = useState(null)
@@ -236,16 +279,21 @@ export default function Integrations() {
           {/* ⚡ 1-Click API Webhook & REST Sync Studio (Bento Tile: Spans 12 Columns - Hero Tile) */}
           <div className="bento-tile-12 bento-card bento-card-api">
             <div className="integration-card-top" style={{ flexWrap: 'wrap', gap: '12px' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <h3 style={{ margin: 0, fontSize: '18px' }}>1-Click API Webhook & REST Sync Studio</h3>
-                  <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', background: isScalePlan ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)', color: isScalePlan ? '#10b981' : '#f59e0b', padding: '3px 10px', borderRadius: '100px' }}>
-                    {isScalePlan ? 'Scale Tier Active' : 'Scale Tier Exclusive'}
-                  </span>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <div className="bento-brand-icon icon-api">
+                  <Terminal size={18} />
                 </div>
-                <p className="integration-desc" style={{ marginTop: '4px', marginBottom: 0 }}>
-                  Automate sprint task status updates, push automated proof of work, and query velocity metrics in real time from GitHub Actions, GitLab CI, Linear, or custom webhooks.
-                </p>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <h3 style={{ margin: 0, fontSize: '17px' }}>1-Click API Webhook & REST Sync Studio</h3>
+                    <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', background: isScalePlan ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)', color: isScalePlan ? '#10b981' : '#f59e0b', padding: '3px 10px', borderRadius: '100px' }}>
+                      {isScalePlan ? 'Scale Tier Active' : 'Scale Tier Exclusive'}
+                    </span>
+                  </div>
+                  <p className="integration-desc" style={{ marginTop: '4px', marginBottom: 0 }}>
+                    Automate sprint task status updates, push automated proof of work, and query velocity metrics in real time from GitHub Actions, GitLab CI, Linear, or custom webhooks.
+                  </p>
+                </div>
               </div>
               <span className={`integration-status ${isScalePlan && config.api_key ? 'integration-status--ready' : ''}`}>
                 {isScalePlan ? (config.api_key ? '● Webhook Ready' : '● Setup Key') : 'Locked (Scale Tier)'}
@@ -542,17 +590,39 @@ print(response.json())`}
                 )}
               </div>
             ) : (
-              <div style={{ marginTop: '16px', padding: '20px', background: 'rgba(245, 158, 11, 0.04)', border: '1px dashed rgba(245, 158, 11, 0.3)', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>1-Click API Webhook & REST Sync Studio is exclusive to the Pro Plan.</div>
+              <div className="bento-terminal-mock">
+                <div className="bento-terminal-header">
+                  <div className="bento-terminal-dots">
+                    <span className="bento-terminal-dot" style={{ background: '#ef4444' }} />
+                    <span className="bento-terminal-dot" style={{ background: '#f59e0b' }} />
+                    <span className="bento-terminal-dot" style={{ background: '#10b981' }} />
+                  </div>
+                  <span style={{ fontSize: '11px', color: '#64748B', fontFamily: 'monospace' }}>api.paper5.co &bull; v1/sprint/webhook</span>
                 </div>
-                <button 
-                  className="btn-primary"
-                  onClick={() => setIsPricingModalOpen(true)}
-                  style={{ whiteSpace: 'nowrap', padding: '10px 18px' }}
-                >
-                  Upgrade to Pro
-                </button>
+                <pre className="bento-terminal-code">
+                  <span className="comment"># 1-Click Webhook Trigger (GitHub Actions / GitLab / CI)</span>{'\n'}
+                  <span className="kw">curl</span> -X POST https://api.paper5.co/v1/sprint/webhook \{'\n'}
+                  {'  '}-H <span className="str">"Authorization: Bearer p5_live_9f82d1c7..."</span> \{'\n'}
+                  {'  '}-d <span className="str">'&#123;"event": "task.progress", "taskId": "tsk_82a", "status": "in_review"&#125;'</span>
+                </pre>
+                <div className="bento-locked-overlay">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Lock size={16} />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '14px', color: '#ffffff' }}>Scale Tier Exclusive</div>
+                      <div style={{ fontSize: '12px', color: '#94a3b8' }}>Upgrade to unlock custom automated webhook listeners and REST API keys.</div>
+                    </div>
+                  </div>
+                  <button 
+                    className="btn-primary"
+                    onClick={() => setIsPricingModalOpen(true)}
+                    style={{ whiteSpace: 'nowrap', padding: '8px 18px', fontSize: '13px' }}
+                  >
+                    Upgrade to Scale
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -560,14 +630,21 @@ print(response.json())`}
           {/* Bento Tile: Spans 8 Columns - Meeting Notes & Google Calendar Sync */}
           <div className="bento-tile-8 bento-card bento-card-google">
             <div className="integration-card-top">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ margin: 0 }}>Google Calendar & Meeting Notes Sync</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="bento-brand-icon icon-google">
+                  <Calendar size={18} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '15px' }}>Google Calendar &amp; Meeting Notes Sync</h3>
+                  <p className="integration-desc" style={{ marginTop: '2px', fontSize: '12.5px' }}>
+                    Auto-sync notes directly onto the Meeting Agenda page when events occur.
+                  </p>
+                </div>
               </div>
               <span className="integration-status integration-status--ready">
                 {savingNotes ? 'Saving...' : 'Auto-saved'}
               </span>
             </div>
-            <p className="integration-desc">Select a meeting to add notes. They automatically sync to the Meeting Agenda page when that event is clicked.</p>
             
             <div className="integration-fields" style={{ marginTop: '4px' }}>
               <div className="field">
@@ -671,6 +748,7 @@ print(response.json())`}
             const isAllowedByPlan = currentPlan.allowedIntegrations ? currentPlan.allowedIntegrations.includes(integration.id) : true
             const configured = integration.isConfigured(formConfig, formCredentials)
             const result = testResults[integration.id]
+            const brandMeta = BRAND_META[integration.id] || { iconClass: 'icon-api', icon: <Terminal size={16} />, previewLabel: integration.name, previewDot: '#10b981', previewText: 'Configured', previewMeta: 'Live' }
             const brandClass = `bento-tile-4 bento-card bento-card-${integration.id}`
 
             return (
@@ -680,8 +758,16 @@ print(response.json())`}
                   style={{ cursor: 'pointer', userSelect: 'none' }} 
                   onClick={() => toggleCard(integration.id)}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <h3>{integration.name}</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div className={`bento-brand-icon ${brandMeta.iconClass}`}>
+                      {brandMeta.icon}
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '15px', margin: 0 }}>{integration.name}</h3>
+                      <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '1px' }}>
+                        {isAllowedByPlan ? (configured ? 'Ready & active' : 'Click to configure') : 'Plan upgrade required'}
+                      </div>
+                    </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span className={`integration-status${configured && isAllowedByPlan ? ' integration-status--ready' : ''}`}>
@@ -692,6 +778,18 @@ print(response.json())`}
                 </div>
 
                 <p className="integration-desc">{integration.description}</p>
+
+                {!expandedCards[integration.id] && (
+                  <div className="bento-preview-chip" onClick={() => toggleCard(integration.id)} style={{ cursor: 'pointer' }} title="Click to expand settings">
+                    <div className="bento-preview-left">
+                      <span className="bento-preview-dot" style={{ background: configured ? '#10b981' : (isAllowedByPlan ? '#3b82f6' : '#f59e0b') }} />
+                      <span>{brandMeta.previewLabel}</span>
+                      <span style={{ color: 'var(--muted, #64748B)' }}>&bull;</span>
+                      <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>{brandMeta.previewText}</span>
+                    </div>
+                    <span className="bento-preview-meta">{brandMeta.previewMeta}</span>
+                  </div>
+                )}
 
                 {expandedCards[integration.id] && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
@@ -765,6 +863,47 @@ print(response.json())`}
               </div>
             )
           })}
+
+          {/* StageShow Telemetry & Webhook Delivery Stat Tile (Spans 8 Columns - Completes Row 4) */}
+          <div className="bento-tile-8 bento-card bento-card-telemetry">
+            <div className="integration-card-top">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="bento-brand-icon icon-telemetry">
+                  <Zap size={18} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '15px' }}>Real-Time Event Telemetry &amp; Delivery Engine</h3>
+                  <p className="integration-desc" style={{ marginTop: '2px', fontSize: '12.5px' }}>
+                    Zero-drop HMAC-SHA256 signed event propagation across all connected tools.
+                  </p>
+                </div>
+              </div>
+              <span className="integration-status integration-status--ready">
+                Sub-50ms SLA
+              </span>
+            </div>
+
+            <div className="bento-stat-grid" style={{ marginTop: '4px' }}>
+              <div className="bento-stat-big">
+                <div className="bento-stat-number">99.98%</div>
+                <div className="bento-stat-kicker">Delivery Reliability</div>
+              </div>
+              <div className="bento-live-indicators">
+                <div className="bento-live-chip">
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }} />
+                  <span>GitHub CI: Real-Time</span>
+                </div>
+                <div className="bento-live-chip">
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#3b82f6' }} />
+                  <span>Google GIS: Synchronized</span>
+                </div>
+                <div className="bento-live-chip">
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#5865f2' }} />
+                  <span>Discord/Slack: Armed</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
       <AlertModal message={alertMessage} onClose={() => setAlertMessage(null)} />

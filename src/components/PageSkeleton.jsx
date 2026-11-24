@@ -61,35 +61,120 @@ export function WorkspaceSkeleton({ showHeader = true }) {
       <div className="p5-skel-ws-inner">
         {showHeader && (
           <div className="p5-skel-ws-topbar">
-            <SkeletonBlock width="130px" height="30px" radius="8px" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <SkeletonBlock width="28px" height="28px" radius="8px" />
+              <SkeletonBlock width="130px" height="24px" radius="6px" />
+            </div>
             <div className="p5-skel-nav-icons">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <SkeletonBlock key={i} width="84px" height="32px" radius="999px" />
+              {Array.from({ length: 4 }).map((_, i) => (
+                <SkeletonBlock key={i} width="82px" height="30px" radius="999px" />
               ))}
             </div>
-            <SkeletonBlock width="110px" height="34px" radius="999px" />
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <SkeletonBlock width="32px" height="32px" radius="999px" />
+              <SkeletonBlock width="100px" height="32px" radius="8px" />
+            </div>
           </div>
         )}
 
         <div className="p5-skel-ws-metrics">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="p5-skel-card" style={{ padding: '18px' }}>
-              <SkeletonBlock width="48%" height="12px" />
-              <SkeletonBlock width="38%" height="28px" />
+            <div key={i} className="p5-skel-card" style={{ padding: '16px 20px', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <SkeletonBlock width="45%" height="11px" radius="4px" />
+                <SkeletonBlock width="16px" height="16px" radius="4px" />
+              </div>
+              <SkeletonBlock width="35%" height="28px" radius="6px" style={{ marginTop: '2px' }} />
+              <SkeletonBlock width="65%" height="10px" radius="4px" style={{ marginTop: '4px' }} />
             </div>
           ))}
         </div>
 
         <div className="p5-skel-ws-board">
           {Array.from({ length: 3 }).map((_, colIdx) => (
-            <div key={colIdx} className="p5-skel-ws-col">
-              <SkeletonBlock width="50%" height="18px" />
-              <SkeletonBlock width="100%" height="84px" radius="10px" />
-              <SkeletonBlock width="100%" height="84px" radius="10px" />
+            <div key={colIdx} className="p5-skel-ws-col" style={{ padding: '16px', gap: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <SkeletonBlock width="40%" height="14px" radius="4px" />
+                <SkeletonBlock width="20px" height="18px" radius="999px" />
+              </div>
+              {Array.from({ length: 2 }).map((_, taskIdx) => (
+                <div key={taskIdx} style={{ background: 'var(--surface, #FFFFFF)', border: '1px solid var(--border-soft, #E2E8F0)', borderRadius: '10px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <SkeletonBlock width="80%" height="14px" radius="4px" />
+                  <SkeletonBlock width="55%" height="12px" radius="4px" />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                    <SkeletonBlock width="50px" height="18px" radius="4px" />
+                    <SkeletonBlock width="22px" height="22px" radius="50%" />
+                  </div>
+                </div>
+              ))}
             </div>
           ))}
         </div>
       </div>
+    </div>
+  )
+}
+
+export function BentoGridSkeleton({ hasHero = true }) {
+  return (
+    <div className="integrations-bento-grid" role="status" aria-label="Loading integrations">
+      {hasHero && (
+        <div className="bento-tile-12 bento-card" style={{ padding: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', gap: '12px', width: '60%' }}>
+              <SkeletonBlock width="32px" height="32px" radius="8px" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+                <SkeletonBlock width="240px" height="20px" radius="6px" />
+                <SkeletonBlock width="85%" height="13px" radius="4px" />
+              </div>
+            </div>
+            <SkeletonBlock width="130px" height="24px" radius="999px" />
+          </div>
+          <div style={{ marginTop: '16px' }}>
+            <SkeletonBlock width="100%" height="110px" radius="10px" />
+          </div>
+        </div>
+      )}
+
+      {/* Row 2: 8 cols + 4 cols */}
+      <div className="bento-tile-8 bento-card" style={{ padding: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <SkeletonBlock width="32px" height="32px" radius="8px" />
+            <SkeletonBlock width="190px" height="18px" radius="6px" />
+          </div>
+          <SkeletonBlock width="80px" height="22px" radius="999px" />
+        </div>
+        <SkeletonBlock width="75%" height="13px" radius="4px" style={{ marginTop: '8px' }} />
+        <SkeletonBlock width="100%" height="42px" radius="8px" style={{ marginTop: '12px' }} />
+      </div>
+
+      <div className="bento-tile-4 bento-card" style={{ padding: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <SkeletonBlock width="32px" height="32px" radius="8px" />
+            <SkeletonBlock width="100px" height="18px" radius="6px" />
+          </div>
+          <SkeletonBlock width="60px" height="22px" radius="999px" />
+        </div>
+        <SkeletonBlock width="90%" height="13px" radius="4px" style={{ marginTop: '8px' }} />
+        <SkeletonBlock width="100%" height="34px" radius="8px" style={{ marginTop: '12px' }} />
+      </div>
+
+      {/* Row 3: 3 x 4 cols */}
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="bento-tile-4 bento-card" style={{ padding: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <SkeletonBlock width="32px" height="32px" radius="8px" />
+              <SkeletonBlock width="90px" height="18px" radius="6px" />
+            </div>
+            <SkeletonBlock width="60px" height="22px" radius="999px" />
+          </div>
+          <SkeletonBlock width="85%" height="13px" radius="4px" style={{ marginTop: '8px' }} />
+          <SkeletonBlock width="100%" height="34px" radius="8px" style={{ marginTop: '12px' }} />
+        </div>
+      ))}
     </div>
   )
 }
