@@ -146,6 +146,13 @@ export function AuthProvider({ children }) {
       const defaultUsername = u.user_metadata?.username || (cleanEmail ? cleanEmail.split('@')[0].replace(/[^a-z0-9_]/g, '') : `user_${u.id.slice(0, 6)}`)
 
       // Fast Path: Immediately unlock the app shell without waiting for background DB queries
+      let cachedLegalVer = null
+      let cachedLegalAt = null
+      try {
+        cachedLegalVer = sessionStorage.getItem(`p5_legal_v_${u.id}`)
+        cachedLegalAt = sessionStorage.getItem(`p5_legal_at_${u.id}`)
+      } catch (_) {}
+
       setUser(u)
       setUserData({
         id: u.id,
@@ -154,7 +161,12 @@ export function AuthProvider({ children }) {
         billing_plan_id: u.user_metadata?.plan || 'starter',
         billingPlanId: u.user_metadata?.plan || 'starter',
         requires_password_reset: !!u.user_metadata?.must_change_password,
-        requiresPasswordReset: !!u.user_metadata?.must_change_password
+        requiresPasswordReset: !!u.user_metadata?.must_change_password,
+        legal_accepted_version: cachedLegalVer || u.user_metadata?.legal_accepted_version,
+        legalAcceptedVersion: cachedLegalVer || u.user_metadata?.legal_accepted_version,
+        legal_accepted_at: cachedLegalAt || u.user_metadata?.legal_accepted_at,
+        legalAcceptedAt: cachedLegalAt || u.user_metadata?.legal_accepted_at,
+        _isOptimistic: true
       })
       setLoading(false)
 
@@ -192,6 +204,13 @@ export function AuthProvider({ children }) {
           data.billingStatus = data.billing_status
           data.billingPlanId = data.billing_plan_id
           data.requiresPasswordReset = data.requires_password_reset || !!u.user_metadata?.must_change_password
+          data._isOptimistic = false
+          if (data.legal_accepted_version) {
+            try {
+              sessionStorage.setItem(`p5_legal_v_${u.id}`, data.legal_accepted_version)
+              if (data.legal_accepted_at) sessionStorage.setItem(`p5_legal_at_${u.id}`, data.legal_accepted_at)
+            } catch (_) {}
+          }
         }
         setUserData(data)
         setLoading(false)
@@ -616,6 +635,10 @@ export function AuthProvider({ children }) {
   const acceptLegalTerms = async () => {
     if (!user) return
     const now = new Date().toISOString()
+    try {
+      sessionStorage.setItem(`p5_legal_v_${user.id}`, CURRENT_LEGAL_VERSION)
+      sessionStorage.setItem(`p5_legal_at_${user.id}`, now)
+    } catch (_) {}
     await supabase.from('users').update({ 
       legal_accepted_version: CURRENT_LEGAL_VERSION,
       legal_accepted_at: now
@@ -626,7 +649,8 @@ export function AuthProvider({ children }) {
       legal_accepted_version: CURRENT_LEGAL_VERSION,
       legal_accepted_at: now,
       legalAcceptedVersion: CURRENT_LEGAL_VERSION,
-      legalAcceptedAt: now
+      legalAcceptedAt: now,
+      _isOptimistic: false
     }))
   }
   

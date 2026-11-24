@@ -13,8 +13,9 @@ export default function LegalConsentModal() {
   const publicAuthPaths = ['/login', '/signup', '/forgot-password', '/verify', '/auth/action']
   const isAuthPage = publicAuthPaths.some(p => location.pathname.startsWith(p))
 
-  // Do not show on auth pages or if user is still in the onboarding flow (OnboardingWizardModal handles T&C for new users)
-  if (isAuthPage || !userData || !userData.billing_plan_id || userData.billing_plan_id === 'unselected') return null
+  // Do not show on auth pages or if user is still in the onboarding flow (OnboardingWizardModal handles T&C for new users).
+  // Also NEVER show while userData is still in its initial optimistic/loading phase before authoritative DB records are fetched.
+  if (isAuthPage || !userData || !userData.billing_plan_id || userData.billing_plan_id === 'unselected' || userData._isOptimistic) return null
   
   const acceptedVer = userData.legalAcceptedVersion
   if (acceptedVer && acceptedVer >= CURRENT_LEGAL_VERSION) {
