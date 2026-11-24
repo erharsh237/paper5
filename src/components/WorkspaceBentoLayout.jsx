@@ -15,7 +15,7 @@ import {
   GitBranch,
   Calendar,
   TrendingUp,
-  Shield,
+  Settings,
   Plug,
   HelpCircle,
   RefreshCw,
@@ -289,7 +289,7 @@ export default function WorkspaceBentoLayout({ children }) {
                   className={({ isActive }) => `dock-btn ${isActive ? 'active' : ''}`}
                   aria-label="Workspace Settings"
                 >
-                  <Shield size={19} />
+                  <Settings size={19} />
                   <span className="dock-label">Settings</span>
                   <span className="dock-tooltip">Workspace Settings</span>
                 </NavLink>

@@ -27,6 +27,7 @@ import {
   Flag,
   ArrowRight,
   UserPlus,
+  Settings,
   Shield,
   ShieldAlert,
   Archive,
@@ -1172,7 +1173,7 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
                 onClick={() => (window.location.href = `/${workspaceId}/settings`)}
                 aria-label="Workspace Settings"
               >
-                <Shield size={19} />
+                <Settings size={19} />
                 <span className="dock-tooltip">Workspace Settings</span>
               </button>
             </nav>
