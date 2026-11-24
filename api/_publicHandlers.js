@@ -130,11 +130,15 @@ export async function handleFeedback(req, res) {
 }
 
 const ALLOWED_PRODUCT_CATEGORIES = new Set([
+  'Bug or glitch',
+  'Feature request',
+  'UI or usability',
+  'Performance issue',
+  'Other',
   'Bug / Glitch',
   'Feature Request',
   'UI / UX Improvement',
-  'Performance Issue',
-  'Other'
+  'Performance Issue'
 ])
 
 const ALLOWED_IMAGE_MIMES = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp'])
