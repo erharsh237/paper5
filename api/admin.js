@@ -167,7 +167,7 @@ export default async function handler(req, res) {
     const [membersRes, invitesRes, sprintsRes, deadlinesRes, workspaceRes, recentLogsRes] = await Promise.all([
       supabaseAdmin
         .from('workspace_members')
-        .select('user_id, role, created_at, users:user_id(id, email, raw_user_meta_data)')
+        .select('user_id, role, joined_at, users:user_id(id, email, raw_user_meta_data)')
         .eq('workspace_id', workspaceId),
       supabaseAdmin
         .from('invites')

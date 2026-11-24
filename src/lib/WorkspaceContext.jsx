@@ -89,12 +89,12 @@ export function WorkspaceProvider({ children }) {
         // Step 1: Query workspace + membership directly in parallel (Fastest path: ~50-80ms)
         const [wsResult, memberResult] = await Promise.all([
           supabase.from('workspaces').select('*').eq('id', workspaceId).maybeSingle(),
-          supabase.from('workspace_members').select('role, permissions').eq('workspace_id', workspaceId).eq('user_id', user.id).maybeSingle()
+          supabase.from('workspace_members').select('role').eq('workspace_id', workspaceId).eq('user_id', user.id).maybeSingle()
         ])
 
         let wsData = wsResult?.data
         let myRole = memberResult?.data?.role || null
-        let myPerms = Array.isArray(memberResult?.data?.permissions) ? memberResult.data.permissions : []
+        let myPerms = []
 
         // Step 2: Fallback to accept-invite only if user has no role or workspace is null
         if ((!wsData || !myRole) && user?.email && !checkedInvitesOnce) {
@@ -171,7 +171,7 @@ export function WorkspaceProvider({ children }) {
         setMaxAllowedMembers(planLimits.maxMembers)
 
         Promise.allSettled([
-          supabase.from('workspace_members').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId),
+          supabase.from('workspace_members').select('user_id', { count: 'exact', head: true }).eq('workspace_id', workspaceId),
           supabase.from('invites').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId)
         ]).then(([mCountRes, iCountRes]) => {
           const membersCount = mCountRes.status === 'fulfilled' && typeof mCountRes.value?.count === 'number' ? mCountRes.value.count : 1
