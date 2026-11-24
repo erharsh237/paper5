@@ -151,9 +151,7 @@ export const googleCalendar = {
   id: 'google_calendar',
   name: 'Google Calendar',
   description: 'Push sprint start/end dates and the weekly meeting slot onto the team calendar.',
-  configFields: [
-    { key: 'googleCalendarClientId', label: 'OAuth Client ID', placeholder: '....apps.googleusercontent.com', type: 'password' },
-  ],
+  configFields: [],
   credentialFields: [
     { key: 'googleCalendarId', label: 'Calendar ID (optional — defaults to "primary")', placeholder: 'primary' },
   ],

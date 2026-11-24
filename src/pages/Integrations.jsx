@@ -884,30 +884,17 @@ print(response.json())`}
                             const isPassword = f.type === 'password'
                             const isShown = showSecrets[f.key]
                             const inputType = isPassword ? (isShown ? 'text' : 'password') : 'text'
-                            const hasSystemClientId = isGoogleCal && f.key === 'googleCalendarClientId' && Boolean(import.meta.env?.VITE_GOOGLE_CLIENT_ID)
 
                             return (
                               <div className="field" key={f.key}>
-                                <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <span>{f.label}</span>
-                                  {hasSystemClientId && (
-                                    <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 400 }}>
-                                      System default active (override optional)
-                                    </span>
-                                  )}
-                                </label>
+                                <label>{f.label}</label>
                                 <input
                                   type={inputType}
                                   value={formConfig[f.key] || ''}
-                                  placeholder={hasSystemClientId ? 'Default system client active — leave empty unless overriding' : f.placeholder}
+                                  placeholder={f.placeholder}
                                   onChange={(e) => setFormConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
                                   disabled={!isAdmin}
                                 />
-                                {hasSystemClientId && (
-                                  <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '4px', lineHeight: 1.4 }}>
-                                    Default Paper5 OAuth is active for this workspace. You do not need to enter a Client ID unless you want to use a custom Google Cloud project.
-                                  </div>
-                                )}
                               </div>
                             )
                           })}
