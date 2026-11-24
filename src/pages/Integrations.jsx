@@ -750,6 +750,42 @@ print(response.json())`}
             const result = testResults[integration.id]
             const brandMeta = BRAND_META[integration.id] || { iconClass: 'icon-api', icon: <Terminal size={16} />, previewLabel: integration.name, previewDot: '#10b981', previewText: 'Configured', previewMeta: 'Live' }
             const brandClass = `bento-tile-4 bento-card bento-card-${integration.id}`
+            const isGoogleCal = integration.id === 'google_calendar'
+            const isGoogleConnected = isGoogleCal && Boolean(googleCalendar?.actions?.hasValidToken())
+
+            // Dynamic StageShow preview chip
+            let chipMeta = { ...brandMeta }
+            if (isGoogleCal) {
+              if (isGoogleConnected) {
+                if (calendarEvents.length > 0) {
+                  const first = calendarEvents[0]
+                  const timeStr = first.start?.dateTime ? new Date(first.start.dateTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'All-day'
+                  chipMeta = {
+                    ...chipMeta,
+                    previewLabel: first.summary || 'Upcoming Meeting',
+                    previewDot: '#10b981',
+                    previewText: timeStr,
+                    previewMeta: 'Live'
+                  }
+                } else {
+                  chipMeta = {
+                    ...chipMeta,
+                    previewLabel: 'Google Calendar',
+                    previewDot: '#10b981',
+                    previewText: 'No upcoming meetings',
+                    previewMeta: 'Connected'
+                  }
+                }
+              } else if (configured) {
+                chipMeta = {
+                  ...chipMeta,
+                  previewLabel: 'Google Calendar',
+                  previewDot: '#3b82f6',
+                  previewText: 'Click to connect account',
+                  previewMeta: 'Ready'
+                }
+              }
+            }
 
             return (
               <div key={integration.id} className={brandClass}>
@@ -759,19 +795,19 @@ print(response.json())`}
                   onClick={() => toggleCard(integration.id)}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div className={`bento-brand-icon ${brandMeta.iconClass}`}>
-                      {brandMeta.icon}
+                    <div className={`bento-brand-icon ${chipMeta.iconClass}`}>
+                      {chipMeta.icon}
                     </div>
                     <div>
                       <h3 style={{ fontSize: '15px', margin: 0 }}>{integration.name}</h3>
                       <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '1px' }}>
-                        {isAllowedByPlan ? (configured ? 'Ready & active' : 'Click to configure') : 'Plan upgrade required'}
+                        {isAllowedByPlan ? (configured ? (isGoogleCal ? (isGoogleConnected ? 'Account connected' : 'Ready to link account') : 'Ready & active') : 'Click to configure') : 'Plan upgrade required'}
                       </div>
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span className={`integration-status${configured && isAllowedByPlan ? ' integration-status--ready' : ''}`}>
-                      {!isAllowedByPlan ? 'Locked' : (configured ? 'Active' : 'Setup')}
+                      {!isAllowedByPlan ? 'Locked' : (configured ? (isGoogleCal && isGoogleConnected ? 'Connected' : 'Active') : 'Setup')}
                     </span>
                     <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', transform: expandedCards[integration.id] ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
                   </div>
@@ -782,12 +818,12 @@ print(response.json())`}
                 {!expandedCards[integration.id] && (
                   <div className="bento-preview-chip" onClick={() => toggleCard(integration.id)} style={{ cursor: 'pointer' }} title="Click to expand settings">
                     <div className="bento-preview-left">
-                      <span className="bento-preview-dot" style={{ background: configured ? '#10b981' : (isAllowedByPlan ? '#3b82f6' : '#f59e0b') }} />
-                      <span>{brandMeta.previewLabel}</span>
+                      <span className="bento-preview-dot" style={{ background: chipMeta.previewDot || (configured ? '#10b981' : (isAllowedByPlan ? '#3b82f6' : '#f59e0b')) }} />
+                      <span>{chipMeta.previewLabel}</span>
                       <span style={{ color: 'var(--muted, #64748B)' }}>&bull;</span>
-                      <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>{brandMeta.previewText}</span>
+                      <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>{chipMeta.previewText}</span>
                     </div>
-                    <span className="bento-preview-meta">{brandMeta.previewMeta}</span>
+                    <span className="bento-preview-meta">{chipMeta.previewMeta}</span>
                   </div>
                 )}
 
@@ -807,21 +843,71 @@ print(response.json())`}
                       </div>
                     ) : (
                       <>
+                        {isGoogleCal && (
+                          <div style={{ padding: '12px 14px', background: isGoogleConnected ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-layer-2)', border: `1px solid ${isGoogleConnected ? 'rgba(16, 185, 129, 0.25)' : 'var(--border-subtle)'}`, borderRadius: '8px', fontSize: '12.5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                            <div>
+                              <div style={{ fontWeight: 600, color: isGoogleConnected ? '#059669' : 'var(--text-primary)' }}>
+                                {isGoogleConnected ? '✓ Personal Google Account Connected' : 'Google Account Not Linked'}
+                              </div>
+                              <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                                {isGoogleConnected ? 'Your calendar events are syncing with your workspace.' : 'Click to authorize your personal Google Calendar.'}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              className={isGoogleConnected ? "btn-ghost btn-sm" : "btn-primary btn-sm"}
+                              style={{ fontSize: '12px', padding: '5px 12px', height: 'auto', color: isGoogleConnected ? 'var(--accent-critical)' : undefined }}
+                              onClick={async () => {
+                                if (isGoogleConnected) {
+                                  googleCalendar.actions.disconnectCalendar()
+                                  setCalendarEvents([])
+                                  setTestResults(prev => ({ ...prev, google_calendar: { ok: 'Google account disconnected.' } }))
+                                } else {
+                                  try {
+                                    await googleCalendar.actions.connectCalendar(formConfig, formCredentials)
+                                    const evts = await googleCalendar.actions.fetchUpcomingEvents(formConfig, formCredentials)
+                                    setCalendarEvents(evts)
+                                    setTestResults(prev => ({ ...prev, google_calendar: { ok: 'Google account connected successfully!' } }))
+                                  } catch (err) {
+                                    setTestResults(prev => ({ ...prev, google_calendar: { error: err.message || 'Failed to connect.' } }))
+                                  }
+                                }
+                              }}
+                            >
+                              {isGoogleConnected ? 'Disconnect' : 'Connect Account'}
+                            </button>
+                          </div>
+                        )}
+
                         <div className="integration-fields">
                           {integration.configFields.map(f => {
                             const isPassword = f.type === 'password'
                             const isShown = showSecrets[f.key]
                             const inputType = isPassword ? (isShown ? 'text' : 'password') : 'text'
+                            const hasSystemClientId = isGoogleCal && f.key === 'googleCalendarClientId' && Boolean(import.meta.env?.VITE_GOOGLE_CLIENT_ID)
 
                             return (
                               <div className="field" key={f.key}>
-                                <label>{f.label}</label>
+                                <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span>{f.label}</span>
+                                  {hasSystemClientId && (
+                                    <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 400 }}>
+                                      System default active (override optional)
+                                    </span>
+                                  )}
+                                </label>
                                 <input
                                   type={inputType}
                                   value={formConfig[f.key] || ''}
+                                  placeholder={hasSystemClientId ? 'Default system client active — leave empty unless overriding' : f.placeholder}
                                   onChange={(e) => setFormConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
                                   disabled={!isAdmin}
                                 />
+                                {hasSystemClientId && (
+                                  <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '4px', lineHeight: 1.4 }}>
+                                    Default Paper5 OAuth is active for this workspace. You do not need to enter a Client ID unless you want to use a custom Google Cloud project.
+                                  </div>
+                                )}
                               </div>
                             )
                           })}
