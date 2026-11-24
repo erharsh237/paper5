@@ -147,6 +147,8 @@ async function createEvent(credentials, accessToken, event) {
   return res.json()
 }
 
+const DEFAULT_GOOGLE_CLIENT_ID = '909436054865-t9hd11hsgn9bfkrhetf5ipusv5i4kpjt.apps.googleusercontent.com'
+
 export const googleCalendar = {
   id: 'google_calendar',
   name: 'Google Calendar',
@@ -161,7 +163,7 @@ export const googleCalendar = {
   getClientId(config) {
     const fromConfig = config?.googleCalendarClientId
     const fromEnv = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GOOGLE_CLIENT_ID) ? import.meta.env.VITE_GOOGLE_CLIENT_ID : null
-    return (fromConfig || fromEnv || '').trim()
+    return (fromConfig || fromEnv || DEFAULT_GOOGLE_CLIENT_ID).trim()
   },
 
   isConfigured(config) {
