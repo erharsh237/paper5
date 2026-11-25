@@ -46,7 +46,7 @@ export function DatabaseExplorer() {
     setLoadingRows(true)
     setError('')
     try {
-      const res = await ownerApi('database.rows', { table: tableName, limit: 25, offset })
+      const res = await ownerApi('database.rows', { params: { table: tableName, limit: 25, offset } })
       setTableData({
         columns: res.columns || [],
         rows: res.rows || [],
