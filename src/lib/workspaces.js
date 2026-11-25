@@ -532,7 +532,38 @@ export async function createWorkspace(uid, email, name, teamSize, agileWorkflow,
     console.warn('Atomic provision attempt notice:', err)
   }
 
-  // Fallback to create_new_workspace for backward compatibility
+  // Fallback to serverless create_workspace if RPC fails (e.g., schema mismatch on subscription_tier)
+  try {
+    const authHeaders = await getAuthHeaders()
+    const apiResp = await fetch('/api/workspace-members', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: authHeaders,
+      body: JSON.stringify({
+        action: 'create_workspace',
+        name,
+        teamSize: teamSize || '2-5',
+        agileWorkflow: cleanWf,
+        saveData: Boolean(saveData),
+        planId: effectivePlan,
+        billingInterval: cycle
+      })
+    })
+    const apiJson = await apiResp.json().catch(() => ({}))
+    if (apiResp.ok && (apiJson.workspaceId || apiJson.id)) {
+      return apiJson.workspaceId || apiJson.id
+    }
+    if (apiJson?.error) {
+      throw new Error(apiJson.error)
+    }
+  } catch (apiErr) {
+    console.warn('Serverless create_workspace fallback notice:', apiErr)
+    if (apiErr.message?.includes('quota exceeded') || apiErr.message?.includes('subscription_tier')) {
+      throw apiErr
+    }
+  }
+
+  // Legacy RPC fallback
   const newWorkspaceId = crypto.randomUUID()
 
   let { error } = await supabase.rpc('create_new_workspace', {
@@ -591,11 +622,8 @@ export async function createWorkspace(uid, email, name, teamSize, agileWorkflow,
     }
 
     await updateWorkspaceSettings(newWorkspaceId, {
-      plan: effectivePlan,
       billing_plan_id: effectivePlan,
-      subscription_tier: effectivePlan,
       billing_status: 'active',
-      billing_interval: cycle,
       settings: {
         team_size: teamSize || '2-5',
         agile_workflow: cleanWf,
@@ -835,7 +863,7 @@ export async function createInvite(workspaceId, email, role, permissions = [], p
         })
       })
       const emailJson = await emailResp.json()
-      emailStatus = emailJson.emailStatus || (emailResp.ok ? 'sent' : 'failed')
+      emailStatus = emailJson.emailStatus || (emailJson.emailSent ? 'sent' : 'failed')
     } catch (sendErr) {
       console.warn('Email dispatch warning (invite record still saved):', sendErr)
       emailStatus = 'failed'

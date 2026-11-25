@@ -113,6 +113,99 @@ export default async function handler(req, res) {
     }
   }
 
+  // ── CREATE WORKSPACE (Schema-safe server-side provisioning fallback) ───────
+  if (req.method === 'POST' && action === 'create_workspace') {
+    const callerAuth = await authenticateUser(req, supabaseAdmin)
+    if (callerAuth.error) {
+      return res.status(callerAuth.status || 401).json({ error: callerAuth.error })
+    }
+    const uid = callerAuth.user.id
+    const wsName = (body.name || '').trim()
+    if (!wsName) {
+      return res.status(400).json({ error: 'Workspace name is required' })
+    }
+
+    try {
+      const { data: userRow } = await supabaseAdmin
+        .from('users')
+        .select('billing_plan_id')
+        .eq('id', uid)
+        .maybeSingle()
+
+      const rawTier = (userRow?.billing_plan_id || body.planId || 'starter').toLowerCase().trim()
+      const userTier = rawTier === 'scale' ? 'pro' : (rawTier === 'free' ? 'starter' : (['starter', 'team', 'pro'].includes(rawTier) ? rawTier : 'starter'))
+      const maxWs = userTier === 'pro' ? 10 : (userTier === 'team' ? 5 : 1)
+
+      const { count: existingCount } = await supabaseAdmin
+        .from('workspaces')
+        .select('id', { count: 'exact', head: true })
+        .eq('created_by', uid)
+
+      if (existingCount !== null && existingCount >= maxWs) {
+        return res.status(403).json({
+          error: `Workspace quota exceeded: Your ${userTier.toUpperCase()} plan allows up to ${maxWs} workspace${maxWs === 1 ? '' : 's'}.`
+        })
+      }
+
+      const newWsId = crypto.randomUUID()
+      const cleanCycle = body.billingInterval === 'annual' ? 'annual' : 'monthly'
+      const now = new Date()
+      const expDate = new Date(now)
+      if (cleanCycle === 'annual') expDate.setFullYear(expDate.getFullYear() + 1)
+      else expDate.setMonth(expDate.getMonth() + 1)
+
+      const initialInvoice = {
+        id: `INV-${userTier.toUpperCase()}-${cleanCycle.toUpperCase()}-${now.getFullYear()}-001`,
+        invoiceNumber: `INV-${now.getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`,
+        date: now.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+        rawDate: now.toISOString(),
+        expiryDate: expDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+        cycle: cleanCycle === 'annual' ? 'Annual (12 Months)' : 'Monthly (1 Month)',
+        plan: `${userTier.charAt(0).toUpperCase() + userTier.slice(1)} Plan (${cleanCycle === 'annual' ? 'Annual' : 'Monthly'})`,
+        planId: userTier,
+        changeType: 'Initial Workspace Setup',
+        amount: '₹0',
+        status: 'Paid',
+        workspaceName: wsName
+      }
+
+      const { error: wsErr } = await supabaseAdmin.from('workspaces').insert({
+        id: newWsId,
+        name: wsName,
+        created_by: uid,
+        billing_plan_id: userTier,
+        billing_status: 'active',
+        is_active: true,
+        settings: {
+          team_size: body.teamSize || '2-5',
+          agile_workflow: body.agileWorkflow || 'kanban',
+          save_data: Boolean(body.saveData),
+          billing_interval: cleanCycle,
+          invoices: [initialInvoice]
+        },
+        created_at: now.toISOString()
+      })
+      if (wsErr) {
+        return res.status(400).json({ error: wsErr.message || 'Failed to create workspace' })
+      }
+
+      const { error: memErr } = await supabaseAdmin.from('workspace_members').insert({
+        workspace_id: newWsId,
+        user_id: uid,
+        role: 'owner',
+        joined_at: now.toISOString()
+      })
+      if (memErr) {
+        await supabaseAdmin.from('workspaces').delete().eq('id', newWsId)
+        return res.status(400).json({ error: memErr.message || 'Failed to assign workspace owner' })
+      }
+
+      return res.status(200).json({ success: true, workspaceId: newWsId, id: newWsId })
+    } catch (err) {
+      return res.status(500).json({ error: sanitizeError(err, 'Failed to create workspace') })
+    }
+  }
+
   // ─────────────────────────────────────────────────────────────
   // 2. ACTION: DELETE USER / SELF ACCOUNT PURGE (Rewritten from /api/delete-user)
   // ─────────────────────────────────────────────────────────────

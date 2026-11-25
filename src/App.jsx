@@ -5,8 +5,8 @@ import { Suspense, lazy, useEffect, useState, useSyncExternalStore } from 'react
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './lib/AuthContext'
 import { WorkspaceProvider, useWorkspace } from './lib/WorkspaceContext'
-import WorkspaceBentoLayout from './components/WorkspaceBentoLayout'
-import LockedOverlay from './components/LockedOverlay'
+const WorkspaceBentoLayout = lazy(() => import('./components/WorkspaceBentoLayout'))
+const LockedOverlay = lazy(() => import('./components/LockedOverlay'))
 // Auto-reloads page if a Vercel deploy replaced older JS bundle filenames
 function safeLazy(routeKey, { trackLoading = true } = {}) {
   return lazy(async () => {
@@ -211,7 +211,7 @@ function WorkspaceGuard({ children }) {
     )
   }
 
-  if (isLocked) return <LockedOverlay />
+  if (isLocked) return <Suspense fallback={null}><LockedOverlay /></Suspense>
   return (
     <>
       <SEOHead title="Workspace | Paper5" description="Private team workspace on Paper5." noIndex />

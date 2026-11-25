@@ -710,11 +710,17 @@ export function AuthProvider({ children }) {
     acceptLegalTerms,
     resendVerification,
     resetPassword,
-    logout: () => {
+    logout: async () => {
       setIsPending2FA(false)
-      sessionCookieApi.clear()
+      setUser(null)
+      setUserData(null)
+      setLoading(false)
       clearAuthStorage()
-      return supabase.auth.signOut()
+      try { await sessionCookieApi.clear() } catch (_) {}
+      try { await supabase.auth.signOut({ scope: 'local' }) } catch (_) {}
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.replace('/login')
+      }
     }, 
     authError,
     getFriendlyError,

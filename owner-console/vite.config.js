@@ -27,7 +27,12 @@ export default defineConfig(({ mode }) => {
               return
             }
 
-            if (url.pathname === '/api/owner') {
+            const localRoutes = {
+              '/api/owner': 'api/owner.js',
+              '/api/auth/session': 'api/auth/session.js'
+            }
+
+            if (localRoutes[url.pathname]) {
               try {
                 // Ensure query object exists
                 req.query = Object.fromEntries(url.searchParams.entries())
@@ -60,10 +65,10 @@ export default defineConfig(({ mode }) => {
                   }
                 }
 
-                // Import and execute local api/owner.js
-                const ownerFilePath = path.resolve(rootDir, 'api/owner.js')
-                const ownerModule = await import(pathToFileURL(ownerFilePath).href + '?t=' + Date.now())
-                await ownerModule.default(req, res)
+                // Import and execute local API handler
+                const handlerPath = path.resolve(rootDir, localRoutes[url.pathname])
+                const handlerModule = await import(pathToFileURL(handlerPath).href + '?t=' + Date.now())
+                await handlerModule.default(req, res)
                 return
               } catch (err) {
                 console.error('[Local Vite API Error]', err)

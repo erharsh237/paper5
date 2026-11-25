@@ -115,20 +115,8 @@ export default function UserMenu() {
             </div>
             
             <NavLink to={getPath('/profile')} className={({ isActive }) => `nav-more-item${isActive ? ' nav-more-item--active' : ''}`} onClick={() => setOpen(false)}>
-              <ProfileIcon /> Profile
+              <SettingsIcon /> Profile Settings
             </NavLink>
-
-            {(isAdmin || canManageSettings) && (
-              <NavLink to={getPath('/settings')} className={({ isActive }) => `nav-more-item${isActive ? ' nav-more-item--active' : ''}`} onClick={() => setOpen(false)}>
-                <SettingsIcon /> Settings
-              </NavLink>
-            )}
-
-            {isAdmin && (
-              <NavLink to={getPath('/integrations')} className={({ isActive }) => `nav-more-item${isActive ? ' nav-more-item--active' : ''}`} onClick={() => setOpen(false)}>
-                <IntegrationsIcon /> Integrations
-              </NavLink>
-            )}
 
             <Link to={`/workspace?picker=true&current=${workspaceId || ''}`} className="nav-more-item" onClick={() => setOpen(false)}>
               <SwitchIcon /> Switch / Create Workspace

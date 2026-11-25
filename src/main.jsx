@@ -1,9 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import ReactDOMServer from 'react-dom/server'
-import { BrowserRouter, MemoryRouter } from 'react-router-dom'
+import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
-import { title, description, ogImage, canonicalUrl } from './seo.js'
 import { AuthProvider } from './lib/AuthContext.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import ConnectionStatus from './components/ConnectionStatus.jsx'
@@ -12,39 +10,7 @@ import { isLocalHost } from './lib/domain.js'
 import { isSafeUrl } from './utils/security.js'
 import { hasAnalyticsConsent } from './lib/privacyPrefs.js'
 import './index.css'
-import './pages/Auth.css'
 import './styles/editorial-theme.css'
-
-// Server-side rendering export
-export function render(url = '/') {
-  const html = ReactDOMServer.renderToString(
-    <React.StrictMode>
-      <ErrorBoundary>
-        <MemoryRouter initialEntries={[url]}>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
-        </MemoryRouter>
-      </ErrorBoundary>
-    </React.StrictMode>
-  )
-
-  const fullHtml = `<!doctype html>
-<html lang="en">
-<head>
-  <title>${title}</title>
-  <link rel="canonical" href="${canonicalUrl}">
-  <meta name="description" content="${description}">
-  <meta property="og:image" content="${ogImage}">
-</head>
-<body>
-  <div id="root">${html}</div>
-  <script type="module" src="/src/main.jsx"></script>
-</body>
-</html>`
-
-  return { html, fullHtml, title, description, ogImage }
-}
 
 // Router Security Guard: Enforce same-origin, HTTPS in production, and reject unsafe external URLs
 if (typeof window !== 'undefined') {
@@ -91,18 +57,25 @@ if (typeof window !== 'undefined') {
   }
 
   if (import.meta.env.VITE_SENTRY_DSN) {
-    import('@sentry/react').then((Sentry) => {
-      const analyticsAllowed = hasAnalyticsConsent()
-      Sentry.init({
-        dsn: import.meta.env.VITE_SENTRY_DSN,
-        integrations: analyticsAllowed
-          ? [Sentry.browserTracingIntegration(), Sentry.replayIntegration()]
-          : [],
-        tracesSampleRate: analyticsAllowed ? 0.2 : 0,
-        replaysSessionSampleRate: analyticsAllowed ? 0.1 : 0,
-        replaysOnErrorSampleRate: analyticsAllowed ? 1.0 : 0,
-      })
-    }).catch(() => {})
+    const initSentry = () => {
+      import('@sentry/react').then((Sentry) => {
+        const analyticsAllowed = hasAnalyticsConsent()
+        Sentry.init({
+          dsn: import.meta.env.VITE_SENTRY_DSN,
+          integrations: analyticsAllowed
+            ? [Sentry.browserTracingIntegration(), Sentry.replayIntegration()]
+            : [],
+          tracesSampleRate: analyticsAllowed ? 0.2 : 0,
+          replaysSessionSampleRate: analyticsAllowed ? 0.1 : 0,
+          replaysOnErrorSampleRate: analyticsAllowed ? 1.0 : 0,
+        })
+      }).catch(() => {})
+    }
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(initSentry, { timeout: 2500 })
+    } else {
+      setTimeout(initSentry, 1200)
+    }
   }
 
   const rootElement = document.getElementById('root')

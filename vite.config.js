@@ -19,9 +19,38 @@ export default defineConfig(({ mode }) => {
           const host = req.headers.host || 'localhost:5173'
           const url = new URL(req.url, `http://${host}`)
 
-          if (url.pathname === '/api/owner') {
+          const localApiRoutes = {
+            '/api/owner': { file: 'api/owner.js' },
+            '/api/auth/session': { file: 'api/auth/session.js' },
+            '/api/public': { file: 'api/public.js' },
+            '/api/contact': { file: 'api/public.js', query: { action: 'contact' } },
+            '/api/feedback': { file: 'api/public.js', query: { action: 'feedback' } },
+            '/api/product-feedback': { file: 'api/public.js', query: { action: 'product-feedback' } },
+            '/api/forgot-password': { file: 'api/public.js', query: { action: 'forgot-password' } },
+            '/api/admin': { file: 'api/admin.js' },
+            '/api/admin-overview': { file: 'api/admin.js', query: { action: 'overview' } },
+            '/api/audit-logs': { file: 'api/admin.js', query: { action: 'audit-logs' } },
+            '/api/workspace-members': { file: 'api/workspace-members.js' },
+            '/api/ensure-user': { file: 'api/workspace-members.js', query: { action: 'ensure_user' } },
+            '/api/delete-workspace': { file: 'api/workspace-members.js', query: { action: 'delete_workspace' } },
+            '/api/delete-user': { file: 'api/workspace-members.js', query: { action: 'delete_user' } },
+            '/api/request-account-deletion': { file: 'api/workspace-members.js', query: { action: 'request_account_deletion' } },
+            '/api/invites': { file: 'api/invites.js' },
+            '/api/accept-invite': { file: 'api/invites.js', query: { action: 'accept' } },
+            '/api/send-invite': { file: 'api/invites.js', query: { action: 'send' } },
+            '/api/select-plan': { file: 'api/select-plan.js' },
+            '/api/sprints': { file: 'api/sprints.js' },
+            '/api/deadlines': { file: 'api/deadlines.js' },
+            '/api/meetings': { file: 'api/meetings.js' },
+          }
+
+          if (localApiRoutes[url.pathname]) {
             try {
-              req.query = Object.fromEntries(url.searchParams.entries())
+              const routeCfg = localApiRoutes[url.pathname]
+              req.query = {
+                ...Object.fromEntries(url.searchParams.entries()),
+                ...(routeCfg.query || {})
+              }
 
               if (!res.status) {
                 res.status = function(code) {
@@ -49,12 +78,12 @@ export default defineConfig(({ mode }) => {
                 }
               }
 
-              const ownerFilePath = path.resolve(__dirname, 'api/owner.js')
-              const ownerModule = await import(pathToFileURL(ownerFilePath).href + '?t=' + Date.now())
-              await ownerModule.default(req, res)
+              const apiFilePath = path.resolve(__dirname, routeCfg.file)
+              const apiModule = await import(pathToFileURL(apiFilePath).href + '?t=' + Date.now())
+              await apiModule.default(req, res)
               return
             } catch (err) {
-              console.error('[Local Owner API Error]', err)
+              console.error('[Local API Error]', err)
               res.statusCode = 500
               res.setHeader('Content-Type', 'application/json')
               res.end(JSON.stringify({ error: err.message }))
@@ -118,6 +147,7 @@ export default defineConfig(({ mode }) => {
     sourcemap: false,
     target: 'es2020',
     cssTarget: 'es2020',
+    modulePreload: { polyfill: false },
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
@@ -140,6 +170,9 @@ export default defineConfig(({ mode }) => {
             }
             if (normalized.includes('/lucide-react/') || normalized.includes('/@fortawesome/')) {
               return 'vendor-icons'
+            }
+            if (normalized.includes('/recharts/') || normalized.includes('/d3-')) {
+              return 'vendor-charts'
             }
             if (normalized.includes('/date-fns/')) {
               return 'vendor-date'

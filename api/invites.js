@@ -47,7 +47,7 @@ export default async function handler(req, res) {
   if (action === 'send') {
     if (checkRateLimit(req, res, { max: 30, windowMs: 60000 })) return
 
-    const { type, email, toEmail, toName, role, workspaceName, workspaceId, title, description, dueDate, priority, assignedBy, blockerReason, blockerUser, appUrl } = body
+    const { type, email, toEmail, toName, role, workspaceName, workspaceId, inviteId: sendInviteId, title, description, dueDate, priority, assignedBy, blockerReason, blockerUser, appUrl } = body
     const cleanEmail = (email || toEmail || '').trim().toLowerCase()
 
     if (!cleanEmail) {
@@ -63,7 +63,7 @@ export default async function handler(req, res) {
       // Enforce member quota before dispatching invite email
       const { count: currentMemberCount } = await supabaseAdmin
         .from('workspace_members')
-        .select('id', { count: 'exact', head: true })
+        .select('user_id', { count: 'exact', head: true })
         .eq('workspace_id', workspaceId)
 
       if (currentMemberCount !== null && currentMemberCount >= wsAuth.maxMembers) {
@@ -99,10 +99,11 @@ export default async function handler(req, res) {
       textBody = `Blocker Flagged\n\n${reporterName} flagged a blocker on "${title || 'Task'}".\n\nReason: ${blockerReason || 'No blocker reason provided.'}\n\nResolve or view details: ${targetUrl}`
       htmlBody = `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:24px;background:#f8fafc;"><div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;padding:32px;border:1px solid #fecaca;"><div style="display:inline-block;background:#fee2e2;color:#b91c1c;padding:4px 10px;border-radius:9999px;font-weight:700;font-size:12px;margin-bottom:12px;">BLOCKER ALERT</div><h2 style="font-size:18px;font-weight:800;color:#991b1b;margin:0 0 12px;">A blocker has been reported</h2><p style="font-size:14px;color:#334155;"><strong>${reporterName}</strong> reported an obstacle on <strong>"${title || 'Untitled Task'}"</strong>.</p><div style="background:#fff1f2;border-radius:8px;padding:16px;margin:16px 0;border:1px solid #fecdd3;"><strong style="color:#991b1b;">Blocker Reason:</strong><p style="margin:8px 0 0;font-size:14px;color:#4c0519;">${blockerReason || 'No details provided.'}</p></div><a href="${targetUrl}" style="display:inline-block;background:#dc2626;color:#fff!important;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:700;font-size:14px;margin-top:16px;">View Blocker on Dashboard &rarr;</a></div></body></html>`
     } else {
-      const inviteLink = `${targetUrl}/join?workspace=${encodeURIComponent(workspaceId || '')}&inviteId=${encodeURIComponent(inviteId || '')}&email=${encodeURIComponent(cleanEmail)}`
+      const expiresAtMs = Date.now() + 30 * 60 * 1000
+      const inviteLink = `${targetUrl}/join?workspace=${encodeURIComponent(workspaceId || '')}&inviteId=${encodeURIComponent(sendInviteId || req.query?.inviteId || '')}&email=${encodeURIComponent(cleanEmail)}&exp=${expiresAtMs}`
       subject = `You've been invited to join ${workspaceName || 'a team workspace'} on Paper5`
-      textBody = `You've been invited to join ${workspaceName || 'a workspace'} on Paper5 as ${role || 'member'}.\n\nClick the link below to accept your invitation:\n${inviteLink}\n\nSign in to get started.`
-      htmlBody = `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:24px;background:#f8fafc;"><div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;padding:32px;border:1px solid #e2e8f0;"><div style="display:inline-block;background:#e0e7ff;color:#4338ca;padding:4px 10px;border-radius:9999px;font-weight:700;font-size:12px;margin-bottom:12px;">WORKSPACE INVITATION</div><h2 style="font-size:20px;font-weight:800;color:#0f172a;margin:0 0 12px;">Join ${workspaceName || 'your team'} on Paper5</h2><p style="font-size:14px;color:#475569;line-height:1.6;margin:0 0 20px;">You've been invited to collaborate in <strong>${workspaceName || 'a private workspace'}</strong> as a <strong>${role || 'member'}</strong>.</p><a href="${inviteLink}" style="display:inline-block;background:#4f46e5;color:#fff!important;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:700;font-size:14px;margin:16px 0;">Accept Invitation &rarr;</a></div></body></html>`
+      textBody = `You've been invited to join ${workspaceName || 'a workspace'} on Paper5 as ${role || 'member'}.\n\nClick the link below to accept your invitation (expires in 30 minutes):\n${inviteLink}\n\nSign in to get started.`
+      htmlBody = `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:24px;background:#f8fafc;"><div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;padding:32px;border:1px solid #e2e8f0;"><div style="display:inline-block;background:#e0e7ff;color:#4338ca;padding:4px 10px;border-radius:9999px;font-weight:700;font-size:12px;margin-bottom:12px;">WORKSPACE INVITATION</div><h2 style="font-size:20px;font-weight:800;color:#0f172a;margin:0 0 12px;">Join ${workspaceName || 'your team'} on Paper5</h2><p style="font-size:14px;color:#475569;line-height:1.6;margin:0 0 20px;">You've been invited to collaborate in <strong>${workspaceName || 'a private workspace'}</strong> as a <strong>${role || 'member'}</strong>. This invitation link expires in 30 minutes.</p><a href="${inviteLink}" style="display:inline-block;background:#4f46e5;color:#fff!important;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:700;font-size:14px;margin:16px 0;">Accept Invitation &rarr;</a></div></body></html>`
     }
 
     let emailSent = false
@@ -138,28 +139,47 @@ export default async function handler(req, res) {
       }
     }
 
-    return res.status(200).json({ success: true, emailSent, resendDetails })
+    const emailStatus = emailSent ? 'sent' : (resendApiKey ? 'failed' : 'not_configured')
+    return res.status(200).json({ success: true, emailSent, emailStatus, resendDetails })
   }
 
   // ─────────────────────────────────────────────────────────────
   // 2. ACCEPT INVITATION / JOIN WORKSPACE
   // ─────────────────────────────────────────────────────────────
+  const INVITE_TTL_MS = 30 * 60 * 1000
+  const isInviteExpired = (inv) => {
+    if (!inv) return true
+    if (inv.expires_at && Date.now() > new Date(inv.expires_at).getTime()) return true
+    if (inv.created_at && Date.now() - new Date(inv.created_at).getTime() > INVITE_TTL_MS) return true
+    return false
+  }
+
   const payload = { ...(req.query || {}), ...(body || {}) }
-  const { email, userId, workspaceId, inviteId } = payload
+  const { email, userId, workspaceId, inviteId, exp } = payload
   if (!email && !userId) {
     return res.status(400).json({ error: 'Missing email or userId parameter' })
   }
 
+  if (exp && Number.isFinite(Number(exp)) && Date.now() > Number(exp)) {
+    return res.status(410).json({ error: 'This invitation link has expired (valid for 30 minutes). Please request a new invitation.' })
+  }
+
   const cleanEmail = email ? email.trim().toLowerCase() : ''
 
-  // If a specific inviteId was passed in the link, verify it is still active and not superseded/deactivated
+  // If a specific inviteId was passed in the link, verify it is still active and within 30 minutes
   if (inviteId && hasElevatedAccess) {
     const [{ data: sp1 }, { data: sp2 }] = await Promise.all([
-      supabaseAdmin.from('invites').select('id, workspace_id').eq('id', inviteId).maybeSingle(),
-      supabaseAdmin.from('workspace_invites').select('id, workspace_id').eq('id', inviteId).maybeSingle()
+      supabaseAdmin.from('invites').select('id, workspace_id, created_at, expires_at').eq('id', inviteId).maybeSingle(),
+      supabaseAdmin.from('workspace_invites').select('id, workspace_id, created_at, expires_at').eq('id', inviteId).maybeSingle()
     ])
-    if (!sp1 && !sp2) {
+    const matchedInvite = sp1 || sp2
+    if (!matchedInvite) {
       return res.status(404).json({ error: 'This invitation link is no longer valid or has been replaced by a newer invitation.' })
+    }
+    if (isInviteExpired(matchedInvite)) {
+      try { await supabaseAdmin.from('invites').delete().eq('id', inviteId) } catch (_) {}
+      try { await supabaseAdmin.from('workspace_invites').delete().eq('id', inviteId) } catch (_) {}
+      return res.status(410).json({ error: 'This invitation link has expired (valid for 30 minutes). Please request a new invitation.' })
     }
   }
 
@@ -184,7 +204,13 @@ export default async function handler(req, res) {
           supabaseAdmin.from('workspace_invites').select('*').ilike('email', cleanEmail)
         ])
 
-        const allInvites = [...(inv1 || []), ...(inv2 || [])]
+        const rawInvites = [...(inv1 || []), ...(inv2 || [])]
+        const expiredIds = rawInvites.filter(isInviteExpired).map((i) => i.id).filter(Boolean)
+        if (expiredIds.length > 0) {
+          try { await supabaseAdmin.from('invites').delete().in('id', expiredIds) } catch (_) {}
+          try { await supabaseAdmin.from('workspace_invites').delete().in('id', expiredIds) } catch (_) {}
+        }
+        const allInvites = rawInvites.filter((inv) => !isInviteExpired(inv))
 
         for (const inv of allInvites) {
           if (inv.workspace_id) {
@@ -194,7 +220,7 @@ export default async function handler(req, res) {
             try {
               const { data: existingMember } = await supabaseAdmin
                 .from('workspace_members')
-                .select('id')
+                .select('user_id, role')
                 .eq('workspace_id', inv.workspace_id)
                 .eq('user_id', targetUserId)
                 .maybeSingle()
@@ -202,25 +228,23 @@ export default async function handler(req, res) {
               if (existingMember) {
                 await supabaseAdmin
                   .from('workspace_members')
-                  .update({
-                    role: inv.role || 'member',
-                    permissions: rawPerms
-                  })
-                  .eq('id', existingMember.id)
+                  .update({ role: inv.role || 'member' })
+                  .eq('workspace_id', inv.workspace_id)
+                  .eq('user_id', targetUserId)
               } else {
                 // Enforce plan member quota before accepting and inserting new membership
                 const { data: wsTarget } = await supabaseAdmin
                   .from('workspaces')
-                  .select('billing_plan_id, subscription_tier, is_active')
+                  .select('billing_plan_id, settings, is_active')
                   .eq('id', inv.workspace_id)
                   .maybeSingle()
 
-                const rawPlan = (wsTarget?.billing_plan_id || wsTarget?.subscription_tier || 'starter').toLowerCase().trim()
+                const rawPlan = (wsTarget?.billing_plan_id || wsTarget?.settings?.subscription_tier || 'starter').toLowerCase().trim()
                 const maxMembers = (rawPlan === 'pro' || rawPlan === 'scale' || rawPlan === 'enterprise') ? Infinity : (rawPlan === 'team' ? 7 : 3)
 
                 const { count: currentCount } = await supabaseAdmin
                   .from('workspace_members')
-                  .select('id', { count: 'exact', head: true })
+                  .select('user_id', { count: 'exact', head: true })
                   .eq('workspace_id', inv.workspace_id)
 
                 if (currentCount !== null && currentCount >= maxMembers) {
@@ -229,14 +253,16 @@ export default async function handler(req, res) {
                   })
                 }
 
-                await supabaseAdmin
+                const { error: insertMemErr } = await supabaseAdmin
                   .from('workspace_members')
                   .insert({
                     workspace_id: inv.workspace_id,
                     user_id: targetUserId,
-                    role: inv.role || 'member',
-                    permissions: rawPerms
+                    role: inv.role || 'member'
                   })
+                if (insertMemErr) {
+                  console.warn('workspace_members insert notice:', insertMemErr)
+                }
               }
             } catch (memErr) {
               console.warn('workspace_members insert/update notice:', memErr)
@@ -290,12 +316,12 @@ export default async function handler(req, res) {
         } catch (_) {}
       }
 
-      if (workspaceId && targetUserId) {
-        if (!acceptedWorkspaceId) acceptedWorkspaceId = workspaceId
+      // Only stamp workspace_members for workspaceId if an active invite actually authorized it
+      if (workspaceId && targetUserId && acceptedWorkspaceId === workspaceId && inviteId) {
         try {
           const { data: existingMember } = await supabaseAdmin
             .from('workspace_members')
-            .select('id')
+            .select('user_id')
             .eq('workspace_id', workspaceId)
             .eq('user_id', targetUserId)
             .maybeSingle()
@@ -304,8 +330,7 @@ export default async function handler(req, res) {
             await supabaseAdmin.from('workspace_members').insert({
               workspace_id: workspaceId,
               user_id: targetUserId,
-              role: 'member',
-              permissions: []
+              role: 'member'
             })
           }
         } catch (_) {}
@@ -319,7 +344,7 @@ export default async function handler(req, res) {
               .from('workspaces')
               .select('id')
               .eq('id', acceptedWorkspaceId)
-              .eq('owner_id', targetUserId)
+              .eq('created_by', targetUserId)
               .maybeSingle()
             if (wsOwner) isOwner = true
           }
@@ -356,6 +381,7 @@ export default async function handler(req, res) {
     }
 
     let workspace = null
+    let role = null
     if (acceptedWorkspaceId) {
       try {
         const { data: wsData } = await supabaseAdmin
@@ -364,6 +390,15 @@ export default async function handler(req, res) {
           .eq('id', acceptedWorkspaceId)
           .maybeSingle()
         workspace = wsData || null
+        if (targetUserId) {
+          const { data: memRow } = await supabaseAdmin
+            .from('workspace_members')
+            .select('role')
+            .eq('workspace_id', acceptedWorkspaceId)
+            .eq('user_id', targetUserId)
+            .maybeSingle()
+          role = memRow?.role || null
+        }
       } catch (wsErr) {
         console.warn('Workspace fetch notice:', wsErr)
       }
@@ -373,7 +408,8 @@ export default async function handler(req, res) {
       success: true,
       elevated: hasElevatedAccess,
       workspaceId: acceptedWorkspaceId,
-      workspace
+      workspace,
+      role
     })
   } catch (err) {
     console.error('accept-invite server error:', err)

@@ -139,8 +139,9 @@ export default function WorkspaceBentoLayout({ children }) {
   const headerMeta = useMemo(() => {
     const p = location.pathname.replace(new RegExp(`^/${workspaceId}`), '') || '/'
     if (p === '/' || p === '') {
-      const name = user?.user_metadata?.first_name || (user?.email ? user.email.split('@')[0] : 'Admin')
-      const formatted = name.charAt(0).toUpperCase() + name.slice(1)
+      const fullName = (user?.user_metadata?.full_name || user?.user_metadata?.name || '').trim()
+      const fallback = user?.user_metadata?.first_name || (user?.email ? user.email.split('@')[0] : 'Admin')
+      const formatted = fullName || (fallback.charAt(0).toUpperCase() + fallback.slice(1))
       return {
         isOverview: true,
         title: `Hello, ${formatted}`,

@@ -137,7 +137,7 @@ export default function Landing() {
 
   const handleGetStarted = (planId = 'team') => {
     trackEvent('get_started_click', { plan: planId, source: 'landing_hero' })
-    window.open(getAppUrl('/signup'), '_blank', 'noopener,noreferrer')
+    window.location.href = getAppUrl('/signup')
   }
 
   const handlePlanClick = (planId) => {
@@ -147,7 +147,7 @@ export default function Landing() {
     setTimeout(() => {
       setClaimedNotice(null)
     }, 4500)
-    window.open(getAppUrl(`/signup?plan=${planId}&cycle=${billingCycle}`), '_blank', 'noopener,noreferrer')
+    window.location.href = getAppUrl(`/signup?plan=${planId}&cycle=${billingCycle}`)
   }
 
   const scrollToSection = (e, sectionId) => {
@@ -320,121 +320,109 @@ export default function Landing() {
           </div>
         </section>
 
-        <section id="problem" className="editorial-pillars-section" aria-label="Core Operational Shift">
+        <section id="problem" className="editorial-pillars-section outcome-section" aria-label="Core Operational Shift">
           <div className="section-container">
-            <div className="section-header pillars-section-header">
-              <span className="section-kicker">PROBLEM & OUTCOME</span>
-              <h2 className="section-title">Less Chasing. More Building.</h2>
-              <p className="section-description">
+            <div className="outcome-editorial-header">
+              <div className="outcome-header-left">
+                <span className="section-kicker">PROBLEM &amp; OUTCOME</span>
+                <h2 className="section-title">Less Chasing. More Building.</h2>
+              </div>
+              <p className="outcome-header-desc">
                 Eliminate status roundtables, manual ticket triage, and diffuse accountability. Replace coordination drag with direct single ownership and automated visibility.
               </p>
             </div>
 
-            {/* Mobile Pillar Switcher Tabs */}
-            <div className="pillars-mobile-tabs mobile-only" role="tablist" aria-label="Operational Pillars">
-              <button 
-                type="button"
-                role="tab"
-                aria-selected={mobileActivePillar === 0}
-                className={`pillar-tab-btn ${mobileActivePillar === 0 ? 'active' : ''}`}
-                onClick={() => setMobileActivePillar(0)}
-              >
-                <Eye size={15} />
-                <span>Clarity & Alignment</span>
-              </button>
-              <button 
-                type="button"
-                role="tab"
-                aria-selected={mobileActivePillar === 1}
-                className={`pillar-tab-btn ${mobileActivePillar === 1 ? 'active' : ''}`}
-                onClick={() => setMobileActivePillar(1)}
-              >
-                <Rocket size={15} />
-                <span>Execution & Speed</span>
-              </button>
-            </div>
-
-            <div className="pillars-grid">
-              {/* Left Pillar: Clarity & Alignment */}
-              <div className={`pillar-column ${mobileActivePillar === 0 ? 'mobile-visible' : 'mobile-hidden'}`}>
-                <div className="desktop-only">
-                  <span className="pillar-kicker">CLARITY & ALIGNMENT</span>
-                  <h2 className="pillar-title">Know the Score Without Asking</h2>
-                  <div className="pillar-rule" />
+            <div className="outcome-editorial-grid">
+              {/* Left Sticky Contrast Ledger */}
+              <aside className="outcome-ledger" aria-label="Operational Shift Comparison">
+                <div className="outcome-ledger-head">
+                  <span className="outcome-ledger-kicker">OPERATIONAL SHIFT</span>
+                  <h3 className="outcome-ledger-title">Know the score without asking.</h3>
                 </div>
 
-                <div className="pillar-items">
-                  <div className="pillar-item">
-                    <div className="pillar-icon-box">
-                      <Eye size={17} />
-                    </div>
-                    <div className="pillar-text">
-                      <h3>Instant Roster Visibility</h3>
-                      <p>See live active tasks, verified deliverables, and owners across the squad without interrupting engineers with status questions.</p>
-                    </div>
+                <div className="outcome-ledger-rows">
+                  <div className="outcome-ledger-row">
+                    <span className="outcome-old">30-min status roundtables</span>
+                    <span className="outcome-arrow" aria-hidden="true">-&gt;</span>
+                    <span className="outcome-new">Live roster visibility</span>
                   </div>
-
-                  <div className="pillar-item">
-                    <div className="pillar-icon-box">
-                      <Clock size={17} />
-                    </div>
-                    <div className="pillar-text">
-                      <h3>Eliminate Coordination Roundtables</h3>
-                      <p>Replace 30-minute status roundtables and daily standup roll-calls with a transparent command center that always mirrors reality.</p>
-                    </div>
+                  <div className="outcome-ledger-row">
+                    <span className="outcome-old">Chasing status in chat</span>
+                    <span className="outcome-arrow" aria-hidden="true">-&gt;</span>
+                    <span className="outcome-new">Verified proof of work</span>
                   </div>
-
-                  <div className="pillar-item">
-                    <div className="pillar-icon-box">
-                      <ShieldCheck size={17} />
-                    </div>
-                    <div className="pillar-text">
-                      <h3>True Ownership & Pride in Shipping</h3>
-                      <p>Every deliverable has one explicit owner who feels pride and clear responsibility for submitting verified proof of work.</p>
-                    </div>
+                  <div className="outcome-ledger-row">
+                    <span className="outcome-old">Late release surprises</span>
+                    <span className="outcome-arrow" aria-hidden="true">-&gt;</span>
+                    <span className="outcome-new">Early blocker broadcast</span>
+                  </div>
+                  <div className="outcome-ledger-row">
+                    <span className="outcome-old">Split specs &amp; PR threads</span>
+                    <span className="outcome-arrow" aria-hidden="true">-&gt;</span>
+                    <span className="outcome-new">Unified tasks &amp; GitHub</span>
                   </div>
                 </div>
-              </div>
 
-              {/* Right Pillar: Execution & Speed */}
-              <div className={`pillar-column ${mobileActivePillar === 1 ? 'mobile-visible' : 'mobile-hidden'}`}>
-                <div className="desktop-only">
-                  <span className="pillar-kicker">EXECUTION & SPEED</span>
-                  <h2 className="pillar-title">Build Faster With Zero Drag</h2>
-                  <div className="pillar-rule" />
+                <div className="outcome-ledger-foot">
+                  Clarity &amp; Alignment · Execution &amp; Speed
                 </div>
+              </aside>
 
-                <div className="pillar-items">
-                  <div className="pillar-item">
-                    <div className="pillar-icon-box">
-                      <AlertTriangle size={17} />
-                    </div>
-                    <div className="pillar-text">
-                      <h3>Identify Bottlenecks Days Earlier</h3>
-                      <p>Flagged blockers broadcast instant notifications so teammates can swarm and resolve obstacles days before release deadlines.</p>
-                    </div>
+              {/* Right 01–06 Hairline Architectural Grid */}
+              <div className="outcome-spec-grid">
+                <article className="outcome-spec-cell">
+                  <div className="outcome-cell-top">
+                    <span className="outcome-index">01</span>
+                    <span className="outcome-pillar-label">CLARITY</span>
                   </div>
+                  <h3>Instant Roster Visibility</h3>
+                  <p>See live active tasks, verified deliverables, and owners across the squad without interrupting engineers with status questions.</p>
+                </article>
 
-                  <div className="pillar-item">
-                    <div className="pillar-icon-box">
-                      <Layers size={17} />
-                    </div>
-                    <div className="pillar-text">
-                      <h3>Unified Tasks, Specs & GitHub Code</h3>
-                      <p>Architecture decisions, standup digests, and GitHub pull requests live together so vital context is never lost across disjointed tools.</p>
-                    </div>
+                <article className="outcome-spec-cell">
+                  <div className="outcome-cell-top">
+                    <span className="outcome-index">02</span>
+                    <span className="outcome-pillar-label">CLARITY</span>
                   </div>
+                  <h3>Eliminate Coordination Roundtables</h3>
+                  <p>Replace 30-minute status roundtables and daily standup roll-calls with a transparent command center that always mirrors reality.</p>
+                </article>
 
-                  <div className="pillar-item">
-                    <div className="pillar-icon-box">
-                      <Rocket size={17} />
-                    </div>
-                    <div className="pillar-text">
-                      <h3>Spend Time Executing, Not Managing</h3>
-                      <p>Reclaim hours every week to build, design, test, and ship software that delivers real customer value.</p>
-                    </div>
+                <article className="outcome-spec-cell">
+                  <div className="outcome-cell-top">
+                    <span className="outcome-index">03</span>
+                    <span className="outcome-pillar-label">CLARITY</span>
                   </div>
-                </div>
+                  <h3>True Ownership &amp; Pride in Shipping</h3>
+                  <p>Every deliverable has one explicit owner who feels pride and clear responsibility for submitting verified proof of work.</p>
+                </article>
+
+                <article className="outcome-spec-cell">
+                  <div className="outcome-cell-top">
+                    <span className="outcome-index">04</span>
+                    <span className="outcome-pillar-label">EXECUTION</span>
+                  </div>
+                  <h3>Identify Bottlenecks Days Earlier</h3>
+                  <p>Flagged blockers broadcast instant notifications so teammates can swarm and resolve obstacles days before release deadlines.</p>
+                </article>
+
+                <article className="outcome-spec-cell">
+                  <div className="outcome-cell-top">
+                    <span className="outcome-index">05</span>
+                    <span className="outcome-pillar-label">EXECUTION</span>
+                  </div>
+                  <h3>Unified Tasks, Specs &amp; GitHub Code</h3>
+                  <p>Architecture decisions, standup digests, and GitHub pull requests live together so vital context is never lost across disjointed tools.</p>
+                </article>
+
+                <article className="outcome-spec-cell">
+                  <div className="outcome-cell-top">
+                    <span className="outcome-index">06</span>
+                    <span className="outcome-pillar-label">EXECUTION</span>
+                  </div>
+                  <h3>Spend Time Executing, Not Managing</h3>
+                  <p>Reclaim hours every week to build, design, test, and ship software that delivers real customer value.</p>
+                </article>
               </div>
             </div>
           </div>
@@ -778,72 +766,120 @@ export default function Landing() {
             6. INTEGRATIONS SECTION (LIGHT)
             GitHub (one-line), Slack, Discord, Calendar, REST API Studio
             ════════════════════════════════════════════════════════════════ */}
-        <section id="integrations" className="integrations-section ">
+        <section id="integrations" className="integrations-section integrations-bento-section">
           <div className="section-container">
-            <div className="section-header">
-              <span className="section-kicker">DEVELOPER INTEGRATIONS</span>
-              <h2 className="section-title">
-                Connects Seamlessly with Your Existing Stack.
-              </h2>
-              <p className="section-description">
+            <div className="outcome-editorial-header">
+              <div className="outcome-header-left">
+                <span className="section-kicker">DEVELOPER INTEGRATIONS</span>
+                <h2 className="section-title">
+                  Connects Seamlessly with Your Existing Stack.
+                </h2>
+              </div>
+              <p className="outcome-header-desc">
                 Bring your communication, calendar, code repositories, and custom automations into one command center.
               </p>
             </div>
 
-            <div className="integrations-cards-grid ">
-              {/* 1. GitHub Native Sync (Kept as one-line item per instructions) */}
-              <div className="integration-app-card">
-                <div className="app-card-icon"><GitPullRequest size={20} /></div>
-                <div className="app-card-info">
+            <div className="integrations-bento-grid">
+              {/* 1. GitHub Native Sync (7 cols) */}
+              <article className="int-bento-card int-bento--github">
+                <div className="int-bento-head">
+                  <div className="app-card-icon"><GitPullRequest size={19} /></div>
+                  <span className="int-bento-kicker">REPOSITORIES</span>
+                </div>
+                <div className="int-bento-body">
                   <h3>GitHub Native Sync</h3>
                   <p>Real-time branch commit tracking, automated PR status updates, and deploy link syncing.</p>
                 </div>
-              </div>
-
-              {/* 2. Slack Workspace Feed */}
-              <div className="integration-app-card">
-                <div className="app-card-icon"><MessageSquare size={20} /></div>
-                <div className="app-card-info">
-                  <h3>Slack Broadcasts</h3>
-                  <p>Post automated sprint kickoffs, blocker swarms, and daily digest summaries directly to channels.</p>
+                <div className="int-bento-preview" aria-hidden="true">
+                  <div className="int-preview-row">
+                    <span className="int-mono-muted">main &lt;- feat/auth-passkeys</span>
+                    <span className="int-mono-strong">PR #418 merged</span>
+                  </div>
+                  <div className="int-preview-row">
+                    <span className="int-mono-muted">deploy/production</span>
+                    <span className="int-mono-strong">Task #104 closed</span>
+                  </div>
                 </div>
-              </div>
+              </article>
 
-              {/* 3. Discord Engineering Swarms */}
-              <div className="integration-app-card">
-                <div className="app-card-icon"><Users size={20} /></div>
-                <div className="app-card-info">
-                  <h3>Discord Webhooks</h3>
-                  <p>Stream real-time sprint events and deliverable sign-offs to your technical community channels.</p>
+              {/* 2. REST API Studio (5 cols) */}
+              <article className="int-bento-card int-bento--api">
+                <div className="int-bento-head">
+                  <div className="app-card-icon"><Terminal size={19} /></div>
+                  <span className="int-bento-kicker">AUTOMATION</span>
                 </div>
-              </div>
-
-              {/* 4. Google Calendar Milestone Sync */}
-              <div className="integration-app-card">
-                <div className="app-card-icon"><Calendar size={20} /></div>
-                <div className="app-card-info">
-                  <h3>Google Calendar Sync</h3>
-                  <p>Synchronize release deadlines and sprint milestones directly with engineering team calendars.</p>
-                </div>
-              </div>
-
-              {/* 5. Linear Migration Importer */}
-              <div className="integration-app-card">
-                <div className="app-card-icon"><Layers size={20} /></div>
-                <div className="app-card-info">
-                  <h3>Linear Workspace Importer</h3>
-                  <p>One-click migration utility to import existing issue hierarchies, labels, and backlogs without loss.</p>
-                </div>
-              </div>
-
-              {/* 6. REST API Studio */}
-              <div className="integration-app-card">
-                <div className="app-card-icon"><Terminal size={20} /></div>
-                <div className="app-card-info">
+                <div className="int-bento-body">
                   <h3>REST API Studio</h3>
                   <p>Programmatic curl access to query sprints, trigger deliverable checks, and export team telemetry.</p>
                 </div>
-              </div>
+                <div className="int-bento-code" aria-hidden="true">
+                  <code>curl -s /api/v1/sprints?status=active</code>
+                </div>
+              </article>
+
+              {/* 3. Slack Broadcasts (4 cols) */}
+              <article className="int-bento-card int-bento--third">
+                <div className="int-bento-head">
+                  <div className="app-card-icon"><MessageSquare size={19} /></div>
+                  <span className="int-bento-kicker">MESSAGING</span>
+                </div>
+                <div className="int-bento-body">
+                  <h3>Slack Broadcasts</h3>
+                  <p>Post automated sprint kickoffs, blocker swarms, and daily digest summaries directly to channels.</p>
+                </div>
+                <div className="int-bento-meta" aria-hidden="true">
+                  #eng-sprints · 09:00 digest posted
+                </div>
+              </article>
+
+              {/* 4. Discord Webhooks (4 cols) */}
+              <article className="int-bento-card int-bento--third">
+                <div className="int-bento-head">
+                  <div className="app-card-icon"><Users size={19} /></div>
+                  <span className="int-bento-kicker">WEBHOOKS</span>
+                </div>
+                <div className="int-bento-body">
+                  <h3>Discord Webhooks</h3>
+                  <p>Stream real-time sprint events and deliverable sign-offs to your technical community channels.</p>
+                </div>
+                <div className="int-bento-meta" aria-hidden="true">
+                  deliverable.verified -&gt; #ship-log
+                </div>
+              </article>
+
+              {/* 5. Google Calendar Sync (4 cols) */}
+              <article className="int-bento-card int-bento--third">
+                <div className="int-bento-head">
+                  <div className="app-card-icon"><Calendar size={19} /></div>
+                  <span className="int-bento-kicker">SCHEDULING</span>
+                </div>
+                <div className="int-bento-body">
+                  <h3>Google Calendar Sync</h3>
+                  <p>Synchronize release deadlines and sprint milestones directly with engineering team calendars.</p>
+                </div>
+                <div className="int-bento-meta" aria-hidden="true">
+                  Fri 16:00 · v2.4 Release Freeze
+                </div>
+              </article>
+
+              {/* 6. Linear Workspace Importer (12 cols) */}
+              <article className="int-bento-card int-bento--wide">
+                <div className="int-bento-wide-left">
+                  <div className="app-card-icon"><Layers size={19} /></div>
+                  <div className="int-bento-body">
+                    <h3>Linear Workspace Importer</h3>
+                    <p>One-click migration utility to import existing issue hierarchies, labels, and backlogs without loss.</p>
+                  </div>
+                </div>
+                <div className="int-bento-wide-flow" aria-hidden="true">
+                  <span>Issues</span>
+                  <span className="int-flow-sep">-&gt;</span>
+                  <span>Labels</span>
+                  <span className="int-flow-sep">-&gt;</span>
+                  <span>Backlogs</span>
+                </div>
+              </article>
             </div>
           </div>
         </section>

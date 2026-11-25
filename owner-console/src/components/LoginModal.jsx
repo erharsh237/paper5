@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { Mail, Lock, AlertCircle } from 'lucide-react'
+import { Mail, Lock, AlertCircle, KeyRound } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { checkHasPasskey, loginWithPasskey } from '../lib/passkeys'
 
 export function LoginModal({ onLoginSuccess }) {
   const [email, setEmail] = useState('')
@@ -8,6 +9,21 @@ export function LoginModal({ onLoginSuccess }) {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [passkeyStep, setPasskeyStep] = useState(false)
+  const [pendingEmail, setPendingEmail] = useState('')
+
+  async function handlePasskeyVerify(targetEmail = pendingEmail) {
+    setLoading(true)
+    setError(null)
+    try {
+      const authedUser = await loginWithPasskey(targetEmail)
+      onLoginSuccess(authedUser)
+    } catch (err) {
+      setError(err?.message || 'Passkey verification failed.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   async function handleLogin(e) {
     e.preventDefault()
@@ -30,6 +46,15 @@ export function LoginModal({ onLoginSuccess }) {
       if (authError) throw authError
 
       if (data?.session) {
+        const hasPasskey = await checkHasPasskey(cleanEmail)
+        if (hasPasskey) {
+          await supabase.auth.signOut().catch(() => {})
+          setPendingEmail(cleanEmail)
+          setPasskeyStep(true)
+          setLoading(false)
+          await handlePasskeyVerify(cleanEmail)
+          return
+        }
         onLoginSuccess(data.session.user)
       }
     } catch (err) {
@@ -66,6 +91,33 @@ export function LoginModal({ onLoginSuccess }) {
           </div>
         )}
 
+        {passkeyStep ? (
+          <div className="space-y-4 text-xs">
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 leading-relaxed">
+              Passkey verification is required for <strong className="text-slate-900">{pendingEmail}</strong> before accessing the admin console.
+            </div>
+            <button
+              type="button"
+              onClick={() => handlePasskeyVerify()}
+              disabled={loading}
+              className="btn-primary w-full justify-center !py-2.5 text-xs font-semibold !rounded-xl flex items-center gap-2"
+            >
+              <KeyRound className="w-3.5 h-3.5" />
+              <span>{loading ? 'Verifying Passkey...' : 'Verify with Passkey'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPasskeyStep(false)
+                setPendingEmail('')
+                setError(null)
+              }}
+              className="w-full py-2 text-slate-500 hover:text-slate-800 text-xs font-medium"
+            >
+              Back to sign in
+            </button>
+          </div>
+        ) : (
         <form onSubmit={handleLogin} className="space-y-4 text-xs">
           <div>
             <label className="text-slate-600 block mb-1 font-medium">Admin Email</label>
@@ -119,6 +171,7 @@ export function LoginModal({ onLoginSuccess }) {
             {loading ? 'Authenticating...' : 'Sign In'}
           </button>
         </form>
+        )}
       </div>
     </div>
   )

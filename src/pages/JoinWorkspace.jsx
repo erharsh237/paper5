@@ -14,10 +14,17 @@ export default function JoinWorkspace() {
 
   const workspaceId = searchParams.get('workspace') || searchParams.get('workspaceId')
   const inviteId = searchParams.get('inviteId')
+  const expParam = searchParams.get('exp')
   const rawToken = searchParams.get('token')
   const emailParam = searchParams.get('email')
 
   useEffect(() => {
+    if (expParam && Number.isFinite(Number(expParam)) && Date.now() > Number(expParam)) {
+      setError('This invitation link has expired (valid for 30 minutes). Please request a new invitation.')
+      setLoading(false)
+      return
+    }
+
     if (!workspaceId && !emailParam && !inviteId) {
       setError('Authentication failed: The invite link is invalid or missing required parameters.')
       setLoading(false)
@@ -39,7 +46,8 @@ export default function JoinWorkspace() {
             email: user.email,
             userId: user.id,
             workspaceId,
-            inviteId
+            inviteId,
+            exp: expParam
           })
         })
         const data = await resp.json().catch(() => ({}))

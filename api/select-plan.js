@@ -86,7 +86,7 @@ export default async function handler(req, res) {
           billing_plan_id: normalizedPlan,
           billing_status: 'active'
         })
-        .or(`created_by.eq.${callerUid},owner_id.eq.${callerUid}`)
+        .eq('created_by', callerUid)
     } catch (wsErr) {
       console.warn('Workspace tier sync notice:', wsErr)
     }

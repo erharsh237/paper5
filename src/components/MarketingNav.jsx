@@ -43,12 +43,8 @@ export default function MarketingNav() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const handleSignIn = () => {
-    window.open(getAppUrl('/login'), '_blank', 'noopener,noreferrer')
-  }
-
   const handleGetStarted = () => {
-    window.open(getAppUrl('/signup'), '_blank', 'noopener,noreferrer')
+    window.location.href = getAppUrl('/signup')
   }
 
   const handleHomeClick = (e) => {
@@ -313,12 +309,6 @@ export default function MarketingNav() {
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <button 
-                  className="nav-btn-link" 
-                  onClick={handleSignIn}
-                >
-                  Sign In
-                </button>
-                <button 
                   className={`btn-primary btn-sm nav-btn-signup ${isPastHero ? 'nav-sticky-cta' : ''}`}
                   onClick={handleGetStarted}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 18px', fontSize: '13.5px' }}
@@ -551,13 +541,6 @@ export default function MarketingNav() {
                   onClick={() => { handleGetStarted(); setIsMobileMenuOpen(false); }}
                 >
                   Get Started &rarr;
-                </button>
-                <button 
-                  className="btn-ghost w-full center-text" 
-                  style={{ justifyContent: 'center', padding: '10px', border: '1px solid var(--border)' }} 
-                  onClick={() => { handleSignIn(); setIsMobileMenuOpen(false); }}
-                >
-                  Sign In
                 </button>
               </div>
             )}

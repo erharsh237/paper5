@@ -10,6 +10,7 @@ export function Header({
   onRefresh,
   isRefreshing,
   onOpenCommandPalette,
+  onOpenPasskeys,
   dbLatency
 }) {
   const [userDropdown, setUserDropdown] = useState(false)
@@ -128,6 +129,12 @@ export function Header({
                   className="w-full px-3 py-1.5 text-left hover:bg-slate-50 text-slate-700"
                 >
                   Analytics
+                </button>
+                <button
+                  onClick={() => onOpenPasskeys && onOpenPasskeys()}
+                  className="w-full px-3 py-1.5 text-left hover:bg-slate-50 text-slate-700 font-medium"
+                >
+                  Passkey Security
                 </button>
               </div>
 

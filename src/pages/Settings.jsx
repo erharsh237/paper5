@@ -1852,27 +1852,27 @@ export default function Settings() {
                             </label>
                           </div>
 
+                          {inviteRole === 'member' && (
+                            <div style={{ padding: '12px', border: '1px solid var(--border-subtle)', borderRadius: '6px', background: 'var(--bg-layer-1)' }}>
+                              <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>Permissions</label>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                                {AVAILABLE_PERMISSIONS.map(ap => {
+                                  const isChecked = ap.keys.some(k => invitePermissions.includes(k)) || invitePermissions.includes(ap.id)
+                                  return (
+                                    <label key={ap.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text, #1C1D2B)', cursor: 'pointer' }}>
+                                      <input type="checkbox" checked={isChecked} onChange={() => toggleInvitePermission(ap.id)} />
+                                      {ap.label}
+                                    </label>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          )}
+
                           <button type="submit" className="btn-primary" disabled={inviting} style={{ alignSelf: 'flex-start' }}>
                             {inviting ? 'Sending...' : 'Create & Send Invite'}
                           </button>
                         </form>
-                        
-                        {inviteRole === 'member' && (
-                          <div style={{ marginTop: '12px', padding: '12px', border: '1px solid var(--border-subtle)', borderRadius: '6px', background: 'var(--bg-layer-1)' }}>
-                            <label style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>Permissions</label>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-                              {AVAILABLE_PERMISSIONS.map(ap => {
-                                const isChecked = ap.keys.some(k => invitePermissions.includes(k)) || invitePermissions.includes(ap.id)
-                                return (
-                                  <label key={ap.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text, #1C1D2B)', cursor: 'pointer' }}>
-                                    <input type="checkbox" checked={isChecked} onChange={() => toggleInvitePermission(ap.id)} />
-                                    {ap.label}
-                                  </label>
-                                )
-                              })}
-                            </div>
-                          </div>
-                        )}
                         
                         {inviteError && <div className="form-error" style={{ marginTop: '12px' }}>{inviteError}</div>}
                       </>

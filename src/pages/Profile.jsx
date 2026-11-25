@@ -1,543 +1,451 @@
-import { useEffect, useState, useMemo } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
-import { subscribeProfile, saveProfile, saveAim, getAimLockStatus, uploadPhoto, uploadResume, deleteResume } from '../lib/profile'
-import { resetTourSeen } from '../lib/onboarding'
-
-import Breadcrumbs from '../components/Breadcrumbs'
-import UserMenu from '../components/UserMenu'
-import CalendarWidget from '../components/CalendarWidget'
-import ConfirmModal from '../components/ui/ConfirmModal'
 import { useWorkspace } from '../lib/WorkspaceContext'
-import './Dashboard.css'
+import { supabase } from '../lib/supabase'
+import { validateUsername, validatePassword } from '../lib/validation'
+import { listPasskeys, registerPasskey, removePasskey } from '../lib/passkeys'
 import './Profile.css'
 
-const TOTAL_STEPS = 4
-const MAX_PIC_MB = 5
-
-function getUserColor(identifier) {
-  if (!identifier) return '#5e5ce6';
-  let hash = 0;
-  for (let i = 0; i < identifier.length; i++) {
-    hash = identifier.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const hue = Math.abs(hash % 360);
-  return `hsl(${hue}, 55%, 45%)`;
-}
-
 export default function Profile() {
-  const { user, logout, userData } = useAuth()
-  const workspaceContext = useWorkspace()
-  const workspace = workspaceContext?.workspace
-  const workspaceId = workspaceContext?.workspaceId || 'global'
-  const workspaceRole = workspaceContext?.workspaceRole
-  const isOwner = workspaceContext?.isOwner
-  const isAdmin = workspaceContext?.isAdmin
+  const { user, userData, checkUsername } = useAuth()
+  const { workspace, workspaceId, workspaceRole } = useWorkspace()
+  const workspaceHome = workspaceId ? `/${workspaceId}` : '/workspaces'
 
-  const navigate = useNavigate()
-  const [profile, setProfile] = useState(null)
-  const [name, setName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [bio, setBio] = useState('')
-  const [aim, setAim] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [savedFlash, setSavedFlash] = useState(false)
-  const [error, setError] = useState('')
-  const [picUploading, setPicUploading] = useState(false)
-  const [currentStep, setCurrentStep] = useState(0)
-  const [deletingAccount, setDeletingAccount] = useState(false)
-  const [requestingDeletion, setRequestingDeletion] = useState(false)
-  const [cancellingRequest, setCancellingRequest] = useState(false)
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  const [successNotice, setSuccessNotice] = useState('')
-  const [localRequested, setLocalRequested] = useState(false)
-  const [localCancelled, setLocalCancelled] = useState(false)
+  const [fullNameInput, setFullNameInput] = useState('')
+  const [usernameInput, setUsernameInput] = useState('')
+  const [savingProfile, setSavingProfile] = useState(false)
+  const [profileMsg, setProfileMsg] = useState({ type: '', text: '' })
 
-  const isDeletionPending = useMemo(() => {
-    if (localCancelled) return false
-    if (localRequested) return true
-    const reqs = workspace?.settings?.deletion_requests || {}
-    const hasReq = !!(reqs[user?.id] || reqs[user?.email?.trim().toLowerCase()])
-    return hasReq
-  }, [workspace, user, localRequested, localCancelled])
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showNewPwd, setShowNewPwd] = useState(false)
+  const [savingPassword, setSavingPassword] = useState(false)
+  const [passwordMsg, setPasswordMsg] = useState({ type: '', text: '' })
 
-  const handleRequestAccountDeletion = async () => {
-    setRequestingDeletion(true)
-    setError('')
-    try {
-      const uid = user?.id || user?.uid
-      const resp = await fetch('/api/request-account-deletion', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workspaceId, userId: uid, email: user?.email, action: 'request' })
-      })
-      const json = await resp.json()
-      if (!resp.ok) throw new Error(json.error || 'Failed to submit deletion request')
-      
-      setLocalRequested(true)
-      setLocalCancelled(false)
-      setIsDeleteModalOpen(false)
-      setSuccessNotice('Account deletion request submitted to your workspace Administrator.')
-      setTimeout(() => setSuccessNotice(''), 6000)
-    } catch (err) {
-      console.error('Failed to request deletion:', err)
-      setError('Could not submit request: ' + err.message)
-      setIsDeleteModalOpen(false)
-    } finally {
-      setRequestingDeletion(false)
-    }
-  }
-
-  const handleCancelDeletionRequest = async () => {
-    setCancellingRequest(true)
-    setError('')
-    try {
-      const uid = user?.id || user?.uid
-      const resp = await fetch('/api/request-account-deletion', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workspaceId, userId: uid, email: user?.email, action: 'cancel' })
-      })
-      const json = await resp.json()
-      if (!resp.ok) throw new Error(json.error || 'Failed to cancel deletion request')
-      
-      setLocalRequested(false)
-      setLocalCancelled(true)
-      setSuccessNotice('Account deletion request cancelled.')
-      setTimeout(() => setSuccessNotice(''), 6000)
-    } catch (err) {
-      console.error('Failed to cancel deletion request:', err)
-      setError('Could not cancel request: ' + err.message)
-    } finally {
-      setCancellingRequest(false)
-    }
-  }
-
-  const handleExecuteDeleteAccount = async () => {
-    setDeletingAccount(true)
-    setError('')
-    try {
-      const uid = user?.id || user?.uid
-      const resp = await fetch('/api/delete-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: uid, email: user?.email, workspaceId, fullDelete: true })
-      })
-      const json = await resp.json()
-      if (!resp.ok) throw new Error(json.error || 'Failed to delete account')
-      
-      setIsDeleteModalOpen(false)
-      await logout()
-      navigate('/login')
-    } catch (err) {
-      console.error('Failed to delete account:', err)
-      setError('Could not delete account: ' + err.message)
-      setDeletingAccount(false)
-      setIsDeleteModalOpen(false)
-    }
-  }
-
-  const prevStep = () => setCurrentStep(s => Math.max(0, s - 1))
-  const nextStep = () => setCurrentStep(s => Math.min(TOTAL_STEPS - 1, s + 1))
+  const [passkeys, setPasskeys] = useState([])
+  const [loadingPasskeys, setLoadingPasskeys] = useState(true)
+  const [passkeyBusy, setPasskeyBusy] = useState(false)
+  const [passkeyMsg, setPasskeyMsg] = useState({ type: '', text: '' })
 
   useEffect(() => {
-    const uid = user?.id || user?.email
-    if (!uid) return
-    return subscribeProfile(workspaceId, uid, (data) => {
-      setProfile(data)
-      if (data) {
-        setName(data.name || '')
-        setPhone(data.phone || '')
-        setBio(data.bio || '')
-        setAim(data.aim || '')
-      }
-    })
-  }, [user, workspaceId])
-
-  const aimLock = getAimLockStatus(profile)
-
-  async function handleSaveAll() {
-    if (!name.trim() || !phone.trim() || !bio.trim() || !aim.trim()) {
-      setError('Please fill in Name, Phone, Bio, and Aim before saving.');
-      return;
+    const currentFullName = user?.user_metadata?.full_name || user?.user_metadata?.name || userData?.name || ''
+    if (currentFullName && !fullNameInput) {
+      setFullNameInput(currentFullName)
     }
-    
-    setError('')
-    setSaving(true)
-    try {
-      await saveProfile(user.email, {
-        name: name.trim(),
-        phone: phone.trim(),
-        roleId: profile?.roleId || '',
-        roleName: profile?.roleName || '',
-        bio: bio.trim(),
+    const currentUname = userData?.username || user?.user_metadata?.username || ''
+    if (currentUname && !usernameInput) {
+      setUsernameInput(currentUname)
+    }
+  }, [user?.user_metadata?.full_name, user?.user_metadata?.name, userData?.name, userData?.username, user?.user_metadata?.username])
+
+  useEffect(() => {
+    let mounted = true
+    if (!user) return
+    setLoadingPasskeys(true)
+    listPasskeys()
+      .then((list) => {
+        if (mounted) setPasskeys(list)
       })
-
-      if (!aimLock.locked && aim.trim() !== (profile?.aim || '')) {
-        await saveAim(user.email, aim.trim())
-      }
-      
-      setSavedFlash(true)
-      setTimeout(() => setSavedFlash(false), 3000)
-    } catch (err) {
-      console.error(err)
-      setError('Could not save. Try again.')
-    } finally {
-      setSaving(false)
+      .catch(() => {
+        if (mounted) setPasskeys([])
+      })
+      .finally(() => {
+        if (mounted) setLoadingPasskeys(false)
+      })
+    return () => {
+      mounted = false
     }
-  }
+  }, [user?.id])
 
-  async function handlePicChange(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    const ALLOWED_PIC_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-    const hasValidExt = /\.(jpe?g|png|webp|gif)$/i.test(file.name)
-    if (!ALLOWED_PIC_TYPES.includes(file.type) || !hasValidExt) {
-      setError('Invalid image format. Only JPG, PNG, WEBP, or GIF are allowed.')
-      e.target.value = ''
+  const handleSaveProfile = async (e) => {
+    e.preventDefault()
+    setProfileMsg({ type: '', text: '' })
+    const cleanFullName = (fullNameInput || '').trim()
+    const cleanUsername = (usernameInput || '').trim().toLowerCase()
+    const check = validateUsername(cleanUsername)
+    if (!check.valid) {
+      setProfileMsg({ type: 'error', text: check.error })
       return
     }
-
-    if (file.size > MAX_PIC_MB * 1024 * 1024) {
-      setError(`Image file must be under ${MAX_PIC_MB}MB.`)
-      e.target.value = ''
-      return
-    }
-    setError('')
-    setPicUploading(true)
-    try {
-      const reader = new FileReader()
-      reader.onload = async () => {
-        const dataUrl = reader.result
-        const uid = user?.id || user?.email
-        await uploadPhoto(workspaceId, uid, dataUrl)
-        setProfile(prev => ({ ...prev, photoURL: dataUrl }))
-        setSavedFlash(true)
-        setTimeout(() => setSavedFlash(false), 3000)
-        setPicUploading(false)
-      }
-      reader.readAsDataURL(file)
-    } catch (err) {
-      console.error(err)
-      setError('Could not upload photo. Please try again.')
-      setPicUploading(false)
-    }
-    e.target.value = ''
-  }
-
-  async function handleResumeChange(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    const ALLOWED_RESUME_TYPES = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    ]
-    const hasValidResumeExt = /\.(pdf|docx?)$/i.test(file.name)
-    if ((file.type && !ALLOWED_RESUME_TYPES.includes(file.type)) || !hasValidResumeExt) {
-      setError('Invalid resume format. Only PDF and Word documents (.pdf, .doc, .docx) are permitted.')
-      e.target.value = ''
-      return
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      setError('Resume file must be under 10MB.')
-      e.target.value = ''
-      return
-    }
-    setError('')
-    try {
-      const reader = new FileReader()
-      reader.onload = async () => {
-        const resumeUrl = reader.result
-        const uid = user?.id || user?.email
-        const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100)
-        await uploadResume(workspaceId, uid, resumeUrl, sanitizedName)
-        setProfile(prev => ({ ...prev, resumeURL: resumeUrl, resumeName: sanitizedName }))
-        setSavedFlash(true)
-        setTimeout(() => setSavedFlash(false), 3000)
-      }
-      reader.readAsDataURL(file)
-    } catch (err) {
-      console.error(err)
-      setError('Could not upload resume. Please try again.')
-    }
-    e.target.value = ''
-  }
-
-  async function handleRemoveResume() {
-    setError('')
-    try {
-      const uid = user?.id || user?.email
-      await deleteResume(workspaceId, uid)
-      setProfile(prev => ({ ...prev, resumeURL: null, resumeName: null }))
-      setSavedFlash(true)
-      setTimeout(() => setSavedFlash(false), 3000)
-    } catch (err) {
-      console.error(err)
-      setError('Could not remove resume.')
-    }
-  }
-
-  async function handleRetakeTour() {
+    setSavingProfile(true)
     try {
       const uid = user?.id || user?.uid
-      await resetTourSeen(uid, user?.email)
-      navigate(`/${workspaceId}?tour=true`)
+      const isAvail = await checkUsername(cleanUsername, uid)
+      if (!isAvail) {
+        setProfileMsg({ type: 'error', text: 'This username is already taken.' })
+        return
+      }
+      const { error: authErr } = await supabase.auth.updateUser({
+        data: {
+          full_name: cleanFullName,
+          name: cleanFullName,
+          username: cleanUsername,
+        },
+      })
+      if (authErr) throw authErr
+      await supabase.from('users').update({ username: cleanUsername }).eq('id', uid)
+      setFullNameInput(cleanFullName)
+      setUsernameInput(cleanUsername)
+      setProfileMsg({ type: 'success', text: 'Profile details updated.' })
     } catch (err) {
-      console.error(err)
-      setError('Could not restart the tour. Try again.')
+      setProfileMsg({ type: 'error', text: err?.message || 'Failed to update profile.' })
+    } finally {
+      setSavingProfile(false)
     }
   }
 
+  const handleChangePassword = async (e) => {
+    e.preventDefault()
+    setPasswordMsg({ type: '', text: '' })
+    const pwdCheck = validatePassword(newPassword)
+    if (!pwdCheck.valid) {
+      setPasswordMsg({
+        type: 'error',
+        text: `Password requirements not met: ${pwdCheck.errors.join(', ')}`,
+      })
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordMsg({ type: 'error', text: 'Passwords do not match.' })
+      return
+    }
+    setSavingPassword(true)
+    try {
+      const { error: pwdErr } = await supabase.auth.updateUser({ password: newPassword })
+      if (pwdErr) throw pwdErr
+      setNewPassword('')
+      setConfirmPassword('')
+      setPasswordMsg({ type: 'success', text: 'Password updated successfully.' })
+    } catch (err) {
+      setPasswordMsg({ type: 'error', text: err?.message || 'Failed to update password.' })
+    } finally {
+      setSavingPassword(false)
+    }
+  }
 
+  const handleSetupPasskey = async () => {
+    setPasskeyBusy(true)
+    setPasskeyMsg({ type: '', text: '' })
+    try {
+      await registerPasskey()
+      const updated = await listPasskeys()
+      setPasskeys(updated)
+      setPasskeyMsg({
+        type: 'success',
+        text: 'Passkey added! You will be prompted for it when signing in.',
+      })
+    } catch (err) {
+      setPasskeyMsg({ type: 'error', text: err?.message || 'Could not add passkey.' })
+    } finally {
+      setPasskeyBusy(false)
+    }
+  }
+
+  const handleRemovePasskey = async (credentialId) => {
+    setPasskeyBusy(true)
+    setPasskeyMsg({ type: '', text: '' })
+    try {
+      const remaining = await removePasskey(credentialId)
+      setPasskeys(remaining)
+      setPasskeyMsg({ type: 'success', text: 'Passkey removed from your account.' })
+    } catch (err) {
+      setPasskeyMsg({ type: 'error', text: err?.message || 'Could not remove passkey.' })
+    } finally {
+      setPasskeyBusy(false)
+    }
+  }
+
+  const activeFullName = (user?.user_metadata?.full_name || user?.user_metadata?.name || userData?.name || '').trim()
+  const activeUsername = userData?.username || user?.user_metadata?.username || ''
+  const displayName = activeFullName || (activeUsername ? `@${activeUsername}` : user?.email?.split('@')[0] || 'Account')
+  const initials = (activeFullName || activeUsername || user?.email || 'U').slice(0, 2).toUpperCase()
 
   return (
     <div className="dash-root">
-      <main className="dash-container" style={{ paddingBottom: '48px' }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '16px' }}>
-          <button type="button" className="btn-ghost btn-sm" onClick={handleRetakeTour}>
-            Retake site tour
-          </button>
-        </div>
-
-        <div className="profile-container">
-          
-          <div className="profile-cover" style={{ background: getUserColor(user?.email) }}>
-            <div className="profile-header-content">
-              <div className="profile-pic-wrap">
-                {profile?.photoURL ? (
-                  <img src={profile.photoURL} alt={name ? `Profile photo of ${name}` : 'User profile photo'} className="profile-pic" decoding="async" />
-                ) : (
-                  <div className="profile-pic profile-pic--placeholder mono">
-                    {(name || user?.email || '?')[0]?.toUpperCase()}
-                  </div>
-                )}
-              </div>
-              
-              <div className="profile-name-area">
-                <h1 className="profile-name">{name || user?.email}</h1>
-                <div className="role-badge">
-                  {profile?.roleName || (
-                    isOwner ? 'Workspace Owner' :
-                    isAdmin ? 'Workspace Admin' :
-                    workspaceRole ? `Workspace ${workspaceRole.charAt(0).toUpperCase() + workspaceRole.slice(1)}` :
-                    'Workspace Admin'
-                  )}
-                </div>
-              </div>
+      <main className="dash-container">
+        <div className="ps-shell">
+          <div className="ps-topbar">
+            <div className="ps-page-header">
+              <h1 className="ps-page-title">Profile Settings</h1>
+              <p className="ps-page-subtitle">
+                Manage your username, password, passkeys, and account preferences.
+              </p>
             </div>
+            <Link to={workspaceHome} className="ps-back-link">
+              Back to Workspace
+            </Link>
           </div>
 
-          <div className="profile-card profile-card--main">
-            <div className="profile-photo-actions-bar">
-              <label className="profile-change-photo-btn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                  <circle cx="12" cy="13" r="4"/>
-                </svg>
-                <span>{picUploading ? 'Uploading…' : 'Change photo'}</span>
-                <input type="file" accept="image/*" hidden onChange={handlePicChange} disabled={picUploading} />
-              </label>
-              <span className="profile-photo-spec">JPG, PNG or WebP · Up to {MAX_PIC_MB}MB</span>
+          {/* Account Summary */}
+          <section className="ps-identity-card" aria-label="Account summary">
+            <div className="ps-identity-left">
+              <div className="ps-avatar" aria-hidden="true">
+                {initials}
+              </div>
+              <div className="ps-identity-meta">
+                <h2 className="ps-identity-name">{displayName}</h2>
+                <p className="ps-identity-email">{user?.email || 'Signed in user'}</p>
+              </div>
             </div>
 
-            {/* SLIDER SYSTEM */}
-            <div style={{ display: 'block', marginTop: '24px', position: 'relative' }}>
-              <button type="button" className="btn-ghost btn-sm slider-nav-btn" onClick={prevStep} style={{ visibility: currentStep === 0 ? 'hidden' : 'visible', position: 'absolute', top: '50%', left: '-48px', transform: 'translateY(-50%)', zIndex: 10, padding: '8px', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: getUserColor(user?.email), color: '#ffffff', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
-              </button>
+            <div className="ps-identity-summary">
+              {workspace?.name && (
+                <span className="ps-summary-item">
+                  Workspace: <strong>{workspace.name}</strong>
+                </span>
+              )}
+              <span className="ps-summary-item">
+                Role: <strong>{workspaceRole || 'Member'}</strong>
+              </span>
+              {!loadingPasskeys && (
+                <span className="ps-summary-item">
+                  Passkey: <strong>{passkeys.length > 0 ? 'Enabled' : 'Not set'}</strong>
+                </span>
+              )}
+            </div>
+          </section>
 
-              <div className="profile-slider-viewport" style={{ flex: 1, minWidth: 0, marginTop: 0 }}>
-                <div className="profile-slider-track" style={{ transform: `translateX(-${currentStep * 100}%)` }}>
-                  
-                  {/* Slide 1: Personal Info */}
-                  <div className="profile-slide" style={{ height: currentStep === 0 ? 'auto' : 0, overflow: 'hidden', opacity: currentStep === 0 ? 1 : 0, transition: 'opacity 0.3s' }}>
-                    <h2 className="profile-section-title">Step 1: Personal Information</h2>
-                    <div className="field-row" style={{ marginBottom: '16px' }}>
-                      <div className="premium-field" style={{ flex: 1 }}>
-                        <label htmlFor="p-name">Full Name</label>
-                        <input id="p-name" type="text" value={name} onChange={(e) => setName(e.target.value)} />
-                      </div>
-                      <div className="premium-field" style={{ flex: 1 }}>
-                        <label htmlFor="p-phone">Phone Number</label>
-                        <input id="p-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 …" />
-                      </div>
-                    </div>
+          {/* 2-Column Settings Grid */}
+          <div className="ps-grid">
+            {/* Left Column */}
+            <div className="ps-col">
+              <section className="ps-card">
+                <div className="ps-card-head">
+                  <h3 className="ps-card-title">Personal Details</h3>
+                  <p className="ps-card-desc">
+                    Update your full name and handle for your workspace greeting and mentions.
+                  </p>
+                </div>
 
-                    <div className="premium-field">
-                      <label htmlFor="p-bio">About Me</label>
-                      <textarea id="p-bio" rows={3} value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Background, what you're focused on right now…" />
-                    </div>
+                <form onSubmit={handleSaveProfile} className="ps-form">
+                  <div className="ps-field">
+                    <label htmlFor="ps-fullname" className="ps-label">
+                      Full Name
+                    </label>
+                    <input
+                      id="ps-fullname"
+                      type="text"
+                      className="ps-input"
+                      value={fullNameInput}
+                      onChange={(e) => setFullNameInput(e.target.value)}
+                      placeholder="Enter your full name"
+                      autoComplete="name"
+                    />
                   </div>
 
-                  {/* Slide 2: Aim */}
-                  <div className="profile-slide" style={{ height: currentStep === 1 ? 'auto' : 0, overflow: 'hidden', opacity: currentStep === 1 ? 1 : 0, transition: 'opacity 0.3s' }}>
-                    <h2 className="profile-section-title">Step 2: Your {workspace?.name || 'Workspace'} Aim</h2>
-                    <div className="premium-field">
-                      <label htmlFor="p-aim" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span>What do you want to achieve on {workspace?.name || 'this workspace'}?</span>
-                        {aimLock.locked && (
-                          <span className="profile-aim-lock-note">Locked until {aimLock.unlockDate.toLocaleDateString()}</span>
-                        )}
-                      </label>
-                      <textarea
-                        id="p-aim" rows={3} value={aim}
-                        onChange={(e) => setAim(e.target.value)}
-                        disabled={aimLock.locked}
-                        placeholder="Once saved, this is locked for 45 days — write what you're actually aiming for."
+                  <div className="ps-field">
+                    <label className="ps-label">Email address</label>
+                    <input
+                      type="email"
+                      className="ps-input ps-input--readonly"
+                      value={user?.email || ''}
+                      readOnly
+                    />
+                  </div>
+
+                  <div className="ps-field">
+                    <label htmlFor="ps-username" className="ps-label">
+                      Username
+                    </label>
+                    <div className="ps-input-wrap">
+                      <span className="ps-input-prefix">@</span>
+                      <input
+                        id="ps-username"
+                        type="text"
+                        className="ps-input ps-input--prefix"
+                        value={usernameInput}
+                        onChange={(e) => setUsernameInput(e.target.value)}
+                        placeholder="your_username"
+                        autoComplete="username"
                       />
                     </div>
+                    <p className="ps-hint">3–20 characters: lowercase letters, numbers, or underscores.</p>
                   </div>
 
-                  {/* Slide 3: Documents */}
-                  <div className="profile-slide" style={{ height: currentStep === 2 ? 'auto' : 0, overflow: 'hidden', opacity: currentStep === 2 ? 1 : 0, transition: 'opacity 0.3s' }}>
-                    <h2 className="profile-section-title">Step 3: Documents</h2>
-                    <div className="profile-resume-row">
-                      <div className="profile-resume-info">
-                        <span className="mono" style={{ fontSize: '11px', color: 'var(--text-tertiary)', letterSpacing: '0.05em' }}>RESUME</span>
-                        {profile?.resumeURL ? (
-                          <a href={profile.resumeURL} target="_blank" rel="noopener noreferrer" className="profile-resume-link">
-                            {profile.resumeName || 'View uploaded resume'}
-                          </a>
+                  {profileMsg.text && (
+                    <div className={`ps-feedback ps-feedback--${profileMsg.type === 'error' ? 'error' : 'success'}`}>
+                      {profileMsg.text}
+                    </div>
+                  )}
+
+                  <div className="ps-actions">
+                    <button type="submit" disabled={savingProfile} className="ps-btn ps-btn--primary">
+                      {savingProfile ? 'Saving...' : 'Save Changes'}
+                    </button>
+                  </div>
+                </form>
+              </section>
+
+              <section className="ps-card">
+                <div className="ps-card-head">
+                  <h3 className="ps-card-title">Other Account Settings</h3>
+                  <p className="ps-card-desc">
+                    Workspace navigation and account options.
+                  </p>
+                </div>
+
+                <div className="ps-pref-row">
+                  <div>
+                    <div className="ps-pref-title">Switch or Create Workspace</div>
+                    <div className="ps-pref-sub">Open another workspace or start a new team space.</div>
+                  </div>
+                  <Link to="/workspaces" className="ps-btn ps-btn--secondary">
+                    Workspaces
+                  </Link>
+                </div>
+              </section>
+            </div>
+
+            {/* Right Column */}
+            <div className="ps-col">
+              <section className="ps-card">
+                <div className="ps-card-head">
+                  <h3 className="ps-card-title">Passkeys</h3>
+                  <p className="ps-card-desc">
+                    Sign in with Windows Hello, Touch ID, Face ID, or a security key. When set up, sign-in requires passkey verification.
+                  </p>
+                </div>
+
+                {loadingPasskeys ? (
+                  <div className="ps-passkey-empty">
+                    <span className="ps-passkey-empty-text">Checking registered passkeys...</span>
+                  </div>
+                ) : passkeys.length === 0 ? (
+                  <div className="ps-passkey-empty">
+                    <div className="ps-passkey-empty-text">
+                      No passkey configured yet.
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSetupPasskey}
+                      disabled={passkeyBusy}
+                      className="ps-btn ps-btn--primary"
+                    >
+                      {passkeyBusy ? 'Waiting...' : 'Set Up Passkey'}
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="ps-passkey-list">
+                      {passkeys.map((pk, idx) => (
+                        <div key={pk.id || idx} className="ps-passkey-row">
+                          <div>
+                            <div className="ps-passkey-name">Passkey #{idx + 1}</div>
+                            <div className="ps-passkey-sub">
+                              {pk.createdAt
+                                ? `Added ${new Date(pk.createdAt).toLocaleDateString()}`
+                                : 'Active device passkey'}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePasskey(pk.id)}
+                            disabled={passkeyBusy}
+                            className="ps-btn ps-btn--danger"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="ps-actions">
+                      <button
+                        type="button"
+                        onClick={handleSetupPasskey}
+                        disabled={passkeyBusy}
+                        className="ps-btn ps-btn--secondary"
+                      >
+                        {passkeyBusy ? 'Waiting...' : 'Add Another Passkey'}
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {passkeyMsg.text && (
+                  <div className={`ps-feedback ps-feedback--${passkeyMsg.type === 'error' ? 'error' : 'success'}`}>
+                    {passkeyMsg.text}
+                  </div>
+                )}
+              </section>
+
+              <section className="ps-card">
+                <div className="ps-card-head">
+                  <h3 className="ps-card-title">Change Password</h3>
+                  <p className="ps-card-desc">
+                    Use at least 8 characters with uppercase, lowercase, and a number.
+                  </p>
+                </div>
+
+                <form onSubmit={handleChangePassword} className="ps-form">
+                  <div className="ps-field">
+                    <label htmlFor="ps-new-password" className="ps-label">
+                      New Password
+                    </label>
+                    <div className="ps-input-wrap">
+                      <input
+                        id="ps-new-password"
+                        type={showNewPwd ? 'text' : 'password'}
+                        className="ps-input ps-input--eye"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter new password"
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPwd((v) => !v)}
+                        className="ps-eye-btn"
+                        aria-label={showNewPwd ? 'Hide password' : 'Show password'}
+                      >
+                        {showNewPwd ? (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                            <line x1="1" y1="1" x2="23" y2="23" />
+                          </svg>
                         ) : (
-                          <span className="profile-hint">No resume uploaded yet.</span>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
                         )}
-                      </div>
-                      <div className="profile-resume-actions">
-                        <label className="btn-ghost btn-sm profile-upload-btn">
-                          {profile?.resumeURL ? 'Replace' : 'Upload Resume'}
-                          <input type="file" accept=".pdf,.doc,.docx" hidden onChange={handleResumeChange} />
-                        </label>
-                        {profile?.resumeURL && (
-                          <button type="button" className="dcard-delete btn-sm" onClick={handleRemoveResume}>Remove</button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Slide 4: Calendar & Submit */}
-                  <div className="profile-slide" style={{ height: currentStep === 3 ? 'auto' : 0, overflow: 'hidden', opacity: currentStep === 3 ? 1 : 0, transition: 'opacity 0.3s' }}>
-                    <h2 className="profile-section-title">Step 4: Integrations & Finalize</h2>
-                    <div style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--border-subtle)', borderRadius: '12px' }}>
-                      <CalendarWidget user={user} />
-                    </div>
-                    
-                    {error && <div className="form-error" style={{ marginTop: '16px', textAlign: 'center' }}>{error}</div>}
-                    
-                    <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
-                      {savedFlash && <span className="form-status form-status--ok">All changes saved securely!</span>}
-                      <button type="button" className="btn-primary" style={{ width: '100%', maxWidth: '300px', fontSize: '15px', padding: '12px' }} onClick={handleSaveAll} disabled={saving}>
-                        {saving ? 'Saving...' : 'Save All Changes'}
                       </button>
                     </div>
                   </div>
 
-                </div>
-              </div>
+                  <div className="ps-field">
+                    <label htmlFor="ps-confirm-password" className="ps-label">
+                      Confirm New Password
+                    </label>
+                    <input
+                      id="ps-confirm-password"
+                      type={showNewPwd ? 'text' : 'password'}
+                      className="ps-input"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Re-enter new password"
+                      autoComplete="new-password"
+                    />
+                  </div>
 
-              <button type="button" className="btn-ghost btn-sm slider-nav-btn" onClick={nextStep} style={{ visibility: currentStep === TOTAL_STEPS - 1 ? 'hidden' : 'visible', position: 'absolute', top: '50%', right: '-48px', transform: 'translateY(-50%)', zIndex: 10, padding: '8px', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: getUserColor(user?.email), color: '#ffffff', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-              </button>
-            </div>
+                  {passwordMsg.text && (
+                    <div className={`ps-feedback ps-feedback--${passwordMsg.type === 'error' ? 'error' : 'success'}`}>
+                      {passwordMsg.text}
+                    </div>
+                  )}
 
-            <div className="slider-dots" style={{ justifyContent: 'center', marginTop: '20px' }}>
-              {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-                <div key={i} className={`slider-dot ${i === currentStep ? 'active' : ''}`} />
-              ))}
-            </div>
-            
-          </div>
-
-          {successNotice && (
-            <div style={{ marginTop: '20px', padding: '12px 18px', borderRadius: '8px', background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#065F46', fontSize: '13px', fontWeight: 600 }}>
-              {successNotice}
-            </div>
-          )}
-
-          <div className="dash-surface-card" style={{ marginTop: '28px', padding: '24px 28px', border: '1px solid #FECACA', background: '#FEF2F2' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
-              <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#DC2626', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Danger Zone</h2>
-              {isDeletionPending && (
-                <span style={{ fontSize: '11.5px', fontWeight: 700, background: '#FEF3C7', color: '#92400E', padding: '2px 10px', borderRadius: '100px', border: '1px solid #FCD34D' }}>
-                  Deletion Request Pending Admin Approval ⏳
-                </span>
-              )}
-            </div>
-            <p style={{ fontSize: '13px', color: '#7F1D1D', margin: '0 0 16px 0', lineHeight: 1.5 }}>
-              {isDeletionPending
-                ? 'Your account deletion request has been submitted to your workspace Administrator. Once approved, your whole account and personal data will be permanently deleted from the database.'
-                : (isOwner
-                  ? 'Deleting your account will permanently remove your user record, workspace memberships, and all personal data from the database. This action cannot be undone.'
-                  : 'Deleting your account will submit a formal deletion request to your workspace Administrator. When approved, your whole account will be permanently deleted from the database.')}
-            </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                disabled={isDeletionPending || requestingDeletion || deletingAccount}
-                style={{
-                  background: isDeletionPending ? '#9CA3AF' : '#DC2626',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  padding: '9px 18px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  cursor: (isDeletionPending || requestingDeletion || deletingAccount) ? 'not-allowed' : 'pointer',
-                  opacity: isDeletionPending ? 0.75 : ((requestingDeletion || deletingAccount) ? 0.7 : 1),
-                  transition: 'all 0.15s ease'
-                }}
-                onClick={() => !isDeletionPending && setIsDeleteModalOpen(true)}
-              >
-                {isDeletionPending
-                  ? 'Deletion Request Submitted'
-                  : (isOwner ? 'Delete Account & Data' : 'Request Account Deletion')}
-              </button>
-
-              {isDeletionPending && (
-                <button
-                  type="button"
-                  disabled={cancellingRequest}
-                  onClick={handleCancelDeletionRequest}
-                  style={{
-                    background: '#FFFFFF',
-                    border: '1px solid #D1D5DB',
-                    color: '#4B5563',
-                    padding: '8px 14px',
-                    borderRadius: '8px',
-                    fontSize: '12.5px',
-                    fontWeight: 600,
-                    cursor: cancellingRequest ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  {cancellingRequest ? 'Cancelling…' : 'Cancel Request'}
-                </button>
-              )}
+                  <div className="ps-actions">
+                    <button type="submit" disabled={savingPassword} className="ps-btn ps-btn--primary">
+                      {savingPassword ? 'Updating...' : 'Update Password'}
+                    </button>
+                  </div>
+                </form>
+              </section>
             </div>
           </div>
         </div>
       </main>
-
-      <ConfirmModal
-        isOpen={isDeleteModalOpen}
-        title={isOwner ? 'Delete Account & Data' : 'Request Account Deletion'}
-        message={
-          isOwner
-            ? 'Are you absolutely sure you want to delete your account? All your personal profile data, workspace memberships, and account records will be permanently erased from the database. This action cannot be undone.'
-            : 'Are you sure you want to request account deletion? A formal request will be sent to your workspace Administrator. Once approved, your whole account and personal data will be permanently deleted from the database.'
-        }
-        confirmText={
-          isOwner
-            ? (deletingAccount ? 'Deleting Account…' : 'Delete My Account')
-            : (requestingDeletion ? 'Submitting…' : 'Submit Deletion Request')
-        }
-        cancelText="Cancel"
-        variant="danger"
-        onConfirm={isOwner ? handleExecuteDeleteAccount : handleRequestAccountDeletion}
-        onCancel={() => !deletingAccount && !requestingDeletion && setIsDeleteModalOpen(false)}
-      />
     </div>
   )
 }

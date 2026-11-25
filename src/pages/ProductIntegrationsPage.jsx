@@ -83,7 +83,7 @@ export default function ProductIntegrationsPage() {
                 </ul>
               </div>
               <div>
-                <button className="btn-primary" style={{ width: 'fit-content' }} onClick={() => window.open(getAppUrl('/signup'), '_blank', 'noopener,noreferrer')}>
+                <button className="btn-primary" style={{ width: 'fit-content' }} onClick={() => { window.location.href = getAppUrl('/signup') }}>
                   Provision 1-Click API Key
                 </button>
               </div>

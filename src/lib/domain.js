@@ -60,6 +60,9 @@ export const MAIN_BASE_URL = 'https://paper5.co'
  */
 export const getAppUrl = (path = '') => {
   const cleanPath = path.startsWith('/') ? path : `/${path}`
+  if (typeof window !== 'undefined' && isLocalHost(window.location.hostname)) {
+    return cleanPath
+  }
   return `${APP_BASE_URL}${cleanPath}`
 }
 
@@ -68,5 +71,8 @@ export const getAppUrl = (path = '') => {
  */
 export const getMainUrl = (path = '') => {
   const cleanPath = path === '/' ? '' : (path.startsWith('/') ? path : `/${path}`)
+  if (typeof window !== 'undefined' && isLocalHost(window.location.hostname)) {
+    return cleanPath || '/'
+  }
   return `${MAIN_BASE_URL}${cleanPath || '/'}`
 }

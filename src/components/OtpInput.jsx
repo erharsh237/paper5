@@ -85,28 +85,10 @@ export default function OtpInput({
   }
 
   return (
-    <div style={{ display: 'flex', gap: '6px', justifyContent: 'space-between', width: '100%', margin: '8px 0 16px 0' }}>
+    <div className="p5-otp-row">
       {Array.from({ length }).map((_, i) => {
         const isFilled = Boolean(digits[i])
         const isFocused = focusedIndex === i
-
-        let borderColor = '#334155' // High-contrast Slate-700 dark border
-        let bg = '#ffffff'
-        let shadow = '0 2px 4px rgba(0, 0, 0, 0.08)'
-
-        if (isFocused) {
-          borderColor = '#10b981' // Green focus
-          shadow = '0 0 0 3px rgba(16, 185, 129, 0.3)'
-        } else if (isFilled) {
-          borderColor = '#10b981' // Green filled
-          shadow = '0 0 0 2px rgba(16, 185, 129, 0.15)'
-        }
-
-        if (disabled) {
-          bg = '#f1f5f9'
-          borderColor = '#94a3b8'
-          shadow = 'none'
-        }
 
         return (
           <input
@@ -124,22 +106,7 @@ export default function OtpInput({
             onBlur={() => setFocusedIndex(null)}
             disabled={disabled}
             autoComplete="one-time-code"
-            style={{
-              width: '100%',
-              height: '48px',
-              textAlign: 'center',
-              fontSize: '20px',
-              fontWeight: '800',
-              fontFamily: 'monospace',
-              borderRadius: '8px',
-              border: `2px solid ${borderColor}`,
-              background: bg,
-              color: '#0f172a',
-              outline: 'none',
-              transition: 'all 0.15s ease',
-              boxShadow: shadow,
-              boxSizing: 'border-box'
-            }}
+            className={`p5-otp-box ${isFocused ? 'is-focused' : ''} ${isFilled ? 'is-filled' : ''}`}
           />
         )
       })}

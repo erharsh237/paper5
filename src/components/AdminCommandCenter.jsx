@@ -151,9 +151,10 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
   const recentActivity = data?.recentActivity || []
   const invites = data?.invites || []
 
-  // Current Admin First Name
+  // Current Admin Name
   const adminFirstName = useMemo(() => {
-    if (user?.displayName) return user.displayName.split(' ')[0]
+    const fullName = (user?.user_metadata?.full_name || user?.user_metadata?.name || user?.displayName || '').trim()
+    if (fullName) return fullName
     if (user?.email) {
       const prefix = user.email.split('@')[0]
       return prefix.charAt(0).toUpperCase() + prefix.slice(1)

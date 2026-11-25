@@ -629,3 +629,533 @@ body[data-theme="dark"] .auth-brand-text,
     right: 16px;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SPLIT-CARD AUTH PORTAL (Mock-inspired Design + Zero-Reload Mode Switch)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.auth-split-layout {
+  background: #f3f3ef;
+  padding: 68px 20px 28px;
+}
+
+.auth-split-card {
+  width: 100%;
+  max-width: 960px;
+  min-height: 580px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 26px;
+  box-shadow: 0 24px 60px -18px rgba(15, 23, 42, 0.08), 0 4px 16px rgba(15, 23, 42, 0.03);
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 44% 56%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Left Visual Panel */
+.auth-visual-panel {
+  background: #efefed;
+  border-radius: 18px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-visual-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 2;
+}
+
+.auth-visual-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.auth-illustration-wrap {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-illustration-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Right Form Panel */
+.auth-form-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 18px 42px 28px;
+  position: relative;
+}
+
+.auth-panel-top-link {
+  text-align: right;
+  font-size: 12.5px;
+  color: #6b7280;
+  margin-bottom: 18px;
+}
+
+.auth-top-switch-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #111827;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.auth-top-switch-link:hover {
+  color: #2563eb;
+}
+
+.auth-panel-body {
+  width: 100%;
+  max-width: 360px;
+  margin: auto;
+  text-align: left;
+}
+
+.auth-split-title {
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  font-size: 32px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.03em;
+  margin: 0 0 18px;
+  line-height: 1.15;
+}
+
+.auth-mode-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+/* Two side-by-side Sign in / Sign up buttons */
+.auth-mode-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.auth-mode-btn {
+  height: 42px;
+  border-radius: 12px;
+  border: 1.5px solid #e5e7eb;
+  background: #ffffff;
+  color: #475569;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.08s ease, border-color 0.08s ease, color 0.08s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-mode-btn:hover:not(.active) {
+  border-color: #cbd5e1;
+  color: #0f172a;
+  background: #f8fafc;
+}
+
+.auth-mode-btn.active {
+  border-color: #1a6bff;
+  background: rgba(26, 107, 255, 0.06);
+  color: #1a6bff;
+  box-shadow: 0 2px 8px rgba(26, 107, 255, 0.12);
+}
+
+.auth-mode-sublabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+/* Icon-prefixed soft-filled pill inputs */
+.auth-input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-field-icon {
+  position: absolute;
+  left: 14px;
+  color: #94a3b8;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.auth-input.auth-input-pill {
+  background: #f4f4f6;
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  padding: 11px 14px 11px 40px;
+  font-size: 13.5px;
+  color: #0f172a;
+  height: 44px;
+}
+
+.auth-input.auth-input-pill::placeholder {
+  color: #94a3b8;
+}
+
+.auth-input.auth-input-pill:focus {
+  background: #ffffff;
+  border-color: #1a6bff;
+  box-shadow: 0 0 0 3px rgba(26, 107, 255, 0.12);
+}
+
+/* Pill Primary CTA Button */
+.auth-submit-btn.auth-submit-pill {
+  background: #1a6bff;
+  border-radius: 9999px;
+  height: 44px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  box-shadow: 0 6px 18px -4px rgba(26, 107, 255, 0.4);
+}
+
+.auth-submit-btn.auth-submit-pill:hover:not(:disabled) {
+  background: #1558d6 !important;
+  box-shadow: 0 8px 22px -4px rgba(26, 107, 255, 0.5);
+}
+
+.auth-secondary-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 9px 14px;
+  border-radius: 9999px;
+  border: 1px solid #e2e8f0;
+  background: transparent;
+  color: #64748b;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.auth-secondary-btn:hover:not(:disabled) {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.auth-inline-change-btn {
+  background: transparent;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  color: var(--text-primary, #0f172a);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 10px;
+}
+
+.auth-turnstile-note {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+  text-align: center;
+  font-size: 10.5px;
+  color: #94a3b8;
+  font-family: var(--mono, monospace);
+}
+
+.auth-pwd-tooltip {
+  position: absolute;
+  left: calc(100% + 14px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 210px;
+  background: #09090b;
+  color: #ffffff;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #27272a;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+  font-size: 11px;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+/* Dark Theme Overrides for Split Card */
+[data-theme="dark"] .auth-split-layout {
+  background: #09090b;
+}
+
+[data-theme="dark"] .auth-split-card {
+  background: #141417;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+}
+
+[data-theme="dark"] .auth-visual-panel {
+  background: #1c1c21;
+}
+
+[data-theme="dark"] .auth-split-title {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .auth-panel-top-link,
+[data-theme="dark"] .auth-mode-label,
+[data-theme="dark"] .auth-mode-sublabel {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .auth-top-switch-link {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .auth-top-switch-link:hover {
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .auth-mode-btn {
+  background: #1c1c21;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .auth-mode-btn:hover {
+  background: #27272e;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .auth-mode-btn.active {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.14);
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .auth-input.auth-input-pill {
+  background: #1c1c21;
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .auth-input.auth-input-pill:focus {
+  background: #0f0f12;
+  border-color: #3b82f6;
+}
+
+[data-theme="dark"] .auth-secondary-btn {
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .auth-secondary-btn:hover:not(:disabled) {
+  background: #27272e;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .auth-turnstile-note {
+  border-top-color: rgba(255, 255, 255, 0.08);
+  color: #71717a;
+}
+
+/* Responsive Tablet / Mobile */
+@media (max-width: 860px) {
+  .auth-split-card {
+    grid-template-columns: 1fr;
+    max-width: 460px;
+    min-height: auto;
+  }
+
+  .auth-visual-panel {
+    display: none;
+  }
+
+  .auth-form-panel {
+    padding: 20px 20px 24px;
+  }
+
+  .auth-pwd-tooltip {
+    left: 0;
+    top: calc(100% + 8px);
+    transform: none;
+    width: 100%;
+  }
+}
+
+/* Clean Account Pill & OTP Boxes matching Split-Card Theme */
+.auth-account-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: #f4f4f6;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+
+.auth-account-pill-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.auth-account-pill-text {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auth-inline-change-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a6bff;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.auth-inline-change-link:hover {
+  text-decoration: underline;
+}
+
+.p5-otp-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  width: 100%;
+  margin: 8px 0 14px;
+}
+
+.p5-otp-box {
+  width: 100%;
+  height: 46px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--mono, monospace);
+  border-radius: 12px;
+  border: 1.5px solid #e2e8f0;
+  background: #f4f4f6;
+  color: #0f172a;
+  outline: none;
+  transition: all 0.14s ease;
+  box-sizing: border-box;
+}
+
+.p5-otp-box.is-focused {
+  background: #ffffff;
+  border-color: #1a6bff;
+  box-shadow: 0 0 0 3px rgba(26, 107, 255, 0.14);
+}
+
+.p5-otp-box.is-filled:not(.is-focused) {
+  background: #ffffff;
+  border-color: #93c5fd;
+}
+
+.p5-otp-box:disabled {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+[data-theme="dark"] .auth-account-pill {
+  background: #1c1c21;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .auth-account-pill-text {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .auth-inline-change-link {
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .p5-otp-box {
+  background: #1c1c21;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .p5-otp-box.is-focused {
+  background: #0f0f12;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.22);
+}
+
+[data-theme="dark"] .p5-otp-box.is-filled:not(.is-focused) {
+  background: #0f0f12;
+  border-color: rgba(59, 130, 246, 0.55);
+}
+
+/* Inline Password Requirements Checklist (never clipped) */
+.auth-pwd-checklist {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 12px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f4f4f6;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.auth-pwd-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.auth-pwd-item.is-met {
+  color: #059669;
+  font-weight: 600;
+}
+
+.auth-pwd-dot {
+  font-weight: 700;
+  font-size: 11px;
+}
+
+[data-theme="dark"] .auth-pwd-checklist {
+  background: #1c1c21;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .auth-pwd-item {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .auth-pwd-item.is-met {
+  color: #34d399;
+}

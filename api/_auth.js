@@ -103,7 +103,7 @@ export async function verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { r
     // 1. Check workspace existence, ownership, active status, and tier
     const { data: wsRecord, error: wsErr } = await supabaseAdmin
       .from('workspaces')
-      .select('id, created_by, owner_id, settings, billing_plan_id, subscription_tier, is_active')
+      .select('id, created_by, settings, billing_plan_id, is_active')
       .eq('id', workspaceId)
       .maybeSingle()
 
@@ -119,7 +119,7 @@ export async function verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { r
       }
     }
 
-    const isDirectOwner = (wsRecord.created_by || wsRecord.owner_id) === user.id
+    const isDirectOwner = wsRecord.created_by === user.id
 
     // 2. Check membership record
     const { data: memberRecord } = await supabaseAdmin
@@ -149,7 +149,7 @@ export async function verifyWorkspaceAccess(req, supabaseAdmin, workspaceId, { r
     }
 
     const memberPermissions = wsRecord.settings?.member_permissions?.[user.id] || []
-    const rawPlan = (wsRecord.billing_plan_id || wsRecord.subscription_tier || 'starter').toLowerCase().trim()
+    const rawPlan = (wsRecord.billing_plan_id || wsRecord.settings?.subscription_tier || 'starter').toLowerCase().trim()
     const plan = (rawPlan === 'scale' || rawPlan === 'pro' || rawPlan === 'enterprise') ? 'pro' : (rawPlan === 'team' ? 'team' : 'starter')
     const maxMembers = plan === 'pro' ? Infinity : (plan === 'team' ? 7 : 3)
 

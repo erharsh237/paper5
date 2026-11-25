@@ -33,7 +33,7 @@ export default function MarketingFooter({ hideCTA = false }) {
   }
 
   const handleGetStarted = () => {
-    window.open(getAppUrl('/signup'), '_blank', 'noopener,noreferrer')
+    window.location.href = getAppUrl('/signup')
   }
 
   return (

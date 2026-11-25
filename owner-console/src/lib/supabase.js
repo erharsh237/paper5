@@ -10,6 +10,7 @@ export const supabase = createClient(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
+      storage: typeof window !== 'undefined' ? window.sessionStorage : undefined,
       storageKey: 'paper5_owner_console_auth'
     }
   }

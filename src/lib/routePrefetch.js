@@ -164,21 +164,26 @@ let backgroundPrefetchScheduled = false
 
 export function scheduleBackgroundPrefetch(isAppSubdomain = false) {
   if (typeof window === 'undefined' || backgroundPrefetchScheduled) return
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection
+  if (conn?.saveData || conn?.effectiveType === '2g' || conn?.effectiveType === 'slow-2g') {
+    return
+  }
   backgroundPrefetchScheduled = true
 
+  // Only prefetch the highest-probability next routes during browser idle time
   const keys = isAppSubdomain
-    ? ['workspacePicker', 'myDashboard', 'workflow', 'team', 'meeting', 'analytics']
-    : ['landing', 'features', 'productIntegrations', 'docs', 'about', 'contact', 'privacy']
+    ? ['workspacePicker', 'myDashboard']
+    : ['features', 'login']
 
   const run = () => {
     keys.forEach((key, index) => {
-      setTimeout(() => prefetchRouteKey(key), index * 80)
+      setTimeout(() => prefetchRouteKey(key), index * 200)
     })
   }
 
   if (typeof window.requestIdleCallback === 'function') {
-    window.requestIdleCallback(run, { timeout: 1200 })
+    window.requestIdleCallback(run, { timeout: 2500 })
   } else {
-    setTimeout(run, 350)
+    setTimeout(run, 1500)
   }
 }

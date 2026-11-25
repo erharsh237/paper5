@@ -4,7 +4,8 @@ import { ownerApi } from './lib/api'
 import { Header } from './components/Header'
 import { CommandPalette } from './components/CommandPalette'
 import { LoginModal } from './components/LoginModal'
-import { Plus } from 'lucide-react'
+import { listPasskeys, registerPasskey, removePasskey } from './lib/passkeys'
+import { Plus, KeyRound, X } from 'lucide-react'
 
 // Modules
 import { CommandCenter } from './modules/CommandCenter'
@@ -26,6 +27,11 @@ export function App() {
   const [loading, setLoading] = useState(true)
   const [currentModule, setCurrentModule] = useState('command-center')
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
+  const [passkeyModalOpen, setPasskeyModalOpen] = useState(false)
+  const [passkeys, setPasskeys] = useState([])
+  const [loadingPasskeys, setLoadingPasskeys] = useState(false)
+  const [passkeyBusy, setPasskeyBusy] = useState(false)
+  const [passkeyMsg, setPasskeyMsg] = useState({ type: '', text: '' })
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   const [dbLatency, setDbLatency] = useState(null)
@@ -161,6 +167,19 @@ export function App() {
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
         onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+        onOpenPasskeys={async () => {
+          setPasskeyModalOpen(true)
+          setPasskeyMsg({ type: '', text: '' })
+          setLoadingPasskeys(true)
+          try {
+            const list = await listPasskeys()
+            setPasskeys(list)
+          } catch (_) {
+            setPasskeys([])
+          } finally {
+            setLoadingPasskeys(false)
+          }
+        }}
         dbLatency={dbLatency}
       />
 
@@ -210,6 +229,127 @@ export function App() {
         onClose={() => setCommandPaletteOpen(false)}
         onNavigate={setCurrentModule}
       />
+
+      {/* Admin Passkey Security Modal */}
+      {passkeyModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-2xl p-6 space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center">
+                  <KeyRound className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Admin Passkey Security</h3>
+                  <p className="text-xs text-slate-500">
+                    When a passkey is set, admin sign-in requires passkey verification.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPasskeyModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {loadingPasskeys ? (
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-500">
+                Checking registered passkeys...
+              </div>
+            ) : passkeys.length === 0 ? (
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+                <span className="text-xs text-slate-600">No passkey configured yet.</span>
+                <button
+                  type="button"
+                  disabled={passkeyBusy}
+                  onClick={async () => {
+                    setPasskeyBusy(true)
+                    setPasskeyMsg({ type: '', text: '' })
+                    try {
+                      await registerPasskey()
+                      const updated = await listPasskeys()
+                      setPasskeys(updated)
+                      setPasskeyMsg({ type: 'success', text: 'Passkey added for admin sign-in.' })
+                    } catch (err) {
+                      setPasskeyMsg({ type: 'error', text: err?.message || 'Could not add passkey.' })
+                    } finally {
+                      setPasskeyBusy(false)
+                    }
+                  }}
+                  className="btn-primary !px-3.5 !py-1.5 text-xs font-semibold !rounded-lg"
+                >
+                  {passkeyBusy ? 'Waiting...' : 'Set Up Passkey'}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {passkeys.map((pk, idx) => (
+                  <div key={pk.id || idx} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-semibold text-slate-900">Passkey #{idx + 1}</div>
+                      <div className="text-[11px] text-slate-500">
+                        {pk.createdAt ? `Added ${new Date(pk.createdAt).toLocaleDateString()}` : 'Active device passkey'}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={passkeyBusy}
+                      onClick={async () => {
+                        setPasskeyBusy(true)
+                        setPasskeyMsg({ type: '', text: '' })
+                        try {
+                          const remaining = await removePasskey(pk.id)
+                          setPasskeys(remaining)
+                          setPasskeyMsg({ type: 'success', text: 'Passkey removed.' })
+                        } catch (err) {
+                          setPasskeyMsg({ type: 'error', text: err?.message || 'Could not remove passkey.' })
+                        } finally {
+                          setPasskeyBusy(false)
+                        }
+                      }}
+                      className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="button"
+                    disabled={passkeyBusy}
+                    onClick={async () => {
+                      setPasskeyBusy(true)
+                      setPasskeyMsg({ type: '', text: '' })
+                      try {
+                        await registerPasskey()
+                        const updated = await listPasskeys()
+                        setPasskeys(updated)
+                        setPasskeyMsg({ type: 'success', text: 'Additional passkey added.' })
+                      } catch (err) {
+                        setPasskeyMsg({ type: 'error', text: err?.message || 'Could not add passkey.' })
+                      } finally {
+                        setPasskeyBusy(false)
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50"
+                  >
+                    {passkeyBusy ? 'Waiting...' : 'Add Another Passkey'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {passkeyMsg.text && (
+              <div className={`p-2.5 rounded-lg text-xs font-medium border ${passkeyMsg.type === 'error' ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
+                {passkeyMsg.text}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

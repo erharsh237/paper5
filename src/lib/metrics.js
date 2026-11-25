@@ -1,6 +1,12 @@
 import { hasAnalyticsConsent } from './privacyPrefs'
+import { getDomainConfig } from './domain'
 
-const MEASUREMENT_ID = (import.meta.env.VITE_GA_MEASUREMENT_ID || '').trim()
+const IS_APP_HOST = typeof window !== 'undefined' && getDomainConfig().isAppSubdomain
+const MEASUREMENT_ID = (
+  IS_APP_HOST
+    ? (import.meta.env.VITE_GA_APP_MEASUREMENT_ID || 'G-QMZWSSCCES')
+    : (import.meta.env.VITE_GA_MEASUREMENT_ID || '')
+).trim()
 const GTM_ID = (import.meta.env.VITE_GTM_ID || '').trim()
 
 const IS_VALID_GA_ID = /^G-[A-Z0-9]{4,}$/i.test(MEASUREMENT_ID) && !/^G-X+$/i.test(MEASUREMENT_ID)
