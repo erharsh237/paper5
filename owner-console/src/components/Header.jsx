@@ -21,6 +21,8 @@ export function Header({
     { id: 'users', name: 'Users' },
     { id: 'workspaces', name: 'Workspaces' },
     { id: 'billing', name: 'Billing' },
+    { id: 'analytics', name: 'Analytics' },
+    { id: 'database', name: 'Database' },
     { id: 'security', name: 'Security' },
     { id: 'support', name: 'Support' },
     { id: 'rbac', name: 'Admins' }

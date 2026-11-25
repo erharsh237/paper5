@@ -1,3 +1,4 @@
+import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import { setCorsHeaders } from './_cors.js'
 import { checkRateLimit } from './_rateLimit.js'
@@ -58,6 +59,7 @@ function getClientIp(req) {
 const ACTION_PERMISSIONS = {
   'overview': 'overview:read',
   'metrics': 'overview:read',
+  'analytics.ga4': 'overview:read',
   'users.list': 'users:read',
   'users.get': 'users:read',
   'users.suspend': 'users:write',
@@ -78,6 +80,8 @@ const ACTION_PERMISSIONS = {
   'security.audit_logs': 'security:read',
   'health.check': 'health:read',
   'health.telemetry': 'health:read',
+  'database.tables': 'health:read',
+  'database.rows': 'health:read',
   'support.list': 'support:read',
   'support.update_ticket': 'support:write',
   'flags.list': 'flags:read',
@@ -1181,6 +1185,188 @@ export default async function handler(req, res) {
     }
 
     // ==========================================================================
+    // 1B. GOOGLE ANALYTICS 4 (GA4 DATA API)
+    // ==========================================================================
+    if (action === 'analytics.ga4') {
+      const target = sanitizeText(req.query?.target || body.target || 'default', 20).toLowerCase()
+      const dateRange = sanitizeText(req.query?.dateRange || body.dateRange || '28d', 10).toLowerCase()
+      const startDate = dateRange === '7d' ? '7daysAgo' : dateRange === '90d' ? '90daysAgo' : '28daysAgo'
+
+      const mainPropId = (process.env.GA4_MAIN_PROPERTY_ID || process.env.GA4_PROPERTY_ID || '').trim()
+      const appPropId = (process.env.GA4_APP_PROPERTY_ID || '').trim()
+      const propertyId = target === 'app' && appPropId ? appPropId : (mainPropId || appPropId)
+
+      let clientEmail = (process.env.GA4_CLIENT_EMAIL || '').trim()
+      let privateKey = (process.env.GA4_PRIVATE_KEY || '').replace(/\\n/g, '\n').trim()
+
+      if ((!clientEmail || !privateKey) && process.env.GA4_SERVICE_ACCOUNT_JSON) {
+        try {
+          const parsed = JSON.parse(process.env.GA4_SERVICE_ACCOUNT_JSON)
+          clientEmail = parsed.client_email || clientEmail
+          privateKey = (parsed.private_key || privateKey).replace(/\\n/g, '\n')
+        } catch (jsonErr) {
+          return res.status(400).json({
+            configured: false,
+            error: 'Invalid GA4_SERVICE_ACCOUNT_JSON format.'
+          })
+        }
+      }
+
+      if (!propertyId || !clientEmail || !privateKey) {
+        return res.status(200).json({
+          configured: false,
+          availableProperties: {
+            main: Boolean(mainPropId),
+            app: Boolean(appPropId)
+          },
+          message: 'GA4 is not configured yet. Add GA4_PROPERTY_ID (or GA4_MAIN_PROPERTY_ID / GA4_APP_PROPERTY_ID) and GA4_SERVICE_ACCOUNT_JSON (or GA4_CLIENT_EMAIL + GA4_PRIVATE_KEY) to your environment variables.'
+        })
+      }
+
+      try {
+        const nowSec = Math.floor(Date.now() / 1000)
+        const b64url = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64url')
+        const header = b64url({ alg: 'RS256', typ: 'JWT' })
+        const claim = b64url({
+          iss: clientEmail,
+          scope: 'https://www.googleapis.com/auth/analytics.readonly',
+          aud: 'https://oauth2.googleapis.com/token',
+          exp: nowSec + 3600,
+          iat: nowSec
+        })
+        const signer = crypto.createSign('RSA-SHA256')
+        signer.update(`${header}.${claim}`)
+        const signature = signer.sign(privateKey, 'base64url')
+        const jwtAssertion = `${header}.${claim}.${signature}`
+
+        const tokenResp = await fetch('https://oauth2.googleapis.com/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+            assertion: jwtAssertion
+          })
+        })
+        const tokenJson = await tokenResp.json()
+        if (!tokenResp.ok || !tokenJson.access_token) {
+          throw new Error(tokenJson.error_description || tokenJson.error || 'Failed to authenticate with Google Analytics API.')
+        }
+
+        const runGaReport = async (reportBody) => {
+          const r = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${encodeURIComponent(propertyId)}:runReport`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${tokenJson.access_token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(reportBody)
+          })
+          const json = await r.json()
+          if (!r.ok) {
+            throw new Error(json?.error?.message || 'GA4 runReport failed.')
+          }
+          return json
+        }
+
+        const [summaryRep, dailyRep, pagesRep, sourcesRep] = await Promise.all([
+          runGaReport({
+            dateRanges: [{ startDate, endDate: 'today' }],
+            metrics: [
+              { name: 'activeUsers' },
+              { name: 'sessions' },
+              { name: 'screenPageViews' },
+              { name: 'averageSessionDuration' },
+              { name: 'bounceRate' }
+            ]
+          }),
+          runGaReport({
+            dateRanges: [{ startDate, endDate: 'today' }],
+            dimensions: [{ name: 'date' }],
+            metrics: [
+              { name: 'activeUsers' },
+              { name: 'sessions' },
+              { name: 'screenPageViews' }
+            ],
+            orderBys: [{ dimension: { dimensionName: 'date' } }]
+          }),
+          runGaReport({
+            dateRanges: [{ startDate, endDate: 'today' }],
+            dimensions: [{ name: 'pagePath' }],
+            metrics: [
+              { name: 'screenPageViews' },
+              { name: 'activeUsers' }
+            ],
+            orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+            limit: 8
+          }),
+          runGaReport({
+            dateRanges: [{ startDate, endDate: 'today' }],
+            dimensions: [{ name: 'sessionSourceMedium' }],
+            metrics: [
+              { name: 'sessions' },
+              { name: 'activeUsers' }
+            ],
+            orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+            limit: 8
+          })
+        ])
+
+        const sVals = summaryRep?.rows?.[0]?.metricValues || []
+        const summary = {
+          activeUsers: Number(sVals[0]?.value || 0),
+          sessions: Number(sVals[1]?.value || 0),
+          pageViews: Number(sVals[2]?.value || 0),
+          avgSessionDurationSec: Math.round(Number(sVals[3]?.value || 0)),
+          bounceRatePct: Math.round(Number(sVals[4]?.value || 0) * 1000) / 10
+        }
+
+        const daily = (dailyRep?.rows || []).map((row) => {
+          const raw = row.dimensionValues?.[0]?.value || ''
+          const formattedDate = raw.length === 8 ? `${raw.slice(4, 6)}/${raw.slice(6, 8)}` : raw
+          return {
+            date: formattedDate,
+            activeUsers: Number(row.metricValues?.[0]?.value || 0),
+            sessions: Number(row.metricValues?.[1]?.value || 0),
+            pageViews: Number(row.metricValues?.[2]?.value || 0)
+          }
+        })
+
+        const topPages = (pagesRep?.rows || []).map((row) => ({
+          path: row.dimensionValues?.[0]?.value || '/',
+          views: Number(row.metricValues?.[0]?.value || 0),
+          users: Number(row.metricValues?.[1]?.value || 0)
+        }))
+
+        const topSources = (sourcesRep?.rows || []).map((row) => ({
+          source: row.dimensionValues?.[0]?.value || '(direct) / (none)',
+          sessions: Number(row.metricValues?.[0]?.value || 0),
+          users: Number(row.metricValues?.[1]?.value || 0)
+        }))
+
+        return res.status(200).json({
+          configured: true,
+          propertyId,
+          target: target === 'app' && appPropId ? 'app' : 'main',
+          availableProperties: {
+            main: Boolean(mainPropId),
+            app: Boolean(appPropId)
+          },
+          dateRange,
+          summary,
+          daily,
+          topPages,
+          topSources
+        })
+      } catch (gaErr) {
+        console.error('[GA4 API Error]', gaErr)
+        return res.status(502).json({
+          configured: true,
+          error: gaErr?.message || 'Failed to fetch GA4 report.'
+        })
+      }
+    }
+
+    // ==========================================================================
     // 6. MODULE: INFRASTRUCTURE & SYSTEM HEALTH
     // ==========================================================================
     if (action === 'health.check' || action === 'health.telemetry') {
@@ -1210,6 +1396,83 @@ export default async function handler(req, res) {
         },
         nodeVersion: process.version,
         serverTime: new Date().toISOString()
+      })
+    }
+
+    // ==========================================================================
+    // 6B. MODULE: DATABASE EXPLORER (TABLES & ROW DATA)
+    // ==========================================================================
+    const ALLOWED_DB_TABLES = [
+      'users',
+      'workspaces',
+      'workspace_members',
+      'invites',
+      'workspace_invites',
+      'sprints',
+      'deadlines',
+      'meetings',
+      'platform_admins',
+      'platform_audit_logs',
+      'rate_limit_log',
+      'feature_flags',
+      'announcements',
+      'support_tickets',
+      'contact_messages',
+      'product_feedback'
+    ]
+
+    if (action === 'database.tables') {
+      const results = await Promise.all(
+        ALLOWED_DB_TABLES.map(async (tableName) => {
+          try {
+            const { count, error } = await supabaseAdmin
+              .from(tableName)
+              .select('*', { count: 'exact', head: true })
+            if (error) return null
+            return { name: tableName, rowCount: count ?? 0 }
+          } catch (_) {
+            return null
+          }
+        })
+      )
+      const tables = results.filter(Boolean)
+      return res.status(200).json({
+        database: 'Supabase PostgreSQL',
+        schema: 'public',
+        tables
+      })
+    }
+
+    if (action === 'database.rows') {
+      const tableName = sanitizeText(req.query?.table || body.table, 64)
+      if (!ALLOWED_DB_TABLES.includes(tableName)) {
+        return res.status(400).json({ error: 'Invalid or unsupported table name.' })
+      }
+      const { limit, offset } = sanitizePagination(req.query?.limit || body.limit, req.query?.offset || body.offset, 25, 100)
+      const { data: rows, count, error } = await supabaseAdmin
+        .from(tableName)
+        .select('*', { count: 'exact' })
+        .range(offset, offset + limit - 1)
+
+      if (error) {
+        return res.status(400).json({ error: error.message || `Failed to query ${tableName}` })
+      }
+
+      const safeRows = (rows || []).map((row) => {
+        const copy = { ...row }
+        delete copy.password_hash
+        delete copy.encrypted_password
+        return copy
+      })
+      const columns = safeRows.length > 0 ? Object.keys(safeRows[0]) : []
+
+      return res.status(200).json({
+        table: tableName,
+        columns,
+        rows: safeRows,
+        total: count ?? safeRows.length,
+        limit,
+        offset
       })
     }
 

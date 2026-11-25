@@ -17,6 +17,7 @@ import { ownerApi } from '../lib/api'
 
 export function CommandCenter({ onNavigate }) {
   const [data, setData] = useState(null)
+  const [ga4, setGa4] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -24,8 +25,12 @@ export function CommandCenter({ onNavigate }) {
     setLoading(true)
     setError(null)
     try {
-      const res = await ownerApi('overview')
+      const [res, gaRes] = await Promise.all([
+        ownerApi('overview'),
+        ownerApi('analytics.ga4', { params: { dateRange: '7d', target: 'main' } }).catch(() => null)
+      ])
       setData(res)
+      if (gaRes) setGa4(gaRes)
     } catch (err) {
       console.error('Command center fetch error:', err)
       setError(err.message)
@@ -322,9 +327,65 @@ export function CommandCenter({ onNavigate }) {
 
           <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>Database Tables</span>
-            <span className="font-mono text-slate-700 font-semibold">{Object.keys(stats).length} active</span>
+            <button
+              type="button"
+              onClick={() => onNavigate('database')}
+              className="font-mono text-slate-700 font-semibold hover:text-slate-900"
+            >
+              {Object.keys(stats).length} active -&gt;
+            </button>
           </div>
         </div>
+      </div>
+
+      {/* GA4 Traffic Glimpse (Matching existing card style) */}
+      <div className="bg-white p-6 sm:p-7 rounded-2xl border border-black/[0.06] shadow-sm space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div>
+            <h3 className="text-base font-bold text-slate-900 tracking-tight">Google Analytics glimpse</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Last 7 days on paper5.co</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigate('analytics')}
+            className="text-xs font-semibold text-slate-700 hover:text-slate-900 flex items-center gap-1"
+          >
+            <span>Open full analytics</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {ga4?.configured && !ga4?.error ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+              <div className="text-[11px] text-slate-500 font-medium">Active Users</div>
+              <div className="text-xl font-bold text-slate-900 font-mono mt-1">{(ga4.summary?.activeUsers || 0).toLocaleString()}</div>
+            </div>
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+              <div className="text-[11px] text-slate-500 font-medium">Sessions</div>
+              <div className="text-xl font-bold text-slate-900 font-mono mt-1">{(ga4.summary?.sessions || 0).toLocaleString()}</div>
+            </div>
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+              <div className="text-[11px] text-slate-500 font-medium">Page Views</div>
+              <div className="text-xl font-bold text-slate-900 font-mono mt-1">{(ga4.summary?.pageViews || 0).toLocaleString()}</div>
+            </div>
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
+              <div className="text-[11px] text-slate-500 font-medium">Bounce Rate</div>
+              <div className="text-xl font-bold text-slate-900 font-mono mt-1">{ga4.summary?.bounceRatePct ?? 0}%</div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-3.5 rounded-xl bg-slate-50 text-xs text-slate-500 flex items-center justify-between">
+            <span>{ga4?.error || 'GA4 metrics will appear once configured in environment variables.'}</span>
+            <button
+              type="button"
+              onClick={() => onNavigate('analytics')}
+              className="font-semibold text-slate-800 hover:underline shrink-0 ml-3"
+            >
+              Configure
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

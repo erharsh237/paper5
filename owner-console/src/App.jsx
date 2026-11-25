@@ -5,7 +5,7 @@ import { Header } from './components/Header'
 import { CommandPalette } from './components/CommandPalette'
 import { LoginModal } from './components/LoginModal'
 import { listPasskeys, registerPasskey, removePasskey } from './lib/passkeys'
-import { Plus, KeyRound, X } from 'lucide-react'
+import { KeyRound, X } from 'lucide-react'
 
 // Modules
 import { CommandCenter } from './modules/CommandCenter'
@@ -13,6 +13,7 @@ import { UserManagement } from './modules/UserManagement'
 import { WorkspaceManagement } from './modules/WorkspaceManagement'
 import { BillingSubscriptions } from './modules/BillingSubscriptions'
 import { ProductAnalytics } from './modules/ProductAnalytics'
+import { DatabaseExplorer } from './modules/DatabaseExplorer'
 import { SecurityOperations } from './modules/SecurityOperations'
 import { SystemHealth } from './modules/SystemHealth'
 import { SupportTickets } from './modules/SupportTickets'
@@ -193,16 +194,6 @@ export function App() {
             {getGreeting()}, {capitalizedName}
           </h1>
         </div>
-
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={() => setCommandPaletteOpen(true)}
-            className="btn-primary !rounded-full !px-4 !py-1.5 text-xs font-medium shadow-sm hover:shadow"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Action</span>
-          </button>
-        </div>
       </div>
 
       {/* Main Content Viewport */}
@@ -214,6 +205,7 @@ export function App() {
         {currentModule === 'workspaces' && <WorkspaceManagement />}
         {currentModule === 'billing' && <BillingSubscriptions />}
         {currentModule === 'analytics' && <ProductAnalytics />}
+        {currentModule === 'database' && <DatabaseExplorer />}
         {currentModule === 'security' && <SecurityOperations />}
         {currentModule === 'health' && <SystemHealth />}
         {currentModule === 'support' && <SupportTickets />}

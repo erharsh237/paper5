@@ -10,7 +10,8 @@ import {
   Flag,
   Megaphone,
   TrendingUp,
-  KeyRound
+  KeyRound,
+  Database
 } from 'lucide-react'
 
 export const MODULES = [
@@ -19,6 +20,7 @@ export const MODULES = [
   { id: 'workspaces', name: 'Workspaces', icon: Briefcase },
   { id: 'billing', name: 'Billing', icon: CreditCard },
   { id: 'analytics', name: 'Analytics', icon: BarChart3 },
+  { id: 'database', name: 'Database', icon: Database },
   { id: 'security', name: 'Security & Logs', icon: ShieldAlert },
   { id: 'health', name: 'System Health', icon: Activity },
   { id: 'support', name: 'Support', icon: LifeBuoy },
