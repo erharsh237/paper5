@@ -319,7 +319,22 @@ export default async function handler(req, res) {
           })
         }
 
-        // 5. List Passkeys (Authenticated)
+        // 5. Check if authenticated user has passkeys
+        if (passkeyAction === 'check-has-passkey') {
+          const authHeader = req.headers.authorization || ''
+          const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : cookies['sb_access_token']
+          if (!bearer) {
+            return res.status(200).json({ hasPasskey: false })
+          }
+          const { data: userData, error: userErr } = await supabaseAdmin.auth.getUser(bearer).catch(() => ({ data: null, error: true }))
+          if (userErr || !userData?.user) {
+            return res.status(200).json({ hasPasskey: false })
+          }
+          const existingKeys = Array.isArray(userData.user.app_metadata?.passkeys) ? userData.user.app_metadata.passkeys : []
+          return res.status(200).json({ hasPasskey: existingKeys.length > 0 })
+        }
+
+        // 6. List Passkeys (Authenticated)
         if (passkeyAction === 'list-passkeys') {
           const authHeader = req.headers.authorization || ''
           const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : cookies['sb_access_token']

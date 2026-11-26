@@ -99,6 +99,11 @@ export function App() {
     checkAuth()
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      try {
+        if (newSession && sessionStorage.getItem('owner_passkey_verifying') === '1') {
+          return
+        }
+      } catch (_) {}
       setSession(newSession)
       if (!newSession) setAdminProfile(null)
     })

@@ -16,6 +16,7 @@ export function LoginModal({ onLoginSuccess }) {
     setLoading(true)
     setError(null)
     try {
+      try { sessionStorage.removeItem('owner_passkey_verifying') } catch (_) {}
       const authedUser = await loginWithPasskey(targetEmail)
       onLoginSuccess(authedUser)
     } catch (err) {
@@ -38,6 +39,7 @@ export function LoginModal({ onLoginSuccess }) {
     }
 
     try {
+      try { sessionStorage.setItem('owner_passkey_verifying', '1') } catch (_) {}
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password: password.trim()
@@ -55,9 +57,11 @@ export function LoginModal({ onLoginSuccess }) {
           await handlePasskeyVerify(cleanEmail)
           return
         }
+        try { sessionStorage.removeItem('owner_passkey_verifying') } catch (_) {}
         onLoginSuccess(data.session.user)
       }
     } catch (err) {
+      try { sessionStorage.removeItem('owner_passkey_verifying') } catch (_) {}
       console.error('Login error:', err)
       let msg = err?.message
       if (!msg || msg === '{}' || msg.trim().startsWith('{')) {

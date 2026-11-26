@@ -11,10 +11,11 @@ async function getBearerHeaders() {
 }
 
 export async function checkHasPasskey(identifier) {
+  const headers = await getBearerHeaders()
   const res = await fetch('/api/auth/session', {
     method: 'POST',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ passkeyAction: 'check-has-passkey', identifier }),
   })
   const data = await res.json().catch(() => ({}))
@@ -113,15 +114,23 @@ export async function loginWithPasskey(email) {
     body: JSON.stringify({ passkeyAction: 'login-verify', credential }),
   })
   const verData = await verRes.json().catch(() => ({}))
-  if (!verRes.ok || !verData.verified || !verData.session) {
+  if (!verRes.ok || !verData.verified || (!verData.session && !verData.tokenHash)) {
     throw new Error(verData.error || 'Passkey verification failed.')
   }
 
-  const { data: sessData, error: sessErr } = await supabase.auth.setSession({
-    access_token: verData.session.access_token,
-    refresh_token: verData.session.refresh_token,
-  })
+  let sessData, sessErr
+  if (verData.tokenHash) {
+    ({ data: sessData, error: sessErr } = await supabase.auth.verifyOtp({
+      token_hash: verData.tokenHash,
+      type: 'magiclink',
+    }))
+  } else {
+    ({ data: sessData, error: sessErr } = await supabase.auth.setSession({
+      access_token: verData.session.access_token,
+      refresh_token: verData.session.refresh_token,
+    }))
+  }
   if (sessErr) throw sessErr
 
-  return sessData?.session?.user || verData.user
+  return sessData?.session?.user || sessData?.user || verData.user
 }
