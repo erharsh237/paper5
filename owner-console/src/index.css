@@ -57,16 +57,22 @@ html, body {
   display: inline-flex;
   align-items: center;
   gap: 2px;
+  scrollbar-width: none;
+}
+
+.pill-navbar::-webkit-scrollbar {
+  display: none;
 }
 
 .pill-nav-item {
-  padding: 5px 14px;
+  padding: 5px 11px;
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 500;
   color: #94A3B8;
   transition: all 0.15s ease;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .pill-nav-item:hover {

@@ -29,16 +29,16 @@ export function Header({
   ]
 
   return (
-    <header className="h-16 px-6 sm:px-8 lg:px-10 border-b border-black/[0.06] bg-white sticky top-0 z-30">
-      <div className="max-w-[1720px] mx-auto w-full h-full flex items-center justify-between">
+    <header className="h-16 px-4 sm:px-6 lg:px-8 border-b border-black/[0.06] bg-white sticky top-0 z-30">
+      <div className="max-w-[1720px] mx-auto w-full h-full flex items-center justify-between gap-4">
         {/* Brand Logo - Clean Typography */}
-        <div className="flex items-center cursor-pointer select-none" onClick={() => onSelectModule('command-center')}>
-          <span className="font-bold text-base tracking-tight text-slate-900 hover:text-slate-700 transition-colors">Paper5</span>
+        <div className="flex items-center shrink-0 cursor-pointer select-none" onClick={() => onSelectModule('command-center')}>
+          <span className="font-bold text-base tracking-tight text-slate-900 hover:text-slate-700 transition-colors whitespace-nowrap">Paper5</span>
         </div>
 
       {/* Center Floating Pill Navigation */}
-      <div className="hidden md:flex items-center">
-        <div className="pill-navbar">
+      <div className="hidden md:flex items-center min-w-0">
+        <div className="pill-navbar max-w-full overflow-x-auto">
           {primaryModules.map((m) => {
             const isActive = currentModule === m.id
             return (
@@ -55,15 +55,16 @@ export function Header({
       </div>
 
       {/* Right Controls: Search, Latency & User Profile */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5 shrink-0">
         {/* Search Input Trigger */}
         <button
           onClick={onOpenCommandPalette}
-          className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200/80 text-xs text-slate-500 hover:bg-slate-200/60 transition-colors"
+          className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200/80 text-xs text-slate-500 hover:bg-slate-200/60 transition-colors whitespace-nowrap shrink-0"
         >
-          <Search className="w-3.5 h-3.5" />
-          <span>Ask Paper5</span>
-          <kbd className="px-1 py-0.2 rounded bg-white text-[10px] font-mono text-slate-500 shadow-2xs">
+          <Search className="w-3.5 h-3.5 shrink-0" />
+          <span className="hidden xl:inline">Ask Paper5</span>
+          <span className="xl:hidden">Search</span>
+          <kbd className="px-1 py-0.2 rounded bg-white text-[10px] font-mono text-slate-500 shadow-2xs shrink-0">
             ⌘K
           </kbd>
         </button>
