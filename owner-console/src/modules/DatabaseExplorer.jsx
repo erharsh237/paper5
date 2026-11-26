@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Database, Table2, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
 import { ownerApi } from '../lib/api'
+import { useRealtimeRefresh } from '../lib/useRealtimeRefresh'
 
 function formatCellValue(val) {
   if (val === null || val === undefined) return 'null'
@@ -70,6 +71,11 @@ export function DatabaseExplorer() {
       loadRows(selectedTable, 0)
     }
   }, [selectedTable, loadRows])
+
+  useRealtimeRefresh(() => {
+    loadTables()
+    if (selectedTable) loadRows(selectedTable, tableData.offset)
+  })
 
   const totalRows = dbInfo.tables.reduce((acc, t) => acc + (t.rowCount || 0), 0)
   const canPrev = tableData.offset > 0

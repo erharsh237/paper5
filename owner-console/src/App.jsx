@@ -116,8 +116,52 @@ export function App() {
   }, [])
 
   useEffect(() => {
-    if (session) {
-      pingHealth()
+    if (!session) return
+    pingHealth()
+
+    let timer = null
+    const emitSync = (table = '*') => {
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('owner:realtime-sync', { detail: { table } }))
+      }, 400)
+    }
+
+    const watchedTables = [
+      'users',
+      'workspaces',
+      'workspace_members',
+      'support_tickets',
+      'sprints',
+      'deadlines',
+      'platform_audit_logs',
+      'feature_flags',
+      'announcements',
+      'platform_admins'
+    ]
+
+    let channel = supabase.channel('owner-console-live')
+    for (const table of watchedTables) {
+      channel = channel.on('postgres_changes', { event: '*', schema: 'public', table }, () => emitSync(table))
+    }
+    channel.subscribe()
+
+    const bgInterval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        emitSync('*')
+      }
+    }, 25000)
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') emitSync('*')
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    return () => {
+      if (timer) clearTimeout(timer)
+      clearInterval(bgInterval)
+      document.removeEventListener('visibilitychange', handleVisibility)
+      supabase.removeChannel(channel)
     }
   }, [session])
 

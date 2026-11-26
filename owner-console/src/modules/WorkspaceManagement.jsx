@@ -16,6 +16,7 @@ import {
   FileText
 } from 'lucide-react'
 import { ownerApi } from '../lib/api'
+import { useRealtimeRefresh } from '../lib/useRealtimeRefresh'
 
 export function WorkspaceManagement() {
   const [workspaces, setWorkspaces] = useState([])
@@ -40,8 +41,8 @@ export function WorkspaceManagement() {
   // Delete Form
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
 
-  async function fetchWorkspaces() {
-    setLoading(true)
+  async function fetchWorkspaces(silent = false) {
+    if (!silent) setLoading(true)
     try {
       const res = await ownerApi('workspaces.list', {
         params: {
@@ -63,6 +64,10 @@ export function WorkspaceManagement() {
   useEffect(() => {
     fetchWorkspaces()
   }, [search, activeFilter, page])
+
+  useRealtimeRefresh(() => {
+    fetchWorkspaces(true)
+  }, ['workspaces', 'workspace_members', 'sprints', 'deadlines'])
 
   async function handleInspect(w, initialTab = 'overview') {
     try {

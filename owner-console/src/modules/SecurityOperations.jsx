@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { RefreshCw, CheckCircle } from 'lucide-react'
 import { ownerApi } from '../lib/api'
+import { useRealtimeRefresh } from '../lib/useRealtimeRefresh'
 
 export function SecurityOperations() {
   const [rateLimits, setRateLimits] = useState([])
@@ -28,6 +29,10 @@ export function SecurityOperations() {
   useEffect(() => {
     loadSecurityData()
   }, [])
+
+  useRealtimeRefresh(() => {
+    loadSecurityData()
+  }, ['platform_audit_logs', 'feature_flags'])
 
   async function handleUnblock(ip) {
     if (!confirm(`Unblock IP ${ip}?`)) return

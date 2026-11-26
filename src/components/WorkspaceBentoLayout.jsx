@@ -4,6 +4,7 @@ import { useWorkspace } from '../lib/WorkspaceContext'
 import { useAuth } from '../lib/AuthContext'
 import { formatPlanBadge } from '../lib/plans'
 import { fetchWorkspaceOverview, getCachedWorkspaceOverview, invalidateWorkspaceOverview } from '../lib/workspaceDataCache'
+import { supabase } from '../lib/supabase'
 import Paper5Logo from './Paper5Logo'
 import NotificationBell from './NotificationBell'
 import UserMenu from './UserMenu'
@@ -91,6 +92,38 @@ export default function WorkspaceBentoLayout({ children }) {
       window.removeEventListener('sprintos:deadlines-updated', handleWorkspaceUpdated)
     }
   }, [fetchWorkspaceData, workspaceId])
+
+  // Real-time Supabase sync across all team members in this workspace
+  useEffect(() => {
+    if (!workspaceId) return
+    let timer = null
+    const triggerSync = () => {
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => {
+        invalidateWorkspaceOverview(workspaceId)
+        fetchWorkspaceData(true)
+      }, 350)
+    }
+
+    const channel = supabase
+      .channel(`ws-live-${workspaceId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'deadlines', filter: `workspace_id=eq.${workspaceId}` }, triggerSync)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sprints', filter: `workspace_id=eq.${workspaceId}` }, triggerSync)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_members', filter: `workspace_id=eq.${workspaceId}` }, triggerSync)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'workspaces', filter: `id=eq.${workspaceId}` }, triggerSync)
+      .subscribe()
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') triggerSync()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    return () => {
+      if (timer) clearTimeout(timer)
+      document.removeEventListener('visibilitychange', handleVisibility)
+      supabase.removeChannel(channel)
+    }
+  }, [workspaceId, fetchWorkspaceData])
 
   // Member online check
   const isMemberOnline = useCallback((member) => {

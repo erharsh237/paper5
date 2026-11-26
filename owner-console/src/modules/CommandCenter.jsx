@@ -14,6 +14,7 @@ import {
   Clock
 } from 'lucide-react'
 import { ownerApi } from '../lib/api'
+import { useRealtimeRefresh } from '../lib/useRealtimeRefresh'
 
 export function CommandCenter({ onNavigate }) {
   const [data, setData] = useState(null)
@@ -42,6 +43,10 @@ export function CommandCenter({ onNavigate }) {
   useEffect(() => {
     loadData()
   }, [])
+
+  useRealtimeRefresh(() => {
+    loadData()
+  })
 
   if (loading && !data) {
     return (

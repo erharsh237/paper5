@@ -13,6 +13,7 @@ import {
   Ban
 } from 'lucide-react'
 import { ownerApi } from '../lib/api'
+import { useRealtimeRefresh } from '../lib/useRealtimeRefresh'
 
 export function UserManagement() {
   const [users, setUsers] = useState([])
@@ -42,8 +43,8 @@ export function UserManagement() {
   // Delete Form
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
 
-  async function fetchUsers() {
-    setLoading(true)
+  async function fetchUsers(silent = false) {
+    if (!silent) setLoading(true)
     try {
       const res = await ownerApi('users.list', {
         params: {
@@ -65,6 +66,10 @@ export function UserManagement() {
   useEffect(() => {
     fetchUsers()
   }, [search, tierFilter, page])
+
+  useRealtimeRefresh(() => {
+    fetchUsers(true)
+  }, ['users', 'user_entitlement_overrides'])
 
   async function handleInspect(u) {
     try {

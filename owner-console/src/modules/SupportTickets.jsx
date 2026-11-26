@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { ownerApi } from '../lib/api'
+import { useRealtimeRefresh } from '../lib/useRealtimeRefresh'
 
 export function SupportTickets() {
   const [tickets, setTickets] = useState([])
@@ -15,8 +16,8 @@ export function SupportTickets() {
   const [adminNotes, setAdminNotes] = useState('')
   const [saving, setSaving] = useState(false)
 
-  async function loadTickets() {
-    setLoading(true)
+  async function loadTickets(silent = false) {
+    if (!silent) setLoading(true)
     try {
       const res = await ownerApi('support.list', {
         params: { status: statusFilter === 'all' ? undefined : statusFilter }
@@ -33,6 +34,10 @@ export function SupportTickets() {
   useEffect(() => {
     loadTickets()
   }, [statusFilter])
+
+  useRealtimeRefresh(() => {
+    loadTickets(true)
+  }, ['support_tickets'])
 
   function handleOpenTicket(t) {
     setActiveTicket(t)

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { ownerApi } from '../lib/api'
+import { useRealtimeRefresh } from '../lib/useRealtimeRefresh'
 
 export function BillingSubscriptions() {
   const [data, setData] = useState(null)
@@ -20,6 +21,10 @@ export function BillingSubscriptions() {
   useEffect(() => {
     loadBilling()
   }, [])
+
+  useRealtimeRefresh(() => {
+    loadBilling()
+  }, ['users', 'workspaces', 'user_entitlement_overrides'])
 
   const summary = data?.summary || {}
   const subscribers = data?.subscribers || []
