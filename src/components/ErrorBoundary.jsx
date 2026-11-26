@@ -13,6 +13,23 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error('Unhandled UI error:', error, info)
+    const msg = error?.message || ''
+    if (
+      msg.includes("reading 'default'") ||
+      msg.includes('dynamically imported module') ||
+      msg.includes('Failed to fetch') ||
+      msg.includes('Loading chunk')
+    ) {
+      try {
+        const lastReload = sessionStorage.getItem('p5_chunk_reload')
+        const now = Date.now()
+        if (!lastReload || now - parseInt(lastReload, 10) > 30000) {
+          sessionStorage.setItem('p5_chunk_reload', String(now))
+          window.location.reload()
+          return
+        }
+      } catch (_) {}
+    }
     this.setState({ errorInfo: info })
   }
 

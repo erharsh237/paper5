@@ -19,6 +19,7 @@ function safeLazy(routeKey, { trackLoading = true } = {}) {
     } catch (error) {
       const msg = error?.message || (typeof error === 'string' ? error : '')
       if (
+        msg.includes("reading 'default'") ||
         msg.includes('dynamically imported module') ||
         msg.includes('Failed to fetch') ||
         msg.includes('Loading chunk') ||
