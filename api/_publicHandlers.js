@@ -77,6 +77,28 @@ export async function handleContact(req, res) {
   }
 }
 
+async function saveToSupportTickets(row) {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://sdbglndhjkqhkphzqmum.supabase.co'
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!serviceKey) return null
+  try {
+    const supabaseAdmin = createClient(supabaseUrl, serviceKey)
+    const { data, error } = await supabaseAdmin
+      .from('support_tickets')
+      .insert(row)
+      .select('id, ticket_number')
+      .single()
+    if (error) {
+      console.warn('[support_tickets insert warning]', error.message)
+      return null
+    }
+    return data
+  } catch (err) {
+    console.warn('[support_tickets insert error]', err?.message)
+    return null
+  }
+}
+
 export async function handleFeedback(req, res) {
   if (!runFormPreamble(req, res, { max: 6, windowMs: 600000 })) {
     return
@@ -110,6 +132,17 @@ export async function handleFeedback(req, res) {
     return res.status(turnstileCheck.status || 400).json({ error: turnstileCheck.error })
   }
 
+  await saveToSupportTickets({
+    email: email || 'not-provided',
+    name,
+    subject: `[Feedback ${ratingNum}/5] ${category}`,
+    message,
+    category,
+    priority: 'normal',
+    status: 'open',
+    source: 'feedback_modal'
+  })
+
   const endpoint = process.env.FORMSPREE_FEEDBACK_ENDPOINT || 'https://formspree.io/f/myewlnba'
   try {
     await forwardToFormspree(endpoint, {
@@ -120,13 +153,10 @@ export async function handleFeedback(req, res) {
       message,
       source
     })
-    return res.status(200).json({ ok: true, message: 'Feedback delivered successfully.' })
   } catch (err) {
-    console.error('[api/feedback] Delivery error:', err)
-    return res.status(502).json({
-      error: 'Unable to submit feedback right now. Please try again shortly.'
-    })
+    console.warn('[api/feedback] Formspree forward warning:', err?.message)
   }
+  return res.status(200).json({ ok: true, message: 'Feedback delivered successfully.' })
 }
 
 const ALLOWED_PRODUCT_CATEGORIES = new Set([
@@ -255,6 +285,30 @@ export async function handleProductFeedback(req, res) {
     }
   }
 
+  const userId = sanitizeText(req.body.userId || '', { maxLen: 64 })
+  const priorityMap = { High: 'high', Medium: 'normal', Low: 'low' }
+  const dbMessage = [
+    message,
+    '',
+    `Workspace: ${workspaceName} (${workspaceId})`,
+    `User: ${userName} <${userEmail || 'not-provided'}>`,
+    currentUrl ? `Route: ${currentUrl}` : '',
+    `Env: ${environment.browser || 'Unknown'} / ${environment.os || 'Unknown'} (${environment.screen || 'Unknown'})`,
+    evidenceUrl ? `Screenshot: ${evidenceUrl}` : ''
+  ].filter(Boolean).join('\n')
+
+  await saveToSupportTickets({
+    user_id: userId || null,
+    email: userEmail || 'not-provided',
+    name: userName,
+    subject: `[${category}] ${title || 'Workspace Feedback'}`,
+    message: dbMessage,
+    category,
+    priority: priorityMap[severity] || 'normal',
+    status: 'open',
+    source: workspaceId && workspaceId !== 'N/A' ? `workspace:${workspaceId}` : 'workspace_feedback'
+  })
+
   const endpoint = process.env.FORMSPREE_PRODUCT_FEEDBACK_ENDPOINT || 'https://formspree.io/f/xyewlnla'
   try {
     await forwardToFormspree(endpoint, {
@@ -273,11 +327,14 @@ export async function handleProductFeedback(req, res) {
       screen_resolution: environment.screen || 'Unknown',
       source: 'Paper5 In-App Dashboard'
     })
-    return res.status(200).json({
-      ok: true,
-      message: 'Product report received successfully. Thank you for helping us improve Paper5!',
-      evidenceUrl
-    })
+  } catch (err) {
+    console.warn('[api/product-feedback] Formspree forward warning:', err?.message)
+  }
+  return res.status(200).json({
+    ok: true,
+    message: 'Product report received successfully. Thank you for helping us improve Paper5!',
+    evidenceUrl
+  })
   } catch (err) {
     console.error('[api/product-feedback] Delivery error:', err)
     return res.status(502).json({

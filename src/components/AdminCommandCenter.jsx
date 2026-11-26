@@ -378,7 +378,12 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
       ───────────────────────────────────────────────────────────── */}
           <section className="bento-kpi-row">
             {/* Card 1: Workspace Output / Task Statistics */}
-            <div className="bento-card">
+            <div
+              className="bento-card"
+              onClick={() => { setActiveTab('tasks'); setQuickFilter('all') }}
+              style={{ cursor: 'pointer' }}
+              title="View all workspace tasks"
+            >
               <div className="bento-card-top">
                 <span className="bento-card-title">Task Velocity</span>
                 <span className="bento-card-tag">All Projects</span>
@@ -404,7 +409,12 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
             </div>
 
             {/* Card 2: Emerald Green Project Deck Card (Direct from Quixotic Mock #3) */}
-            <div className="bento-card bento-card--emerald">
+            <div
+              className="bento-card bento-card--emerald"
+              onClick={() => setActiveTab('projects')}
+              style={{ cursor: 'pointer' }}
+              title="Open Projects Command"
+            >
               <div className="bento-emerald-top">
                 <div>
                   <span className="bento-emerald-eyebrow">ACTIVE PROJECTS</span>
@@ -721,6 +731,21 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
                     >
                       Urgent / High
                     </button>
+                    {(searchQuery || selectedProjectFilter !== 'all' || selectedStatusFilter !== 'all' || selectedPriorityFilter !== 'all' || quickFilter !== 'all') && (
+                      <button
+                        type="button"
+                        className="bento-chip"
+                        onClick={() => {
+                          setSearchQuery('')
+                          setSelectedProjectFilter('all')
+                          setSelectedStatusFilter('all')
+                          setSelectedPriorityFilter('all')
+                          setQuickFilter('all')
+                        }}
+                      >
+                        Clear filters
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -745,6 +770,31 @@ export default function AdminCommandCenter({ onSwitchToPersonal }) {
                         <td colSpan="7" className="bento-empty-cell">
                           <Inbox size={32} color="#cbd5e1" style={{ margin: '0 auto 10px' }} />
                           <p>No workspace tasks match your selected filters.</p>
+                          {(searchQuery || selectedProjectFilter !== 'all' || selectedStatusFilter !== 'all' || selectedPriorityFilter !== 'all' || quickFilter !== 'all') ? (
+                            <button
+                              type="button"
+                              className="bento-chip"
+                              style={{ marginTop: '10px' }}
+                              onClick={() => {
+                                setSearchQuery('')
+                                setSelectedProjectFilter('all')
+                                setSelectedStatusFilter('all')
+                                setSelectedPriorityFilter('all')
+                                setQuickFilter('all')
+                              }}
+                            >
+                              Reset filters
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="bento-chip active"
+                              style={{ marginTop: '10px' }}
+                              onClick={() => setIsNewTaskOpen(true)}
+                            >
+                              + Create first task
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ) : (

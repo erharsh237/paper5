@@ -179,15 +179,18 @@ export default function ProductFeedbackModal({ isOpen, onClose }) {
     setSubmitting(true)
 
     try {
+      const resolvedEmail = (user?.email || '').trim()
+      const resolvedWorkspaceId = workspaceInfo?.workspaceId || workspaceInfo?.workspace?.id || 'N/A'
       const payload = {
         category,
         severity: isBugOrPerf ? severity : 'N/A',
         title: title.trim() || `${category} report`,
         message: message.trim(),
         website,
-        userName: (user?.displayName || user?.full_name || 'Logged-in User').trim(),
-        userEmail: (user?.email || '').trim(),
-        workspaceId: workspaceInfo?.workspaceId || workspaceInfo?.workspace?.id || 'N/A',
+        userId: user?.id || null,
+        userName: (user?.displayName || user?.full_name || user?.user_metadata?.full_name || 'Logged-in User').trim(),
+        userEmail: resolvedEmail,
+        workspaceId: resolvedWorkspaceId,
         workspaceName: workspaceInfo?.workspace?.name || 'N/A',
         currentUrl: typeof window !== 'undefined' ? window.location.pathname : '',
         environment: detectEnvironment(),
@@ -296,6 +299,29 @@ export default function ProductFeedbackModal({ isOpen, onClose }) {
                 value={website}
                 onChange={(e) => setWebsite(e.target.value)}
               />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div className="field">
+                <label htmlFor="feedback-user-email">Email</label>
+                <input
+                  id="feedback-user-email"
+                  type="text"
+                  value={user?.email || 'Not signed in'}
+                  readOnly
+                  style={{ background: 'var(--surface-2, #F8FAFC)', color: 'var(--muted, #475569)', fontSize: '12px' }}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="feedback-workspace-id">Workspace ID</label>
+                <input
+                  id="feedback-workspace-id"
+                  type="text"
+                  value={workspaceInfo?.workspaceId || workspaceInfo?.workspace?.id || 'N/A'}
+                  readOnly
+                  style={{ background: 'var(--surface-2, #F8FAFC)', color: 'var(--muted, #475569)', fontSize: '12px', fontFamily: 'monospace' }}
+                />
+              </div>
             </div>
 
             <div className="field">

@@ -7,6 +7,7 @@ export function SupportTickets() {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('all')
+  const [sourceFilter, setSourceFilter] = useState('all')
 
   const [activeTicket, setActiveTicket] = useState(null)
   const [patchStatus, setPatchStatus] = useState('open')
@@ -69,17 +70,29 @@ export function SupportTickets() {
           Support <span className="text-xs font-normal text-slate-500">({total})</span>
         </h2>
 
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="console-input text-xs w-40"
-        >
-          <option value="all">All Statuses</option>
-          <option value="open">Open</option>
-          <option value="in_progress">In Progress</option>
-          <option value="resolved">Resolved</option>
-          <option value="closed">Closed</option>
-        </select>
+        <div className="flex items-center gap-2">
+          <select
+            value={sourceFilter}
+            onChange={(e) => setSourceFilter(e.target.value)}
+            className="console-input text-xs w-44"
+          >
+            <option value="all">All Sources</option>
+            <option value="workspace">Workspace Feedback</option>
+            <option value="support">Support &amp; General</option>
+          </select>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="console-input text-xs w-40"
+          >
+            <option value="all">All Statuses</option>
+            <option value="open">Open</option>
+            <option value="in_progress">In Progress</option>
+            <option value="resolved">Resolved</option>
+            <option value="closed">Closed</option>
+          </select>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-black/[0.06] shadow-sm overflow-hidden">
@@ -104,7 +117,16 @@ export function SupportTickets() {
                 <td colSpan="6" className="text-center py-8 text-xs text-slate-400">No tickets found.</td>
               </tr>
             ) : (
-              tickets.map((t) => (
+              tickets
+                .filter((t) => {
+                  const isWs = t.source?.startsWith('workspace') || t.source === 'feedback_modal'
+                  if (sourceFilter === 'workspace') return isWs
+                  if (sourceFilter === 'support') return !isWs
+                  return true
+                })
+                .map((t) => {
+                  const wsId = t.source?.startsWith('workspace:') ? t.source.slice('workspace:'.length) : null
+                  return (
                 <tr key={t.id}>
                   <td>
                     <div className="font-semibold text-slate-900 text-xs">#{t.ticket_number} {t.subject}</div>
@@ -113,6 +135,9 @@ export function SupportTickets() {
                   <td>
                     <div className="text-slate-900 text-xs font-medium">{t.name || 'User'}</div>
                     <div className="text-[11px] text-slate-500 font-mono">{t.email}</div>
+                    {wsId && (
+                      <div className="text-[10px] text-blue-600 font-mono mt-0.5">ws: {wsId}</div>
+                    )}
                   </td>
                   <td>
                     <span className="text-xs font-mono uppercase font-semibold text-slate-700">
@@ -133,11 +158,12 @@ export function SupportTickets() {
                       onClick={() => handleOpenTicket(t)}
                       className="btn-secondary !py-1 !px-2.5 !text-xs font-medium"
                     >
-                      Update
+                      View / Update
                     </button>
                   </td>
                 </tr>
-              ))
+                  )
+                })
             )}
           </tbody>
         </table>
@@ -151,6 +177,14 @@ export function SupportTickets() {
               <button onClick={() => setActiveTicket(null)} className="text-slate-400 hover:text-slate-700">
                 <X className="w-4 h-4" />
               </button>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs space-y-1.5">
+              <div className="font-semibold text-slate-900">{activeTicket.subject}</div>
+              <div className="text-slate-500 font-mono text-[11px]">
+                {activeTicket.email}{activeTicket.source?.startsWith('workspace:') ? ` · ws: ${activeTicket.source.slice('workspace:'.length)}` : ''}
+              </div>
+              <pre className="whitespace-pre-wrap font-sans text-slate-700 text-xs pt-1 leading-relaxed max-h-40 overflow-y-auto">{activeTicket.message}</pre>
             </div>
 
             <form onSubmit={saveTicket} className="space-y-3.5 text-xs">
