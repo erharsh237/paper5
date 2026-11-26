@@ -1159,3 +1159,163 @@ body[data-theme="dark"] .auth-brand-text,
 [data-theme="dark"] .auth-pwd-item.is-met {
   color: #34d399;
 }
+
+/* ============================================================================
+   RESET PASSWORD CARD (Minimal Centered Lock UI)
+   ============================================================================ */
+
+.reset-card {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: 20px;
+  padding: 36px 32px;
+  box-shadow: 0 12px 36px -10px rgba(15, 23, 42, 0.08);
+}
+
+.reset-icon-ring {
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 20px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #f3f4f6 0%, rgba(243, 244, 246, 0.35) 100%);
+  border: 1px solid rgba(15, 23, 42, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reset-icon-inner {
+  width: 48px;
+  height: 48px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8b8d97;
+}
+
+.reset-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #18181b;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px 0;
+}
+
+.reset-sub {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.reset-divider {
+  border: 0;
+  border-top: 1px dashed #e5e7eb;
+  margin: 24px 0;
+}
+
+.reset-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #18181b;
+}
+
+.reset-required {
+  color: #d96540;
+  margin-left: 2px;
+}
+
+.auth-input.reset-input {
+  width: 100%;
+  height: 44px;
+  padding: 10px 14px 10px 40px;
+  border-radius: 10px;
+  border: 1.5px solid #e5e7eb;
+  background: #ffffff;
+  color: #18181b;
+  font-size: 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.auth-input.reset-input:focus {
+  outline: none;
+  border-color: #d96540;
+  box-shadow: 0 0 0 3px rgba(217, 101, 64, 0.12);
+}
+
+.reset-submit-btn {
+  width: 100%;
+  height: 44px;
+  border-radius: 10px;
+  border: none;
+  background: #2b2d30;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.reset-submit-btn:hover:not(:disabled) {
+  background: #1c1e21;
+}
+
+.reset-submit-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+[data-theme="dark"] .reset-card {
+  background: #16161a;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .reset-icon-ring {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .reset-icon-inner {
+  background: #1f1f24;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .reset-title,
+[data-theme="dark"] .reset-label {
+  color: #f4f4f5;
+}
+
+[data-theme="dark"] .reset-sub {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .reset-divider {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .auth-input.reset-input {
+  background: #1c1c21;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f4f4f5;
+}
+
+[data-theme="dark"] .auth-input.reset-input:focus {
+  border-color: #d96540;
+}
+
+[data-theme="dark"] .reset-submit-btn {
+  background: #f4f4f5;
+  color: #18181b;
+}
+
+[data-theme="dark"] .reset-submit-btn:hover:not(:disabled) {
+  background: #e4e4e7;
+}

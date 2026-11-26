@@ -1,13 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Mail } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import './Auth.css'
 import { InlineError } from '../components/states'
 import { validateEmail } from '../lib/validation'
-import logo from '../assets/logo.png'
 import Turnstile from '../components/Turnstile'
 import ThemeToggle from '../components/ThemeToggle'; import SEOHead from '../components/SEOHead'
-import { getMainUrl } from '../lib/domain'
 
 export default function ForgotPassword() {
   const { resetPassword, authError, clearAuthError } = useAuth()
@@ -68,89 +66,85 @@ export default function ForgotPassword() {
 
       <div className="auth-showcase-bg" aria-hidden="true" />
 
-      <div className="auth-container" style={{ maxWidth: '440px', margin: '0 auto', padding: '40px 20px' }}>
-        <div className="auth-card glass-panel" style={{ padding: '40px 32px' }}>
-          
-          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <img src={logo} alt="Paper5 logo" style={{ height: '36px', width: 'auto', marginBottom: '16px' }} />
-            <h1 className="auth-title" style={{ fontSize: '24px', fontWeight: 700, margin: '0 0 8px 0' }}>
-              Reset Password
-            </h1>
-            <p className="auth-sub" style={{ fontSize: '14px', color: 'var(--text-secondary, #666)', margin: 0 }}>
-              Enter your account email to receive a password reset link.
-            </p>
+      <div className="auth-container" style={{ maxWidth: '420px', margin: '0 auto', padding: '40px 20px' }}>
+        <div className="reset-card">
+          <div style={{ textAlign: 'center' }}>
+            <div className="reset-icon-ring" aria-hidden="true">
+              <div className="reset-icon-inner">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17 10h-1V7a4 4 0 0 0-8 0v3H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2Zm-7-3a2 2 0 1 1 4 0v3h-4V7Zm3 9.73V18a1 1 0 1 1-2 0v-1.27a1.5 1.5 0 1 1 2 0Z" />
+                </svg>
+              </div>
+            </div>
+            <h1 className="reset-title">Reset Password</h1>
+            <p className="reset-sub">Enter your email to reset your password.</p>
           </div>
 
+          <hr className="reset-divider" />
+
           {(error || authError) && (
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '18px' }}>
               <InlineError error={error || authError} />
             </div>
           )}
 
           {submitted ? (
-            <div style={{ textAlign: 'center', padding: '16px 0' }}>
-              <div style={{ 
-                background: 'rgba(15, 157, 99, 0.1)', 
-                border: '1px solid rgba(15, 157, 99, 0.2)', 
-                borderRadius: '8px', 
-                padding: '16px', 
-                marginBottom: '24px',
+            <div style={{ textAlign: 'center', padding: '8px 0' }}>
+              <div style={{
+                background: 'rgba(15, 157, 99, 0.1)',
+                border: '1px solid rgba(15, 157, 99, 0.2)',
+                borderRadius: '10px',
+                padding: '14px 16px',
+                marginBottom: '18px',
                 color: 'var(--accent-signal, #0f9d63)',
-                fontSize: '14px',
+                fontSize: '13.5px',
                 lineHeight: 1.5
               }}>
                 ✓ Check your inbox! We've sent password reset instructions to <strong>{email}</strong>.
               </div>
-              <p style={{ fontSize: '13px', color: 'var(--text-tertiary, #888)', marginBottom: '20px' }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-tertiary, #888)', marginBottom: '18px' }}>
                 Didn't receive the email? Check your spam folder or try again.
               </p>
-              <button 
-                type="button" 
-                className="btn-ghost" 
+              <button
+                type="button"
+                className="reset-submit-btn"
                 onClick={() => setSubmitted(false)}
-                style={{ width: '100%', marginBottom: '12px' }}
               >
                 Resend Link
               </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} style={{ textAlign: 'left' }}>
-              <div className="auth-input-group" style={{ marginBottom: '24px' }}>
-                <label htmlFor="reset-email" style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: 600 }}>
-                  Email Address
+              <div style={{ marginBottom: '20px' }}>
+                <label htmlFor="reset-email" className="reset-label">
+                  Email Address<span className="reset-required">*</span>
                 </label>
-                <input
-                  id="reset-email"
-                  type="email"
-                  className="auth-input"
-                  placeholder="m@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoFocus
-                  style={{ width: '100%' }}
-                />
+                <div className="auth-input-with-icon">
+                  <Mail size={16} className="auth-field-icon" aria-hidden="true" />
+                  <input
+                    id="reset-email"
+                    type="email"
+                    className="auth-input reset-input"
+                    placeholder="hello@paper5.co"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoFocus
+                  />
+                </div>
               </div>
 
               <button
                 type="submit"
-                className="auth-submit-btn"
+                className="reset-submit-btn"
                 disabled={loading || !email.trim()}
-                style={{ width: '100%', padding: '12px', fontSize: '14px', fontWeight: 600 }}
               >
-                {loading ? 'Sending Link...' : 'Send Reset Link'}
+                {loading ? 'Sending Link...' : 'Reset Password'}
               </button>
 
               <Turnstile ref={turnstileRef} action="forgot-password" onSuccess={setTurnstileToken} />
             </form>
           )}
-
-          <div style={{ marginTop: '24px', textAlign: 'center', borderTop: '1px solid var(--border-subtle, #eee)', paddingTop: '20px' }}>
-            <Link to="/login" className="auth-back-link">
-              ← Back to Sign In
-            </Link>
-          </div>
-
         </div>
       </div>
     </div>
