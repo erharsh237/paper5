@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import './Auth.css'
@@ -17,6 +17,11 @@ export default function ForgotPassword() {
   const [error, setError] = useState(null)
   const [turnstileToken, setTurnstileToken] = useState(null)
   const turnstileRef = useRef(null)
+
+  useEffect(() => {
+    clearAuthError()
+    return () => clearAuthError()
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
