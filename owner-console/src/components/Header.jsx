@@ -15,16 +15,16 @@ export function Header({
 }) {
   const [userDropdown, setUserDropdown] = useState(false)
 
-  // Primary navigation tabs shown in center pill
+  // Primary navigation tabs shown in center pill (grouped: Overview, Tenants, Ops, Governance)
   const primaryModules = [
     { id: 'command-center', name: 'Home' },
+    { id: 'analytics', name: 'Analytics' },
     { id: 'users', name: 'Users' },
     { id: 'workspaces', name: 'Workspaces' },
     { id: 'billing', name: 'Billing' },
-    { id: 'analytics', name: 'Analytics' },
     { id: 'database', name: 'Database' },
-    { id: 'security', name: 'Security' },
     { id: 'support', name: 'Support' },
+    { id: 'security', name: 'Security' },
     { id: 'rbac', name: 'Admins' }
   ]
 
