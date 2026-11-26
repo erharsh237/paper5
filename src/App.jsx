@@ -5,6 +5,7 @@ import { Suspense, lazy, useEffect, useState, useSyncExternalStore } from 'react
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './lib/AuthContext'
 import { WorkspaceProvider, useWorkspace } from './lib/WorkspaceContext'
+import { captureAttribution } from './lib/attribution'
 const WorkspaceBentoLayout = lazy(() => import('./components/WorkspaceBentoLayout'))
 const LockedOverlay = lazy(() => import('./components/LockedOverlay'))
 // Auto-reloads page if a Vercel deploy replaced older JS bundle filenames
@@ -235,6 +236,10 @@ export default function App() {
   const { user, userData, loading, isPending2FA } = useAuth()
   const [analyticsConsent, setAnalyticsConsent] = useState(() => hasAnalyticsConsent())
   const isRouteChunkLoading = useSyncExternalStore(subscribeRouteLoading, getIsRouteLoading, () => false)
+
+  useEffect(() => {
+    captureAttribution()
+  }, [location.search])
 
   useEffect(() => {
     if (analyticsConsent) {

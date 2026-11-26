@@ -453,20 +453,27 @@ export default async function handler(req, res) {
       const { data, count, error } = await query
       if (error) return res.status(400).json({ error: error.message })
 
-      // Fetch active, non-expired entitlement overrides
+      // Fetch active, non-expired entitlement overrides + auth user_metadata for acquisition source
       const userIds = (data || []).map(u => u.id)
       let overridesMap = {}
+      let authMetaMap = {}
       if (userIds.length > 0) {
         const nowIso = new Date().toISOString()
-        const { data: oData } = await supabaseAdmin
-          .from('user_entitlement_overrides')
-          .select('user_id, override_plan, reason, expires_at')
-          .in('user_id', userIds)
-          .eq('is_active', true)
-          .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+        const [overrideRes, authUsersRes] = await Promise.all([
+          supabaseAdmin
+            .from('user_entitlement_overrides')
+            .select('user_id, override_plan, reason, expires_at')
+            .in('user_id', userIds)
+            .eq('is_active', true)
+            .or(`expires_at.is.null,expires_at.gt.${nowIso}`),
+          supabaseAdmin.auth.admin.listUsers({ perPage: 1000 }).catch(() => ({ data: null }))
+        ])
 
-        if (oData) {
-          oData.forEach(o => { overridesMap[o.user_id] = o })
+        if (overrideRes?.data) {
+          overrideRes.data.forEach(o => { overridesMap[o.user_id] = o })
+        }
+        if (authUsersRes?.data?.users) {
+          authUsersRes.data.users.forEach(au => { authMetaMap[au.id] = au.user_metadata || {} })
         }
       }
 
@@ -477,11 +484,20 @@ export default async function handler(req, res) {
           : ['team', 'standard'].includes(rawPlan.toLowerCase())
             ? 'team'
             : 'starter'
+        const meta = authMetaMap[u.id] || {}
+        const source = meta.signup_source || null
         return {
           ...u,
           effectivePlan,
           hasOverride: Boolean(overridesMap[u.id]),
-          overrideDetails: overridesMap[u.id] || null
+          overrideDetails: overridesMap[u.id] || null,
+          source,
+          sourceDetails: source ? {
+            source,
+            medium: meta.signup_medium || 'none',
+            campaign: meta.signup_campaign || '',
+            referrer: meta.signup_referrer || ''
+          } : null
         }
       })
 
@@ -493,14 +509,15 @@ export default async function handler(req, res) {
       if (!isValidUuid(userId)) return res.status(400).json({ error: 'Valid UUID required for userId' })
 
       const nowIso = new Date().toISOString()
-      const [userRes, membershipsRes, ownedWsRes, overrideRes, auditRes, platformAdminRes, invitesRes] = await Promise.all([
+      const [userRes, membershipsRes, ownedWsRes, overrideRes, auditRes, platformAdminRes, invitesRes, authUserRes] = await Promise.all([
         supabaseAdmin.from('users').select('*').eq('id', userId).maybeSingle(),
         supabaseAdmin.from('workspace_members').select('workspace_id, role, joined_at, workspaces(id, name, is_active, billing_plan_id, billing_status)').eq('user_id', userId),
         supabaseAdmin.from('workspaces').select('id, name, is_active, billing_plan_id, billing_status, created_at, created_by').eq('created_by', userId),
         supabaseAdmin.from('user_entitlement_overrides').select('*').eq('user_id', userId).eq('is_active', true).or(`expires_at.is.null,expires_at.gt.${nowIso}`).maybeSingle(),
         supabaseAdmin.from('platform_audit_logs').select('*').eq('target_id', userId).order('created_at', { ascending: false }).limit(20),
         supabaseAdmin.from('platform_admins').select('role, is_active, permissions, created_at').eq('user_id', userId).maybeSingle(),
-        supabaseAdmin.from('invites').select('id, workspace_id, email, role, permissions, created_at')
+        supabaseAdmin.from('invites').select('id, workspace_id, email, role, permissions, created_at'),
+        supabaseAdmin.auth.admin.getUserById(userId).catch(() => ({ data: null }))
       ])
 
       if (userRes.error || !userRes.data) return res.status(404).json({ error: 'User not found' })
@@ -563,6 +580,14 @@ export default async function handler(req, res) {
           ? 'team'
           : 'starter'
 
+      const authMeta = authUserRes?.data?.user?.user_metadata || {}
+      const sourceDetails = authMeta.signup_source ? {
+        source: authMeta.signup_source,
+        medium: authMeta.signup_medium || 'none',
+        campaign: authMeta.signup_campaign || '',
+        referrer: authMeta.signup_referrer || ''
+      } : null
+
       return res.status(200).json({
         user,
         effectivePlan,
@@ -572,7 +597,8 @@ export default async function handler(req, res) {
         activeOverride: overrideRes.data || null,
         auditHistory: auditRes.data || [],
         lastKnownIp,
-        isBanned
+        isBanned,
+        sourceDetails
       })
     }
 

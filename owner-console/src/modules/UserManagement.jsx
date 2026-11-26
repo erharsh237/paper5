@@ -247,6 +247,7 @@ export function UserManagement() {
               <th>User</th>
               <th>Plan</th>
               <th>Status</th>
+              <th>Source</th>
               <th>Joined</th>
               <th className="text-right">Actions</th>
             </tr>
@@ -254,13 +255,13 @@ export function UserManagement() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="5" className="text-center py-12 text-xs text-slate-400">
+                <td colSpan="6" className="text-center py-12 text-xs text-slate-400">
                   Loading users...
                 </td>
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan="5" className="text-center py-12 text-xs text-slate-400">
+                <td colSpan="6" className="text-center py-12 text-xs text-slate-400">
                   No users found.
                 </td>
               </tr>
@@ -305,6 +306,19 @@ export function UserManagement() {
                           Active
                         </span>
                       )}
+                    </td>
+
+                    <td>
+                      <span
+                        title={u.sourceDetails ? `Medium: ${u.sourceDetails.medium}${u.sourceDetails.campaign ? ` | Campaign: ${u.sourceDetails.campaign}` : ''}${u.sourceDetails.referrer ? ` | Referrer: ${u.sourceDetails.referrer}` : ''}` : 'No recorded attribution'}
+                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-mono ${
+                          u.source && u.source !== 'direct'
+                            ? 'bg-blue-50 text-blue-700 border border-blue-200/70 font-semibold'
+                            : 'bg-slate-100 text-slate-500'
+                        }`}
+                      >
+                        {u.source || '—'}
+                      </span>
                     </td>
 
                     <td className="text-xs text-slate-500 font-mono">
@@ -552,6 +566,17 @@ export function UserManagement() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {inspectUser.sourceDetails && (
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs flex flex-wrap items-center justify-between gap-2">
+                <span className="text-slate-500 font-medium">Acquisition Source</span>
+                <span className="font-mono text-slate-900 font-semibold">
+                  {inspectUser.sourceDetails.source}
+                  {inspectUser.sourceDetails.medium && inspectUser.sourceDetails.medium !== 'none' ? ` / ${inspectUser.sourceDetails.medium}` : ''}
+                  {inspectUser.sourceDetails.campaign ? ` (${inspectUser.sourceDetails.campaign})` : ''}
+                </span>
               </div>
             )}
 

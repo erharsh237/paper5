@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from './supabase'
 import { ensureUserRecordExists } from './workspaces'
+import { getSignupAttributionMetadata } from './attribution'
 import { triggerSpamNotice } from '../components/FloatingNotice'
 
 /**
@@ -188,6 +189,13 @@ export function AuthProvider({ children }) {
         _isOptimistic: true
       })
       setLoading(false)
+
+      if (u && !u.user_metadata?.signup_source) {
+        const attrMeta = getSignupAttributionMetadata()
+        if (attrMeta.signup_source) {
+          supabase.auth.updateUser({ data: attrMeta }).catch(() => {})
+        }
+      }
 
       // Fetch authoritative user profile and entitlements asynchronously
       const fetchUserData = async () => {
@@ -643,11 +651,13 @@ export function AuthProvider({ children }) {
 
   const signupWithEmail = async (email, password) => {
     setAuthError(null)
+    const attrMeta = getSignupAttributionMetadata()
     const { error, data } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: window.location.origin + '/workspace'
+        emailRedirectTo: window.location.origin + '/workspace',
+        data: attrMeta
       }
     })
     if (error) {
