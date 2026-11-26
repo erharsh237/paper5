@@ -83,6 +83,30 @@ const sessionCookieApi = {
 
 export const CURRENT_LEGAL_VERSION = '1.0'
 
+function getCachedLegalConsent(userId) {
+  if (!userId) return { version: null, at: null }
+  try {
+    return {
+      version: sessionStorage.getItem(`p5_legal_v_${userId}`) || localStorage.getItem(`p5_legal_v_${userId}`),
+      at: sessionStorage.getItem(`p5_legal_at_${userId}`) || localStorage.getItem(`p5_legal_at_${userId}`)
+    }
+  } catch (_) {
+    return { version: null, at: null }
+  }
+}
+
+function cacheLegalConsent(userId, version, at) {
+  if (!userId || !version) return
+  try {
+    sessionStorage.setItem(`p5_legal_v_${userId}`, version)
+    localStorage.setItem(`p5_legal_v_${userId}`, version)
+    if (at) {
+      sessionStorage.setItem(`p5_legal_at_${userId}`, at)
+      localStorage.setItem(`p5_legal_at_${userId}`, at)
+    }
+  } catch (_) {}
+}
+
 function clearAuthStorage() {
   const preserved = {}
   const keepKeys = ['p5_cookie_consent', 'p5_app_theme', 'p5_marketing_theme']
@@ -146,12 +170,7 @@ export function AuthProvider({ children }) {
       const defaultUsername = u.user_metadata?.username || (cleanEmail ? cleanEmail.split('@')[0].replace(/[^a-z0-9_]/g, '') : `user_${u.id.slice(0, 6)}`)
 
       // Fast Path: Immediately unlock the app shell without waiting for background DB queries
-      let cachedLegalVer = null
-      let cachedLegalAt = null
-      try {
-        cachedLegalVer = sessionStorage.getItem(`p5_legal_v_${u.id}`)
-        cachedLegalAt = sessionStorage.getItem(`p5_legal_at_${u.id}`)
-      } catch (_) {}
+      const { version: cachedLegalVer, at: cachedLegalAt } = getCachedLegalConsent(u.id)
 
       setUser(u)
       setUserData({
@@ -199,17 +218,18 @@ export function AuthProvider({ children }) {
           } catch (_) {}
         }
         if (data) {
-          data.legalAcceptedVersion = data.legal_accepted_version
-          data.legalAcceptedAt = data.legal_accepted_at
+          const resolvedLegalVer = data.legal_accepted_version || u.user_metadata?.legal_accepted_version || cachedLegalVer || null
+          const resolvedLegalAt = data.legal_accepted_at || u.user_metadata?.legal_accepted_at || cachedLegalAt || null
+          data.legal_accepted_version = resolvedLegalVer
+          data.legalAcceptedVersion = resolvedLegalVer
+          data.legal_accepted_at = resolvedLegalAt
+          data.legalAcceptedAt = resolvedLegalAt
           data.billingStatus = data.billing_status
           data.billingPlanId = data.billing_plan_id
           data.requiresPasswordReset = data.requires_password_reset || !!u.user_metadata?.must_change_password
           data._isOptimistic = false
-          if (data.legal_accepted_version) {
-            try {
-              sessionStorage.setItem(`p5_legal_v_${u.id}`, data.legal_accepted_version)
-              if (data.legal_accepted_at) sessionStorage.setItem(`p5_legal_at_${u.id}`, data.legal_accepted_at)
-            } catch (_) {}
+          if (resolvedLegalVer) {
+            cacheLegalConsent(u.id, resolvedLegalVer, resolvedLegalAt)
           }
         }
         setUserData(data)
@@ -255,8 +275,13 @@ export function AuthProvider({ children }) {
           }
           const data = payload.new
           if (data) {
-            data.legalAcceptedVersion = data.legal_accepted_version
-            data.legalAcceptedAt = data.legal_accepted_at
+            const { version: cachedVer, at: cachedAt } = getCachedLegalConsent(data.id)
+            const resolvedLegalVer = data.legal_accepted_version || cachedVer || null
+            const resolvedLegalAt = data.legal_accepted_at || cachedAt || null
+            data.legal_accepted_version = resolvedLegalVer
+            data.legalAcceptedVersion = resolvedLegalVer
+            data.legal_accepted_at = resolvedLegalAt
+            data.legalAcceptedAt = resolvedLegalAt
             data.billingStatus = data.billing_status
             data.billingPlanId = data.billing_plan_id
             data.requiresPasswordReset = data.requires_password_reset
@@ -635,14 +660,24 @@ export function AuthProvider({ children }) {
   const acceptLegalTerms = async () => {
     if (!user) return
     const now = new Date().toISOString()
-    try {
-      sessionStorage.setItem(`p5_legal_v_${user.id}`, CURRENT_LEGAL_VERSION)
-      sessionStorage.setItem(`p5_legal_at_${user.id}`, now)
-    } catch (_) {}
-    await supabase.from('users').update({ 
-      legal_accepted_version: CURRENT_LEGAL_VERSION,
-      legal_accepted_at: now
-    }).eq('id', user.id)
+    cacheLegalConsent(user.id, CURRENT_LEGAL_VERSION, now)
+
+    const [, dbRes] = await Promise.all([
+      supabase.auth.updateUser({
+        data: {
+          legal_accepted_version: CURRENT_LEGAL_VERSION,
+          legal_accepted_at: now
+        }
+      }).catch(() => ({})),
+      supabase.from('users').update({
+        legal_accepted_version: CURRENT_LEGAL_VERSION,
+        legal_accepted_at: now
+      }).eq('id', user.id)
+    ])
+
+    if (dbRes?.error) {
+      console.warn('Could not update public.users legal consent:', dbRes.error.message)
+    }
 
     setUserData(prev => ({
       ...prev,
