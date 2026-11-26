@@ -66,7 +66,7 @@ export default function ForgotPassword() {
 
       <div className="auth-showcase-bg" aria-hidden="true" />
 
-      <div className="auth-container" style={{ maxWidth: '420px', margin: '0 auto', padding: '40px 20px' }}>
+      <div style={{ width: '100%', maxWidth: '460px', margin: '0 auto' }}>
         <div className="reset-card">
           <div style={{ textAlign: 'center' }}>
             <div className="reset-icon-ring" aria-hidden="true">
