@@ -335,12 +335,6 @@ export async function handleProductFeedback(req, res) {
     message: 'Product report received successfully. Thank you for helping us improve Paper5!',
     evidenceUrl
   })
-  } catch (err) {
-    console.error('[api/product-feedback] Delivery error:', err)
-    return res.status(502).json({
-      error: 'Unable to submit product report right now. Please try again shortly.'
-    })
-  }
 }
 
 export async function handleForgotPassword(req, res) {

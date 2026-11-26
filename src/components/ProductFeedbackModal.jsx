@@ -170,8 +170,8 @@ export default function ProductFeedbackModal({ isOpen, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (submitting) return
-    if (!message.trim()) {
-      setError('Please provide a description.')
+    if (!message.trim() || message.trim().length < 5) {
+      setError('Please provide a description (minimum 5 characters).')
       return
     }
 
@@ -212,7 +212,10 @@ export default function ProductFeedbackModal({ isOpen, onClose }) {
 
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to submit feedback.')
+        const errMsg = typeof data.error === 'string'
+          ? data.error
+          : (data.error?.message || data.message || 'Failed to submit feedback.')
+        throw new Error(errMsg)
       }
 
       setSubmitted(true)
