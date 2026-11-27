@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import './InvoicesModal.css'
 import AlertModal from './ui/AlertModal'
 import { Calendar, Download, ShieldCheck, FileText } from 'lucide-react'
@@ -6,9 +6,16 @@ import { Calendar, Download, ShieldCheck, FileText } from 'lucide-react'
 export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspace }) {
   const [alertMessage, setAlertMessage] = useState(null)
   
-  // Auto-detect or toggle billing cycle (Monthly vs Annual)
-  const initialCycle = workspace?.billing_interval || workspace?.settings?.billing_interval || workspace?.billing?.interval || 'monthly'
+  // Auto-detect billing cycle (Monthly vs Annual) and sync when modal opens
+  const rawInitialCycle = (workspace?.billing_interval || workspace?.settings?.billing_interval || workspace?.billing?.interval || 'monthly').toLowerCase()
+  const initialCycle = rawInitialCycle === 'annual' || rawInitialCycle === 'yearly' ? 'annual' : 'monthly'
   const [billingCycle, setBillingCycle] = useState(initialCycle)
+
+  useEffect(() => {
+    if (isOpen) {
+      setBillingCycle(initialCycle)
+    }
+  }, [isOpen, initialCycle])
 
   const effectivePlanId = useMemo(() => {
     const p = (currentPlanId || workspace?.billing_plan_id || workspace?.plan || workspace?.subscription_tier || workspace?.settings?.plan || workspace?.billing?.planId || 'pro').toLowerCase().trim()
@@ -102,9 +109,12 @@ export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspac
     }
   })
 
-  // Combine stored + fallback, ensuring current active cycle is represented
-  let combinedInvoices = matchingStored.length > 0 ? [...matchingStored] : [fallbackCurrentInvoice]
-  if (!isAnnualTab && effectivePlanId !== 'starter' && effectivePlanId !== 'free' && !combinedInvoices.some(i => i.id?.includes('STARTER'))) {
+  // Only synthesize a fallback invoice for the workspace's actual active billing cycle
+  let combinedInvoices = [...matchingStored]
+  if (combinedInvoices.length === 0 && billingCycle === initialCycle) {
+    combinedInvoices = [fallbackCurrentInvoice]
+  }
+  if (!isAnnualTab && billingCycle === initialCycle && effectivePlanId !== 'starter' && effectivePlanId !== 'free' && !combinedInvoices.some(i => i.id?.includes('STARTER'))) {
     combinedInvoices.push(fallbackInitialInvoice)
   }
 
@@ -323,7 +333,14 @@ export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspac
               </tr>
             </thead>
             <tbody>
-              {combinedInvoices.map((inv) => (
+              {combinedInvoices.length === 0 ? (
+                <tr>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '28px 16px', color: 'var(--muted, #6E7091)', fontSize: '13px' }}>
+                    No {isAnnualTab ? 'annual' : 'monthly'} invoices found for this workspace.
+                  </td>
+                </tr>
+              ) : (
+              combinedInvoices.map((inv) => (
                 <tr key={inv.id}>
                   <td>
                     <code style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text, #1C1D2B)', background: 'var(--surface-2, #EEF0F9)', padding: '3px 6px', borderRadius: '4px' }}>
@@ -370,7 +387,8 @@ export default function InvoicesModal({ isOpen, onClose, currentPlanId, workspac
                     </button>
                   </td>
                 </tr>
-              ))}
+              ))
+              )}
             </tbody>
           </table>
         </div>
