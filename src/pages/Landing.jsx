@@ -934,37 +934,59 @@ export default function Landing() {
         </section>
 
         {/* ════════════════════════════════════════════════════════════════
+            7.5. LAUNCH CONFETTI BANNER SECTION
+            ════════════════════════════════════════════════════════════════ */}
+        <section
+          id="launch-offer"
+          style={{
+            position: 'relative',
+            overflow: 'hidden',
+            padding: '56px 24px',
+            textAlign: 'center',
+            background: 'linear-gradient(180deg, rgba(16, 185, 129, 0.06) 0%, rgba(59, 130, 246, 0.04) 100%)',
+            borderTop: '1px solid var(--border-soft, #EAECF6)',
+            borderBottom: '1px solid var(--border-soft, #EAECF6)'
+          }}
+        >
+          <PricingConfetti targetId="launch-offer" />
+          <div className="section-container" style={{ position: 'relative', zIndex: 2, maxWidth: '720px', margin: '0 auto' }}>
+            <h2
+              style={{
+                fontSize: 'clamp(28px, 4vw, 40px)',
+                fontWeight: 800,
+                letterSpacing: '-0.03em',
+                margin: '0 0 10px',
+                color: 'var(--text, #1C1D2B)'
+              }}
+            >
+              Free till 31st December 2026
+            </h2>
+            <p
+              style={{
+                fontSize: '16px',
+                color: 'var(--muted, #6E7091)',
+                margin: 0,
+                lineHeight: 1.6
+              }}
+            >
+              Full access to Paper5 during our public launch — no credit card required.
+            </p>
+          </div>
+        </section>
+
+        {/* ════════════════════════════════════════════════════════════════
             8. PRICING SECTION (LIGHT)
             Transparent Plans • Free During Launch • Structured Tiers
             ════════════════════════════════════════════════════════════════ */}
-        <section id="pricing" className="pricing-section " style={{ position: 'relative', overflow: 'hidden' }}>
-          <PricingConfetti targetId="pricing" />
-          <div className="section-container" style={{ position: 'relative', zIndex: 3 }}>
+        <section id="pricing" className="pricing-section ">
+          <div className="section-container">
             <div className="section-header">
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '6px 14px',
-                  borderRadius: '9999px',
-                  background: 'rgba(16, 185, 129, 0.1)',
-                  border: '1px solid rgba(16, 185, 129, 0.25)',
-                  color: '#047857',
-                  fontSize: '12.5px',
-                  fontWeight: 700,
-                  marginBottom: '12px'
-                }}
-              >
-                <span aria-hidden="true">🎉</span>
-                <span>Free till 31st December 2026</span>
-              </div>
               <span className="section-kicker">TRANSPARENT PRICING</span>
               <h2 className="section-title">
                 Simple Plans. Free During Launch.
               </h2>
               <p className="section-description">
-                Experience the complete connected workspace with all features unlocked — free till 31st December 2026. Pick the plan that fits your squad.
+                Experience the complete connected workspace with all features unlocked during our public launch. Pick the plan that fits your squad.
               </p>
             </div>
 
