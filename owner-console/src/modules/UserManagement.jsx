@@ -477,14 +477,16 @@ export function UserManagement() {
             {/* Subscription, Billing Cycle, Expiration & Invoices */}
             {(() => {
               const bd = inspectUser.billingDetails || {}
-              const intervalLabel = bd.interval === 'annual' || bd.interval === 'yearly'
-                ? 'Annual'
-                : bd.interval === 'monthly'
-                  ? 'Monthly'
-                  : 'Free (No Cycle)'
-              const expiryLabel = bd.expiresAt
-                ? new Date(bd.expiresAt).toLocaleDateString()
-                : (inspectUser.effectivePlan === 'starter' ? 'No Expiry (Free)' : 'Not Set')
+              const startedAt = bd.startedAt || inspectUser.user?.created_at
+              const interval = (bd.interval || 'monthly').toLowerCase()
+              const intervalLabel = interval === 'annual' || interval === 'yearly' ? 'Annual' : 'Monthly'
+              const fallbackExpiry = startedAt
+                ? new Date(new Date(startedAt).getTime() + (interval === 'annual' || interval === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000)
+                : null
+              const expiryDate = bd.expiresAt ? new Date(bd.expiresAt) : fallbackExpiry
+              const expiryLabel = expiryDate
+                ? expiryDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+                : '—'
               return (
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-2.5 text-xs">
                   <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
@@ -498,7 +500,7 @@ export function UserManagement() {
                     <div>
                       <div className="text-[10px] text-slate-400">Started</div>
                       <div className="font-mono font-semibold text-slate-900 mt-0.5">
-                        {bd.startedAt ? new Date(bd.startedAt).toLocaleDateString() : '—'}
+                        {startedAt ? new Date(startedAt).toLocaleDateString() : '—'}
                       </div>
                     </div>
                     <div>

@@ -511,8 +511,8 @@ export default async function handler(req, res) {
       const nowIso = new Date().toISOString()
       const [userRes, membershipsRes, ownedWsRes, overrideRes, auditRes, platformAdminRes, invitesRes, authUserRes] = await Promise.all([
         supabaseAdmin.from('users').select('*').eq('id', userId).maybeSingle(),
-        supabaseAdmin.from('workspace_members').select('workspace_id, role, joined_at, workspaces(id, name, is_active, billing_plan_id, billing_status, billing_interval)').eq('user_id', userId),
-        supabaseAdmin.from('workspaces').select('id, name, is_active, billing_plan_id, billing_status, billing_interval, created_at, created_by').eq('created_by', userId),
+        supabaseAdmin.from('workspace_members').select('workspace_id, role, joined_at, workspaces(id, name, is_active, billing_plan_id, billing_status, billing_interval, settings, created_at, updated_at)').eq('user_id', userId),
+        supabaseAdmin.from('workspaces').select('id, name, is_active, billing_plan_id, billing_status, billing_interval, settings, created_at, updated_at, created_by').eq('created_by', userId),
         supabaseAdmin.from('user_entitlement_overrides').select('*').eq('user_id', userId).eq('is_active', true).or(`expires_at.is.null,expires_at.gt.${nowIso}`).maybeSingle(),
         supabaseAdmin.from('platform_audit_logs').select('*').eq('target_id', userId).order('created_at', { ascending: false }).limit(20),
         supabaseAdmin.from('platform_admins').select('role, is_active, permissions, created_at').eq('user_id', userId).maybeSingle(),
@@ -588,12 +588,18 @@ export default async function handler(req, res) {
         referrer: authMeta.signup_referrer || ''
       } : null
 
-      const billingInterval =
+      const primaryWs = ownedWsRes.data?.[0] || membershipsRes.data?.[0]?.workspaces || null
+      const rawInterval =
         authMeta.billing_cycle ||
         authMeta.cycle ||
-        ownedWsRes.data?.find(w => w.billing_interval)?.billing_interval ||
-        membershipsRes.data?.find(m => m.workspaces?.billing_interval)?.workspaces?.billing_interval ||
-        (effectivePlan === 'starter' ? 'free' : 'monthly')
+        primaryWs?.billing_interval ||
+        primaryWs?.settings?.billing_interval ||
+        'monthly'
+      const billingInterval = rawInterval.toLowerCase() === 'annual' || rawInterval.toLowerCase() === 'yearly' ? 'annual' : 'monthly'
+
+      const periodDays = billingInterval === 'annual' ? 365 : 30
+      const baseDate = new Date(primaryWs?.updated_at || primaryWs?.created_at || user.created_at || Date.now())
+      const computedPeriodEnd = new Date(baseDate.getTime() + periodDays * 24 * 60 * 60 * 1000).toISOString()
 
       let invoices = []
       if (user.billing_razorpay_subscription_id && process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
@@ -622,7 +628,7 @@ export default async function handler(req, res) {
         interval: billingInterval,
         status: user.billing_status || 'active',
         startedAt: user.created_at,
-        expiresAt: overrideRes.data?.expires_at || user.billing_current_period_end || null,
+        expiresAt: overrideRes.data?.expires_at || user.billing_current_period_end || computedPeriodEnd,
         subscriptionId: user.billing_razorpay_subscription_id || null,
         invoices
       }
