@@ -5,6 +5,7 @@ import { useAuth } from '../lib/AuthContext'
 import MarketingNav from '../components/MarketingNav'
 import MarketingFooter from '../components/MarketingFooter'
 import AetherFlowHero from '../components/AetherFlowHero'
+import PricingConfetti from '../components/PricingConfetti'
 import SEOHead from '../components/SEOHead'
 import AlertModal from '../components/ui/AlertModal'
 import ContactModal from '../components/ContactModal'
@@ -936,15 +937,34 @@ export default function Landing() {
             8. PRICING SECTION (LIGHT)
             Transparent Plans • Free During Launch • Structured Tiers
             ════════════════════════════════════════════════════════════════ */}
-        <section id="pricing" className="pricing-section ">
-          <div className="section-container">
+        <section id="pricing" className="pricing-section " style={{ position: 'relative', overflow: 'hidden' }}>
+          <PricingConfetti targetId="pricing" />
+          <div className="section-container" style={{ position: 'relative', zIndex: 3 }}>
             <div className="section-header">
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '6px 14px',
+                  borderRadius: '9999px',
+                  background: 'rgba(16, 185, 129, 0.1)',
+                  border: '1px solid rgba(16, 185, 129, 0.25)',
+                  color: '#047857',
+                  fontSize: '12.5px',
+                  fontWeight: 700,
+                  marginBottom: '12px'
+                }}
+              >
+                <span aria-hidden="true">🎉</span>
+                <span>Free till 31st December 2026</span>
+              </div>
               <span className="section-kicker">TRANSPARENT PRICING</span>
               <h2 className="section-title">
                 Simple Plans. Free During Launch.
               </h2>
               <p className="section-description">
-                Experience the complete connected workspace with all features unlocked during our public launch. Pick the plan that fits your squad.
+                Experience the complete connected workspace with all features unlocked — free till 31st December 2026. Pick the plan that fits your squad.
               </p>
             </div>
 
