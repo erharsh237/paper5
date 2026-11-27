@@ -474,6 +474,65 @@ export function UserManagement() {
               </div>
             </div>
 
+            {/* Subscription, Billing Cycle, Expiration & Invoices */}
+            {(() => {
+              const bd = inspectUser.billingDetails || {}
+              const intervalLabel = bd.interval === 'annual' || bd.interval === 'yearly'
+                ? 'Annual'
+                : bd.interval === 'monthly'
+                  ? 'Monthly'
+                  : 'Free (No Cycle)'
+              const expiryLabel = bd.expiresAt
+                ? new Date(bd.expiresAt).toLocaleDateString()
+                : (inspectUser.effectivePlan === 'starter' ? 'No Expiry (Free)' : 'Not Set')
+              return (
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-2.5 text-xs">
+                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    Subscription &amp; Billing
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div>
+                      <div className="text-[10px] text-slate-400">Billing Cycle</div>
+                      <div className="font-mono font-semibold text-slate-900 mt-0.5">{intervalLabel}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-slate-400">Started</div>
+                      <div className="font-mono font-semibold text-slate-900 mt-0.5">
+                        {bd.startedAt ? new Date(bd.startedAt).toLocaleDateString() : '—'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-slate-400">Expiration / Renewal</div>
+                      <div className="font-mono font-semibold text-slate-900 mt-0.5">{expiryLabel}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-slate-400">Subscription / Invoice</div>
+                      <div className="font-mono text-slate-700 mt-0.5 truncate" title={bd.subscriptionId || 'None'}>
+                        {bd.subscriptionId || 'None'}
+                      </div>
+                    </div>
+                  </div>
+                  {bd.invoices && bd.invoices.length > 0 && (
+                    <div className="pt-2 border-t border-slate-200/70 space-y-1">
+                      <div className="text-[10px] text-slate-400 font-semibold uppercase">Invoices</div>
+                      {bd.invoices.map((inv) => (
+                        <div key={inv.id} className="flex items-center justify-between text-[11px] font-mono">
+                          <span className="text-slate-700">
+                            {inv.id} · {inv.amount} {inv.currency} ({inv.status})
+                          </span>
+                          {inv.url && (
+                            <a href={inv.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
+                              View Invoice
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
+
             {/* Active Plan Overrides */}
             {inspectUser.activeOverride && (
               <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs">

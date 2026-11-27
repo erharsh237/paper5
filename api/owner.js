@@ -511,8 +511,8 @@ export default async function handler(req, res) {
       const nowIso = new Date().toISOString()
       const [userRes, membershipsRes, ownedWsRes, overrideRes, auditRes, platformAdminRes, invitesRes, authUserRes] = await Promise.all([
         supabaseAdmin.from('users').select('*').eq('id', userId).maybeSingle(),
-        supabaseAdmin.from('workspace_members').select('workspace_id, role, joined_at, workspaces(id, name, is_active, billing_plan_id, billing_status)').eq('user_id', userId),
-        supabaseAdmin.from('workspaces').select('id, name, is_active, billing_plan_id, billing_status, created_at, created_by').eq('created_by', userId),
+        supabaseAdmin.from('workspace_members').select('workspace_id, role, joined_at, workspaces(id, name, is_active, billing_plan_id, billing_status, billing_interval)').eq('user_id', userId),
+        supabaseAdmin.from('workspaces').select('id, name, is_active, billing_plan_id, billing_status, billing_interval, created_at, created_by').eq('created_by', userId),
         supabaseAdmin.from('user_entitlement_overrides').select('*').eq('user_id', userId).eq('is_active', true).or(`expires_at.is.null,expires_at.gt.${nowIso}`).maybeSingle(),
         supabaseAdmin.from('platform_audit_logs').select('*').eq('target_id', userId).order('created_at', { ascending: false }).limit(20),
         supabaseAdmin.from('platform_admins').select('role, is_active, permissions, created_at').eq('user_id', userId).maybeSingle(),
@@ -588,6 +588,45 @@ export default async function handler(req, res) {
         referrer: authMeta.signup_referrer || ''
       } : null
 
+      const billingInterval =
+        authMeta.billing_cycle ||
+        authMeta.cycle ||
+        ownedWsRes.data?.find(w => w.billing_interval)?.billing_interval ||
+        membershipsRes.data?.find(m => m.workspaces?.billing_interval)?.workspaces?.billing_interval ||
+        (effectivePlan === 'starter' ? 'free' : 'monthly')
+
+      let invoices = []
+      if (user.billing_razorpay_subscription_id && process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+        try {
+          const rzpAuth = Buffer.from(`${process.env.RAZORPAY_KEY_ID}:${process.env.RAZORPAY_KEY_SECRET}`).toString('base64')
+          const invRes = await fetch(
+            `https://api.razorpay.com/v1/invoices?subscription_id=${encodeURIComponent(user.billing_razorpay_subscription_id)}&count=5`,
+            { headers: { Authorization: `Basic ${rzpAuth}` }, signal: AbortSignal.timeout(3000) }
+          )
+          if (invRes.ok) {
+            const invJson = await invRes.json()
+            invoices = (invJson?.items || []).map(inv => ({
+              id: inv.id,
+              status: inv.status,
+              amount: inv.amount_paid ? inv.amount_paid / 100 : (inv.amount ? inv.amount / 100 : 0),
+              currency: inv.currency || 'USD',
+              date: inv.issued_at ? new Date(inv.issued_at * 1000).toISOString() : null,
+              url: inv.short_url || null
+            }))
+          }
+        } catch (_) {}
+      }
+
+      const billingDetails = {
+        plan: effectivePlan,
+        interval: billingInterval,
+        status: user.billing_status || 'active',
+        startedAt: user.created_at,
+        expiresAt: overrideRes.data?.expires_at || user.billing_current_period_end || null,
+        subscriptionId: user.billing_razorpay_subscription_id || null,
+        invoices
+      }
+
       return res.status(200).json({
         user,
         effectivePlan,
@@ -598,7 +637,8 @@ export default async function handler(req, res) {
         auditHistory: auditRes.data || [],
         lastKnownIp,
         isBanned,
-        sourceDetails
+        sourceDetails,
+        billingDetails
       })
     }
 
