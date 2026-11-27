@@ -598,8 +598,24 @@ export default async function handler(req, res) {
       const billingInterval = rawInterval.toLowerCase() === 'annual' || rawInterval.toLowerCase() === 'yearly' ? 'annual' : 'monthly'
 
       const periodDays = billingInterval === 'annual' ? 365 : 30
-      const baseDate = new Date(primaryWs?.updated_at || primaryWs?.created_at || user.created_at || Date.now())
+      const baseIso = primaryWs?.updated_at || primaryWs?.created_at || user.created_at || new Date().toISOString()
+      const baseDate = new Date(baseIso)
       const computedPeriodEnd = new Date(baseDate.getTime() + periodDays * 24 * 60 * 60 * 1000).toISOString()
+
+      const workspaceInvoices = Array.isArray(primaryWs?.settings?.invoices)
+        ? primaryWs.settings.invoices.map(inv => ({
+            id: inv.id || inv.invoiceNumber,
+            status: inv.status || 'Paid',
+            amount: inv.amount ?? '₹0',
+            currency: inv.currency || '',
+            date: inv.date || baseIso,
+            expiryDate: inv.expiryDate || computedPeriodEnd,
+            plan: inv.plan || `${effectivePlan.toUpperCase()} (${billingInterval === 'annual' ? 'Annual' : 'Monthly'})`,
+            cycle: inv.cycle || (billingInterval === 'annual' ? 'Annual (12 Months)' : 'Monthly (1 Month)'),
+            changeType: inv.changeType || 'Subscription',
+            url: inv.url || null
+          }))
+        : []
 
       let invoices = []
       if (user.billing_razorpay_subscription_id && process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
@@ -623,13 +639,34 @@ export default async function handler(req, res) {
         } catch (_) {}
       }
 
+      if (invoices.length === 0) {
+        invoices = workspaceInvoices
+      }
+      if (invoices.length === 0) {
+        const planLabel = effectivePlan === 'pro' ? 'Pro Plan' : effectivePlan === 'team' ? 'Team Plan' : 'Starter Plan'
+        const cycleLabel = billingInterval === 'annual' ? 'Annual' : 'Monthly'
+        invoices = [{
+          id: `INV-${effectivePlan.toUpperCase()}-${cycleLabel.toUpperCase()}-${baseDate.getFullYear()}-001`,
+          status: 'Paid',
+          amount: '₹0',
+          currency: '',
+          date: baseDate.toISOString(),
+          expiryDate: overrideRes.data?.expires_at || user.billing_current_period_end || computedPeriodEnd,
+          plan: `${planLabel} (${cycleLabel})`,
+          cycle: billingInterval === 'annual' ? 'Annual (12 Months)' : 'Monthly (1 Month)',
+          changeType: effectivePlan === 'starter' ? 'Initial Workspace Creation' : 'Subscription',
+          url: null
+        }]
+      }
+
       const billingDetails = {
         plan: effectivePlan,
         interval: billingInterval,
         status: user.billing_status || 'active',
         startedAt: user.created_at,
         expiresAt: overrideRes.data?.expires_at || user.billing_current_period_end || computedPeriodEnd,
-        subscriptionId: user.billing_razorpay_subscription_id || null,
+        subscriptionId: user.billing_razorpay_subscription_id || invoices[0]?.id || null,
+        workspaceName: primaryWs?.name || 'Workspace',
         invoices
       }
 

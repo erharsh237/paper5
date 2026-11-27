@@ -10,7 +10,8 @@ import {
   ChevronRight,
   ShieldAlert,
   AlertTriangle,
-  Ban
+  Ban,
+  Download
 } from 'lucide-react'
 import { ownerApi } from '../lib/api'
 import { useRealtimeRefresh } from '../lib/useRealtimeRefresh'
@@ -78,6 +79,47 @@ export function UserManagement() {
     } catch (err) {
       alert(err.message)
     }
+  }
+
+  function handleDownloadInvoicePdf(inv, userEmail, workspaceName) {
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) {
+      alert('Pop-up blocked. Please allow pop-ups to download the invoice PDF.')
+      return
+    }
+    const issueDate = inv.date ? new Date(inv.date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : '—'
+    const expDate = inv.expiryDate ? new Date(inv.expiryDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : '—'
+    const price = inv.currency ? `${inv.amount} ${inv.currency}` : (inv.amount || '₹0')
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Tax Invoice - ${inv.id}</title>
+          <style>
+            @page { size: A4; margin: 15mm; }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #111827; padding: 24px; line-height: 1.5; }
+            .header { display: flex; justify-content: space-between; border-bottom: 2px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 24px; }
+            .brand { font-size: 22px; font-weight: 800; color: #0f172a; }
+            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            th, td { padding: 10px 12px; border-bottom: 1px solid #e5e7eb; text-align: left; font-size: 13px; }
+            th { background: #f8fafc; font-size: 11px; text-transform: uppercase; color: #64748b; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div><div class="brand">Paper5</div><div style="font-size:12px;color:#64748b;">Official Subscription Receipt</div></div>
+            <div style="text-align:right;"><div style="font-weight:700;">${inv.id}</div><div style="font-size:12px;color:#64748b;">Issued: ${issueDate}</div></div>
+          </div>
+          <p style="font-size:13px;"><strong>Account:</strong> ${userEmail || '—'}<br/><strong>Workspace:</strong> ${workspaceName || 'Workspace'}<br/><strong>Valid Until:</strong> ${expDate}</p>
+          <table>
+            <thead><tr><th>Plan</th><th>Cycle</th><th>Type</th><th>Status</th><th>Amount</th></tr></thead>
+            <tbody><tr><td>${inv.plan || 'Starter Plan'}</td><td>${inv.cycle || 'Monthly'}</td><td>${inv.changeType || 'Subscription'}</td><td>${inv.status || 'Paid'}</td><td><strong>${price}</strong></td></tr></tbody>
+          </table>
+          <script>window.onload = () => { window.print(); setTimeout(() => window.close(), 800); }</script>
+        </body>
+      </html>
+    `)
+    printWindow.document.close()
   }
 
   async function handleToggleSuspend(u) {
@@ -509,23 +551,32 @@ export function UserManagement() {
                     </div>
                     <div>
                       <div className="text-[10px] text-slate-400">Subscription / Invoice</div>
-                      <div className="font-mono text-slate-700 mt-0.5 truncate" title={bd.subscriptionId || 'None'}>
-                        {bd.subscriptionId || 'None'}
+                      <div className="font-mono text-slate-700 mt-0.5 truncate" title={bd.subscriptionId || bd.invoices?.[0]?.id || 'None'}>
+                        {bd.subscriptionId || bd.invoices?.[0]?.id || 'None'}
                       </div>
                     </div>
                   </div>
                   {bd.invoices && bd.invoices.length > 0 && (
-                    <div className="pt-2 border-t border-slate-200/70 space-y-1">
+                    <div className="pt-2 border-t border-slate-200/70 space-y-1.5">
                       <div className="text-[10px] text-slate-400 font-semibold uppercase">Invoices</div>
                       {bd.invoices.map((inv) => (
-                        <div key={inv.id} className="flex items-center justify-between text-[11px] font-mono">
-                          <span className="text-slate-700">
-                            {inv.id} · {inv.amount} {inv.currency} ({inv.status})
+                        <div key={inv.id} className="flex items-center justify-between gap-2 text-[11px] font-mono">
+                          <span className="text-slate-700 truncate">
+                            {inv.id} · {inv.currency ? `${inv.amount} ${inv.currency}` : (inv.amount || '₹0')} ({inv.status})
                           </span>
-                          {inv.url && (
-                            <a href={inv.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
+                          {inv.url ? (
+                            <a href={inv.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline shrink-0">
                               View Invoice
                             </a>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadInvoicePdf(inv, inspectUser.user?.email, bd.workspaceName || inspectUser.workspaces?.[0]?.name)}
+                              className="inline-flex items-center gap-1 text-blue-600 hover:underline shrink-0 font-sans font-semibold"
+                            >
+                              <Download className="w-3 h-3" />
+                              <span>Download PDF</span>
+                            </button>
                           )}
                         </div>
                       ))}
