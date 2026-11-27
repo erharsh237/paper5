@@ -84,6 +84,12 @@ Our active subprocessor directory is maintained at [Subprocessors](/legal/subpro
 ### User-Directed Integrations
 If your workspace administrator elects to connect optional third-party integrations (e.g., GitHub, Google Calendar, Discord, Slack, or custom webhooks), we exchange the necessary authorization tokens to execute actions explicitly requested by your team.
 
+### Google Workspace APIs & Limited Use Disclosure
+Paper5's use and transfer to any other app of information received from Google APIs strictly adheres to the [Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy), including the Limited Use requirements.
+
+- **Scope Usage (Google Calendar):** When you connect Google Calendar (`calendar.events.readonly` and `calendar.events`), Paper5 accesses your calendar events solely to display upcoming meetings inside your workspace and to create or sync sprint/meeting events explicitly requested by you.
+- **No AI/ML Model Training:** Paper5 **never** uses, retains, or transfers any user data obtained through Google Workspace APIs to develop, improve, or train generalized artificial intelligence (AI) and/or machine learning (ML) models.
+
 ---
 
 ## 5. Data Retention & Deletion
